@@ -1,180 +1,180 @@
-(* -- Literals *)
+;; -- Literals
 
-1;
--1;
+1 ?
+-1 ?
 
-1.2;
-1.66e10;
--1.66E-10;
-1E-9999;  (* underflow *)
-1E9999;   (* infinity *)
+1.2 ?
+1.66e10 ?
+-1.66E-10 ?
+1E-9999 ?  ;; underflow
+1E9999 ?   ;; infinity
 
-'A';
-'A'.clazz;
-'\r';     (* line feed *) 
-'\n';     (* newline *)
-'\010';   (* newline *)
+'A' ?
+'A'.clazz ?
+'\r' ?     ;; line feed *) 
+'\n' ?     ;; newline
+'\010' ?   ;; newline
 
-"A";
-"A".clazz;
-"Otto";
+"A" ?
+"A".clazz ?
+"Otto" ?
 
-false;
-false.clazz;
-true.clazz;
+false ?
+false.clazz ?
+true.clazz ?
 
-nil;
+nil ?
 
-(* -- Infix notation for methods: *)
+;; -- Infix notation for methods:
 
-3 + 4 * 5;
-3."+"(4."*"(5));
-(3 + 4) * 5;
-12 / 3;
-12 % 3;
+3 + 4 * 5 ?
+3."+"(4."*"(5)) ?
+(3 + 4) * 5 ?
+12 / 3 ?
+12 % 3 ?
 
-3 > 4;
-3 > 4 - 3;
+3 > 4 ?
+3 > 4 - 3 ?
 
-(* -- Popular methods of class Number: *)
+;; -- Popular methods of class Number:
 
-Number.prettyPrint;
+Number.prettyPrint ?
 
--3.sign;
+-3.sign ?
 
-(* -- Arithmetic overflow and errors: *)
+;; -- Arithmetic overflow and errors:
 
-2.intPower(3);
-2.intPower(99);  (* integer overflow ignored *)
-2.0.intPower(9999);  (* real overflow = Inf *)
+2.intPower(3) ?
+2.intPower(99) ?  ;; integer overflow ignored
+2.0.intPower(9999) ?  ;; real overflow = Inf
 
-200.asin;
+200.asin ?
 
-1 / 0;     (* Division by zero exception *)
-1.0 / 0.0; (* an ArithmeticError *)
+1 / 0 ?     ;; Division by zero exception
+1.0 / 0.0 ? ;; an ArithmeticError
 
-(* -- No overloading: *)
+;; -- No overloading:
 
-1 + 1.0;
-1.asReal + 1.0;
-1 + 1.0.asInt;
+1 + 1.0 ?
+1.asReal + 1.0 ?
+1 + 1.0.asInt ?
 
-(* -- Class String and Output: *)
+;; -- Class String and Output:
 
-"Kon" + "katenation";
-" test ".trim;
-" test ".locateChar('e');
-" test ".locateChar('3');
+"Kon" + "katenation" ?
+" test ".trim ?
+" test ".locateChar('e') ?
+" test ".locateChar('3') ?
 
-tycoon.stdout << "Kon" + "katenation" ;
-tycoon.stdout << "Kon" << "katenation" ;
-(* The latter is more efficient *)
+tycoon.stdout << "Kon" + "katenation"  ?
+tycoon.stdout << "Kon" << "katenation"  ?
+;; The latter is more efficient
 
-tycoon.stdout << 3.145;
-tycoon.stdout << true;
+tycoon.stdout << 3.145 ?
+tycoon.stdout << true ?
 
-(* File <: ExternalStream <: Output *)
-tycoon.stdout.clazz.prettyPrint;
-ExternalStream.prettyPrint;
-Output.prettyPrint; (* << defined here *)
+;; File <: ExternalStream <: Output
+tycoon.stdout.clazz.prettyPrint ?
+ExternalStream.prettyPrint ?
+Output.prettyPrint ? ;; << defined here
 
-(* -- Identity and Equality *)
+;; -- Identity and Equality
 
-"abc" = "abc";
-"abc" == "abc";
-3.0 = 3.0;
-3.0 == 3.0;
+"abc" = "abc" ?
+"abc" == "abc" ?
+3.0 = 3.0 ?
+3.0 == 3.0 ?
 
-2 == 2;
-2.intPower(31); (* ## overflow not detected *)
-2.intPower(30) == 2.intPower(30);  (* false if greater than 2.intPower(29) - 1 *)
-2.intPower(30) = 2.intPower(30);   (* but always equal *)
-2.intPower(29) == 2.intPower(29);
-2.intPower(29) - 1 == 2.intPower(29) - 1;
-2.intPower(4) == 2.intPower(4);  
+2 == 2 ?
+2.intPower(31) ? ;; ## overflow not detected
+2.intPower(30) == 2.intPower(30) ?  ;; false if greater than 2.intPower(29) - 1
+2.intPower(30) = 2.intPower(30) ?   ;; but always equal
+2.intPower(29) == 2.intPower(29) ?
+2.intPower(29) - 1 == 2.intPower(29) - 1 ?
+2.intPower(4) == 2.intPower(4) ?  
 
-(* Lesson: Use "=" wherever possible *)
+;; Lesson: Use "=" wherever possible
 
-(* -- Fun classes, blocks and scoping: *)
+;; -- Fun classes, blocks and scoping:
 
-{"hello"};
-{"hello"}[];
-fun() {"hello"};
-fun() {"hello"}[];
-{"hello"}.clazz.prettyPrint;
+{"hello"} ?
+{"hello"}[] ?
+fun() {"hello"} ?
+fun() {"hello"}[] ?
+{"hello"}.clazz.prettyPrint ?
 
-fun(x:Int) {x + x};
-fun(x:Int) {x + x} [7];
-fun(x:Int) {x + x}.clazz.prettyPrint;
+fun(x:Int) {x + x} ?
+fun(x:Int) {x + x} [7] ?
+fun(x:Int) {x + x}.clazz.prettyPrint ?
 
-{1 2 3}[];
-(1 2 3);
+{1 2 3}[] ?
+(1 2 3) ?
 
-();  (* nil *)
+() ?  ;; nil
 
 (a ::= 3
   (a ::= "A"
    a)
-);
+) ?
 
 (a ::= 3
  (a ::= "A")
  a
-);
+) ?
 
 (a ::= 3
  a ::= "A"
  a 
-);
+) ?
 
-(* -- Class Bool and Conditionals *)
+;; -- Class Bool and Conditionals
 
-true & false;
-true | false;
-true ^ false;
+true & false ?
+true | false ?
+true ^ false ?
 
-!true;
-!(3 > 4);
+!true ?
+!(3 > 4) ?
 
-Bool.prettyPrint;
+Bool.prettyPrint ?
 
-if( false then:{ tycoon.stdout << "true" } else:{ tycoon.stdout << "false" });
+if( false then:{ tycoon.stdout << "true" } else:{ tycoon.stdout << "false" }) ?
 
-Object.methodDictionary["if"];
-true.case({tycoon.stdout << "true"},{tycoon.stdout << "false"});
-false.case({tycoon.stdout << "true"},{tycoon.stdout << "false"});
+Object.methodDictionary["if"] ?
+true.case({tycoon.stdout << "true"},{tycoon.stdout << "false"}) ?
+false.case({tycoon.stdout << "true"},{tycoon.stdout << "false"}) ?
 
-(* -- Short circuit evaluation: *)
+;; -- Short circuit evaluation:
 
 ( x :Int := nil
   x.isNotNil && x > 3
   x := 0
   x=0 || 1/x > 3
-);
+) ?
 
 ( x :Int := nil
   x.isNotNil."&&"({ x > 3 })
   x := 0
   x=0."||"({ 1/x > 3 })
-);
+) ?
 
-(* -- Nil value: *)
+;; -- Nil value:
 
-fun(x :Int) {x > 1} [nil];   (* runtime error *)
+fun(x :Int) {x > 1} [nil] ?   ;; runtime error
 
-fun(x :Int) {x.isNil || {x > 1} } [nil];
+fun(x :Int) {x.isNil || {x > 1} } [nil] ?
 
 
-(* -- Control structures: *)
+;; -- Control structures:
 
-Object.prettyPrint;
+Object.prettyPrint ?
 
 ( x ::= 1234
   repeat({
     tycoon.stdout << x % 10 << "-"
     x:= x / 10
   } until:{ x = 0 })
-);
+) ?
 
 ( x ::= 2
   exp ::= 3
@@ -184,19 +184,19 @@ Object.prettyPrint;
     exp:= exp - 1
   })
   result
-);
+) ?
 
 for(1 to: 10 do: fun(i :Int) {
   tycoon.stdout << i << "-"
-});
+}) ?
 
 forDown(10 to: 1 do: fun(i :Int) {
   tycoon.stdout << i << "-"
-});
+}) ?
 
 for(1 to: 100 step: 10 do: fun(i :Int) {
   tycoon.stdout << i << "-"
-});
+}) ?
 
 try({
   tycoon.stdout << "before "
@@ -204,19 +204,19 @@ try({
   tycoon.stdout << "after "
 } else: fun(e :Exception) { 
   tycoon.stdout << e 
-});
+}) ?
 
 
-(* -- Function closures: *)
+;; -- Function closures:
 
 fun(i :Int) {
   
- fun() { i }  (* R-value binding *)
+ fun() { i }  ;; R-value binding
 
-}[3][];
+}[3][] ?
 
 ( i ::= 3
-  result ::= fun() { i }  (* L-value binding *)
+  result ::= fun() { i }  ;; L-value binding
   i := i+1
   result[]
-);
+) ?
