@@ -51,6 +51,9 @@ case "${MYOS}" in
   Linux*)   PROCESSOR=`uname -m`
             VERSION=`uname -v`
             PLATFORM=Linux_i386 ;;
+  Darwin*)  PROCESSOR=`uname -p`
+  	    VERSION=`uname -r`
+	    PLATFORM=Darwin_PPC ;;
   *) ;;
 esac
 

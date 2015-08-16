@@ -269,7 +269,7 @@ static int __readDir(tosDirectory_T *pDir, char **foundFile)
 
 #else
 
-  #if defined(rt_LIB_Linux_i386) || defined(_POSIX_PTHREAD_SEMANTICS)
+  #if defined(rt_LIB_Darwin_PPC) || defined(rt_LIB_Linux_i386) || defined(_POSIX_PTHREAD_SEMANTICS)
       struct dirent * pp;
       *foundFile = NULL;
       res = readdir_r(pDir->searchHandle, &(pDir->lastEntry), &pp);

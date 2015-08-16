@@ -112,12 +112,12 @@ Int tosSecurity_uidToString(tosSecurity_SID *uid,
   struct passwd  pwd;
   char   buffer[512];
 
-#ifdef rt_LIB_Linux_i386
+#if defined(rt_LIB_Linux_i386) || defined(rt_LIB_Darwin_PPC)
   struct passwd *resPwd;
 #endif
 
   *resUid = 0;
-#ifdef rt_LIB_Linux_i386
+#if defined(rt_LIB_Linux_i386) || defined(rt_LIB_Darwin_PPC)
   if (getpwuid_r((tosSecurity_UID)*uid, &pwd, buffer, 512, &resPwd) == 0)
 #else
   if (getpwuid_r((tosSecurity_UID)*uid, &pwd, buffer, 512) != NULL)
@@ -164,12 +164,12 @@ Int tosSecurity_gidToString(tosSecurity_SID *gid,
   struct group  grp;
   char   buffer[512];
 
-#ifdef rt_LIB_Linux_i386
+#if defined(rt_LIB_Linux_i386) || defined(rt_LIB_Darwin_PPC)
   struct group *resGrp;
 #endif
 
   *resGid = 0;
-#ifdef rt_LIB_Linux_i386
+#if defined(rt_LIB_Linux_i386) || defined(rt_LIB_Darwin_PPC)
   if (getgrgid_r((tosSecurity_GID)*gid, &grp, buffer, 512, &resGrp) == 0)
 #else
   if (getgrgid_r((tosSecurity_GID)*gid, &grp, buffer, 512) != NULL)

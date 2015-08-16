@@ -192,7 +192,7 @@ int unlink( char *f ); 	/* In filevms.c */
 # include <ctype.h>
 # if !defined(__bsdi__)&&!defined(__FreeBSD__)
 # if !defined(NeXT)&&!defined(__MACHTEN__)
-# if !defined(MVS)
+# if !defined(MVS)&&!defined(__APPLE__)
 # include <malloc.h>
 # endif
 # endif
@@ -242,6 +242,10 @@ int unlink( char *f ); 	/* In filevms.c */
 # endif
 # ifdef __Lynx__
 # define OSSYMS "UNIX=true","OS=LYNX"
+# define unix
+# endif
+# ifdef __APPLE__
+# define OSSYMS "UNIX=true","OS=MACOSX"
 # define unix
 # endif
 # ifdef __MACHTEN__

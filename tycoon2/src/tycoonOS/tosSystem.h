@@ -52,12 +52,13 @@ extern "C" {
 #define tosSystem_ID_WINNT        5
 #define tosSystem_ID_WIN95        6
 #define tosSystem_ID_WIN98        7
-#define tosSystem_ID_UNKNOWN      8
+#define tosSystem_ID_MACOSX       8
+#define tosSystem_ID_UNKNOWN      9
 
 /*
  * tosSystem_getID
  * ---------------
- * Returns the current system id (on of ahead constants).
+ * Returns the current system id (one of the constants above).
  *
  * Return          - Current system id
  * Ressources      - none

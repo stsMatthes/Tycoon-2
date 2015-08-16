@@ -100,6 +100,17 @@ switch $(OS)
     HOX_COPT_FLAGS = -O2 ;
     HOX_CDBG_FLAGS = -g ;
   }
+
+  case MACOSX : {
+    HOX_CC_FLAGS   = -Drt_LIB_Darwin_PPC -Wall -pipe -fno-builtin -D_REENTRANT -D_GNU_SOURCE -DHAS_MMAP -Dtvm_THREADED_CODE ;
+    HOX_COMPILER   = GCC ;
+    HOX_LINK_FLAGS = -i -lpthread -ldl -lm ;
+    HOX_COPT_FLAGS = -O2 -fomit-frame-pointer ;
+    HOX_CDBG_FLAGS = -g ;
+
+    # needed for shared libraries on linux
+    LDSHARE_FLAGS  += -dynamic -r ;
+  }
 }
 
 

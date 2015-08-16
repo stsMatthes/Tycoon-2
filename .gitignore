@@ -4,6 +4,9 @@ tycoon2/bin/**
 tycoon2/lib/**
 contrib/Jam-2.2/bin.solaris/**
 contrib/Jam-2.2/bin.linuxx86/**
+contrib/Jam-2.2/bin.macosx/**
+
+*~
 
 # general C stuff:
 

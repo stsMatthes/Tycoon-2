@@ -188,6 +188,7 @@ static ArchTable archTable[] = {
   {"WinNT_i386",     littleEndian, alignTable_i386},  
   {"Win95_i386",     littleEndian, alignTable_i386},
   {"Win98_i386",     littleEndian, alignTable_i386},
+  {"Darwin_PPC",     bigEndian,    alignTable_SPARC},
   {NULL, 0, NULL}
 };
   
@@ -362,6 +363,8 @@ static int    mmap_fd = 0;
 #define round_down(a, b) (((a) / (b)) * (b))
 #define round_up(a, b)   round_down((a) + (b), b)
 
+#include <errno.h>
+
 static void unmap(unsigned long linear_start, unsigned long linear_end)
 {
   int prot, flags, fd, retval;
@@ -372,11 +375,16 @@ static void unmap(unsigned long linear_start, unsigned long linear_end)
   if(linear_start < linear_end) {
     prot = PROT_READ | PROT_WRITE | PROT_EXEC;
     flags = MAP_FIXED | MAP_PRIVATE;
+#if defined(rt_LIB_Darwin_PPC)
+    flags |= MAP_ANON;
+    fd = -1;
+#else
     fd = mmap_fd;
+#endif
     retval = (int)mmap((caddr_t)linear_start, linear_end - linear_start,
 		       prot, flags, fd, 0);
     if(retval == -1) {
-      tosLog_error("tsp", "unmap", "TSP error: mmap failed!");
+      tosLog_error("tsp", "unmap", "TSP error: mmap failed! %d", errno);
       tosError_ABORT();
     }
   }
@@ -422,7 +430,7 @@ static void unmap_old_pages(void)
 
 static void init_mmap(void)
 {
-#ifdef rt_LIB_Linux_i386
+#if defined(rt_LIB_Linux_i386) || defined(rt_LIB_Darwin_PPC)
   mmap_pagesize = getpagesize();
 #else
   mmap_pagesize = sysconf(_SC_PAGESIZE);
