@@ -83,7 +83,7 @@ buildScannerTables :Void
   sb.addToken("[ \t\f]+", fun(s:Scanner(Token(Object))){ s.read })
 
   sb.addToken("=", fun(:Scanner(Token(Object))){ equalT.token })
-  sb.addToken("\n", fun(:Scanner(Token(Object))){ newlineT.token })
+  sb.addToken("\r?\n", fun(:Scanner(Token(Object))){ newlineT.token })
 
   ; ### copy&paste from TWLScannerBuilder: 
 

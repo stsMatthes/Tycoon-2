@@ -1,38 +1,5 @@
-(*
- * This file is part of the Tycoon-2 system.
- *
- * The Tycoon-2 system is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation (Version 2).
- *
- * The Tycoon-2 system is distributed in the hope that it will be
- * useful, but WITHOUT ANY WARRANTY; without even the implied warranty
- * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public
- * License along with the Tycoon-2 system; see the file LICENSE.
- * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
- * D-21071 Hamburg, Germany. http://www.sts.tu-harburg.de
- * 
- * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
- *
- *)
-(* File:    demo.tyc
-   Author:  Florian Matthes, Jens Wahlen
-   Date:    29/10/97
-   Purpose: Getting used to Tycoon-2 (see also slides by JW and FM!)
-   Note:    Some examples require class definitions from
-            directory src/TL2/Demo!
-*)
-
-(* == Using Classes and Objects ============================================ *)
-
-(* type check Top Level *)
-tycoon.tl.topLevel.typeCheck := true;
-
 (* -- Literals *)
-;
+
 1;
 -1;
 
@@ -44,7 +11,7 @@ tycoon.tl.topLevel.typeCheck := true;
 
 'A';
 'A'.clazz;
-'\r';     (* line feed *)
+'\r';     (* line feed *) 
 '\n';     (* newline *)
 '\010';   (* newline *)
 
@@ -80,6 +47,8 @@ Number.prettyPrint;
 2.intPower(3);
 2.intPower(99);  (* integer overflow ignored *)
 2.0.intPower(9999);  (* real overflow = Inf *)
+
+200.asin;
 
 1 / 0;     (* Division by zero exception *)
 1.0 / 0.0; (* an ArithmeticError *)
@@ -122,7 +91,7 @@ Output.prettyPrint; (* << defined here *)
 2.intPower(30) = 2.intPower(30);   (* but always equal *)
 2.intPower(29) == 2.intPower(29);
 2.intPower(29) - 1 == 2.intPower(29) - 1;
-2.intPower(4) == 2.intPower(4);
+2.intPower(4) == 2.intPower(4);  
 
 (* Lesson: Use "=" wherever possible *)
 
@@ -138,44 +107,56 @@ fun(x:Int) {x + x};
 fun(x:Int) {x + x} [7];
 fun(x:Int) {x + x}.clazz.prettyPrint;
 
-{1, 2, 3}[];
+{1 2 3}[];
+(1 2 3);
 
-{}[];  (* nil *)
+();  (* nil *)
 
-{let a = 3,
-  {let a = "A",
-   a }[]
-}[];
+(a ::= 3
+  (a ::= "A"
+   a)
+);
 
-{let a = 3,
- let a = "A",
+(a ::= 3
+ (a ::= "A")
  a
-}[];
+);
+
+(a ::= 3
+ a ::= "A"
+ a 
+);
 
 (* -- Class Bool and Conditionals *)
 
 true & false;
 true | false;
-true => false;    (* implication *)
-true ? {tycoon.stdout << "true"};
-false ? {tycoon.stdout << "true"};
-false ?
-  {tycoon.stdout << "true"}
-: {tycoon.stdout << "false"};
+true ^ false;
 
 !true;
 !(3 > 4);
 
 Bool.prettyPrint;
 
+if( false then:{ tycoon.stdout << "true" } else:{ tycoon.stdout << "false" });
+
+Object.methodDictionary["if"];
+true.case({tycoon.stdout << "true"},{tycoon.stdout << "false"});
+false.case({tycoon.stdout << "true"},{tycoon.stdout << "false"});
+
 (* -- Short circuit evaluation: *)
 
-{ let x :Int = nil,
-  x.isNotNil && { x > 3 },
-  x := 0,
-  x=0 || {1/x > 3},
-  x!=0  =>=> {1/x > 3}
-}[];
+( x :Int := nil
+  x.isNotNil && x > 3
+  x := 0
+  x=0 || 1/x > 3
+);
+
+( x :Int := nil
+  x.isNotNil."&&"({ x > 3 })
+  x := 0
+  x=0."||"({ 1/x > 3 })
+);
 
 (* -- Nil value: *)
 
@@ -188,181 +169,54 @@ fun(x :Int) {x.isNil || {x > 1} } [nil];
 
 Object.prettyPrint;
 
-{ let x = 1234,
-  until( {x = 0}, {
-    tycoon.stdout << x % 10 << "-",
+( x ::= 1234
+  repeat({
+    tycoon.stdout << x % 10 << "-"
     x:= x / 10
-  })
-}[];
+  } until:{ x = 0 })
+);
 
-{ let x = 2,
-  let exp = 3,
-  let result = 1,
-  while( {exp!=0}, {
-    result:= result * x,
+( x ::= 2
+  exp ::= 3
+  result ::= 1
+  while({ exp!=0 } do:{ 
+    result:= result * x
     exp:= exp - 1
-  }),
+  })
   result
-}[];
+);
 
-for(1, 10, fun(i :Int) {
+for(1 to: 10 do: fun(i :Int) {
   tycoon.stdout << i << "-"
 });
 
-forDownto(10, 1, fun(i :Int) {
+forDown(10 to: 1 do: fun(i :Int) {
   tycoon.stdout << i << "-"
 });
 
-forStep(1, 100, 10, fun(i :Int) {
+for(1 to: 100 step: 10 do: fun(i :Int) {
   tycoon.stdout << i << "-"
 });
 
 try({
-  tycoon.stdout << "before ",
-  5 / 0,
+  tycoon.stdout << "before "
+  5 / 0
   tycoon.stdout << "after "
-  },
-fun(e :Exception) {
-  tycoon.stdout << e
+} else: fun(e :Exception) { 
+  tycoon.stdout << e 
 });
 
 
 (* -- Function closures: *)
 
 fun(i :Int) {
-
+  
  fun() { i }  (* R-value binding *)
 
 }[3][];
 
-{ let i = 3,
-  let result = fun() { i },  (* L-value binding *)
-  i:= i+1,
+( i ::= 3
+  result ::= fun() { i }  (* L-value binding *)
+  i := i+1
   result[]
-}[];
-
-(* == Defining Classes and Objects ======================================== *)
-
-tycoon.tl.loader.registerDirectory("Demo");
-tycoon.tl.loader.update;
-tycoon.tl.typeChecker.check;
-
-(* -- PiggyBank, a simple stand-alone class with a public slot: *)
-
-{ let piggyBank = PiggyBank.new(),
-  piggyBank.current := 0,
-  piggyBank.increment(), (* 1 *)
-  piggyBank.increment, (* 2 *)
-  piggyBank.incTwice, (* 4 *)
-  piggyBank.current  (* 4 *)
-}[];
-
-(* A typical beginner-error: uninitialized slots *)
-
-{ let myPig = PiggyBank.new,
-  myPig.current, (* nil *)
-  myPig.increment    (* error *)
-}[];
-
-(* -- Class Counter, a simple root class with a private slot: *)
-
-{ let counter = Counter.new,
-  tycoon.stdout << counter.current,
-  counter.increment,
-  tycoon.stdout << counter.current
-}[];
-
-
-
-(* -- Class ResetableCounter, example of subclassing and subsumption: *)
-
-  let reCounter = ResetableCounter.new,
-  let var counter (* ## :Counter *) = reCounter,  (* ## unbound type error Counter? *)
-  tycoon.stdout << counter.increment, (* 1 *)
-  tycoon.stdout << reCounter.current, (* 1 *)
-  (* counter.reset,  (* type error *) *)
-  reCounter.reset,
-  tycoon.stdout << counter.current (* 0 *)
-  ;
-
-
-(* -- Parameterized classes: Arrays: *)
-
- Array(:Int).with5(1, 2, nil, nil, 5);
-
- Array().with5(1, 2, nil, nil, 5);  (* type inference*)
-
- Array(:Bool).with2(true, false);
-
-{ let reCounter = ResetableCounter.new,
-  let counterArray (* ## :Array(Counter) *) =   (* ## unbound type identifier Counter?? *)
-    Array.with3(
-      Counter.new,
-      reCounter,    (* sharing! *)
-      Counter.new
-    ),
-  tycoon.stdout << counterArray[0].increment, (* 1 *)
-  tycoon.stdout << counterArray[1].increment,  (* 1 *)
-  (* tycoon.stdout << counterArray[1].reset *)  (* type error *)
-  reCounter.reset(),
-  tycoon.stdout << counterArray[1].current  (* 0 *)
-}[];
-
-(* -- Class DoubleCounter: example for method overriding and "super" calls *)
-
-{ let dc = DoubleCounter.new,
-  tycoon.stdout << dc.current,  (* 0 *)
-  tycoon.stdout << dc.increment (* 2 *)
-}[];
-
-(* -- Class CycleCounter: example for slot method overriding: *)
-
-{ let counter = CycleCounter.new,
-  for(1, 110, fun(:Int) {
-    tycoon.stdout << counter.increment << ' '
-  })
-}[];
-
-(* -- Class ResetableDoubleCounter: Multiple inheritance and class precedence
-      lists *)
-
-{ let rdc = ResetableDoubleCounter.new,
-  tycoon.stdout << rdc.current  (* 0 *)
-   << rdc.increment (* 2 *)
-   << rdc.incTwice, (* 6 *)
-  rdc.reset,
-  tycoon.stdout << rdc.current  (* 0 *)
-}[];
-
-
-(* print the CPL of a class *)
-
-ResetableDoubleCounter.cpl;
-
-(* -- Class Counter2: Defining Metaclasses: *)
-
-Counter2.new.current;  (* 0 *)
-
-Counter2.new1(4711).current;
-
-
-(* -- Class CounterWithFun: Higher-order functions capturing self and super
-      (similar to inner classes in Java): *)
-
-{ let c = CounterWithFun.new,
-  tycoon.stdout << c.current, (* 0 *)
-  let inc1 = c.incrementer(3),
-  tycoon.stdout << inc1[] << inc1[] << c.current,
-  c.increment,
-  tycoon.stdout << inc1[] (* 10 *)
-}[];
-
-{ let c = CounterWithFun.new,
-  tycoon.stdout << c.current << '\n', (* 0 *)
-  let inc1 = c.incrementerSuper(3),
-  tycoon.stdout << inc1[] << inc1[] << c.current << '\n',
-  c.increment,
-  tycoon.stdout << inc1[] << '\n' (* 10 *)
-}[];
-
-
+);

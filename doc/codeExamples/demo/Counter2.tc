@@ -1,23 +1,6 @@
+class Counter2
+super Object
 (*
- * This file is part of the Tycoon-2 system.
- *
- * The Tycoon-2 system is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation (Version 2).
- *
- * The Tycoon-2 system is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty
- * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public
- * License along with the Tycoon-2 system; see the file LICENSE.
- * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
- * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
- * 
- * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
- *
-
  * This file is part of the Tycoon-2 system.
  *
  * The Tycoon-2 system is free software; you can redistribute it and/or
@@ -36,30 +19,22 @@
  * 
  * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
  *
- *)
-class Counter2
-(* Defining Metaclasses
+
+   Defining Metaclasses
    Florian Matthes, 23.10.1997
 *)
+meta Counter2Class
+{
 
-super Object
-metaclass Counter2Class
+current :Int  { _current  }
 
-public methods
+increment :Int  { _current := _current + 1 }
 
-current() :Int  { _current  }
-
-increment() :Int  { _current := _current + 1 }
-
-incTwice() :Int { increment, increment }
+incTwice :Int { increment increment }
 
 private
 
 _current :Int
 
-methods
-
-_init1(i :Int):Self { super._init, _current := i, self }
-
-;
-
+}
+?
