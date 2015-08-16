@@ -1,0 +1,4 @@
+class PersonalizeHttp
+super Personalize
+metaclass AbstractClass
+;

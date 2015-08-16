@@ -1,0 +1,8 @@
+class CSlotAccessMethod
+super SlotAccessMethod, CSlotMethod
+metaclass CSlotAccessMethodClass
+public
+tycoonType :Char
+;
+
+

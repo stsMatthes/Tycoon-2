@@ -1,0 +1,14 @@
+class PrintObject
+super Object
+metaclass PrintObjectClass
+public methods
+
+printOn(out :Output)
+{
+  _printOn[out]
+}
+
+private
+
+_printOn :Fun1(Output, Void)
+;

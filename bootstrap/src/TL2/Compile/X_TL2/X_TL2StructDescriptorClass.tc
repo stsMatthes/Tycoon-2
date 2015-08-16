@@ -1,0 +1,13 @@
+class X_TL2StructDescriptorClass
+super ConcreteClass(X_TL2StructDescriptor)
+meta MetaClass
+{
+new(format :String) :X_TL2StructDescriptor
+{
+  instance ::= _new
+  instance.format := format
+  instance._init
+  instance
+}
+}
+

@@ -1,0 +1,5 @@
+class Koltar
+super Object
+meta AbstractClass
+{
+}

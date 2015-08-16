@@ -1,0 +1,90 @@
+class Properties
+super Util, Dictionary(String, String)
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+   Properties are a set of named strings.
+   Properties can easily be loaded from and stored into a text file.
+
+*)
+meta PropertiesClass()
+
+{
+load(in :Input) :Void
+  (* Each non-empty line must consist of a name, an equal sign and another name,
+     with optional whitespace in between or at the beginning or end of the line.
+     name may consist of alphanumeric characters plus any of _!#$%&*+-/:;<>?@^`|~
+     or may use the standard Tycoon string syntax including escapes.
+   *)
+{
+  dic ::= NameValueParser.instance.parse(in)
+  clear
+  dic.keysAndElementsDo(fun(k :String, e :String) {
+    self[k] := e
+  })
+}
+
+token(s :String) :String
+  (* *)
+{
+  ; be restrictive: support shell syntax as much as possible ##write shell escape filter?
+  if( "ABCDEFGHIJKLMNOPRSTUVWXYZabcdefghijklmnoprstuvwxyz1234567890".includesAll(s) && 
+    s.size > 0 
+    then: { s }
+    else: { s.printString })
+}
+
+save(out :Output) :Void
+  (* *)
+{
+  sortedKeys ::= keys.as(MutableArray)
+  sortedKeys.quicksort(fun(s1:String,s2:String){s1.order(s2)})
+  sortedKeys.do(fun(k :String) {
+    e ::= self[k]
+    out << token(k)
+	<< "="
+	<< if( e.isNil then: { "" } else: { token(e) })
+	<< '\n'
+  })
+}
+
+loadFromFile(path :String) :Void
+  (* *)
+{
+  in ::= File.openRead(path).bufferedInput
+  protect({load(in)}, {in.close})
+}
+
+saveToFile(path :String) :Void
+  (* *)
+{
+  out ::= File.openWrite(path).bufferedOutput
+  protect({save(out)}, {out.close})
+}
+
+private
+
+_init :Void
+  (* *)
+{
+  super._init1(4)
+}
+
+}

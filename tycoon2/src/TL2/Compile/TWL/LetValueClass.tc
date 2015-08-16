@@ -1,0 +1,17 @@
+class LetValueClass
+super ConcreteClass(LetValue)
+metaclass MetaClass
+
+public methods
+
+  new(pos :SourcePos, ide :ValueIde, value :Value, body :Value) :LetValue
+  {
+    let instance = _new,
+    instance.pos := pos,
+    instance.ide := ide,
+    instance.value := value,
+    instance.body := body,
+    instance._init
+  }
+
+;

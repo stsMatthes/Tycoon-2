@@ -1,0 +1,24 @@
+class NotValue
+super IfValue
+metaclass NotValueClass
+public methods
+
+prettyPrint(out :Printer)
+{
+  out.write('!'),
+  condition.prettyPrint(out)
+}
+
+genCodeIgnore(backEnd :MethodManager)
+{ backEnd.errorLog.warning(pos, "ignored not application"),
+  condition.genCodeIgnore(backEnd)
+}
+
+genCodeBranch(backEnd :MethodManager, dest :MMLabel, branchIf :Bool)
+{
+  condition.genCodeBranch(backEnd, dest, !branchIf)
+}
+;
+
+
+

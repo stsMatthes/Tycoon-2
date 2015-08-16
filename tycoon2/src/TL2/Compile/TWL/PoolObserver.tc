@@ -1,0 +1,8 @@
+class PoolObserver
+super TWL
+metaclass AbstractClass
+public methods
+
+globalIdeChanged(s :String)
+  deferred
+;

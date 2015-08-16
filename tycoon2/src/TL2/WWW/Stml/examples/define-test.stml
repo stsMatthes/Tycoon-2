@@ -1,0 +1,39 @@
+<!DOCTYPE STML SYSTEM>
+<html>
+  <head>
+    <title>define-test</title>
+  </head>
+
+  <body>
+      <h1>define-test</h1>
+
+	<define name=hans type='String'> lala </define>
+	<ref name=hans//
+<p>
+	<define name=f>
+	  <fun param="s :String, y :Fun(:String):String">
+	    <apply name=y><arg><ref name=s//</apply>
+	  </fun>
+	</define>
+
+	<define name=ignore>
+	  <fun param=":String">ignoriert<br></fun>
+	</define>
+
+	<apply name=ignore><arg/hallo/</apply>
+
+	<apply name=f>
+	  <arg name=s/Hallo /
+	  <arg name=y>
+	    <fun param="s1 :String"><ref name=s1//Kleines</fun>
+	  </arg>
+	</apply>
+
+      <hr>
+      <address><a href="mailto:">Axel Wienberg</a></address>
+<!-- Created: Tue Jul  8 20:26:02 MET DST 1997 -->
+<!-- hhmts start -->
+Last modified: Thu Jul 10 13:31:19 MET DST 1997
+<!-- hhmts end -->
+  </body>
+</html>

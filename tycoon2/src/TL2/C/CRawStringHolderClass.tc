@@ -1,0 +1,18 @@
+class CRawStringHolderClass
+
+super ConcreteClass(CRawStringHolder)
+
+metaclass MetaClass
+
+public methods
+
+new(length:Int):CRawStringHolder
+{
+  let s = _new(),
+  s._length := length,
+  s._allocate(length),
+  s
+}
+
+;
+

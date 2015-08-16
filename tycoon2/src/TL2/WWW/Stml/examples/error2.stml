@@ -1,0 +1,13 @@
+<!DOCTYPE STML SYSTEM>
+<html>
+<title>
+Error 2
+</title>
+<body>
+<define name=x>
+  <fun>
+  </fun>
+</define>
+<ref name=x></ref>
+</body>  
+</html>  

@@ -1,0 +1,81 @@
+class X_TL2TypeVisitor(T <: Void)
+super X_TL2TypeCheckMixin
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+*)
+meta AbstractClass
+{
+visitType(t :X_TL2Type) :T
+  (* *)
+{ t.accept(self) }
+
+visitApplyType        (t :X_TL2ApplyType)         :T
+  (* *)
+{ visitDefault(t) }
+
+visitCPLType          (t :X_TL2CPLType)           :T
+  (* *)
+{ visitApplyType(t) }
+
+visitClassInstanceType(t :X_TL2ClassInstanceType) :T
+  (* *)
+{ visitObjectType(t) }
+
+visitIdeType          (t :X_TL2IdeType)           :T
+  (* *)
+{ visitDefault(t) }
+
+visitMethodType       (t :X_TL2MethodType)        :T
+  (* *)
+{ visitDefault(t) }
+
+visitNilType          (t :X_TL2NilType)           :T
+  (* *)
+{ visitDefault(t) }
+
+visitObjectType       (t :X_TL2ObjectType)        :T
+  (* *)
+{ visitDefault(t) }
+
+visitOperType         (t :X_TL2OperType)          :T
+  (* *)
+{ visitDefault(t) }
+
+visitSubstType        (t :X_TL2SubstType)         :T
+  (* *)
+{ visitDefault(t) }
+
+visitUnifyType        (t :X_TL2UnifyType)         :T
+  (* *)
+{ visitDefault(t) }
+
+visitVoidType         (t :X_TL2VoidType)          :T
+  (* *)
+{ visitObjectType(t) }
+
+visitDefault(t :X_TL2Type) :T
+  (* *)
+{
+    setError(nil, "Fatal: no matching case in X_TL2TypeVisitor: "+t.printString, {
+      raiseError
+    })
+  }
+
+}

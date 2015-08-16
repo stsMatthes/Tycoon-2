@@ -1,0 +1,14 @@
+class TypeTraceClass
+  super ConcreteClass(TypeTrace)
+  metaclass MetaClass
+
+public methods
+
+  new(type :Type) :TypeTrace
+  {
+    let instance = _new,
+    instance._initType(type),
+    instance
+  }
+
+;

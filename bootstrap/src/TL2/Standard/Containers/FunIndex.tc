@@ -1,0 +1,50 @@
+class FunIndex(K <: Object, E <: Object)
+super AddMixin(E), Index(K,E)
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+  A set of objects indexed by keys computed from the objects.
+
+  Note that the key value computed from an element must not change while
+  the object is an element of the index, otherwise the index will behave
+  inconsitently.
+
+  Unfortunately, we cannot use the key function to speed up locate, remove
+  etc., because these methods accept arbitrary objects, while the key function
+  only accepts E.
+
+Author:  Axel Wienberg
+Date:    02-Oct-1998
+*)
+meta FunIndexClass(K, E)
+{
+
+add(e :E) :Void
+  (* *)
+  ensure includes(e)
+{
+  _add(_keyFn[e], e)
+}
+
+private
+
+_keyFn :Fun(:E):K
+
+}

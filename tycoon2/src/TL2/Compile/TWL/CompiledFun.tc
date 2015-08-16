@@ -1,0 +1,169 @@
+class CompiledFun
+super CompiledMethod, Value
+metaclass CompiledFunClass
+public
+
+freeValueIdes :Array(ValueIde),
+nativeBody :Int
+methods
+
+prettyPrint(out :Printer)
+{
+  domain.isEmpty && {range.isNil} ? {
+    (*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ no fun *)
+  } : {
+    out.writeAll("fun("),
+    let var simpleDomain = domain.all(fun(i:Ide) {
+			     i.type.isNil || {i.type.isLeaf}}),
+    out.withAbsIndent(out.column, {
+      domain.doBetween(fun(i :Ide) {
+	i.prettyPrint(out)
+      }, {
+	out.write(','),
+	simpleDomain ? { out.space } : { out.nl }
+      })
+    }),
+    out.write(')'),
+    range.isNotNil ? {
+      range.isLeaf ? {
+	out.write(':'),
+	range.prettyPrint(out)
+      } : {
+	simpleDomain := false,
+	out.withRelIndent(2, {
+	  out.nl,
+	  out.write(':'),
+	  range.prettyPrint(out)
+	})
+      }
+    },
+    simpleDomain ? { out.space } : { out.nl }
+  },
+  out.withRelIndent(2, {
+    out.writeAll("{\n"),
+    body.prettyPrint(out)
+  }),
+  out.writeAll("\n}")
+}
+
+freeVarHook(out :Printer)
+{
+  out.writeString("Free Variables: "),
+  out.withRelIndent(1, {
+    freeValueIdes.keysAndElementsDo(fun(i :Int, v:ValueIde) {
+      out.nl,
+      (i+1).printOn(out), out.writeString(": "), v.name.printOn(out)
+    })
+  }),
+  out.nl
+}
+
+children :Reader(Value)
+{
+  Reader(:Value).append( domain.map(fun(i:Ide):Value{i.type}),
+		 body.children)
+}
+
+scope(env :Scoper) :CompiledFun
+{
+  let freeIdes =
+    env.collectFreeIdes({
+      scopeMethod(env)
+    }),
+  freeValueIdes :=
+    List.fromReader(
+      freeIdes.sfw( (* select *) fun(i:Ide){ i.asValueIde },
+		    (* where *) fun(i:Ide){ i.isValueIde })),
+  freeValueIdes.do(fun(v :ValueIde) {
+    v.setAccessedFromClosure
+  }),
+  self
+}
+
+genCode(backEnd :MethodManager)
+{
+  (* compile self with bindings for global variables *)
+  let globalVars = Bindings.new,
+  freeValueIdes.keysAndElementsDo(
+    fun(idx:Int, ide :ValueIde) {
+       globalVars.add( GlobalVar.new(ide, idx+1) )
+    }),
+  compile(globalVars, nil, backEnd.compiler),
+
+  (* emit closure creation:
+     push variable references in reverse order, then the CompiledFun (me). *)
+  freeValueIdes.reverseReader.do(fun(ide :ValueIde) {
+    backEnd.loadRef(ide)
+  }),
+  backEnd.loadLiteral(self),
+  backEnd.closure(freeValueIdes.size)
+}
+
+genCodeIgnore(backEnd :MethodManager)
+{ backEnd.errorLog.warning(pos, "ignored unused closure") }
+
+genCodeBranch(backEnd :MethodManager, dest :MMLabel, branchIf :Bool)
+{ backEnd.errorLog.error(pos, "closure as condition (not a Bool!)") }
+
+makeDisassembler :Disassembler
+{ let dis = super.makeDisassembler,
+  dis.globalNames :=
+    Array.fromReader(
+      Reader.cons("<CompiledFun object>",
+        freeValueIdes.map(fun(v:ValueIde){ v.name }))),
+  dis
+}
+
+
+private methods
+
+
+  doCheck(T <: Void, cont :Fun2(Type, Subst, T)) :T
+  {
+    let args = List.fromReader(domain.map(fun(i :Ide) { i.type })),
+    args.do(fun(t :Type) { t.checkType(EmptySubst.instance) }),
+
+    range.isNotNil ? { range.checkType(EmptySubst.instance) },
+
+    body.check(fun(t :Type, s :Subst) {
+      range.isNotNil ? {
+        setError(pos, "Function body does not conform to declared type", {
+	  t.checkSubType(range, s, EmptySubst.instance)
+	})
+      },
+
+      let n = args.size,
+
+      let args = List.reverse(List.cons(
+	range.isNotNil ? { range } : { SubstType.new(t, s) },
+	List.reverse(args)
+      )),
+
+      let funClass = tycoon.tl.classManager.get("Fun"+n.printString),
+      cont[ApplyType.new(IdeType.new(funClass.typeIde), args), EmptySubst.instance]
+    })
+  }
+
+
+;
+
+

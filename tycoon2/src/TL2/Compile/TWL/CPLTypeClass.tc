@@ -1,0 +1,13 @@
+class CPLTypeClass
+super ConcreteClass(CPLType)
+metaclass MetaClass
+public methods
+new(ide :TypeIde, args :List(Type)) :CPLType
+{
+  let instance = _new,
+  instance.pos := ide.pos,
+  instance._ide := ide,
+  instance._args := args,
+  instance
+}
+;

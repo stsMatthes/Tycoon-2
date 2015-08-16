@@ -1,0 +1,142 @@
+class SunOS5
+super SunOS
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+My instance represents the Sun OS 5.x operating system
+
+Author:  Andreas Gawecki
+Date:    21-Feb-1996
+Updates: (Date)	  (Name)	(Description)
+*)
+{
+visit(T <: Void, aVisitor :OSVisitor(T)) :T
+  (* *)
+{
+  aVisitor.visitSunOS5(self)
+  }
+
+SIGUSR1 :Int
+  (* *)
+{ 16 }
+
+SIGUSR2 :Int
+  (* User Signal 1 *)
+{ 17 }
+
+ENOENT :Int
+  (* User Signal 2 *)
+{ 2 }
+
+EINTR :Int
+  (* *)
+{ 4 }
+
+EIO :Int
+  (* *)
+{ 5 }
+
+EACCES :Int
+  (* *)
+{ 13 }
+
+EEXIST :Int
+  (* *)
+{ 17 }
+
+ENOTDIR :Int
+  (* *)
+{ 20 }
+
+EISDIR :Int
+  (* *)
+{ 21 }
+
+ENFILE :Int
+  (* *)
+{ 23 }
+
+EMFILE :Int
+  (* *)
+{ 24}
+
+EFBIG :Int
+  (* *)
+{ 27 }
+
+ENOSPC :Int
+  (* *)
+{ 28 }
+
+EROFS :Int
+  (* *)
+{ 30 }
+
+EMLINK :Int
+  (* *)
+{ 31 }
+
+EDEADLK :Int
+  (* *)
+{ 45 }
+
+ENOLCK :Int
+  (* *)
+{ 46 }
+
+ENOTSUP :Int
+  (* *)
+{ 48 }
+
+EDQUOT :Int
+  (* *)
+{ 49 }
+
+ENAMETOOLONG :Int
+  (* *)
+{ 78 }
+
+EBADFD :Int
+  (* *)
+{ 81 }
+
+ELOOP :Int
+  (* *)
+{ 90 }
+
+ENOTEMPTY :Int
+  (* *)
+{ 93 }
+
+SOCK_STREAM :Int
+  (* *)
+{ 2 }
+
+SOCK_DGRAM :Int
+  (* *)
+{ 1 }
+
+SOCK_RAW :Int
+  (* *)
+{ 4 }
+
+private
+
+}

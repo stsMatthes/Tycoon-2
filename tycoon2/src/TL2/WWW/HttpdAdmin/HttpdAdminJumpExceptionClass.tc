@@ -1,0 +1,14 @@
+class HttpdAdminJumpExceptionClass
+super ConcreteClass(HttpdAdminJumpException)
+meta MetaClass
+{
+
+new(request :HttpRequest) :HttpdAdminJumpException
+{
+  instance ::= _new
+  instance.request := request
+  instance._init
+  instance
+}
+
+}

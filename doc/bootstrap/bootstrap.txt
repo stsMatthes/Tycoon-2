@@ -1,0 +1,153 @@
+----------
+
+normaler Bootstrap:
+Vorraussetzungen:
+
+Die Klassen haben die gleichen Slots in der gleichen Reihenfolge, oder
+    es sind keine Exemplare der Klasse am Bootstrap beteiligt
+
+Am Bootstrap beteiligt sind u.a. viele Containerklassen und fast alle
+    Klassen aus TL2.
+
+Vorgehen: siehe Compile/TL2/bootstrap2.tyc
+
+Darauf achten, daß im Verzeichnis next_tm die Beschreibung der
+    Zielmaschine steht
+
+----------
+
+komplizierter Bootstrap: (wenn sich das Slot-Layout geändert hat)
+
+Mit Hilfe des X_TL2-Stores, da dort alle am Bootstrap beteiligten
+    Klassen dupliziert worden sind.  (### immernoch Namenskonflikte
+    mit Standard)
+
+Wie entsteht der X_TL2-Store?
+-----------------------------
+
+Kopie eines konsistenten Stores ziehen, darin TL2... umbennen in
+X_TL2... oder so, Maschine aendern, dass sie die X_TL2...-Sachen
+ausfuehrt (in classids.h), und das zur Bootstrap-Platform machen.
+
+Vorgehen:
+
+Erstmal Platz auf der Platte schaffen
+
+Kopie von TL2... anlegen unter X_TL2..., per bulkrename alles umbenennen:
+
+(* another bootstrap : TL2 -> X_TL2  (for bootstrapping 1.0 syntax) *)
+
+tycoon.tl.loader.registerDirectory("Util");
+DO load "Util/Init.tyc";
+tycoon.tl.loader.update;
+
+define aBulkRename :BulkRename;
+aBulkRename := BulkRename.new;
+aBulkRename.parseTable(tycoon.hoxHome+"/src/TL2/Compile/bootstrap-rename.tab"), true;
+(* umgekehrte Paare hinzufügen *)
+aBulkRename.table.copy.keysAndElementsDo(fun(sansX :String, conX :String) {
+  aBulkRename.table[conX] := sansX
+});
+
+aBulkRename.filterDirectory(tycoon.hoxHome+"/src/TL2/Compile/X_TL2",
+                  fun(:String){true}, ".org");
+aBulkRename.filterDirectory(tycoon.hoxHome+"/src/TL2/Compile/X_TL2/BackEnd",
+                  fun(:String){true}, ".org");
+aBulkRename.filterDirectory(tycoon.hoxHome+"/src/TL2/Compile/X_TL2/Old",
+                  fun(:String){true}, ".org");
+aBulkRename.filterDirectory(tycoon.hoxHome+"/src/TL2/Compile/X_TL2/New",
+                  fun(:String){true}, ".org");
+aBulkRename.filterDirectory(tycoon.hoxHome+"/src/TL2/X_SystemTracer",
+                  fun(:String){true}, ".org");
+aBulkRename.filterDirectory(tycoon.hoxHome+"/src/TL2/X_Cross",
+                  fun(:String){true}, ".org");
+
+Array.with6("Compile/X_TL2/", "Compile/X_TL2/BackEnd/",
+            "Compile/X_TL2/Old/", "Compile/X_TL2/New/",
+            "X_SystemTracer/", "X_Cross/").do(fun(subdir:String) {
+  let dir = Directory.new(tycoon.hoxHome+"/src/TL2/"+subdir),
+
+Array.with1(tycoon.hoxHome+"/../bootstrap/src/TL2/X_Cross").do(fun(subdir:String) {
+  let dir = Directory.new(subdir),
+  tycoon.stdout << "Directory "<<dir.path<<"\n",
+  dir.do(fun(dc :DirectoryContents) {
+    tycoon.os.fs.pathExtension(dc.path) = "tc" ? {
+      let baseName = tycoon.os.fs.lastArc(tycoon.os.fs.pathBase(dc.path)),
+      tycoon.stdout << "Base name: "<<baseName<<"\n",
+      aBulkRename.table.lookup(baseName, fun(newName :String) {
+        let fullFrom = dc.path,
+        let fullTo = tycoon.os.fs.composePath(
+                                      Array.with2(dir.path, newName+".tc")),
+        tycoon.stdout << "  --> " << fullTo << "\n",
+        dc.rename(fullTo)
+      }, {
+        tycoon.stdout << "  nicht umbenannt\n"
+      })
+    }
+  })
+});
+
+.org-Dateien löschen:
+
+rm X_SystemTracer/*.org
+cd Compile/X_TL2
+find . -name "*.org" -exec rm '{}' \;
+
+Skripte in X_TL2 anpassen
+
+Im Bootstrap-Verzeichnis angepasste Versionen erzeugen
+Systemtracer durchgehen
+Maschine anpassen (classids.h)
+Bootstrap machen, der ein System erzeugt, das mit X_TL2 laeuft
+X_TL2-Kram einchecken
+dann weiter wie folgt:
+
+Wann immer ich inkompatible Aenderungen am Objektformat im twl-workspace mache,
+die Sprach-Semantik aber gleich bleibt,
+laeuft folgendes:
+
+bringover twl -> bootstrap  mit SystemTracer und Compile/TL2
+   ### stattdessen kann man auch einfach einen Link setzen
+in Compile/TL2/TL2.tyc TL2StructDescriptor durch X_TL2StructDescriptor ersetzen
+   ### besser: Methode TL2ClassManager::declareStruct, kann auch warnen
+./X_TL2.ts
+tycoon.tl.loader.registerDirectory("SystemTracer");
+DO load "Compile/TL2/TL2.tyc";
+DO load "SystemTracer/Init.tyc";
+
+(* evtl. ist dafuer auch ein update der Standard-Bibliothek noetig
+   - das ist natuerlich nicht so gut, weil dadurch evtl. die ganze Stabilitaet
+   den Bach runter geht.  Dann lieber ALLES mit X_ verdoppeln und neuen
+   Bootstrap von Compile/X_TL2/bootstrap.tyc *)
+
+tycoon.tl.typeChecker.check;
+Deskriptoren fuer die Zielmaschine kopieren:
+cp /local/tw3/awienber/twl/hox/src/tm/classids.tyc /local/tw2/awienber/bootstrap/hox/src/next_tm/
+cp /local/tw3/awienber/twl/hox/src/tm/opcodes.tab /local/tw2/awienber/bootstrap/hox/src/next_tm/
+cp /local/tw3/awienber/twl/hox/src/tm/builtins.tab /local/tw2/awienber/bootstrap/hox/src/next_tm/
+cp /local/tw3/awienber/twl/hox/src/tm/storeDescriptors.tab /local/tw2/awienber/bootstrap/hox/src/next_tm/
+
+DO load "Compile/TL2/bootstrap2.tyc";
+(* echter bootstrap, bei dem die TL2-Klassen sich selbst uebersetzen *)
+
+cp  /local/tw2/awienber/bootstrap/hox/dump /local/tw3/awienber/twl/hox/
+exit
+tw twl
+tycoon2 -bootstrap dump
+./Bootstrap.ts
+DO load "Compile/TL2/post-bootstrap.tyc";
+(* etc. *)
+
+Es soll KEIN update der Maschine im bootstrap-workspace stattfinden, es darf
+KEIN neuer Store kopiert werden.  Maschine und Store stellen einen geretteten
+konsistenten Zustand dar, der mir nicht verloren gehen darf.
+
+Es sollte auch KEIN update der XTL2-Klassen stattfinden.  Die einzige Aenderung
+in neueren Systemversionen, die die Ausgabe betreffen koennte, ist die
+Reihenfolge der Slots in den erzeugten Objekten; evtl. muss der Systemtracer
+das ummappen.  Durch eine Aktualisierung der XTL2-Klassen gerate ich in Gefahr,
+auch noch diese konsistente Version zu vermurksen.
+
+Bei schwerwiegenden Aenderungen der Sprachsemanik muss ich diesen ganzen
+Prozess (Erstellung eines Bootstrap-workspaces) nochmal laufen lassen, sobald
+eine stabile Version erreicht ist.

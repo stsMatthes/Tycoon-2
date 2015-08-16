@@ -1,0 +1,14 @@
+class SgmlEntityOutputClass
+super ConcreteClass(SgmlEntityOutput)
+metaclass MetaClass
+public methods
+
+new(out :Output) :SgmlEntityOutput
+{
+  let instance = _new,
+  instance._init,
+  instance._out := out,
+  instance
+  }
+;
+

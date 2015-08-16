@@ -1,0 +1,4 @@
+class RTStackClass
+super AbstractArrayClass(Object, RTStack)
+metaclass MetaClass
+;

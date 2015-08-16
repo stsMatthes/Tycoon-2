@@ -1,0 +1,22 @@
+class AtTraceEnterClass
+super ConcreteClass(AtTraceEnter)
+meta MetaClass
+{
+
+new( receivingComponent :Object,
+     receiver :Object,
+     staticClass :Symbol,
+     selector :TL2Selector,
+     args :Array(Object)) :AtTraceEnter
+{
+  instance ::= _new
+  instance.receivingComponent := receivingComponent
+  instance.receiver := receiver
+  instance.staticClass := staticClass
+  instance.selector := selector
+  instance.args := args
+  instance._init
+  instance
+}
+
+}

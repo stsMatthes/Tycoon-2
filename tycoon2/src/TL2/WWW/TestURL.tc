@@ -1,0 +1,97 @@
+class TestURL
+super WWW
+metaclass SimpleConcreteClass(TestURL)
+
+public methods
+
+fix(s: String): String { s==nil ? {"nil"} : {s} }
+
+a_test(got: String, expected: String)
+{
+	got = expected ? {
+	  tycoon.stdout.writeln("OK, got \""+fix(got)+"\"")
+	} : {
+	  tycoon.stdout.writeln("Failure, got \""+fix(got)+"\", expected \""+fix(expected)+"\"")
+	}
+}
+
+testRel(base :String, relative :String, combined :String)
+{
+  a_test(URL.inContext(URL.fromString(relative), URL.fromString(base)).asString, combined)
+}
+
+do_tests
+{
+  let base = "http://a/b/c/d;p?q#f",
+  
+  testRel(base, "g:h", "g:h"),
+  testRel(base, "g", "http://a/b/c/g"),
+  testRel(base, "./g", "http://a/b/c/g"),
+  testRel(base, "g/", "http://a/b/c/g/"),
+  testRel(base, "/g", "http://a/g"),
+
+  (*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ This one fails too, since the result has the canonical root '/' in its path, too
+     In my understanding this is OK
+  *)
+  testRel(base, "//g", "http://g"),
+  testRel(base, "?y", "http://a/b/c/d;p?y"),
+  testRel(base, "g?y", "http://a/b/c/g?y"),
+
+  (* This one fails, since the fragment will be encoded
+                           "http://a/b/c/g?y%2F.%2Fx"   *)
+  testRel(base, "g?y/./x", "http://a/b/c/g?y/./x"),
+
+  testRel(base, "#s", "http://a/b/c/d;p?q#s"),
+  testRel(base, "g#s", "http://a/b/c/g#s"),
+  testRel(base, "g#s/./x", "http://a/b/c/g#s/./x"),
+  testRel(base, "g?y#s", "http://a/b/c/g?y#s"),
+  testRel(base, ";x", "http://a/b/c/d;x"),
+  testRel(base, "g;x", "http://a/b/c/g;x"),
+  testRel(base, "g;x?y#s", "http://a/b/c/g;x?y#s"),
+  testRel(base, ".", "http://a/b/c/"),
+  testRel(base, "./", "http://a/b/c/"),
+  testRel(base, "..", "http://a/b/"),
+  testRel(base, "../", "http://a/b/"),
+  testRel(base, "../g", "http://a/b/g"),
+  testRel(base, "../..", "http://a/"),
+  testRel(base, "../../", "http://a/"),
+  testRel(base, "../../g", "http://a/g"),
+
+  (* "unusal cases" *)
+  testRel(base, "../../../g", "http://a/../g"),
+  testRel(base, "../../../../g", "http://a/../../g"),
+  testRel(base, "/./g", "http://a/./g"),
+  testRel(base, "/../g", "http://a/../g"),
+  testRel(base, "g.", "http://a/b/c/g."),
+  testRel(base, ".g", "http://a/b/c/.g"),
+  testRel(base, "g..", "http://a/b/c/g.."),
+  testRel(base, "..g", "http://a/b/c/..g"),
+  testRel(base, "./../g", "http://a/b/g"),
+  testRel(base, "./g/.", "http://a/b/c/g/"),
+  testRel(base, "g/./h", "http://a/b/c/g/h"),
+  testRel(base, "g/../h", "http://a/b/c/h"),
+
+  nil
+}
+
+;
+  

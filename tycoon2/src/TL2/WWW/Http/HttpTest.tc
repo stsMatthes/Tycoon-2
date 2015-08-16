@@ -1,0 +1,93 @@
+class HttpTest
+super Http
+metaclass SimpleConcreteClass(HttpTest)
+
+public methods
+
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+serve(port :Int) {
+  let s = ServerSocket.new(IPAddress.localHost, port, 3),
+
+  while({true}, {
+    let conn = s.accept,
+    writeln("Accepted"),
+    handle(conn, conn),
+    conn.close
+  })
+}
+
+writeln(s :String) {
+  tycoon.stdout.writeln(s)
+}
+
+handle(in :Input, out :Output)
+{
+  let rp = HttpRequestParser.new(in),
+  let hr = rp.parseHttpMessage,
+
+  writeln("Got request <"+hr.method.printString+hr.uri.printString+hr.major.printString+hr.minor.printString),
+  writeln("Headers:"),
+  hr.headers.keysAndElementsDo(fun(k :String, v :AbstractMimeHeaderValue) {
+    writeln(k + v.value.printString)
+  }),
+
+  let response = HttpResponse.new6(1, 1, 200, "Ok", MimeHeaderDictionary.new, nil),
+  response.contentType := MediaType.new("text", "html"),
+  response.setHeaderValue("server", :String, MimeString, "HOX-HTTPSrv 0.1"),
+
+  let body = GapString.new(100),  (* should use StringBuilderOutput *)
+
+  body.addAll(
+    "<HEAD><TITLE>HOX-HTTPSrv 0.1</TITLE></HEAD>"+
+    "<BODY>"+
+    "<H1>HOX-HTTPSrv 0.1 Ready</H1>"+
+    "<H2>You requested the following URI: "+hr.uri+"</H2>"+
+    "Headers:</P>"
+  ),
+
+  hr.headers.keysAndElementsDo(fun(name :String, value :AbstractMimeHeaderValue) {
+    body.addAll("<B>"+name+"</B>: "+value.value.printString+" ::"+value.value."class".name+"<P>")
+  }),
+
+  body.addAll(
+    "<HR>"+
+    "<ADDRESS>HOX-HTTPSrv 0.1<ADDRESS>"+
+    "</BODY>"
+  ),
+
+  response.body := body.reader,
+  
+  response.emit(out)
+}
+
+
+private methods
+
+_init :Self
+{
+  HeaderParser._init,
+  HttpResponse._init,
+  super._init
+}
+
+*)
+;

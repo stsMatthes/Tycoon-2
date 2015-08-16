@@ -1,0 +1,11 @@
+class DeviceTaskRecClass(Instance <: DeviceTaskRec)
+super ConcreteClass(Instance)
+metaclass MetaClass
+
+public methods
+
+new :Instance
+{
+  _new.init
+}
+;

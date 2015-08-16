@@ -1,0 +1,59 @@
+class DbgEvent
+super Debug
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+   DbgEvent.tc 1.4 98/11/10 Axel Wienberg
+
+  An event corresponding to a tvm action.
+
+  The event is signalled before the corresponding action (send,
+  return, exception) is executed.
+
+  All events imply to communication (dataflow) between objects, the
+  sender and the receiver.
+*)
+meta AbstractClass
+{
+
+thread :Thread(Void)
+  (* The event occurred during computation in <thread>. *)
+
+sender :Object
+  (* the source of the event (the object currently executing) *)
+
+receiver :Object
+  (* the destination of the event (the object reacting to the event) *)
+
+sendingComponent :Object
+  (* the closest super component of the sender which has the isTracedComponent
+     flag set, or nil if none. *)
+
+receivingComponent :Object
+  (* the closest super component of the receiver which has the isTracedComponent
+     flag set, or nil if none. *)
+
+case(T <: Void,
+     ifSend :Fun(:DbgSendEvent):T,
+     ifReturn :Fun(:DbgReturnEvent):T,
+     ifException :Fun(:DbgExceptionEvent):T):T
+  deferred
+
+}

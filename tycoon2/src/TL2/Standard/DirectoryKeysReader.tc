@@ -1,0 +1,89 @@
+class DirectoryKeysReader
+super Resource, Reader(String)
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+Streaming over directory entries
+
+Author:  Andreas Gawecki, Hubertus Koehler
+Date:    13-Jan-1997
+Updates: (Date)	   (Name)	     (Description)
+         03-Mar-99 Andre Willomat    new tycoonOS
+*)
+meta DirectoryKeysReaderClass()
+
+{
+read :String
+  (* *)
+{
+  if( _dirList.isEmpty
+     then: { result :String := nil }
+     else: { name ::= _dirList.head
+         _dirList := _dirList.tail
+	 name
+       })
+}
+
+isOpen :Bool
+  (* *)
+{
+  _dirList.isNotNil
+}
+
+private
+
+_path :String
+
+_dirList :List(String)
+
+_open :Void
+  (* *)
+{
+  dirStream ::= tycoon.ansiC.malloc(tycoon.tycoonOS.directory_sizeOfDirStream)
+  if( tycoon.tycoonOS.memory_isNull(dirStream)
+      then: { IOError.new(Directory.new(_path), tycoon.tycoonOS).raise }
+  )
+  if( tycoon.tycoonOS.directory_open(dirStream, _path) != 0
+      then: { tycoon.ansiC.free(dirStream) 
+              IOError.new(Directory.new(_path), tycoon.tycoonOS).raise }
+  )
+  dirent :String := nil
+  _dirList := List.new
+
+  while({( dirent := tycoon.tycoonOS.directory_read(dirStream)).isNotNil  } do: fun() {
+    _dirList := List.cons(dirent, _dirList)
+  })
+  tycoon.tycoonOS.directory_close(dirStream)
+  tycoon.ansiC.free(dirStream)
+  super._open
+}
+
+_reopen :Void
+  (* *)
+{
+}
+
+_close :Void
+  (* *)
+{
+  _dirList := nil
+}
+
+}

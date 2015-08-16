@@ -1,0 +1,13 @@
+class WhileValueClass
+super ConcreteClass(WhileValue)
+metaclass MetaClass
+public methods
+new1(pos :SourcePos, condition :Value, body :Value) :WhileValue
+{
+  let instance = _new,
+  instance.pos := pos,
+  instance.condition := condition,
+  instance.body := body,
+  instance._init
+}
+;

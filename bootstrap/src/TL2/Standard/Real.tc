@@ -1,0 +1,225 @@
+class Real
+super Number(Real)
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+Flotaing point numbers
+
+Author:  Andreas Gawecki
+Date:    19-Feb-1996
+Updates: (Date)	  (Name)	(Description)
+
+*)
+Self = Real
+meta RealClass
+{
+asReal :Real
+  (* *)
+{ self }
+
+zero :Self
+  (* *)
+{ 0.0 }
+
+one :Self
+  (* *)
+{ 1.0 }
+
+ten :Self
+  (* *)
+{ 10.0 }
+
+order(x :Real) :Int
+  (* *)
+{ tycoon.tycoonOS.real_order(self, x) }
+
+"+"(x :Real) :Real
+  (* *)
+{ tycoon.tycoonOS.real_add(self, x) }
+
+"-"(x :Real) :Real
+  (* *)
+{ tycoon.tycoonOS.real_sub(self, x) }
+
+"*"(x :Real) :Real
+  (* *)
+{ tycoon.tycoonOS.real_mul(self, x) }
+
+"/"(x :Real) :Real
+  (* *)
+{
+  if( x != 0.0
+    then: {privateDiv(x)}
+    else: {error})
+  }
+
+"%"(x :Real) :Real
+  (* *)
+{ nil }
+
+truncated :Self
+  (* *)
+{ nil }
+
+rounded :Self
+  (* *)
+{ nil }
+
+ceiling :Self
+  (* *)
+{ nil }
+
+floor :Self
+  (* *)
+{ nil }
+
+asInt :Int
+  (* *)
+{
+  tycoon.tycoonOS.real_asInt(self)
+}
+
+asLong :Long
+  (* *)
+{
+  tycoon.tycoonOS.real_asLong(self)
+}
+
+asInt32 :Int32
+  (* *)
+{ nil }
+
+asChar :Char
+  (* *)
+{ nil }
+
+identityHash :Int
+  (* *)
+{
+  ;##better hash value
+  (self * 10000.0).asInt
+  }
+
+superComponent :Object
+{ nil }
+
+sqrt :Real
+  (* *)
+{
+  if( self >= 0.0
+    then: {privateSqrt}
+    else: {error})
+  }
+
+sin :Real
+  (* *)
+{ tycoon.tycoonOS.real_sin(self) }
+
+cos :Real
+  (* *)
+{ tycoon.tycoonOS.real_cos(self) }
+
+tan :Real
+  (* *)
+{ tycoon.tycoonOS.real_tan(self) }
+
+asin :Real
+  (* *)
+{ tycoon.tycoonOS.real_asin(self) }
+
+acos :Real
+  (* *)
+{ tycoon.tycoonOS.real_acos(self) }
+
+atan :Real
+  (* *)
+{ tycoon.tycoonOS.real_atan(self) }
+
+expE :Real
+  (* computes the exponential function e**self *)
+{
+  tycoon.tycoonOS.real_expE(self)
+}
+
+ln :Real
+  (* computes the natural logarithm of the receiver *)
+{
+  tycoon.tycoonOS.real_ln(self)
+}
+
+log(base :Real) :Real
+  (* computes the logarithm of the receiver with the given base *)
+{
+  if( base > 0.0
+    then: {privateLog(base)}
+    else: {error})
+  }
+
+power(x :Real) :Real
+  (* computes the receiver raised to the power x *)
+{
+  tycoon.tycoonOS.real_pow(self, x)
+}
+
+printString() :String
+  (* *)
+{
+  buffer ::= MutableString.new(40)
+  tycoon.ansiC.sprintf_Real(buffer, "%e", self)
+  len ::= tycoon.ansiC.strlen(buffer)
+  String.fromSubSequence(buffer, 0, len)
+}
+
+printOn(out :Output) :Void
+  (* *)
+{
+  out.writeAll(printString)
+}
+
+private
+
+shallowCopy :Self
+  (* *)
+{
+  self
+}
+
+error :Nil
+  (* *)
+{
+  ArithmeticError.new("real arithmetic error").raise
+  ; ##define exception in Number/Real?
+}
+
+privateDiv(x :Real) :Real
+  (* *)
+{ tycoon.tycoonOS.real_div(self, x) }
+
+privateSqrt :Real
+  (* *)
+{ tycoon.tycoonOS.real_sqrt(self) }
+
+privateLog(x :Real) :Real
+  (* *)
+{ nil }
+
+value :Real
+  (* c slot *)
+}

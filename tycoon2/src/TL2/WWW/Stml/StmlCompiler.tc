@@ -1,0 +1,188 @@
+class StmlCompiler(Application <:StmlApplication(Application))
+super Stml
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ StmlCompiler
+   parse an Stml file and create a function generating StmlProcessors for it *)
+meta StmlCompilerClass(Application)
+{
+verbosity :Int
+
+typeCheckStmlCode :Bool
+
+interestedInComments :Bool
+
+"verbose:="(v :Bool) :Bool
+  (* *)
+{ verbosity := if( v then:{ 1 }else:{ 0 })
+  v
+}
+
+verbose :Bool
+  (* *)
+{ verbosity > 0 }
+
+application :Application
+  (* *)
+{ _application }
+
+compile(path :String,
+        resource :StmlResource(Application),
+        errorLog :ErrorLog) :Fun():StmlProcessor(Application)
+  (* compile the file identified by path and answer a generator function.
+     Each time the generator is called, it returns a new stml processor.
+   *)   
+require resource.application == application
+ ensure result.isNil
+	    ||  result.application == application
+		&& result._resource == resource
+{
+  assert({ !errorLog.hasErrors })
+  result :Fun():StmlProcessor(Application) := nil
+
+  ; set up parser 
+  treeBuilder ::= StmlTreeBuilder.new
+  treeBuilder.interestedInComments := interestedInComments
+  sgmlsParser.verbose := verbose
+
+  parseSuccess ::=
+    try({
+      if( verbose then: { tycoon.stdout.writeln("[Stml: Parsing "+path+"]") })
+      additionalFiles ::= Array.with0()
+      sgmlsParser.parse(additionalFiles, path, treeBuilder)
+      true
+    } else: fun(e: Exception) {
+      errorLog.error(nil, e.printString)
+      false
+    })
+  if( parseSuccess then: {
+    tree ::= treeBuilder.tree
+    assert({ tree.isStml })
+    tree ::= tree.asStml
+    if( verbose then: { tycoon.stdout.writeln("[Stml: computing types]") })
+    tree.computeAllTypes(errorLog)
+    if( !errorLog.hasErrors then: {
+      if( verbose then: { tycoon.stdout.writeln("[Stml: compiling to AST]") })
+      compilationContext ::= StmlContext.new(errorLog)
+      funExpression ::= tree.compileAll(compilationContext)
+      stmlClass ::= getStmlClass(tree.position, tree.className, errorLog)
+      if( !errorLog.hasErrors then: {
+	if( verbose then: { tycoon.stdout.writeln("[Stml: compiling to Bytecode]") })
+	stmlClass_ ::= stmlClasses_[tree.className] ; ### compatibility 
+	funGenerator ::= compileAST(funExpression, stmlClass_, errorLog)
+	if( !errorLog.hasErrors then: {
+	  result := { stmlClass.new(resource, funGenerator) }
+	})
+      })
+    })
+  })
+  result
+}
+
+registerClass(c :StmlProcessorClass(Application, StmlProcessor(Application))) :Void
+  (* *)
+{
+  name ::= String.fromSequence(c.name)
+  stmlClasses_[name] := tycoon.tl.classManager.get(name)  ; ### compatibility 
+  stmlClasses[name] := c
+}
+
+registeredClasses :KeyedContainer(String, StmlProcessorClass(Application, StmlProcessor(Application)))
+  (* *)
+{ stmlClasses }
+
+private
+
+sgmlsParser :SgmlsParser
+
+stmlClasses :Dictionary(String, StmlProcessorClass(Application, StmlProcessor(Application)))
+
+stmlClasses_ :Dictionary(String, TL2ClassPublic)
+
+  (* ### compatibility *)
+
+_application :Application
+
+getStmlClass(pos :SgmlPos, name :String, errorLog :ErrorLog) :StmlProcessorClass(Application, StmlProcessor(Application))
+  (* *)
+{
+  stmlClasses.lookup(name,
+    fun(c :StmlProcessorClass(Application, StmlProcessor(Application))) { c },
+    { errorLog.error(pos, "Processor class \'" + name
+        + "\' not registered in STML application \'" +  _application.clazz.name + "\'")
+      nil })
+}
+
+compileAST( funExpression :TL2CompiledFun,
+	    stmlClass :TL2ClassPublic,
+	    errorLog :ErrorLog) :Fun(:StmlProcessor(Application)):Fun():Void
+  (* compile the abstract syntax tree <funExpression> into a generator that creates
+     closures for different self arguments *)
+{
+  assert({ funExpression.domain.isEmpty })  ; a Fun0 
+  selfTypeSig ::= stmlClass.selfTypeSig
+  selfSig ::= TL2ValueIde.new(selfTypeSig.pos, "self", false, selfTypeSig.type)
+  environment ::= Dictionary(:TL2ValueIde,:Object).new
+  environment[selfSig] := nil  ;; hack for Tracer / funs
+
+  funGeneratorExpression ::=
+    TL2CompiledFun.new( funExpression.pos,
+			#"[]",
+		        List.with1(selfSig),
+		        TL2VoidType.instance,
+		        funExpression )
+  if( verbosity > 2 then: {
+    ; print unscoped expression 
+    funExpression.printOn(tycoon.stdout)
+    tycoon.stdout.nl
+  })
+  funGenerator ::=
+    tycoon.tl.compiler.evalChecked(environment, stmlClass, funGeneratorExpression, errorLog, typeCheckStmlCode)
+  if( !errorLog.hasErrors then: {
+    if( verbose then: {
+      tycoon.stdout.writeln("[Stml: done]")
+      if( verbosity > 1 then: {
+        funExpression.printOn(tycoon.stdout)
+	tycoon.stdout.nl
+	funExpression.disassembleOn(
+	  Printer.new(tycoon.stdout),
+	  BEByteCodeReader.new(tycoon.tl.vmInterface,
+			       tycoon.tl.root))
+	tycoon.stdout.nl
+      })
+    })
+    _typeCast(funGenerator, :Fun(:StmlProcessor(Application)):Fun():Void)
+  } else: { nil })
+}
+
+_init :Void
+  (* *)
+{
+  super._init
+  verbosity := 0
+  typeCheckStmlCode := true
+  interestedInComments := false
+  sgmlsParser := SgmlsParser.new
+  stmlClasses := Dictionary.new
+  stmlClasses_ := Dictionary.new ; ### compatibility 
+  self
+}
+
+}

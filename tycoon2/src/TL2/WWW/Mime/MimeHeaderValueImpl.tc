@@ -1,0 +1,77 @@
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ MIME headers
+
+   Author  : Matthias Ernst, Andreas Gawecki
+   Date    : 9.12.96
+   Changes : me   6.1.97   separate class+metaclass, name change
+
+*)
+
+(* typed MIME header fields. *)
+ 
+class MimeHeaderValueImpl(T <: Object)
+super MimeHeaderValue
+metaclass AbstractClass
+
+public methods
+
+(* The value after interpretation of raw *)
+value :T {
+  (* Lazy parsing *)
+  _value == nil && { _string != nil } ? {
+    _value := parseValue(_string)
+  },
+
+  _value
+}
+
+"value:="(t: T) {
+  _value := t,
+  _string := nil
+}
+
+string :String {
+  (* Lazy unparsing *)
+  _string == nil && { _value != nil } ? {
+    _string := unparseValue(_value)
+  },
+
+  _string
+}
+
+"string:="(s: String) {
+  _string := s,
+  _value  := nil
+}
+
+private
+
+_string :String,
+_value  :T
+
+methods
+
+parseValue  (:String) :T      deferred (* parse the header value string *)
+unparseValue(:T)      :String deferred (* give a string representation of value *)
+
+
+;
+

@@ -1,0 +1,26 @@
+class Benchmark
+super Object
+metaclass AbstractClass
+
+public methods
+
+start(iter :Int) :Timer
+{
+  let t = Timer.new(tycoon.cpuClock),
+  for(1, iter, fun(i :Int) {
+    _setup,
+    t.start,
+    _run,
+    t.stop
+  }),
+  t
+}
+
+private methods
+
+_run() :Void
+  deferred
+  
+_setup() :Void
+  deferred
+;

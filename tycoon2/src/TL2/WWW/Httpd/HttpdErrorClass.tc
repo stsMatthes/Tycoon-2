@@ -1,0 +1,14 @@
+class HttpdErrorClass
+super ConcreteClass(HttpdError)
+metaclass MetaClass
+
+public methods
+
+new(response :HttpResponse): HttpdError
+{
+  let result = _new,
+  result.response := response,
+  result
+}
+;
+

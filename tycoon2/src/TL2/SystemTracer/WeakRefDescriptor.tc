@@ -1,0 +1,9 @@
+class WeakRefDescriptor
+super ArrayDescriptor
+metaclass SingletonClass(WeakRefDescriptor)
+public methods
+
+layout :Int
+{ layoutWeakRef }
+
+;

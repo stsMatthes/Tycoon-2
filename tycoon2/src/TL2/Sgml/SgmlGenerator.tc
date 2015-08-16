@@ -1,0 +1,178 @@
+class SgmlGenerator
+
+super Sgml, OutputDecorator
+
+public methods
+
+beginStartTag(tag :String)
+  (*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ write "<tag" to the output stream.
+     a couple of attribute writes may follow, before
+     a call to 'endStartTag' finishes the start tag. *)
+  {
+  write('<'),
+  writeString(tag)
+  }
+
+endStartTag
+  (* close the (possibly empty) attribute list opened with 'beginStartTag' *)
+  {
+  write('>')
+  }
+
+startTag(tag :String)
+  (* write a start tag without attributes *)
+  {
+  beginStartTag(tag),
+  endStartTag
+  }
+
+startElement(id :String, attributes :Dictionary(String, String))
+{
+  beginStartTag(id),
+  attributes.keysAndElementsDo(fun(attribute :String, value :String) {
+    attr(attribute, value)
+  }),
+  endStartTag
+}
+
+attr(name :String, value :String) 
+  (* string attribute: if value is not nil, write name="value" or
+     name='value' to the output stream (the choice of quotes depends on value).
+   *)
+{
+  value !== nil ? {
+    write(' '),
+    writeString(name),
+    write('='),
+    attrValue(value)
+  }
+}
+
+intAttr(name :String, value :Int) (* integer attribute *)
+  (* integer attribute: if value is not nil, write ' name="value"'. *)
+  {
+  value !== nil ? {
+    attr(name, value.printString)
+    }
+  }
+
+
+flagAttr(name :String, value :Bool)
+  (* flag attribute: if value is true, write ' name'. *)
+{
+  value ? {
+    write(' '),
+    writeString(name)
+  }
+}
+
+
+tokenAttr(name :String, value :String)
+{
+  attr(name, value)
+}
+
+(* write attribute value  value, quoted if necessary. *)
+attrValue(value :String)
+{
+    validName(value) ? {
+      writeString(value)
+    } : { !value.includes('\"') ? {
+      write('\"'),
+      writeString(value),
+      write('\"')
+    } : { !value.includes('\'') ? {
+      write('\''),
+      writeString(value),
+      write('\'')
+    } : {
+      (* encode quotes as character references *)
+      write('\"'),
+      value.do(fun(c:Char){
+	c == '\"' ? {
+	  writeString("&#34;")
+	} : {
+	  write(c)
+	}
+      }),
+      write('\"')
+    } } }
+}
+
+(* is name a valid Sgml name?
+   If true, it can appear unquoted as an attribute value. *)
+validName(name :String) :Bool
+{
+  !name.isEmpty
+  && { name.size <= nameLen
+  && { name[0].isAlpha
+  && { name.all(fun(c:Char){
+	 c.isAlphaNumeric || { nameChars.includes(c) }
+       }) } } }
+}
+
+(* maximum allowed name length.
+   Corresponds to the NAMELEN attribute in the Sgml declaration`s SYNTAX section *)
+nameLen :Int
+{ (* default *)
+  8
+}
+
+(* set of additional characters that may appear in names. *)
+nameChars :String
+{ (* default *)
+  ".-"
+}
+
+endTag(tag :String)
+  (* write '</tag>' *)
+{
+  write('<'),
+  write('/'),
+  writeString(tag),
+  write('>')
+}
+
+characterReference(c :Char)
+{
+  write('&'),
+  write('#'),
+  c.asInt.printOn(self),
+  write(';')
+}
+
+entityReference(ent :String)
+  require validName(ent)
+{
+  write('&'),
+  writeString(ent),
+  write(';')
+}
+
+(* simple tags without attributes. *)
+withTag(tag :String, contents :Fun0(Void))
+{
+  startTag(tag),
+  contents[],
+  endTag(tag)
+}
+;

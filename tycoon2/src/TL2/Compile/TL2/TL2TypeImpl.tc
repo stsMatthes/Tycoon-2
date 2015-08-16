@@ -1,0 +1,281 @@
+class TL2TypeImpl
+super TL2Type, TL2TypeCheckMixin
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+*)
+meta AbstractClass
+{
+visitor(T <: Void) :TL2FunTypeVisitor(T)
+  (* *)
+{
+     TL2FunTypeVisitor.new
+   }
+
+charCode :Char
+  (* one of tyc_Type (-> tyc.h), or nil on error *)
+{ 'O' }
+
+resultCharCode :Char
+  (* type code when used as return type in an TL2ExternalMethod *)
+{ 'O' }
+
+scope(env :TL2Scoper) :TL2Type
+  (* comparable to well-formedness, only types that result out of sourcecode must be scoped
+     that applies to TL2IdeType, TL2ApplyType, TL2CPLType and TL2MethodType.
+     All others are correctly scoped by induction
+  *)
+{ self }
+
+checkType(subst :TL2Subst) :Void
+  (* implementations for 'TL2Type' 
+
+     wrapper with notification to the central typeChecker
+     subclasses override doCheckType
+  *)
+{
+    typeChecker.typeChecked(self, subst, {
+      if( subst == TL2EmptySubst.instance then: {
+        traceType(self, {
+          doCheckType(subst)
+	})
+      } else: {
+        doCheckType(subst)
+      })
+    })
+  }
+
+checkApplication(args :List(TL2Type), subst :TL2Subst) :Void
+  (* check self and args
+     expose self and forward the test
+
+     TL2Type Apply
+  *)
+{
+    self.expose(subst, false, fun(exposed :TL2Type, subst :TL2Subst) { exposed.checkApplication(args, subst) })
+  }
+
+expose(T <: Void, subst :TL2Subst, exact :Bool, cont :Fun(:TL2Type, :TL2Subst):T) :T
+  (* *)
+{
+    ; ## maybe log ? 
+    doExpose(subst, exact, cont)
+  }
+
+apply(T <: Void, args :List(TL2Type), subst :TL2Subst, argsSubst :TL2Subst, exact :Bool, cont :Fun(:TL2Type, :TL2Subst):T) :T
+  (* expose self and forward the application *)
+{
+    self.expose(subst, exact, fun(exposed :TL2Type, subst :TL2Subst) { exposed.apply(args, subst, argsSubst, exact, cont) })
+  }
+
+reduce(T <: Void, subst :TL2Subst, cont :Fun(:TL2Type, :TL2Subst):T) :T
+  (* partially apply the substitution
+     needed to keep the TL2SubTypeDB small and to enable cache hits
+
+     DEFAULT: do nothing, overriden in TL2IdeType and TL2ApplyType
+  *)
+{ cont[self, subst] }
+
+lookup(T <: Void,
+	 selector :Symbol,
+	 subst :TL2Subst,
+	 withPrivate :Bool,
+	 cont :Fun(:TL2Method, :TL2Subst):T) :T
+  (* method lookup, public *)
+{
+    lookupWithSelf(selector, subst, withPrivate, self, subst, cont)
+  }
+
+lookupWithSelf(T <: Void,
+	 selector :Symbol,
+	 subst :TL2Subst,
+	 withPrivate :Bool,
+	 selfType :TL2Type,
+	 selfTypeSubst :TL2Subst,
+	 cont :Fun(:TL2Method, :TL2Subst):T) :T
+  (* *)
+{
+    self.expose(subst, false, fun(exposed :TL2Type, subst :TL2Subst) {
+      exposed.lookupWithSelf(selector, subst, withPrivate, selfType, selfTypeSubst, cont)
+    })
+  }
+
+methodsDo(subst :TL2Subst,
+	    withPrivate :Bool,
+	    callback :Fun(:TL2Method, :TL2Subst):Void) :Void
+  (* public *)
+{
+    methodsWithSelfDo(subst, withPrivate, self, subst, callback)
+  }
+
+methodsWithSelfDo(subst :TL2Subst,
+		    withPrivate :Bool,
+		    selfType :TL2Type,
+		    selfTypeSubst :TL2Subst,
+	            callback :Fun(:TL2Method, :TL2Subst):Void) :Void
+  (* *)
+{
+    self.expose(subst, false, fun(exposed :TL2Type, subst :TL2Subst) {
+      exposed.methodsWithSelfDo(subst, withPrivate, selfType, selfTypeSubst, callback)
+    })
+  }
+
+checkSubType(big :TL2Type, subst :TL2Subst, bigSubst :TL2Subst) :Void
+  (* Dispatch on the type of big *)
+{
+    self.reduce(subst, fun(small :TL2Type, smallSubst :TL2Subst) {
+      big.reduce(bigSubst, fun(big :TL2Type, bigSubst :TL2Subst) {
+
+        ; this is a big function 
+	test ::= {
+	  typeChecker.checkSubType(small, big, smallSubst, bigSubst, {
+	    if( (small == big) & (smallSubst == bigSubst) then: {} else: {		; eliminate trivial case 
+
+	      big.visitor.
+		ifObjectType(fun(big :TL2ObjectType) { small.checkSubObjectType(big, smallSubst, bigSubst) }).
+		ifClassInstanceType(fun(big :TL2ClassInstanceType) { small.checkSubClassInstanceType(big, smallSubst, bigSubst) }).
+		ifOperType(fun(big :TL2OperType)     { small.checkSubOperType(big, smallSubst, bigSubst) }).
+
+		ifApplyType(fun(big :TL2ApplyType)   { small.checkSubApplyType(big, smallSubst, bigSubst) }).
+		ifIdeType(fun(big :TL2IdeType)       { small.checkSubIdeType(big, smallSubst, bigSubst) }).
+		ifMethodType(fun(big :TL2MethodType) { small.checkSubMethodType(big, smallSubst, bigSubst) }).
+		ifNilType(fun(big :TL2NilType)       { small.checkSubNilType(big, smallSubst, bigSubst) }).
+
+		ifSubstType(fun(big :TL2SubstType)   { small.checkSubSubstType(big, smallSubst, bigSubst) }).
+		ifUnifyType(fun(big :TL2UnifyType)   { small.checkSubUnifyType(big, smallSubst, bigSubst) }).
+	      visitType(big)
+	    })
+	  })
+	} ; end big function 
+
+	if( smallSubst == TL2EmptySubst.instance &&  bigSubst == TL2EmptySubst.instance  then: {
+	  traceSubType(small, big, test)
+	} else: {
+	  test[]
+	})
+      })
+    })
+  }
+
+checkSubAnyType(big :TL2Type, subst :TL2Subst, bigSubst :TL2Subst) :Void
+  (* is the receiver a subtype of this specific type ?
+     the default uses Subtype Trans, i.e. exposes the small type (the receiver) and
+     checks the result <: big
+
+     the target rules are ergo Sub Object and Sub Oper (because these are what expose evaluates to)
+  *)
+{
+    expose(subst, false, fun(small :TL2Type, subst :TL2Subst) { small.checkSubType(big, subst, bigSubst) })
+  }
+
+checkSubObjectType(big :TL2ObjectType, subst :TL2Subst, bigSubst :TL2Subst) :Void
+  (* *)
+{ checkSubAnyType(big, subst, bigSubst) }
+
+checkSubClassInstanceType(big :TL2ClassInstanceType, subst :TL2Subst, bigSubst :TL2Subst) :Void
+  (* *)
+{ checkSubObjectType(big, subst, bigSubst) }
+
+checkSubNilType   (big :TL2NilType,    subst :TL2Subst, bigSubst :TL2Subst) :Void
+  (* *)
+{ checkSubAnyType(big, subst, bigSubst) }
+
+checkSubApplyType (big :TL2ApplyType,  subst :TL2Subst, bigSubst :TL2Subst) :Void
+  (* *)
+{ checkSubAnyType(big, subst, bigSubst) }
+
+checkSubOperType  (big :TL2OperType,   subst :TL2Subst, bigSubst :TL2Subst) :Void
+  (* *)
+{ checkSubAnyType(big, subst, bigSubst) }
+
+checkSubMethodType(big :TL2MethodType, subst :TL2Subst, bigSubst :TL2Subst) :Void
+  (* *)
+{ assert({false }) }
+
+checkSubIdeType   (big :TL2IdeType,    subst :TL2Subst, bigSubst :TL2Subst) :Void
+  (* *)
+{
+    ; first of all, we must look whether this is really an TL2IdeType, or if
+;       it''s already substituted.
+;       If it is not substituted, we can try:
+;
+;       C = B    A <: B
+;       ---------------
+;            A <: C
+;
+;       where C is the TL2Ide, and B is its declared type
+;
+;
+;       
+;       A <: B    B <: C
+;       ----------------
+;            A <: C
+;
+;       exposing A will fail, since it will never evaluate to an TL2Ide itself,
+;       EXCEPT A is an TL2Ide itself => look into TL2IdeType
+;    
+    
+    bigSubst.subst(big.ide, {
+      ; not found --- strip big if big = X, otherwise expose self 
+      if( big.ide.isSubTypeIde then: fun() :Void {
+        raiseSubTypeError(self, big)
+      } else: {
+        ; ## again (see TL2IdeType), is it right to drop bigSubst ??? 
+	checkSubType(big.ide.type, subst, TL2EmptySubst.instance)
+      })
+    },
+    fun(big :TL2Type, bigSubst :TL2Subst) {
+      checkSubType(big, subst, bigSubst)
+    })
+  }
+
+checkSubUnifyType (big :TL2UnifyType,  subst :TL2Subst, bigSubst :TL2Subst) :Void
+  (* *)
+{
+    big.instantiateSuper(self, subst)
+  }
+
+checkSubSubstType(big :TL2SubstType, subst :TL2Subst, bigSubst :TL2Subst) :Void
+  (* unfold the TL2SubstType *)
+{
+    checkSubType(big.type, subst, TL2CompositeSubst.new(bigSubst, big.substi))
+  }
+
+private
+
+doCheckType(subst :TL2Subst) :Void
+  (* subclasses:
+     all *Types must implement doExpose and doCheckType
+     all method suites and oper types must override apply, checkApplication, lookupWithSelf, methodsDoWithSelf
+  
+ it is only necessary to check ApplyTypes
+     all others are correct per se.
+     Why so ?
+     An TL2IdeType is correct iff it is in the env iff the scoper didn't shout
+     All other types cannot be formulated on the syntax level and are
+     only introduced by the typechecker itself, who is correct by induction !
+  *)
+{ ; success 
+}
+
+doExpose(T <: Void, subst :TL2Subst, exact :Bool, cont :Fun(:TL2Type, :TL2Subst):T) :T
+  (* *)
+deferred
+
+}

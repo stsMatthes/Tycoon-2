@@ -1,0 +1,14 @@
+DO load "../TWL/Compile/Scan/Eager/Eager.tc";
+
+class DFA metaclass AbstractClass;
+class DFAGenerator metaclass AbstractClass;
+class DFAState metaclass AbstractClass;
+class EagerDFA metaclass AbstractClass;
+class EagerScannerBuilder metaclass AbstractClass;
+
+DO load "../TWL/Compile/Scan/Eager/DFA.tc";
+DO load "../TWL/Compile/Scan/Eager/DFAGenerator.tc";
+DO load "../TWL/Compile/Scan/Eager/DFAState.tc";
+DO load "../TWL/Compile/Scan/Eager/EagerDFAClass.tc";
+DO load "../TWL/Compile/Scan/Eager/EagerDFA.tc";
+DO load "../TWL/Compile/Scan/Eager/EagerScannerBuilder.tc";

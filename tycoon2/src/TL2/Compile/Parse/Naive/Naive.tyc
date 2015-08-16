@@ -1,0 +1,9 @@
+class Naive
+super Parse
+metaclass AbstractClass
+;
+
+class NaiveParserClass metaclass MetaClass;
+DO load "../TWL/Compile/Parse/Naive/NaiveParser.tc";
+DO load "../TWL/Compile/Parse/Naive/NaiveParserClass.tc";
+DO load "../TWL/Compile/Parse/Naive/NaiveParserBuilder.tc";

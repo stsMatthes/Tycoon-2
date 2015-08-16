@@ -1,0 +1,119 @@
+class Value
+  super TWLProgramObject, TypeCheckMixin
+  metaclass AbstractClass
+
+public methods
+
+  (*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ subclasses may redefine one of these to return true *)
+  isSend :Bool		{ false }
+  asSend :SendValue	{ nil }
+  isIde :Bool		{ false }
+  asIde :IdeValue		{ nil }
+  isType :Bool		{ false }
+  asType :Type		{ nil }
+  isLet :Bool		{ false }
+  asLet :LetValue		{ nil }
+  isBlock :Bool		{ false }
+  asBlock :BlockValue	{ nil }
+
+  isSuper(env :Scoper) :Bool
+  { false }
+
+
+
+  (* Val xxx *)
+  check(T <: Void, cont :Fun2(Type, Subst, T)) :T
+  {
+    typeChecker.valueChecked(self, {
+      doCheck(cont)
+    })
+  }
+
+
+  scope(env :Scoper) :Value
+    deferred
+
+  (* generate code that evaluates self and pushes the result *)
+  genCode(backEnd :MethodManager)
+    require backEnd.isReached
+	  & !isType
+    deferred
+
+  (* don't leave a result on the stack *)
+  genCodeIgnore(backEnd :MethodManager)
+    require backEnd.isReached
+	  & !isType
+  { genCode(backEnd),
+    backEnd.pop
+  }
+
+  (* return immediately *)
+  genCodeReturn(backEnd :MethodManager)
+    require backEnd.isReached
+	  & !isType
+  { genCode(backEnd),
+    backEnd.return
+  }
+
+  (* Evaluate to a boolean, and jump to <dest> if result is <branchIf>. *)
+  genCodeBranch( backEnd :MethodManager,dest :MMLabel, branchIf :Bool)
+    require backEnd.isReached
+	  & !isType 
+  { genCode(backEnd),
+    branchIf ? {
+      backEnd.ifTrue(dest)
+    } : {
+      backEnd.ifFalse(dest)
+    }
+  }
+
+  prettyPrint(out :Printer)
+    deferred
+
+  isSimple :Bool
+  {
+    children.all(fun(v :Value) {
+      v.isLeaf
+    })
+  }
+
+  isLeaf :Bool
+  {
+    children.read.isNil   (* children.isEmpty *)
+  }
+
+  noSideEffect :Bool
+    (* true => evaluating this expression in an ignore context has no effect. *)
+  { false }
+
+
+  (* subexpressions. *)
+  children :Reader(Value)
+    deferred
+
+
+private methods
+
+  (* subclasses override this to implement value type checking *)
+  doCheck(T <: Void, cont :Fun2(Type, Subst, T)) :T deferred
+    
+;

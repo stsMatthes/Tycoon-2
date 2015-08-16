@@ -1,0 +1,305 @@
+class File
+super ExternalStream, Cursor(Char,Long), DirectoryContents
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+External file system access
+
+All I/O operations in this class are unbuffered, they invoke
+the corresponding system calls directly.
+Use File::bufferedInput or  File::bufferedOutput for buffered I/O.
+
+Author:  Andreas Gawecki
+Date:    13-Feb-1996
+Updates: (Date)	   (Name)	     (Description)
+         22-Aug-96 Hubertus Koehler  added DirectoryContents to super
+         03-Mar-99 Andre Willomat    new tycoonOS, various changes
+	 
+*)
+meta FileClass()
+
+{
+hasPathExtension(extension :String) :Bool
+  (* *)
+{
+  pathExtension ::= tycoon.os.fs.pathExtension(_path)
+  pathExtension.isNotNil &&  pathExtension = extension 
+}
+
+flags :Int
+  (* file status flags, i.e. options for opening the File *)
+{ _flags  }
+
+mode :Int
+  (* file mode, i.e.access permission bits  of the  file (used only if
+     flags includes 'File.O_CREAT')
+   
+     ## flags and mode will become optional parameter
+  *)
+{ _mode  }
+
+
+open2(flags :Int, mode :Int) :File
+  (*## flags and mode will become optional parameter*)
+{
+  ;##make atomic: 
+  _flags := flags
+  _mode := mode
+  open
+}
+
+open1(flags :Int) :File
+  (*## flags and mode will become optional parameter*)
+{
+  open2(flags, defaultMode)
+}
+
+openRead :File
+  (* Open text file for reading. The stream is positioned
+     at the beginning of the file. *)
+{
+  open1(File.O_RDONLY)
+}
+
+defaultMode :Int
+  (* *)
+{
+  0
+  ;## currently ignored in C.
+  ;define constants for file modes (Windows NT?) 
+  ;aw: currently no solution for WinNT
+}
+
+openWrite :File
+  (* Truncate file to zero length or create file for writing.
+     The stream is positioned at the beginning of the file. *)
+{
+  open1(File.O_WRONLY | File.O_TRUNC | File.O_CREAT)
+}
+
+openReadWrite :File
+  (* Open for reading and writing. The stream is positioned
+     at the beginning of the file, which is created if it
+     does not exist.*)
+{
+  open1(File.O_RDWR | File.O_TRUNC | File.O_CREAT)
+}
+
+isCharacterDevice :Bool
+  (* *)
+{
+  synchronize({ _isCharacterDevice })
+}
+
+copyContents(to :String) :Void
+  (* *)
+{
+  _synchronizeBlockingCall({
+    if( tycoon.tycoonOS.file_copy(_path, to) < 0 then: { IOError.new(self, tycoon.tycoonOS).raise })
+  })
+}
+
+remove :Void
+  (* *)
+{
+  synchronize({
+    if( tycoon.tycoonOS.file_remove(_path) < 0 then: { IOError.new(self, tycoon.tycoonOS).raise })
+  })
+}
+
+case(T <:Void,
+     ifDirectory :Fun(:Directory):T,
+     ifFile :Fun(:File):T) :T
+  (* *)
+{ ifFile[self] }
+
+visit(T <:Object, visitor :DirectoryContentsVisitor(T)) :T
+  (* *)
+{ visitor.visitFile(self) }
+
+read :Char
+  (* *)
+{
+  _synchronizeBlockingCall({
+    assert({ _handle !== nil })
+
+    _dll.resetError
+    i ::= _dll.file_readChar(_handle)
+    if( i >= 0
+      then: { i.asChar }
+      else: { if( _dll.errorCode == 0
+	    then: { nil }	  ; eof 
+	    else: { _ioError })   ; error 
+	})  
+  })
+}
+
+readBuffer(buffer :MutableString, start :Int, n :Int) :Int
+  (* *)
+{
+  _synchronizeBlockingCall({
+    assert({ _handle !== nil })
+
+    ; force runtime error on bad argument: 
+    if( n !== 0 then: { buffer[start] := ' ' buffer[start+n-1] := ' '})
+    nn ::= _dll.file_read1(_handle, buffer, start, n)
+    _checkReturnCode(nn)
+  })
+}
+
+write(ch :Char) :Void
+  (* *)
+{
+  _synchronizeBlockingCall({
+    assert({ _handle !== nil })
+    _checkReturnCode(_dll.file_writeChar(_handle, ch))  
+  })
+}
+
+writeBuffer(buffer :String, start :Int, n :Int) :Void
+  (* *)
+{
+  _synchronizeBlockingCall({
+    assert({ _handle !== nil })
+  
+    ; force runtime error on bad argument: 
+    if( n !== 0 then: { buffer[start] buffer[start+n-1]})
+
+    _checkReturnCode(_dll.file_write1( _handle, buffer, start, n))  
+  })
+}
+
+position :Long
+  (* *)
+require !isCharacterDevice
+{
+  synchronize({
+    _dll.filepos_seekCur( _handle, Long.fromInt(0))
+  })
+}
+
+"position:="(pos :Long) :Long
+  (* *)
+require !isCharacterDevice
+{
+  synchronize({
+    _dll.filepos_seek( _handle, pos)
+  })
+}
+
+size :Long
+  (* answer the position at the end of the receiver *)
+{
+  synchronize({
+    savedPosition ::= position
+    result ::= _dll.filepos_seekEnd( _handle, Long.fromInt(0))
+    position := savedPosition
+    result
+  })
+}
+
+printOn(out :Output) :Void
+  (* default print method for objects.
+     Subclasses should override it appropriately. *)
+{
+  out.writeString("File(" + _path.printString + ", " + _handle.printString + ")")
+}
+
+private
+
+_path :String
+
+_flags :Int
+
+; will currently be ignored
+_mode :Int
+
+_savedPosition :Long
+
+_init :Void
+  (* *)
+{
+  super._init
+  _dll := tycoon.tycoonOS
+  self  
+}
+
+_open :Void
+  (* *)
+{
+  ; force runtime type errors on bad argument: 
+  if( _path == nil then: { _path[0] })
+  if( _flags == nil then: { _flags|0 })
+  if( _mode == nil then: { _mode|0 })
+
+  if( _handle == nil then:   ; handle is not nil for stdin and stdout 
+    { _handle := _checkReturnCode(_dll.file_open(_path, _flags)) })
+  
+  super._open
+}
+
+_close :Void
+  (* *)
+{
+  if( _handle !== nil then: {
+      _checkReturnCode(_dll.file_close(_handle))
+    })
+  super._close
+}
+
+_reopen :Void
+  (* *)
+{
+  if( self !== File.stdin &&  self !== File.stdout  then:
+    ; don't reopen stdin and stdout 
+    {
+      tycoon.stdout << " reopen " << path << '\n'
+      _handle := nil
+  
+      ; prevent truncation of output files: 
+      _flags := _flags & File.O_TRUNC.not
+   
+      ; force IOError if file has been removed: 
+      _flags := _flags & File.O_CREAT.not
+  
+      ; mode will be ignored
+      handle ::= _dll.file_open(_path, _flags)
+      _handle := _checkReturnCode(handle)
+      if( !_isCharacterDevice then: {
+        position := _savedPosition
+      })
+    })
+}
+
+_saveState :Void
+  (* *)
+{
+  if( !_isCharacterDevice then: {
+    _savedPosition := position
+  })
+}
+
+_isCharacterDevice :Bool
+  (* *)
+{
+  tycoon.tycoonOS.file_isCharacterDevice(_handle)
+}
+
+}

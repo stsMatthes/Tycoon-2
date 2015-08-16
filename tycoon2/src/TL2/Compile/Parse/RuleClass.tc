@@ -1,0 +1,281 @@
+class RuleClass(D <: Object)
+super ConcreteClass(Rule(D))
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+*)
+meta MetaClass
+{
+new0(lhs :Nonterminal(D), action :Fun():D) :Rule(D)
+  (* *)
+{
+  newPP(lhs,
+      Array.with0,
+      fun(;s
+:Stack(Object)) :D {
+        action[]
+      }
+  )
+}
+
+new1(lhs :Nonterminal(D), 
+     D1 <: Object, rhs1 :GrammarSymbol(D1),
+     action :Fun(:D1):D) :Rule(D)
+  (* *)
+{
+  newPP(lhs,
+      Array(:SymbolO).with1(rhs1),
+      fun (s :Stack(Object)) :D {
+        d1 ::= _typeCast(s.removeFirst, :D1)
+	action[d1]
+      }
+  )
+}
+
+new2(lhs :Nonterminal(D), 
+     D1 <: Object, rhs1 :GrammarSymbol(D1),
+     D2 <: Object, rhs2 :GrammarSymbol(D2),
+     action :Fun(:D1, :D2):D) :Rule(D)
+  (* *)
+{
+  newPP(lhs,
+      Array(:SymbolO).with2(rhs1, rhs2),
+      fun (s :Stack(Object)) :D {
+        d2 :D2 := _typeCast(s.removeFirst, :D2)
+        d1 :D1 := _typeCast(s.removeFirst, :D1)
+	action[d1,d2]
+      }
+  )
+}
+
+new3(lhs :Nonterminal(D), 
+     D1 <: Object, rhs1 :GrammarSymbol(D1),
+     D2 <: Object, rhs2 :GrammarSymbol(D2),
+     D3 <: Object, rhs3 :GrammarSymbol(D3),
+     action :Fun(:D1, :D2, :D3):D) :Rule(D)
+  (* *)
+{
+  newPP(lhs,
+      Array(:SymbolO).with3(rhs1, rhs2, rhs3),
+      fun (s :Stack(Object)) :D {
+        d3 :D3 := _typeCast(s.removeFirst, :D3)
+        d2 :D2 := _typeCast(s.removeFirst, :D2)
+        d1 :D1 := _typeCast(s.removeFirst, :D1)
+	action[d1,d2,d3]
+      }
+  )
+}
+
+new4(lhs :Nonterminal(D), 
+     D1 <: Object, rhs1 :GrammarSymbol(D1),
+     D2 <: Object, rhs2 :GrammarSymbol(D2),
+     D3 <: Object, rhs3 :GrammarSymbol(D3),
+     D4 <: Object, rhs4 :GrammarSymbol(D4),
+     action :Fun(:D1, :D2, :D3, :D4):D) :Rule(D)
+  (* *)
+{
+  newPP(lhs,
+      Array(:SymbolO).with4(rhs1, rhs2, rhs3, rhs4),
+      fun (s :Stack(Object)) :D {
+        d4 :D4 := _typeCast(s.removeFirst, :D4)
+        d3 :D3 := _typeCast(s.removeFirst, :D3)
+        d2 :D2 := _typeCast(s.removeFirst, :D2)
+        d1 :D1 := _typeCast(s.removeFirst, :D1)
+	action[d1,d2,d3,d4]
+      }
+  )
+}
+
+new5(lhs :Nonterminal(D), 
+     D1 <: Object, rhs1 :GrammarSymbol(D1),
+     D2 <: Object, rhs2 :GrammarSymbol(D2),
+     D3 <: Object, rhs3 :GrammarSymbol(D3),
+     D4 <: Object, rhs4 :GrammarSymbol(D4),
+     D5 <: Object, rhs5 :GrammarSymbol(D5),
+     action :Fun(:D1, :D2, :D3, :D4, :D5):D) :Rule(D)
+  (* *)
+{
+  newPP(lhs,
+      Array(:SymbolO).with5(rhs1, rhs2, rhs3, rhs4, rhs5),
+      fun (s :Stack(Object)) :D {
+        d5 :D5 := _typeCast(s.removeFirst, :D5)
+        d4 :D4 := _typeCast(s.removeFirst, :D4)
+        d3 :D3 := _typeCast(s.removeFirst, :D3)
+        d2 :D2 := _typeCast(s.removeFirst, :D2)
+        d1 :D1 := _typeCast(s.removeFirst, :D1)
+	action[d1,d2,d3,d4,d5]
+      }
+  )
+}
+
+new6(lhs :Nonterminal(D), 
+     D1 <: Object, rhs1 :GrammarSymbol(D1),
+     D2 <: Object, rhs2 :GrammarSymbol(D2),
+     D3 <: Object, rhs3 :GrammarSymbol(D3),
+     D4 <: Object, rhs4 :GrammarSymbol(D4),
+     D5 <: Object, rhs5 :GrammarSymbol(D5),
+     D6 <: Object, rhs6 :GrammarSymbol(D6),
+     action :Fun(:D1, :D2, :D3, :D4, :D5, :D6):D) :Rule(D)
+  (* *)
+{
+  newPP(lhs,
+      Array(:SymbolO).with6(rhs1, rhs2, rhs3, rhs4, rhs5, rhs6),
+      fun (s :Stack(Object)) :D {
+        d6 :D6 := _typeCast(s.removeFirst, :D6)
+        d5 :D5 := _typeCast(s.removeFirst, :D5)
+        d4 :D4 := _typeCast(s.removeFirst, :D4)
+        d3 :D3 := _typeCast(s.removeFirst, :D3)
+        d2 :D2 := _typeCast(s.removeFirst, :D2)
+        d1 :D1 := _typeCast(s.removeFirst, :D1)
+	action[d1,d2,d3,d4,d5,d6]
+      }
+  )
+}
+
+new7(lhs :Nonterminal(D), 
+     D1 <: Object, rhs1 :GrammarSymbol(D1),
+     D2 <: Object, rhs2 :GrammarSymbol(D2),
+     D3 <: Object, rhs3 :GrammarSymbol(D3),
+     D4 <: Object, rhs4 :GrammarSymbol(D4),
+     D5 <: Object, rhs5 :GrammarSymbol(D5),
+     D6 <: Object, rhs6 :GrammarSymbol(D6),
+     D7 <: Object, rhs7 :GrammarSymbol(D7),
+     action :Fun(:D1, :D2, :D3, :D4, :D5, :D6, :D7):D) :Rule(D)
+  (* *)
+{
+  newPP(lhs,
+      Array(:SymbolO).with7(rhs1, rhs2, rhs3, rhs4, rhs5, rhs6, rhs7),
+      fun (s :Stack(Object)) :D {
+        d7 :D7 := _typeCast(s.removeFirst, :D7)
+        d6 :D6 := _typeCast(s.removeFirst, :D6)
+        d5 :D5 := _typeCast(s.removeFirst, :D5)
+        d4 :D4 := _typeCast(s.removeFirst, :D4)
+        d3 :D3 := _typeCast(s.removeFirst, :D3)
+        d2 :D2 := _typeCast(s.removeFirst, :D2)
+        d1 :D1 := _typeCast(s.removeFirst, :D1)
+	action[d1,d2,d3,d4,d5,d6,d7]
+      }
+  )
+}
+
+new8(lhs :Nonterminal(D), 
+     D1 <: Object, rhs1 :GrammarSymbol(D1),
+     D2 <: Object, rhs2 :GrammarSymbol(D2),
+     D3 <: Object, rhs3 :GrammarSymbol(D3),
+     D4 <: Object, rhs4 :GrammarSymbol(D4),
+     D5 <: Object, rhs5 :GrammarSymbol(D5),
+     D6 <: Object, rhs6 :GrammarSymbol(D6),
+     D7 <: Object, rhs7 :GrammarSymbol(D7),
+     D8 <: Object, rhs8 :GrammarSymbol(D8),
+     action :Fun(:D1, :D2, :D3, :D4, :D5, :D6, :D7, :D8):D) :Rule(D)
+  (* *)
+{
+  newPP(lhs,
+      Array(:SymbolO).with8(rhs1, rhs2, rhs3, rhs4, rhs5, rhs6, rhs7, rhs8),
+      fun (s :Stack(Object)) :D {
+        d8 :D8 := _typeCast(s.removeFirst, :D8)
+        d7 :D7 := _typeCast(s.removeFirst, :D7)
+        d6 :D6 := _typeCast(s.removeFirst, :D6)
+        d5 :D5 := _typeCast(s.removeFirst, :D5)
+        d4 :D4 := _typeCast(s.removeFirst, :D4)
+        d3 :D3 := _typeCast(s.removeFirst, :D3)
+        d2 :D2 := _typeCast(s.removeFirst, :D2)
+        d1 :D1 := _typeCast(s.removeFirst, :D1)
+	action[d1,d2,d3,d4,d5,d6,d7,d8]
+      }
+  )
+}
+
+new9(lhs :Nonterminal(D), 
+     D1 <: Object, rhs1 :GrammarSymbol(D1),
+     D2 <: Object, rhs2 :GrammarSymbol(D2),
+     D3 <: Object, rhs3 :GrammarSymbol(D3),
+     D4 <: Object, rhs4 :GrammarSymbol(D4),
+     D5 <: Object, rhs5 :GrammarSymbol(D5),
+     D6 <: Object, rhs6 :GrammarSymbol(D6),
+     D7 <: Object, rhs7 :GrammarSymbol(D7),
+     D8 <: Object, rhs8 :GrammarSymbol(D8),
+     D9 <: Object, rhs9 :GrammarSymbol(D9),
+     action :Fun(:D1, :D2, :D3, :D4, :D5, :D6, :D7, :D8, :D9):D) :Rule(D)
+  (* *)
+{
+  newPP(lhs,
+      Array(:SymbolO).with9(
+        rhs1, rhs2, rhs3, rhs4, rhs5, rhs6, rhs7, rhs8, rhs9),
+      fun (s :Stack(Object)) :D {
+        d9 :D9 := _typeCast(s.removeFirst, :D9)
+        d8 :D8 := _typeCast(s.removeFirst, :D8)
+        d7 :D7 := _typeCast(s.removeFirst, :D7)
+        d6 :D6 := _typeCast(s.removeFirst, :D6)
+        d5 :D5 := _typeCast(s.removeFirst, :D5)
+        d4 :D4 := _typeCast(s.removeFirst, :D4)
+        d3 :D3 := _typeCast(s.removeFirst, :D3)
+        d2 :D2 := _typeCast(s.removeFirst, :D2)
+        d1 :D1 := _typeCast(s.removeFirst, :D1)
+	action[d1,d2,d3,d4,d5,d6,d7,d8,d9]
+      }
+  )
+}
+
+private
+
+computePrecedence(rhs :Array(SymbolO)) :Precedence
+  (* use precedence of the last terminal symbol in rhs,
+   or nil if there are no terminal symbols *)
+{
+  result :Precedence := nil
+  rhs.do(fun(s :SymbolO) {
+    s.case(
+      fun(t:TerminalO) :Void {
+        result := t.precedence
+      },
+      fun(;nt
+:NonterminalO) {
+      }
+    )
+  })
+  result
+}
+
+newPP(lhs :Nonterminal(D), 
+    rhs :Array(SymbolO),
+    action :Fun(:Stack(Object)):D)  :Rule(D)
+  (* new with PreProcessed arguments *)
+{
+  instance ::= _new
+  ; ### the following doesn't work because nil is 
+;	 interpreted as end of stream 
+  ; assert rhs.all(fun(e :Object) { e.isNotNil })
+;   
+  if( !rhs.keys.all(fun(i :Int) {
+    rhs[i].isNotNil
+  }) then: {
+    tycoon.stdout << lhs << " ::= " << rhs
+    assert({ rhs.keys.all(fun(i :Int) {
+      rhs[i].isNotNil
+    }) })
+  })
+  instance._lhs := lhs
+  instance._rhs := rhs
+  instance._precedence := computePrecedence(rhs)
+  instance._action := action
+  instance
+}
+
+}

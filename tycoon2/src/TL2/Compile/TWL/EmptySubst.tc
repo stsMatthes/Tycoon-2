@@ -1,0 +1,22 @@
+class EmptySubst
+  super Subst
+  metaclass SingletonClass(EmptySubst)
+
+public methods
+
+  isEmpty :Bool { true }
+
+  subst(T <:Void,
+	ide :Ide,
+	ifNotFound :Fun0(T),
+	cont :Fun2(Type, Subst, T)) :T
+    {
+      ifNotFound[]
+    }
+
+  printOn(o :Output)
+  {
+    o.writeAll("[]")
+  }
+
+;

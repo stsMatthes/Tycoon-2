@@ -1,0 +1,141 @@
+class TL2Normalizer
+super TL2RecursiveValueVisitor
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ This value visitor transforms keyword argument lists to positional argument
+   lists for the most important standard library methods.  Parameter lists are
+   not touched, they must not contain keywords.
+
+   This solution may not be beautiful, but will have to suffice until we get
+   real keyword arguments in the machine and in the type checker.
+
+   The normalizer runs before scoping, so the substituted values can easily
+   refer to self etc.
+ 
+ mapping selector -> expected list of  keyword plus default expression *)
+meta TL2NormalizerClass
+{
+errorLog :ErrorLog
+
+visitSend(v :TL2SendValue) :Void
+  (* *)
+{ super.visitSend(v)
+  standardKeywords.lookup(v.selector, fun(expected :Array(Pair(Symbol, Fun(:SourcePos):TL2Value))) {
+    expectedKeywords ::=
+      Array.fromContainerWithMap(expected, fun(p:Pair(Symbol,Object)) { p.first })
+    if( !v.keywords.sequenceEqual(expectedKeywords) then: {
+      ; we have to reorder the keyword arguments or insert default expressions 
+      actual ::= Dictionary.fromPairs(v.keywordArgs)
+      ; have we lost some arguments while converting to Dictionary? 
+      if( actual.size != v.keywords.size
+      then: { multiArgs ::= Dictionary.fromMultiPairs(v.keywordArgs)
+	  multiKeywords ::= multiArgs.keys.select(fun(k :Symbol) { multiArgs[k].size > 1 })
+	  multiKeywords.do(fun(k :Symbol) {
+	    errorLog.error(v.pos, "repeated argument keyword: "+k)
+	  }) })
+      newArgs :List(TL2Value) := EmptyList.new
+      expected.reverseDo(fun(p :Pair(Symbol, Fun(:SourcePos):TL2Value)) {
+	arg ::=
+	  actual.lookup(p.first, fun(arg :TL2Value){
+	    actual.removeKey(p.first)
+	    arg
+	  }, {
+	    p.second[v.pos]
+	  })
+	newArgs := List.cons(arg, newArgs)
+      })
+      if( !actual.isEmpty
+      then: { actual.keys.do(fun(k :Symbol) {
+	    errorLog.error(v.pos, "unknown argument keyword: "+k)
+	  }) })
+      v.args := List.append(List.fromReader(v.plainArgs), newArgs)
+    })
+    v.keywords := Array.with0
+  }, {
+    ; no special selector 
+  })
+}
+
+visitIde( :TL2IdeValue) :Void
+  (* *)
+{
+  ;  standardKeywords.includesKey(v.ide.name) ? { ... }
+;      no, this is too far out!  "x ::= while  y ::= if"
+;      even more, it would complicate the structure, because
+;      <v> might have to be substituted 
+}
+
+private
+
+standardKeywords :Dictionary(Symbol, Array(Pair(Symbol, Fun(:SourcePos):TL2Value)))
+
+_init :Void
+  (* *)
+{
+  emptyBlock ::=
+    fun(pos :SourcePos) {
+      TL2CompiledFun.new(pos, #"[]", List.with0, nil,
+        TL2BlockValue.new(pos, List.with0))
+    }
+  d ::= Dictionary(:Symbol, :Array(Pair(Symbol, Fun(:SourcePos):TL2Value))).new
+  d[Symbol.new("if")] :=
+    Array.with2( Pair.new( Symbol.new("then"),
+			   emptyBlock),
+		 Pair.new( Symbol.new("else"),
+			   emptyBlock))
+  d[Symbol.new("while")] :=
+    Array.with1( Pair.new( Symbol.new("do"),
+			   emptyBlock))
+  d[Symbol.new("repeat")] :=
+    Array.with1( Pair.new( Symbol.new("until"),
+			   fun(pos :SourcePos) {
+			     TL2CompiledFun.new(pos, #"[]", List.with0, nil,
+			       TL2LiteralValue.new(pos, true))
+			   }))
+  d[Symbol.new("for")] :=
+    Array.with2( Pair.new( Symbol.new("to"),
+			   fun(pos :SourcePos) :TL2Value {
+			     TL2LiteralValue.new(pos, nil)  ; ### makes no sends - i mean sense 
+			   }),
+		 ; ### step: does not match current definition of Object::for 
+		 Pair.new( Symbol.new("do"),
+			   fun(pos :SourcePos) {
+			     intType ::=
+			       TL2IdeType.new(TL2TypeIde.newRef(pos, "Int"))
+			     TL2CompiledFun.new(pos, #"[]", List.with1(TL2ValueIde.new(pos, nil, false, intType)), nil,
+			       TL2BlockValue.new(pos, List.with0))
+			   }))
+  d[Symbol.new("try")] :=
+    Array.with1( Pair.new( Symbol.new("else"),
+			   fun(pos :SourcePos) {
+			      ; fun(e :Exception) { e.raise } 
+			      exceptionType ::=
+			        TL2IdeType.new(TL2TypeIde.newRef(pos, "Exception"))
+			      TL2CompiledFun.new(pos, #"[]", List.with1(TL2ValueIde.new(pos, "e", false, exceptionType)), nil,
+				TL2SendValue.new(pos,
+				  TL2IdeValue.new(TL2ValueIde.newRef(pos, "e")),
+				  Symbol.new("raise"),
+				  List.with0))
+			   }))
+  standardKeywords := d
+  self
+}
+
+}

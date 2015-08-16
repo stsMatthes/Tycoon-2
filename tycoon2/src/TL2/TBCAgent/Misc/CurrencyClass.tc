@@ -1,0 +1,141 @@
+class CurrencyClass
+super ConcreteClass(Currency)
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ CurrencyClass.tc
+
+   Tycoon Business Conversations (TBC) for Tycoon 2
+   ------------------------------------------------
+   Metaclass for Currency.  This class also contains the
+   exchange rate-tables.
+   
+   31.10.97 hw : created
+   
+*)
+meta MetaClass
+{
+new(F<:Number(F), value :F, unit :String) :Currency
+  (* ======== constructor methods =========================================== *)
+{
+    c ::= _new
+    c._value := (value.asReal*100.0).asInt.asLong
+    c._unit  := if( unit.isEmpty then: {_defaultUnit} else: {unit})
+    c
+  }
+
+fromLong(value:Long, unit:String) :Currency
+  (* *)
+{
+    c ::= _new
+    c._unit  := unit
+    c._value := value
+    c
+  }
+
+fromString(s:String) :Currency
+  (* *)
+{
+    fromReader(s.reader)
+  }
+
+fromReader(reader :Reader(Char)) :Currency
+  (* *)
+{
+    negative ::= false
+    hadComma ::= false
+    value :Long := 0.asLong
+    unit ::= ""
+    
+    ch ::= reader.read
+
+    ; skip leading space 
+    while({ch.isNotNil && ch.isSpace} do: {
+      ch := reader.read
+    })
+
+    ; sign must come now or never 
+    if( ch == '-' then: 
+      {negative := true ch := reader.read})
+
+    ; only dollar has its unit before the digits. 
+    if( ch == '$' then:
+      {unit := "$" ch := reader.read})
+      
+    ; accept only digits, but ignore dot and comma. 
+    while({ch.isNotNil && (ch.isDigit || (ch=='.' || ch==','))} do: {
+      if( ch.isDigit then: {
+        value := 10.asLong * value + ch.digitValue.asLong
+      })
+      if( ch == ',' then: {hadComma:=true})
+      ch := reader.read
+    })
+
+    ; accept unit only if not already seen (i.e. $). accept alpha only. 
+    if( unit.size == 0 then: {
+      unit := String.fromReader(reader.select(fun(c:Char):Bool{c.isAlpha}))
+    })
+
+    if( !hadComma then: {value := value * 100.asLong})
+    fromLong(if( negative then: {value.negated} else: {value}), unit)
+  }
+
+setRate(name1 :String, name2 :String, rate :Real) :Void
+  (* ======== exchange rate methods ========================================= 
+
+   * Define a new curreny (or change an existing) and its exchange rate relatively
+   * to another currency.
+   *)
+{
+    _currencies[name1+":"+name2]:=rate
+  }
+
+setRates(name1 :String, name2 :String, rate :Real) :Void
+  (* *)
+{
+    setRate(name1,name2,rate)
+    setRate(name2,name1,1.0/rate)
+  }
+
+getRate(name1 :String, name2 :String) :Real
+  (* *)
+{
+    _currencies[name1+":"+name2]
+  }
+
+init :Void
+  (* *)
+{
+    _defaultUnit := "DM"  ; ### use locale 
+    _currencies := Dictionary.new
+  }
+
+private
+
+_defaultUnit :String
+
+  (*
+   * Here are the exchange rates for all interesting pairs of currencies are
+   * stored. The Key is stored as c1+':'+c2, eg. "DM:NOK".
+   *
+   *)
+
+_currencies :Dictionary(String, Real)
+
+}

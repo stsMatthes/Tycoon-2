@@ -1,0 +1,17 @@
+class PersonalizeHttpResponseFilter
+
+super PersonalizeHttp, HttpResourceDecorator
+
+public
+
+client :PersonalizeHttpClient
+
+methods
+
+get(request :HttpRequest) :HttpResponse
+{
+  let response = resource.get(request),
+  client.personalizeHttp(request, response)
+}
+
+;

@@ -1,0 +1,239 @@
+class AddGeneratorMixin(E <: Object, Instance <: AddMixin(E))
+super AbstractContainerGenerator(E, Instance)
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+   implementation for AbstractContainerGenerator that is based on
+   adding elements.
+   subclasses must implement _newCapacity
+ *)
+meta AbstractClass
+{
+
+fromReader(reader :Reader(E)) :Instance
+  (* result will contain exactly the elements delivered by reader. *)
+{
+  instance ::= _newCapacity(1)
+  instance.addAll(reader)
+  instance
+}
+
+fromContainer(container :Container(E)) :Instance
+  (* result will contain exactly the elements contained in container
+     at the time of creation. *)
+{
+  instance ::= _newCapacity(container.size)
+  instance.addAll(container)
+  instance  
+}
+
+fromContainerWithMap(F <:Object, container :Container(F), map :Fun(:F):E) :Instance
+  (* result will contain the elements obtained by applying map to
+     each element of container at the time of creation. *)
+{
+  instance ::= _newCapacity(container.size)
+  container.do(fun(f :F) {
+    instance.add(map[f])
+  })
+  instance
+}
+
+fromSequence(sequence :Sequence(E)) :Instance
+  (* result will contain exactly the elements contained in sequence
+     at the time of creation. *)
+{
+  fromContainer(sequence)
+}
+
+fromSubSequence(sequence :Sequence(E), start :Int, n :Int) :Instance
+  (* result will contain the n elements contained in sequence
+     starting at position start at creation time. *) 
+{
+  instance ::= _newCapacity(n)
+  sequence.subSequenceReader(start, n).do(fun(e:E) {
+    instance.add(e)
+  })
+  instance
+}
+
+with0: Instance
+  (*  *)
+  ensure result.size = 0
+{
+  _newCapacity(0)
+}
+
+with1(e1 :E): Instance
+  (* *)
+  require e1.isNotNil
+  ensure result.size=1 && result.includes(e1)
+{
+  instance ::= _newCapacity(1)
+  instance.add(e1)
+  instance
+}
+
+with2(e1 :E, e2 :E): Instance
+  (* *)
+  require e1.isNotNil && e2.isNotNil
+  ensure result.size<=2 && result.includes(e1) && result.includes(e2)
+{
+  instance ::= _newCapacity(2)
+  instance.add(e1)
+  instance.add(e2)
+  instance
+}
+
+with3(e1 :E, e2 :E, e3 :E): Instance
+  (* *)
+  require e1.isNotNil && e2.isNotNil && e3.isNotNil
+  ensure result.size<=3 && result.includes(e1) && result.includes(e2) && result.includes(e3)
+{
+  instance ::= _newCapacity(3)
+  instance.add(e1)
+  instance.add(e2)
+  instance.add(e3)
+  instance
+}
+
+with4(e1 :E, e2 :E, e3 :E, e4 :E): Instance
+  (* pre- and postconditions similar to with3 *)
+{
+  instance ::= _newCapacity(4)
+  instance.add(e1)
+  instance.add(e2)
+  instance.add(e3)
+  instance.add(e4)
+  instance
+}
+
+with5(e1 :E, e2 :E, e3 :E, e4 :E, e5 :E): Instance
+  (* pre- and postconditions similar to with3 *)
+{
+  instance ::= _newCapacity(5)
+  instance.add(e1)
+  instance.add(e2)
+  instance.add(e3)
+  instance.add(e4)
+  instance.add(e5)
+  instance
+}
+
+with6(e1 :E, e2 :E, e3 :E, e4 :E, e5 :E, e6 :E): Instance
+  (* pre- and postconditions similar to with3 *)
+{
+  instance ::= _newCapacity(6)
+  instance.add(e1)
+  instance.add(e2)
+  instance.add(e3)
+  instance.add(e4)
+  instance.add(e5)
+  instance.add(e6)
+  instance
+}
+
+with7(e1 :E, e2 :E, e3 :E, e4 :E, e5 :E, e6 :E, e7 :E): Instance
+  (* pre- and postconditions similar to with3 *)
+{
+  instance ::= _newCapacity(7)
+  instance.add(e1)
+  instance.add(e2)
+  instance.add(e3)
+  instance.add(e4)
+  instance.add(e5)
+  instance.add(e6)
+  instance.add(e7)
+  instance
+}
+
+with8(e1 :E, e2 :E, e3 :E, e4 :E, e5 :E, e6 :E, e7 :E, e8 :E): Instance
+  (* pre- and postconditions similar to with3 *)
+{
+  instance ::= _newCapacity(8)
+  instance.add(e1)
+  instance.add(e2)
+  instance.add(e3)
+  instance.add(e4)
+  instance.add(e5)
+  instance.add(e6)
+  instance.add(e7)
+  instance.add(e8)
+  instance
+}
+
+with9(e1 :E, e2 :E, e3 :E, e4 :E, e5 :E, e6 :E, e7 :E, e8 :E, e9 :E): Instance
+  (* pre- and postconditions similar to with3 *)
+{
+  instance ::= _newCapacity(9)
+  instance.add(e1)
+  instance.add(e2)
+  instance.add(e3)
+  instance.add(e4)
+  instance.add(e5)
+  instance.add(e6)
+  instance.add(e7)
+  instance.add(e8)
+  instance.add(e9)
+  instance
+}
+
+with10(e1 :E, e2 :E, e3 :E, e4 :E, e5 :E, e6 :E, e7 :E, e8 :E, e9 :E, e10 :E): Instance
+  (* pre- and postconditions similar to with3 *)
+{
+  instance ::= _newCapacity(10)
+  instance.add(e1)
+  instance.add(e2)
+  instance.add(e3)
+  instance.add(e4)
+  instance.add(e5)
+  instance.add(e6)
+  instance.add(e7)
+  instance.add(e8)
+  instance.add(e9)
+  instance.add(e10)
+  instance
+}
+
+with11(e1 :E, e2 :E, e3 :E, e4 :E, e5 :E, e6 :E, e7 :E, e8 :E, e9 :E, e10 :E, e11 :E): Instance
+  (* pre- and postconditions similar to with3 *)
+{
+  instance ::= _newCapacity(11)
+  instance.add(e1)
+  instance.add(e2)
+  instance.add(e3)
+  instance.add(e4)
+  instance.add(e5)
+  instance.add(e6)
+  instance.add(e7)
+  instance.add(e8)
+  instance.add(e9)
+  instance.add(e10)
+  instance.add(e11)
+  instance
+}
+
+private
+
+_newCapacity(initialCapacity :Int) :Instance
+  (* create a new instance, to which <initialCapacity> new elements can
+     efficiently be added *)
+  ensure result.size = 0
+  deferred
+}

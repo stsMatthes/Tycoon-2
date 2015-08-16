@@ -1,0 +1,122 @@
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+
+Author:  Gerd Bremer
+Date:    22-Jul-1997
+Updates: (Date)	  (Name)	(Description)
+*)
+
+class PersonalizeStmlProcessor(Client <:Object,
+  Application <:PersonalizeStmlApplication(Client, Application))
+
+super PersonalizeStml, StmlProcessor(Application)
+
+metaclass StmlProcessorClass(Application, PersonalizeStmlProcessor(Client, Application))
+
+public
+
+client :Client
+(* before processing and if not found in database, this value is nil.
+   stml page MUST create a new client in this case.
+*) 
+
+methods
+
+process
+  {
+    client := _client(request),
+    super.process,    (* evaluate stml pages *)
+    _addCookieHeader  (* add cookie header *) 
+  }
+
+private
+
+_cookieName :String
+
+methods
+
+_init :Self
+  {
+    super._init,
+    _cookieName := "TYCOON_PERSONALIZER",
+    self
+  }
+
+  
+_client(request :HttpRequest) :Client
+  (* inpsect the request and detect the client id.
+     answer nil if no client id can be found
+   *)
+  {
+    let var client :Client = nil,
+   
+    (* cookie? *)
+    request.hasCookies ?
+      {
+        let cookie = request.cookies.detect(fun(cookie :HttpCookie)
+	  { cookie.name = _cookieName }),
+        cookie.isNotNil ?
+	  {
+	    client := application.client(cookie.value),
+	    client.isNotNil ?
+	      { tycoon.stdout << "Client id: " + application.clientId(client).printString + "\n" }
+	  } :
+	  { tycoon.stdout << "Client id: unknown or wrong cookie\n" }
+      } :
+      {
+        client := nil,
+	tycoon.stdout << "Client id: no cookie\n"
+      },
+    
+(* ## in addition do authentification
+    client.isNil ?
+      {
+        ...  
+      },
+*)    
+    client
+  }
+
+
+_plusOneYear(date :Date) :Date
+  {
+    let time = date.asTime + (365 * Date.secondsPerDay).asLong,
+    Date.fromTime(time)
+  }
+
+  
+_addCookieHeader :Void
+  { client.isNotNil && { !request.hasCookies } ?
+      {
+        let name = _cookieName,
+	let value = application.clientId(client),
+	let expires = _plusOneYear(Date.now),
+	let domain = nil,
+	let path = application.path,
+	let secure = false,
+        let cookie = HttpSetCookie.new(name, value, expires, domain, path, secure),
+	response.setCookies := List.with1(cookie),
+	client := nil
+      } :
+      { nil }
+  }
+
+;

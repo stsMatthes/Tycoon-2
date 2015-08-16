@@ -1,0 +1,37 @@
+class ODBCError
+
+super SQLError
+
+metaclass ODBCErrorClass
+
+public
+
+sqlState:String
+
+methods
+
+printOn(out :Output)
+{
+  super.printOn(out),
+  out.writeAll(", Error-Code: "),
+  errorCode.printOn(out),
+  out.writeAll(", Error-Message: "+errorMessage),
+  out.writeAll(", SQLState: "+sqlState)
+}
+
+isConnectionFailedError :Bool
+  {
+    errorCode == -807
+  }
+
+isDuplicateKeyError:Bool
+{
+  errorCode == 200
+}
+
+isDataTruncated:Bool
+{
+  sqlState = "01004"
+}
+
+;

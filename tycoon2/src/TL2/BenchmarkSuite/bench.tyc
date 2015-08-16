@@ -1,0 +1,67 @@
+   TL-2 Benchmark Suite
+   --------------------
+
+   A. Baby Benchmarks:
+
+   quicksort   10000 elements
+   bubblesort   1000 elements
+   perms
+   queens
+   puzzle
+
+   B. Medium benchmarks:
+
+   richards        1 iteration
+
+
+(* *** TESTING *** *)
+
+tycoon.tl.loader.registerDirectory("BenchmarkSuite");
+tycoon.tl.loader.registerDirectory("BenchmarkSuite/Richards");
+tycoon.tl.loader.update;
+
+
+(* ************ quicksort: (MutableSequence.quicksort): ************** *)
+
+define qs :BQuicksort;
+
+qs := BQuicksort.new1(10000);
+qs.start(1);
+
+
+(* ************ bubblesort: ************** *)
+
+define bs :BBubblesort;
+
+bs := BBubblesort.new1(1000);
+bs.start(1);
+
+
+(* ************ queens: ************** *)
+
+define qu :BQueens;
+
+qu := BQueens.new;
+qu.start(50);
+(* ************ perms: ************** *)
+
+define pe :BPerms;
+
+pe := BPerms.new;
+pe.start(1);
+
+
+(* ************ puzzle: ************** *)
+
+define pu :BPuzzle;
+
+pu := BPuzzle.new;
+pu.start(1);
+
+
+(* ************ richards: ************** *)
+
+define ri :Richards;
+
+ri := Richards.new;
+ri.start(1);

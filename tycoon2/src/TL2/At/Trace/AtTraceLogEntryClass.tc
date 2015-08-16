@@ -1,0 +1,18 @@
+class AtTraceLogEntryClass
+super ConcreteClass(AtTraceLogEntry)
+meta MetaClass
+{
+
+new( thread :Thread(Void),
+     outgoing :AtTraceOutgoingEvent,
+     incoming :AtTraceIncomingEvent) :AtTraceLogEntry
+{
+  instance ::= _new
+  instance.thread := thread
+  instance.outgoing := outgoing
+  instance.incoming := incoming
+  instance._init
+  instance
+}
+
+}

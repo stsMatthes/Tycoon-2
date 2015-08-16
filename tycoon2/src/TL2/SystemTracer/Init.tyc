@@ -1,0 +1,10 @@
+WeakRefDescriptor.init;
+ArrayDescriptor.init;
+ByteArrayDescriptor.init;
+ShortArrayDescriptor.init;
+IntArrayDescriptor.init;
+LongArrayDescriptor.init;
+StackDescriptor.init;
+ThreadDescriptor.init;
+
+ClassDescriptor.init;

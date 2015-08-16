@@ -1,0 +1,106 @@
+class BufferInput
+super Input
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ BufferInput
+   Purpose: input using a string buffer
+   Author:  Axel Wienberg
+   Date:    08-Apr-1997
+*)
+meta AbstractClass
+{
+read :Char
+  (* Read the next character.
+     Return nil if exhausted. *)
+{
+  _position ::= _position  ; local copy - 20% faster! 
+  if( _position < _bufferSize
+  then: { ch ::= _buffer[_position]
+      self._position := _position + 1
+      ch }
+  else: { if( _moreBuffer(1)
+      then: { read }
+      else: { nil }) })
+}
+
+readBuffer(buffer :MutableString, start :Int, n :Int) :Int
+  (* read n characters into buffer, or fewer if the receiver is exhausted.
+     answer the number of characters actually read. *)
+require n >= 0
+{
+  nAvailable ::= _bufferSize - _position
+  if( nAvailable < n
+  then: { readBuffer(buffer, start, nAvailable)
+      if( _moreBuffer(n - nAvailable)
+      then: { readBuffer(buffer, start+nAvailable, n - nAvailable) + nAvailable }
+      else: { nAvailable }) }
+  else: { buffer.replace(n, start, _buffer, _position)
+      _position := _position + n
+      n })
+}
+
+readln :String
+  (* readlnBuffer is not a good idea anyway - no efficient reimplementation *)
+{
+  out ::= StringBuilderOutput.new1(80)
+  newlineP ::= _readlnOutput(out)
+  result ::= out.contents
+  if( newlineP ||  !result.isEmpty 
+  then: { result }
+  else: { nil })
+}
+
+private
+
+_position :Int
+
+_buffer :String
+  (* *)
+deferred
+
+_bufferSize :Int
+  (* *)
+deferred
+
+_moreBuffer(n :Int) :Bool
+  (* Try to get <n> more characters of input.
+     Return false at eof. *)
+require _position = _bufferSize
+  deferred
+
+_readlnOutput(out :Output) :Bool
+  (* read one line and write it to <out>, without trailing newline.
+   result = true if the line was terminated by a newline,
+   result = false if it was terminated by end of input. *)
+{
+  newlinePos ::= _buffer.locateChar2('\n', _position, _bufferSize)
+  if( newlinePos.isNil
+  then: { ; no newline in the buffer - collect it all 
+      out.writeBuffer(_buffer, _position, _bufferSize - _position)
+      _position := _bufferSize
+      if( _moreBuffer(80)
+      then: { _readlnOutput(out) }
+      else: { false }) }
+  else: { out.writeBuffer(_buffer, _position, newlinePos - _position)
+      _position := newlinePos + 1
+      true })
+}
+
+}

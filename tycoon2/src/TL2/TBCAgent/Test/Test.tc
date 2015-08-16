@@ -1,0 +1,115 @@
+class Test
+super Trace
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ Test.tc
+
+   Tycoon Business Conversations (TBC) for Tycoon 2
+   ------------------------------------------------
+   Test-class. Examples for TBC are in this methods.
+   Used a class to be able to typecheck this.
+
+   17.09.97 hw : created
+  
+*)
+meta SingletonClass(Test)
+{
+
+agent1 :Agent
+
+agent2 :Agent
+
+testConvSpec():ConversationSpec
+  (*--------------------------------------------------------------------------*)
+{
+  x ::= ConversationSpec.new("Test", "Login")
+
+  login ::= x.newDialog("Login")
+  ciao  ::= x.newDialog("Ciao")
+
+  login.contentSpec["Name"]     := StringContentSpec.new
+  login.contentSpec["Password"] := StringContentSpec.new
+
+  login.newRequest("Connect")
+  login.newRequest("Cancel")
+  login.replies["Connect"].add(login)
+  login.replies["Connect"].add(ciao)
+  login.replies["Cancel"].add(ciao)
+
+  ciao.contentSpec["Message"] := StringContentSpec.new
+
+  x
+}
+
+setup():Void
+  (*--------------------------------------------------------------------------*)
+{
+  close
+
+  ; Create an agent. 
+  agent1 := Agent.new("Agent1")
+
+  ; Create a performer for the conversation-specification above. 
+  aPerf :PerformerRole(TestPerformerSession) := 
+      PerformerRole(:TestPerformerSession).new(agent1, "Service", testConvSpec)
+
+  ; Add rules to the performer. 
+  aPerf.addRule("", testConvSpec.initialRequestName, TestPerformerRuleInit.new)
+  aPerf.addRule("Login", "Connect", TestPerformerRuleConnect.new)
+  aPerf.addRule("Login", "Cancel", TestPerformerRuleCancel.new)
+
+  ; create another agent. 
+  agent2 := Agent.new("Agent2")
+
+  ; Create a customer with the same conversation spec for the 2nd agent 
+  aCust :CustomerRole(Void) :=
+      CustomerRole(:Void).new(agent2, "Tester",  testConvSpec)
+
+  ; Add rules to the customer. 
+  aCust.addRule("Login", TestCustomerRuleLogin.new)
+  aCust.addRule("Ciao", TestCustomerRuleCiao.new)
+
+  nil
+}
+
+close:Void
+  (* *)
+{
+  if( agent1.isNotNil then: {
+    agent1.stop
+    agent1:=nil
+  })
+  if( agent2.isNotNil then: {
+    agent2.stop
+    agent2:=nil
+  })
+  nil
+}
+
+run:Void
+  (* *)
+{
+  ; Start a conversation. 
+  TBC.instance.startConversation("Agent2/Tester", "Agent1/Service")
+
+  nil
+}
+
+}

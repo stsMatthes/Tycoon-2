@@ -1,0 +1,4 @@
+AgentITCSystem.instance.isTracedComponent := true;
+DbgTracer.instance.trace({ Test.instance.setup });
+Test.instance.agent1.isTracedComponent := true;
+Test.instance.agent2.isTracedComponent := true;

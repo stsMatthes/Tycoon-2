@@ -1,0 +1,156 @@
+class TryValue
+super Value
+metaclass TryValueClass
+public
+
+body :Value,
+sig :ValueIde,
+handler :Value
+
+methods
+
+scope(env :Scoper) :TryValue
+{
+  body := env.scope(body),
+  env.withScopedSignature(sig, {
+    handler := env.scope(handler)
+  }),
+  self
+}
+
+genCode(backEnd :MethodManager)
+{
+  genCodeGeneric(backEnd,
+    fun(handlerEnd :MMLabel) {
+      body.genCode(backEnd),
+      backEnd.jump(handlerEnd)
+    },
+    { handler.genCode(backEnd),    
+      backEnd.adjust(1)   (*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ remove exception object under result *)
+    })
+}
+
+genCodeIgnore(backEnd :MethodManager)
+{
+  genCodeGeneric(backEnd,
+    fun(handlerEnd :MMLabel) {
+      body.genCodeIgnore(backEnd),
+      backEnd.jump(handlerEnd)
+    },
+    { handler.genCodeIgnore(backEnd),    
+      backEnd.pop   (* remove exception object *)
+    })
+}
+
+genCodeReturn(backEnd :MethodManager)
+{
+  genCodeGeneric(backEnd,
+    fun(handlerEnd :MMLabel) {
+      body.genCode(backEnd),
+      (* NOT genCodeReturn, otherwise exception frame might get popped *)
+      backEnd.return
+    },
+    { handler.genCodeReturn(backEnd)
+    })
+}
+
+genCodeGeneric(backEnd :MethodManager, bodyF :Fun1(MMLabel,Void), handlerF :Fun0(Void))
+{
+  let bodyStart = backEnd.newLabel,
+  let bodyEnd = backEnd.newLabel,
+  let handlerStart = backEnd.newLabel,
+  let handlerEnd = backEnd.newLabel,
+
+(*
+bodyStart:
+  ...body..., may jump to handlerEnd
+bodyEnd:
+ 
+handlerStart:
+  ...handler, called with exception on the stack...
+handlerEnd:
+*)
+
+  let savedSp = backEnd.sp,
+  backEnd.defineLabel(bodyStart),
+  bodyF[handlerEnd],
+  backEnd.defineLabel(bodyEnd),
+
+  backEnd.sp := savedSp,
+  backEnd.defineLabel(handlerStart),
+  backEnd.incSp,  (* exception object is magically pushed *)
+
+  backEnd.exceptionHandler(bodyStart, bodyEnd, handlerStart),
+
+  backEnd.withLocal(sig, {
+    handlerF[]
+  }),
+  backEnd.defineLabel(handlerEnd)
+}
+
+prettyPrint(out :Printer)
+{
+  out.withRelIndent(2, {
+    out.writeString("try({\n"),
+    body.prettyPrint(out)
+  }),
+  out.writeString("\n}, fun("),
+  sig.prettyPrint(out),
+  out.withRelIndent(2, {
+    out.writeString(") {\n"),
+    handler.prettyPrint(out)
+  }),
+  out.writeString("\n})")
+}
+
+(* ## ?? *)
+children :Reader(Value)
+{
+  Reader.with2(body, handler)
+}
+
+
+private methods
+
+  doCheck(T <: Void, cont :Fun2(Type, Subst, T)) :T
+  {
+    (* same game as with an IfValue *)
+    let resultType = UnifyType.new,
+
+    setError(pos, "Cannot derive result type from try", {
+      body.check(fun(bodyType :Type, bodySubst :Subst) {
+	bodyType.checkSubType(resultType, bodySubst, EmptySubst.instance)
+      }),
+
+      handler.check(fun(handlerType :Type, handlerSubst :Subst) {
+	handlerType.checkSubType(resultType, handlerSubst, EmptySubst.instance)
+      })
+    }),
+
+    cont[resultType, EmptySubst.instance]
+  }
+
+
+;
+
+
+

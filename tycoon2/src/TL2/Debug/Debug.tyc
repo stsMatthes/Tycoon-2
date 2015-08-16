@@ -1,0 +1,35 @@
+(*
+   Debug.tyc 1.3 98/11/19 Axel Wienberg
+
+   load script for debug package
+ *)
+tycoon.tl.loader.registerDirectory("Debug");
+tycoon.tl.loader.update;
+tycoon.tl.typeChecker.finalize;
+tycoon.tl.classManager.classTable.do(fun(c:Class){
+  let path = c.pos.where,
+  path.startsWith("./Debug/") 
+  && { tycoon.tl.typeChecker.agenda.includes(c) }
+  ? { tycoon.tl.typeChecker.checkClass(c) }
+});
+tycoon.tl.typeChecker.finalize;
+
+tycoon.tl.root.debugger := TL2Debugger.new;
+
+DbgTracer.init;
+DbgTracer.instance.startTracer;
+DbgTracer.instance.startPrinter;
+
+(*;
+DbgTracer.instance.trace({
+  for(1,2,fun(:Int) {
+    tycoon.stdout << "work...\n",
+    Thread.sleep(Long.fromInt(2))
+  })
+});
+
+
+
+DbgTracer.instance.stopTracer;
+DbgTracer.instance.stopPrinter;
+*)

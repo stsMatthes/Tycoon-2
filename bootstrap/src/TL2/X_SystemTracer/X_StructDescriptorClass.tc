@@ -1,0 +1,12 @@
+class X_StructDescriptorClass
+super ConcreteClass(X_StructDescriptor)
+metaclass MetaClass
+public methods
+new(format :String) :X_StructDescriptor
+{
+  let instance = _new,
+  instance.format := format,
+  instance._init,
+  instance
+}
+;

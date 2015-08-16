@@ -1,0 +1,144 @@
+class KeyedContainer(K <: Object, E <: Object)
+super Container(E)
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+Containers whose elements are accessible through keys.
+
+Author:  Andreas Gawecki
+Date:    13-Feb-1996
+Updates: (Date)	  (Name)	(Description)
+*)
+meta AbstractClass
+{
+includesKey(k :K) :Bool
+  (* Answer true if an element with key 'k' is a member of the receiver 
+ normative implementation *)
+{
+  key ::= keys
+  protect({ key.some(fun(k2 :K){_keyEqual(k,k2)}) }, { key.close })
+}
+
+"[]"(k :K) :E
+  (* Return the element with key 'k' .
+     Raise KeyNotFoundError if no such key exists. *)
+deferred
+
+lookup(k :K, T <:Void,
+    ifPresent :Fun(:E):T,
+    ifAbsent :Fun():T) :T
+  (* normative implementation *)
+{    
+  if( includesKey(k) then: {
+    ifPresent[self[k]]
+  } else: {
+    ifAbsent[]
+  })
+}
+
+locate(e :Object) :K
+  (* Answer the key of the given element, or nil if absent.
+     If more than one element is equal to 'e', Containers that impose
+     an ordering of their elements answer the key of
+     the 'first' element, others choose an arbitrary element. 
+ normative implementation *)
+{
+  detectKey(fun(e2:E) {
+    _elementEqual(e2, e)
+  })
+}
+
+detectKey(p :Fun(:E):Bool) :K
+  (* Answer the key of an element for which 'p' evaluates
+     to true, or nil if no such element exists.
+     If more than one such element exists, Containers that impose
+     an ordering of their elements answer the key of
+     the 'first' element, others choose an arbitrary element. 
+ normative implementation *)
+{
+  key ::= keys
+  protect({ key.detect(fun(k :K) {p[self[k]]}) }, { key.close })
+}
+
+keys :Reader(K)
+  (* *)
+deferred
+
+keysAndElementsDo(statement :Fun(:K,:E):Void) :Void
+  (* Returns a Reader over the keys of all the elements within the receiver 
+ invariant keys.all(fun(k:K){ validKey(k) }) 
+ Perform statement for each k with element e in the receiver. 
+ normative implementation *)
+{
+  key ::= keys 
+  protect({
+    key.do(fun(k :K) {
+      statement[k,self[k]]
+    })
+  }, { key.close })
+}
+
+keysAndElementsInject(T <:Object, base :T, g :Fun(:T,:K,:E):T) :T
+  (* Accumulate each element of the receiver using 'g', starting with 'base'. *)
+{
+  key ::= keys
+  protect({
+    key.inject(base, fun(accu :T, k :K) { g[accu,k,self[k]] })
+  }, { key.close })
+  }
+
+keysAndElementsSome(p :Fun(:K,:E):Bool) :Bool
+  (* *)
+{
+  key ::= keys
+  protect({
+    key.some(fun(k :K) { p[k,self[k]] })
+  }, { key.close })
+  }
+
+keysAndElementsAll(p :Fun(:K,:E):Bool) :Bool
+  (* *)
+{
+  key ::= keys
+  protect({ key.all(fun(k :K) { p[k,self[k]] }) }, { key.close })
+  }
+
+keysAndElementsMap(F <:Object, f :Fun(:K,:E):F) :Reader(F)
+  (* *)
+{
+  key ::= keys
+  protect({ key.map(fun(k :K) { f[k,self[k]] }) }, { key.close })
+  }
+
+private
+
+_keyEqual(k1 :K, k2 :K) :Bool
+  (* default implementation uses object equality *)
+{
+  k1 = k2
+}
+
+_raiseKeyNotFoundError(k :K) :Nil
+  (* *)
+{
+  KeyNotFoundError.new(self,k).raise
+  }
+
+}

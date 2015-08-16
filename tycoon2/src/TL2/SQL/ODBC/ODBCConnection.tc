@@ -1,0 +1,130 @@
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+Handle connections with data-sources via ODBC
+
+Author:  Michael Skusa
+
+Date:    16-Aug-1996
+
+Updates: (Date)		(Name)	(Description)
+
+         11-Mar-1997	MS	replaced integer values for return codes,
+				SQL-types and ODBC-standard-parameters with
+				integer-constants defined in class ODBC
+*)
+
+class ODBCConnection
+
+super SQLConnection
+
+metaclass SimpleConcreteClass(ODBCConnection)
+
+public methods
+
+newStatement():ODBCStatement
+  (* Creates ODBCStatement,
+     returns nil if connection is closed
+   *)
+{
+  !isClosed
+  ? {
+      let s=ODBCStatement.new(),
+      s.open(_hdbc,self),
+      s
+    }
+  : {nil}
+}
+
+setAutoCommit(on:Bool):Void
+  (* on = true  enables AutoCommit, each single sql-statement is executed
+                and commited immediately,
+                this is the odbc-default,
+     on = false changes become persistent only if commit is called after
+                their execution,
+     raises ODBCError.
+   *)
+{
+  let autoCommitMode = (on ? {1} : {0}),
+  (odbc.SQLSetConnectOption(_hdbc,102,autoCommitMode) != 0)
+  ? {ODBCError.new(odbc.NULL,_hdbc,odbc.NULL).raise}
+}
+
+commit():Void
+{
+  (odbc.SQLTransact(_henv,_hdbc,0) != 0)
+  ? {ODBCError.new(_henv,_hdbc,odbc.NULL).raise}
+}
+
+rollback():Void
+{
+  (odbc.SQLTransact(_henv,_hdbc,1) != 0)
+  ? {ODBCError.new(_henv,_hdbc,odbc.NULL).raise}
+}
+
+private methods
+
+_connect(database:String,user:String,password:String):Void
+{
+    let var h=CIntHolder.new(),
+    (odbc.SQLAllocEnv(h.handle) = 0) ? {_henv:=h.value32}
+                                     : {_henv:=nil},
+    (odbc.SQLAllocConnect(_henv,h.handle) = 0)
+    ? {_hdbc:=h.value32,
+       h.close()}
+    : {_hdbc:=nil,
+       let e=ODBCError.new(_henv,odbc.NULL,odbc.NULL),
+       odbc.SQLFreeEnv(_henv),
+       _henv:=nil,
+       h.close(),
+       e.raise},
+    (odbc.SQLConnect(_hdbc,database,odbc.SQL_NTS,
+                           user,odbc.SQL_NTS,
+			   password,odbc.SQL_NTS) != 0)
+  ? {let e = ODBCError.new(odbc.NULL,_hdbc,odbc.NULL),
+     odbc.SQLFreeConnect(_hdbc),_hdbc:=nil,
+     odbc.SQLFreeEnv(_henv),    _henv:=nil,
+     e.raise}
+}
+
+_open(url:URL):Void
+{
+  let var database = "",
+  let var user = "",
+  let var password = "",
+  url.arcs.size > 1 ? { database := url.arcs[1] }, 
+  url.parameters.includesKey("user")
+  ? { user := url.parameters["user"].head },
+  url.parameters.includesKey("password") 
+  ? { password := url.parameters["password"].head },
+  _connect(database,user,password)
+}
+
+_releaseHandles():Void
+{
+  odbc.SQLDisconnect(_hdbc),
+  odbc.SQLFreeConnect(_hdbc),
+  odbc.SQLFreeEnv(_henv)
+}
+		 
+;
+
+
+

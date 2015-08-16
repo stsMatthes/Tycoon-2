@@ -1,0 +1,15 @@
+class X_TL2InconsistentPrecedenceGraphClass
+super ConcreteClass(X_TL2InconsistentPrecedenceGraph)
+meta MetaClass
+{
+new(reversedPartialResult :List(X_TL2Class),
+    remainingInputs :MutableArray(List(X_TL2Class)))
+      :X_TL2InconsistentPrecedenceGraph
+{
+  i ::= _new
+  i.reversedPartialResult := reversedPartialResult
+  i.remainingInputs := remainingInputs
+  i._init
+  i
+}
+}

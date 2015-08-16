@@ -1,0 +1,128 @@
+class StmlASTOutput
+super StmlASTWriter, Output
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+*)
+meta StmlASTOutputClass
+{
+write(ch :Char) :Void
+  (* *)
+{ stringBuffer.write(ch) }
+
+writeBuffer(buffer :String, start :Int, n :Int) :Void
+  (* *)
+{ stringBuffer.writeBuffer(buffer, start, n) }
+
+entityOutput :SgmlEntityOutput
+  (* *)
+{ _entityOutput }
+
+sgmlGenerator :SgmlGenerator
+  (* *)
+{ _sgmlGenerator }
+
+emitLet(position :SourcePos, name :String, type :TL2Type, value :TL2Value) :Void
+  (* *)
+{
+  flushStrings
+  super.emitLet(position, name, type, value)
+}
+
+tycoonExpression(value :TL2Value) :Void
+  (* *)
+{
+  flushStrings
+  super.tycoonExpression(value)
+}
+
+outWriteString(value :TL2Value) :Void
+  (* *)
+{
+  pos ::= value.pos
+  tycoonExpression(
+    TL2SendValue.new(pos,
+      TL2IdeValue.new(TL2ValueIde.newRef(pos, "out")),
+      Symbol.new("writeString"),
+      List.with1(value)))
+}
+
+outAttrValue(value :TL2Value) :Void
+  (* *)
+{
+  pos ::= value.pos
+  tycoonExpression(
+    TL2SendValue.new(pos,
+      TL2IdeValue.new(TL2ValueIde.newRef(pos, "out")),
+      Symbol.new("attrValue"),
+      List.with1(value)))
+}
+
+isOnlyString :Bool
+  (* -- finish: -- *)
+{ nesting == emptyNesting }
+
+getString :String
+  (* *)
+require isOnlyString
+{
+  assert({ isOnlyString })
+  stringBuffer.contents
+}
+
+finish :TL2BlockValue
+  (* *)
+{ flushStrings
+  if( nesting == emptyNesting
+  then: { outWriteString(TL2LiteralValue.new(nil, "")) })
+  super.finish
+}
+
+private
+
+stringBuffer :StringBuilderOutput
+
+_entityOutput :SgmlEntityOutput
+
+_sgmlGenerator :SgmlGenerator
+
+flushStrings :Void
+  (* *)
+{
+  buffered ::= stringBuffer.contents
+  if( !buffered.isEmpty
+  then: { stringBuffer.clear
+      outWriteString( TL2LiteralValue.new(nil, buffered) ) })
+}
+
+_init :Void
+  (* *)
+{ super._init
+  stringBuffer := StringBuilderOutput.new
+
+  ; used to filter leaf data 
+  _entityOutput := SgmlEntityOutput.new(stringBuffer)
+  _entityOutput.addHtmlLatin    ; ### this is a bit HTML specific. 
+
+  _sgmlGenerator := SgmlGenerator.new(stringBuffer)
+  
+  self
+}
+
+}

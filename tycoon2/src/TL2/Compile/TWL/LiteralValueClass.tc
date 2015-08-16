@@ -1,0 +1,17 @@
+class LiteralValueClass
+super ConcreteClass(LiteralValue)
+metaclass MetaClass
+public methods
+new(value :Positioned(Object)) :LiteralValue
+{
+  new1(value.pos, value.value)
+}
+
+new1(pos :SourcePos, value :Object) :LiteralValue
+{
+  let instance = _new,
+  instance.pos := pos,
+  instance.value := value,
+  instance
+}
+;

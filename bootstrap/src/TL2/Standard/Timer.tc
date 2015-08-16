@@ -1,0 +1,134 @@
+class Timer
+super Object
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+   A Timer is capable of starting and stopping a clock,
+   and of formatting the elapsed time.
+
+   Author:  Andreas Gawecki
+   Date:    02-Sep-1996
+   Updates: (Date)	  (Name)	(Description)
+*)
+meta TimerClass()
+
+{
+clock :Clock
+  (* *)
+{ _clock }
+
+clockRate :Long
+  (* *)
+{ _clockRate }
+
+value :Long
+  (* *)
+{
+  if( !_running then: { _value } else: {
+    _value + (clock.time -  _startTime)
+    })
+  }
+
+reset :Void
+  (* *)
+{
+  _value := Long.fromInt(0)
+  _running := false
+  }
+
+start :Void
+  (* *)
+{
+  _startTime := clock.time
+  _running := true
+  }
+
+stop :Void
+  (* *)
+{
+  if( _running then: {
+    stopTime ::= clock.time
+    _running := false
+    _value := _value + (stopTime -  _startTime)
+    })
+  }
+
+time(thunk :Fun():Void) :Self
+  (* *)
+{
+  start
+  thunk[]
+  stop
+  self
+}
+
+printOn(out :Output) :Void
+  (* *)
+{
+  val ::= value
+  h ::= (val / clock.clockRate).asInt / 60 / 60
+  min ::= ((val  / clock.clockRate).asInt / 60) % 60
+  sec ::= (val / clock.clockRate).asInt % 60
+  h.printOn(out)
+  out.write(':')
+  min.printOn(out)
+  out.write(':')
+  sec.printOn(out)
+
+  remainder ::= val % clock.clockRate
+  rate ::= clock.clockRate
+  L1000 ::= Long.fromInt(1000)
+  L0 ::= Long.fromInt(0)
+  L1 ::= Long.fromInt(1)
+  while({rate > L1} do:{
+    assert({ remainder >= L0 })
+    assert({ remainder < clock.clockRate })
+    quotient ::= ((remainder * L1000) / clock.clockRate).asInt
+    ; ".%03l" 
+    out.write('.')
+    out.write(Char.digit(quotient / 100))
+    out.write(Char.digit((quotient / 10) % 10))
+    out.write(Char.digit(quotient % 10))
+    remainder := (remainder * L1000) % clock.clockRate
+    rate := rate / L1000
+  })
+  }
+
+private
+
+_clock :Clock
+
+_clockRate :Long
+
+_value :Long
+
+_startTime :Long
+
+_running :Bool
+
+_init :Void
+  (* *)
+{
+  _clockRate := clock.clockRate
+  reset
+  self
+}
+
+}

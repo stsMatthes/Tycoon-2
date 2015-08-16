@@ -1,0 +1,12 @@
+class TL2ThreadDescriptor
+super TL2StructDescriptor
+meta SingletonClass(TL2ThreadDescriptor)
+{
+
+format :String
+{ "ioiiiiiioooooooooooo" }
+
+layout :Int
+{ layoutThread }
+
+}

@@ -1,0 +1,201 @@
+class TL2Scoper
+super TL2, KeyedContainer(String, TL2Ide)
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+*)
+meta TL2ScoperClass
+{
+currentClassSig :TL2TypeIde
+
+errorLog :ErrorLog
+
+typeManager :TL2TypeManager
+
+freeIdes :Set(TL2Ide)
+
+warnUnused :Bool
+
+withSignature(signature :TL2Ide, thunk :Fun():Void) :Void
+  (* enter a new lexical block.
+   Extend the environment with <signature>, call <thunk>, and remove
+   the <signature> again.
+   returns the ides referenced inside <thunk>, without <signature>. *)
+{
+  name ::= signature.name
+  if( name.isNotNil then: {
+    env.lookup(name, fun(previous :TL2Ide) {
+      env[name] := signature
+      result ::= thunk[]
+      env[name] := previous
+      result
+    }, {
+      env[name] := signature
+      result ::= thunk[]
+      env.removeKey(name)
+      result
+    })
+    savedNbFree ::= freeIdes.size  ; to check if <signature> was used 
+    freeIdes.remove(signature)
+    if( warnUnused &&  freeIdes.size == savedNbFree  then: {
+      errorLog.warning(signature.pos, "unused identifier "+signature.name)
+    })
+  } else: {
+    thunk[]
+  })
+}
+
+collectFreeIdes(thunk :Fun():Void) :Set(TL2Ide)
+  (* *)
+{
+  savedFreeIdes ::= freeIdes
+  freeIdes := Set.with0
+  thunk[]
+  newFreeIdes ::= freeIdes
+  freeIdes := savedFreeIdes
+  freeIdes.addAll(newFreeIdes)
+  newFreeIdes
+}
+
+withSignatures(T <: Void, signatures :List(TL2Ide), thunk :Fun():T) :T
+  (* ### deprecated? *)
+{
+  unbound :List(String) := EmptyList.new
+  bound :List(TL2Ide) := EmptyList.new
+  signatures.do(fun(i :TL2Ide){
+    if( i.name.isNotNil then: {
+      env.lookup(i.name, fun(previous :TL2Ide) :Void {
+	bound := List.cons(previous, bound)
+      }, {
+	unbound := List.cons(i.name, unbound)
+      })
+      env[i.name] := i
+    })
+  })
+  result ::= thunk[]
+  unbound.do(fun(name :String) {
+    env.removeKey(name)
+  })
+  bound.do(fun(i :TL2Ide) {
+    env[i.name] := i
+  })
+  result
+}
+
+"[]"(name :String) :TL2Ide
+  (* current definition of <name>, or nil. *)
+{
+  env.lookup(name, fun(ide :TL2Ide) {
+    freeIdes.add(ide)
+    ide
+  }, {
+    nil
+  })
+}
+
+selfSig :TL2ValueIde
+  (* *)
+{
+  selfSig ::= self["self"]
+  if( selfSig.isNotNil
+  then: { selfSig.asValueIde }
+  else: { nil })
+}
+
+scopeList( T <: TL2ProgramObject,
+	   l :List(TL2Scopable(T))) :List(T)
+  (* *)
+{
+  l.map(fun(x :TL2Scopable(T)){ x.scope(self) }).as(List)
+}
+
+scope( T <: TL2ProgramObject,
+       x :TL2Scopable(T)) :T
+  (* *)
+{
+  ; tycoon.stdout.writeString("[ "),x.print, tycoon.stdout.nl, 
+  result ::= x.scope(self)
+  ; tycoon.stdout.writeString("] "),result.print, tycoon.stdout.nl, 
+  result
+}
+
+withScopedSignature(signature :TL2Ide, thunk :Fun():Void) :Void
+  (* *)
+{
+  ; bind first, scope second - deals with F-bounded subtype polymorhpism 
+  withSignature(signature, {
+    if( signature.type.isNotNil then: {	    ; for let bindings 
+      signature.type := signature.type.scope(self)
+    })
+    thunk[]
+  })
+}
+
+withScopedSignatures(signatures :List(TL2Ide), thunk :Fun():Void) :Void
+  (* *)
+{
+  if( signatures.isEmpty then: {
+    thunk[]
+  } else: {
+    withScopedSignature(signatures.head, {
+      withScopedSignatures(signatures.tail, thunk)
+    })
+  })
+}
+
+locate(e :Object) :String
+  (* for a bit of bonus functionality, play Decorator for Dictionary <env> *)
+{ env.locate(e) }
+
+keys :Reader(String)
+  (* *)
+{ env.keys }
+
+size :Int
+  (* *)
+{ env.size }
+
+reader :Reader(TL2Ide)
+  (* *)
+{ env.reader }
+
+printOn(out :Output) :Void
+  (* *)
+{ env.printOn(out) }
+
+private
+
+env :Dictionary(String, TL2Ide)
+
+_set(k :String, e :TL2Ide) :TL2Ide
+  (* *)
+{
+  env[k] := e
+}
+
+_init :Void
+  (* *)
+{ super._init
+  env := Dictionary.new
+  freeIdes := Set.new
+  warnUnused := false
+  self
+}
+
+}

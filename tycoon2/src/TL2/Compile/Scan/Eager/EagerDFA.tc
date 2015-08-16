@@ -1,0 +1,129 @@
+class EagerDFA(Action <: Object)
+super Eager, DFATemplate(Int, Action)
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+*)
+meta EagerDFAClass(Action)
+{
+scan(in :TokenBuffer) :Action
+  (*  This method gives no new semantics over DFATemplate::scan, it just has everything inlined.
+    Effect: runs at 133% speed (needs only 75% as much time)
+ *)
+{
+  state ::= initialState
+  ch :Char := nil
+  final :Int := nil
+  initialTokenSize ::= in.tokenSize
+  finalTokenSize ::= initialTokenSize ; token size at longest match 
+
+  ; local copies for slots 
+    moveTable ::= moveTable
+    offsetTable ::= offsetTable
+    firstFinal ::= firstFinal
+
+  assert({ state !== (-1 ;deadEndState
+) })
+  while({state !== (-1 ;deadEndState
+)} do:{
+
+    if( state >= firstFinal ;isFinal(state)
+then: {
+      finalTokenSize := in.tokenSize
+      final := state
+    })
+
+    ch := in.read
+; 
+;    tycoon.stdout<<state<<"--["<<ch.printString<<"]-->\n",
+;
+    if( ch.isNotNil
+    then: { state := _builtinTransition(moveTable, offsetTable[state], ch)
+	         ; transition(state, ch) 
+}
+    else: { state := (-1 ;deadEndState
+)})
+  })
+  if( final.isNotNil
+  then: { in.unread(in.tokenSize - finalTokenSize)
+      actionTable[final - firstFinal]
+      ;action(final)
+}
+  else: { if( ch.isNotNil
+      then: { ; skip unexpected char and raise exception 
+	  ScannerError.new(ch).raise }
+      else: { if( in.tokenSize > initialTokenSize
+	  then: { ; unexpected end of input 
+	      ScannerError.new(ch).raise })
+	  ; else: eof 
+	  nil })
+      nil })
+}
+
+private
+
+initialState :Int
+
+firstFinal :Int
+
+moveTable :ShortArray
+
+offsetTable :Array(Int)
+
+actionTable :Array(Action)
+
+deadEndState :Int
+  (* *)
+{ (-1 )}
+
+isFinal(s :Int) :Bool
+  (* *)
+{ s >= firstFinal }
+
+transition(fromState :Int, on :Char) :Int
+  (* *)
+{
+  _builtinTransition(moveTable, offsetTable[fromState], on)
+}
+
+_builtinTransition(moveTable :ShortArray, offset :Int, ch :Char) :Int
+  (* *)
+builtin
+{
+  offset ::= offset
+  state ::= (-1)
+  chAsInt ::= ch.asInt
+  while({
+     ch2 ::= moveTable[offset]
+     if( ch2 > chAsInt
+       then: { state := moveTable[offset+1] false }
+       else: { ch2 !== (-1 )})
+      } do:
+    {
+    offset := offset+2
+    })
+  state
+}
+
+action(final :Int) :Action
+  (* *)
+require isFinal(final)
+{ actionTable[final - firstFinal] }
+
+}

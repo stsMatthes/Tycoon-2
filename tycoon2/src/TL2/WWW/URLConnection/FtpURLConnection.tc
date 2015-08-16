@@ -1,0 +1,92 @@
+class FtpURLConnection
+super URLConnection
+metaclass AbstractURLConnectionClass(FtpURLConnection)
+public methods
+openRead :Input
+{
+  ftpClient.open,
+  let stringBuilderOutput = StringBuilderOutput.new,
+  protect({
+    ftpClient.binary,
+    ftpClient.retrieve(url.path, fun(in :Input) {
+      let buffer = MutableString.new(512),
+      let var n = in.readBuffer(buffer, 0, buffer.size),
+      while({n > 0}, {
+        stringBuilderOutput.writeBuffer(buffer, 0, n),
+	n := in.readBuffer(buffer, 0, buffer.size)
+      }),
+      in.close
+    }),
+    StringInput.new(stringBuilderOutput.contents)
+  }, { ftpClient.close })
+}
+
+writeTo(content :String)
+{
+  ftpClient.open,
+  protect({
+    let remotePath = url.path,
+    let pos = remotePath.locateLastChar('/'),
+    mkdirhier(remotePath.subString(0, pos)),
+    ftpClient.binary,
+    ftpClient.store(remotePath, fun(out :Output) {
+      let stringInput = StringInput.new(content),
+      let buffer = MutableString.new(512),
+      let var n = stringInput.readBuffer(buffer, 0, buffer.size),
+      while({n >0}, {
+        out.writeBuffer(buffer, 0, n),
+	n := stringInput.readBuffer(buffer, 0, buffer.size)
+      }),
+      out.close
+    })
+  }, { ftpClient.close })
+}
+
+delete
+{
+  ftpClient.open,
+  protect({
+    ftpClient.delete(url.path)
+  }, { ftpClient.close })
+}
+
+basicAuthorization(user :String, password :String)
+{
+  ftpClient.user := user,
+  ftpClient.password := password
+}
+
+private
+ftpClient :FTPClient
+
+methods
+
+mkdirhier(path :String)
+{
+  try({
+    ftpClient.changeDirectory(path)
+  }, fun(e :Exception) {
+    e.clazz = FTPError ? {
+      let ftpError = _typeCast(e, :FTPError),
+      ftpError.response.code = FTPResponse.ACTION_NOT_TAKEN ? {
+        let pos = path.locateLastChar('/'),
+	pos > 0 ? {
+          mkdirhier(path.subString(0, pos))
+	},
+	ftpClient.makeDirectory(path)
+      } : { e.raise }
+    } : { e.raise }
+  })
+}
+
+_init1(u :URL) :Self
+{
+  super._init1(u),
+  ftpClient := FTPClient.new(ipAddressFromHost, "", "", false),
+  u.port.isNotNil ? {
+    ftpClient.port := u.port
+  },
+  self
+}
+
+;

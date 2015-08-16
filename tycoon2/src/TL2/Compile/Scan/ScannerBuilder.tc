@@ -1,0 +1,183 @@
+class ScannerBuilder(E <: Object, UserState <: Void)
+super Scan
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+*)
+meta ScannerBuilderClass(E,UserState)
+{
+"acceptable:="(pred :Fun(:Char):Bool)  :Fun(:Char):Bool
+  (* <pred> should return true if the given character may appear in the input stream
+ *)
+{
+  _reParser.isAcceptable := pred
+  }
+
+addToken(re :String, action :Fun(:UserScanner(E,UserState)):E) :Void
+  (* Add an action to be executed when the token <re> is matched.  If two
+   tokens match a given input, the one added first takes precedence. *)
+{ addTokenMode(0, re, action)
+}
+
+newMode :Int
+  (* *)
+{
+  mode ::= _modes.size
+  _modes.addLast(GapArray.new0)
+  mode
+}
+
+generate :UserScannerTables(E, UserState)
+  (* *)
+{ UserScannerTables.new(computeDfas) }
+
+addTokenMode(mode :Int, res :String, action :Fun(:UserScanner(E,UserState)):E) :Void
+  (* ### This is a grok and has to go.  Should do some *real* grouping.
+     Only here because jens` application uses it *)
+{
+  r ::= SequenceReader.new(res)
+  markNumber ::= 0
+  tempMode ::= mode
+  ; startMarks[n] = i  <=>  at runtime, s.marks[i] is the start of submatch <n> 
+  startMarks ::= GapArray.new0
+  endMarks ::= GapArray.new0
+  
+  while({!r.isAtEnd} do: {
+    str ::=
+      if( r.peek == '{' then: {
+	; marked field 
+	startMarks.addLast(markNumber)
+	r.next
+	start ::= r.position
+	inCharSet ::= false
+	while({ inCharSet || r.peek !== '}' } do:{
+	  if( r.peek == '[' then: fun() :Void {
+	    inCharSet := true
+	  } else: { if( r.peek == ']' then: fun () :Void {
+	    inCharSet := false
+	  } else: {
+	    if( r.peek == '\\' then: { r.next })
+	    if( r.isAtEnd then: {REParserError.new.raise})
+	  })})
+	  r.next
+	})
+	end ::= r.position
+	r.next  ; skip '}' 
+	endMarks.addLast(markNumber+1)
+	String.fromSubSequence(res, start, end-start)
+      } else: {
+	start ::= r.position
+	inCharSet ::= false
+	while({ inCharSet || !r.isAtEnd &&  r.peek !== '{' } do:{
+	  if( r.peek == '[' then:  fun () :Void {
+	    inCharSet := true
+	  } else: { if( r.peek == ']' then:  fun () :Void {
+	    inCharSet := false
+	  } else: {
+	    if( r.peek == '\\' then: { r.next })
+	    if( r.isAtEnd then: {REParserError.new.raise})
+	  })})
+	  r.next
+	})
+	end ::= r.position
+	String.fromSubSequence(res, start, end-start)
+      })
+
+    addSingleTokenMode(tempMode, str,
+      if( markNumber = 0 then: { ; first expression 
+	if( r.isAtEnd then: { ; last expression 
+	  if( startMarks.isEmpty then: {
+	    ; good luck - no marks!
+;	       dont bother to clear <s.marks> 
+	    action
+	  } else: {
+	    fun(s: UserScanner(E,UserState)) :E {
+	      ; stupid: entire expression is marked. 
+	      s.marks.clear
+	      s.marks.addLast(0)
+	      s.marks.addLast(s.tokenSize)
+	      s.startMarks := startMarks
+	      s.endMarks := endMarks
+	      action[s]
+	    }
+	  })
+	} else: { 
+	  nextMode ::= newMode
+	  tempMode := nextMode
+	  fun(s :UserScanner(E,UserState)) :E {
+	    s.marks.clear
+	    s.marks.addLast(0)
+	    s.marks.addLast(s.tokenSize)
+	    s.mode := nextMode
+	    s.readAppend
+	  }
+	})
+      } else: {
+	if( r.isAtEnd then: { ; last expression 
+	  fun(s: UserScanner(E,UserState)) :E {
+	    s.marks.addLast(s.tokenSize)
+	    s.mode := mode
+	    s.startMarks := startMarks
+	    s.endMarks := endMarks
+	    action[s]
+	  }
+	} else: { 
+	  nextMode ::= newMode
+	  tempMode := nextMode
+	  fun(s :UserScanner(E,UserState)) :E {
+	    s.marks.addLast(s.tokenSize)
+	    s.mode := nextMode
+	    s.readAppend
+	  }
+	})
+      })
+    )
+    markNumber := markNumber + 1
+  })
+}
+
+private
+
+_reParser :REParser
+
+_modes :DynSequence( DynSequence(Pair(NFA, Fun(:UserScanner(E,UserState)):E)) )
+
+computeDfas :Array(DFAInterface(Fun(:UserScanner(E,UserState)):E))
+  (* *)
+deferred
+
+addSingleTokenMode(mode :Int, re :String, action :Fun(:UserScanner(E,UserState)):E) :Void
+  (* *)
+{
+  ; ### check for groups 
+  newNfa ::= _reParser.parse(re.reader)
+  tycoon.stdout << "adding token to mode "<<mode<<": "<<re<<'\n'
+  _modes[mode].addLast(Pair.new(newNfa, action))
+}
+
+_init :Void
+  (* *)
+{ super._init
+  _reParser := REParser.new
+  _modes := GapArray.new0
+  newMode  ; create mode 0 
+  self
+}
+
+}

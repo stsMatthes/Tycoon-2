@@ -1,0 +1,294 @@
+class ReentrantNewTL2Scanner
+super NewTL2
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+*)
+meta ReentrantNewTL2ScannerClass
+{
+scan(where :String, input :Input, errorLog :ErrorLog ) :NewTL2Scanner
+  (*, bufferCapacity :=100*)
+{ scan1(where, input, errorLog, 100) }
+
+scan1(where :String, input :Input, errorLog :ErrorLog, bufferCapacity :Int) :NewTL2Scanner
+  (* *)
+{
+  s ::=
+    UserScanner.new1(tables, input, bufferCapacity,
+      NewTL2ScannerState.new(terminals.reservedWords, where, errorLog))
+  s.errorHandler :=   ; ### should become an argument when optional parameters are available 
+    fun(ch :Char){ s.userState.error(ch) }
+  s.userState.scanner := s  ; backward reference for source positions 
+  s
+}
+
+private
+
+terminals :NewTL2Terminals
+
+tables :UserScannerTables(Token(Object), NewTL2ScannerState)
+
+escapes :Dictionary(Char, Char)
+
+_init :Void
+  (* *)
+{ super._init
+
+  ; add regexps for terminals standard terminal symbols 
+
+  int ::= terminals.int
+  long ::= terminals.long
+  real ::= terminals.real
+  char ::= terminals.char
+  string ::= terminals.string
+  stringParen ::= terminals.stringParen
+  symbol ::= terminals.symbol
+  ident ::= terminals.ident
+  identParen ::= terminals.identParen
+  docString ::= terminals.docString
+
+  escapes := Dictionary.new
+  escapes['n'] := '\n'
+  escapes['t'] := '\t'
+  escapes['r'] := '\r'
+  escapes['f'] := '\f'
+  escapes['\''] := '\''
+  escapes['\"'] := '\"'
+  escapes['\\'] := '\\'
+
+  digit ::= "[0-9]"
+  hexdigit ::= "[0-9a-fA-F]"
+  alpha ::= "[a-zA-Z_]"
+  special ::= "[!#$%&*+-/:;<=>?@^`|~]"
+  simpleEscape ::= quoteRE(String.fromReader(escapes.keys))  ;; for '\\'
+  escape ::= "\\\\(["+simpleEscape+"]|"+digit+digit+digit+"|x"+hexdigit+hexdigit+")"
+  delimiter ::= "([()\\{\\}.,]|\\[|\\])"
+
+  digits ::= digit+"+"
+  idRegExp ::= alpha+"("+alpha+"|"+digit+")*"
+
+  sb ::= EagerScannerBuilder(:Token(Object), :NewTL2ScannerState).new
+
+  ;; 1 (whitespace)
+  sb.addToken("[ \t\r\f]+",
+    fun(s :NewTL2Scanner) {
+      s.read
+    })
+
+  sb.addToken("\n",
+    fun(s :NewTL2Scanner) {
+      s.userState.newline
+      s.read
+    })
+
+  ;; 1.1.1.1 Int
+  sb.addToken(digits,
+    fun(s :NewTL2Scanner) {
+      int.token(Positioned.new(s.userState.position,
+        Int.fromReader(s.token.reader)
+      ))
+    })
+
+  sb.addToken("0x"+digits,
+    fun(s :NewTL2Scanner) {
+      token ::= s.token
+      int.token(Positioned.new(s.userState.position,
+        Int.fromReaderBase(token.subSequenceReader(2,token.size-2), 16)
+      ))
+    })
+
+  ;; 1.1.1.2 Long
+  sb.addToken(digits+"L",
+    fun(s :NewTL2Scanner) {
+      token ::= s.token
+      long.token(Positioned.new(s.userState.position,
+        Long.fromReader(token.subSequenceReader(0,token.size-1))
+      ))
+    })
+
+  sb.addToken("0x"+digits+"L",
+    fun(s :NewTL2Scanner) {
+      token ::= s.token
+      long.token(Positioned.new(s.userState.position,
+        Long.fromReaderBase(token.subSequenceReader(2,token.size-3), 16L)
+      ))
+    })
+
+  ;; 1.1.1.3 Real
+  realAction ::=
+    fun(s :NewTL2Scanner) {
+      real.token(Positioned.new(s.userState.position,
+        s.token.asReal
+      ))
+    }
+  sb.addToken(digits+"."+digits, realAction)
+  sb.addToken(digits+"(."+digits+")?(E|e)(+|-)?"+digits, realAction)
+
+  ;; 1.1.2 Char
+  sb.addToken("\'(" + digit +
+		"|" + alpha +
+		"|" + special +
+		"|" + escape +
+		"|" + delimiter + "| )\'",
+    fun(s :NewTL2Scanner) {
+      char.token(Positioned.new(s.userState.position,
+        decodeChar(s.token.subSequenceReader(1,s.tokenSize-2))
+      ))
+    })
+
+  ;; 1.1.3 String
+  stringRegExp
+    ::= "\"(" + digit +
+	"|" + alpha +
+	"|" + special +
+	"|" + escape +
+	"|" + delimiter + "| )*\""
+  sb.addToken(stringRegExp,
+    fun(s :NewTL2Scanner) {
+      r ::= s.token.subSequenceReader(1,s.tokenSize-2)
+      string.token(Positioned.new(s.userState.position,
+        String.fromReader(FunReader.new({ decodeChar(r) }))
+      ))
+    })
+  sb.addToken(stringRegExp+"\\([^*]",
+    fun(s :NewTL2Scanner) {
+      ; return identParen instead of ident if identifer is followed
+;	 immediately by an opening paren token.  Do not confuse a document
+;	 string with a paren. 
+      ; ### warning:  misbehaves at eof, but hey... 
+      s.unread(2)   ; trailing context 
+      r ::= s.token.subSequenceReader(1,s.tokenSize-2)
+      stringParen.token(Positioned.new(s.userState.position,
+        String.fromReader(FunReader.new({ decodeChar(r) }))
+      ))
+    })
+
+  ;; 1.1.4 Symbol 
+  sb.addToken("#"+idRegExp, fun(s:NewTL2Scanner) {
+      token ::= s.token
+      symbol.token(Positioned.new(s.userState.position,
+        Symbol.fromSubSequence(token, 1, token.size-1)
+      ))
+  })
+  sb.addToken("#"+stringRegExp,
+    fun(s :NewTL2Scanner) {
+      r ::= s.token.subSequenceReader(2,s.tokenSize-3)
+      symbol.token(Positioned.new(s.userState.position,
+        Symbol.fromReader(FunReader.new({ decodeChar(r) }))
+      ))
+    })
+
+  ;; 1.2 Identifiers 
+  ;; 1.3 Reserved Words 
+  sb.addToken(idRegExp, fun(s:NewTL2Scanner) {
+    s.userState.identify(s.token, ident)
+  })
+  
+  sb.addToken(idRegExp+"\\([^*]", fun(s:NewTL2Scanner) {
+    ; return identParen instead of ident if identifer is followed immediately
+;       by an opening paren token.  Do not confuse a document string
+;       with a paren. 
+    ; ### warning:  misbehaves at eof, but hey... 
+    s.unread(2)   ; trailing context 
+    s.userState.identify(s.token, identParen)
+  })
+
+  ;; 1.4. Documentation Strings 
+  sb.addToken("\\(\\*([^*]|\\*[^)])*\\*\\)",
+    fun(s :NewTL2Scanner) {
+      token ::= s.token
+      pos ::= s.userState.position
+      idx ::= token.locateChar('\n')
+      while({idx.isNotNil} do: {
+        s.userState.newline
+        idx := token.locateChar1('\n', idx+1)
+      })
+      docString.token(Positioned.new(pos,
+        token.subString(2, token.size-4)
+      ))
+    })
+
+  sb.addToken("\\(\\*", fun(s :NewTL2Scanner) {
+    ; avoid recognition as '(' '*' 
+    s.userState.errorLog.error(s.userState.position, "unclosed documentation string")
+    s.userState.errorLog.raiseError
+    nil
+  })
+
+  ;; 1.5 Single Line Comments 
+  sb.addToken(";[^\n]*",
+    fun(s :NewTL2Scanner) {
+      s.read
+    })
+
+  ;; 1.6 Other tokens 
+  terminals.otherTokens.keysAndElementsDo(
+    fun(name: String, term :ValueTerminal(SourcePos)) {
+      sb.addToken(quoteRE(name), fun(s:NewTL2Scanner) {
+        term.token(s.userState.position)
+      })
+    })
+
+  ; ... and go 
+  tables := sb.generate
+
+  self
+}
+
+decodeChar(r :Reader(Char)) :Char
+  (* *)
+{
+  c ::= r.read
+  if( c.isNil ||  c !== '\\'  then: {
+    c
+  } else: {
+    c ::= r.read
+    escapes.lookup(c,
+      fun(coded :Char) {
+        coded
+      },
+      { if( c = 'x'
+	then: { c ::= r.read
+	    i ::= c.digitValue
+	    c ::= r.read
+	    i ::= i * 16 + c.digitValue
+	    i.asChar }
+	else: { i ::= c.digitValue
+	    c ::= r.read
+	    i ::= i * 10 + c.digitValue
+	    c ::= r.read
+	    i ::= i * 10 + c.digitValue
+	    i.asChar })
+      }
+    )
+  })
+}
+
+quoteRE(s :String) :String
+  (* ### what a hack! *)
+{
+  qs ::= MutableString.new(s.size * 2)
+  for(0 to: s.size-1 do: fun(i :Int) {
+    qs[2*i] := '\\'
+    qs[2*i+1] := s[i]
+  })
+  qs
+}
+
+}

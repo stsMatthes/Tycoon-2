@@ -1,0 +1,174 @@
+class IfValue
+super Value
+metaclass IfValueClass
+public
+condition :Value,
+trueBranch :Value,
+falseBranch :Value
+
+methods
+prettyPrint(out :Printer)
+{
+  condition.prettyPrint(out),
+  let complex =
+    !trueBranch.isSimple || { falseBranch.isNotNil && { !falseBranch.isSimple } },
+  complex ? { out.nl },
+  out.writeString(" ? { "),
+  out.withRelIndent(5, {
+    trueBranch.prettyPrint(out)
+  }),
+  out.writeString(" }"),
+  falseBranch.pos.isNotNil ? {
+    complex ? { out.nl },
+    out.writeString(" : { "),
+    out.withRelIndent(5, {
+      falseBranch.prettyPrint(out)
+    }),
+    out.writeString(" }")
+  }
+}
+
+children: Reader(Value)
+{
+  Array.with3(condition, trueBranch, falseBranch).reader
+}
+
+
+scope(env :Scoper) :IfValue
+{
+  condition := env.scope(condition),
+  trueBranch := env.scope(trueBranch),
+  falseBranch := env.scope(falseBranch),
+  self
+}
+
+genCode(backEnd :MethodManager)
+{
+    let falseL = backEnd.newLabel,
+    let contL = backEnd.newLabel,
+
+    condition.genCodeBranch(backEnd, falseL, false),
+    backEnd.isReached
+    ? { trueBranch.genCode(backEnd),
+        backEnd.jump(contL) },
+
+    backEnd.defineLabel(falseL),
+    backEnd.isReached
+    ? { falseBranch.genCode(backEnd) },
+    backEnd.defineLabel(contL)
+}
+
+genCodeIgnore(backEnd :MethodManager)
+{ let trueEmpty = trueBranch.noSideEffect,
+  let falseEmpty = falseBranch.noSideEffect,
+
+  trueEmpty ? {
+    falseEmpty ? {
+      condition.genCodeIgnore(backEnd)
+    } : {
+      oneBranch(backEnd, false, falseBranch)
+    }
+  } : {
+    falseEmpty ? {
+      oneBranch(backEnd, true, trueBranch)
+    } : {
+      (*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ both nonempty *)
+
+      let falseL = backEnd.newLabel,
+      let contL = backEnd.newLabel,
+      
+      condition.genCodeBranch(backEnd, falseL, false),
+      backEnd.isReached
+      ? { trueBranch.genCodeIgnore(backEnd),
+          backEnd.jump(contL) },
+
+      backEnd.defineLabel(falseL),
+      backEnd.isReached
+      ? { falseBranch.genCodeIgnore(backEnd) },
+
+      backEnd.defineLabel(contL)
+    }
+  }
+}
+
+oneBranch(backEnd :MethodManager, which :Bool, branch :Value)
+{
+  let skipL = backEnd.newLabel,
+  condition.genCodeBranch(backEnd, skipL, !which),
+  backEnd.isReached
+  ? { branch.genCodeIgnore(backEnd) },
+  backEnd.defineLabel(skipL)
+}
+
+(* avoid needless branches *)
+genCodeReturn(backEnd :MethodManager)
+{ let falseL = backEnd.newLabel,
+  condition.genCodeBranch(backEnd, falseL, false),
+  backEnd.isReached
+  ? { trueBranch.genCodeReturn(backEnd) },
+
+  backEnd.defineLabel(falseL),
+  backEnd.isReached
+  ? { falseBranch.genCodeReturn(backEnd) }
+}
+
+(* don''t bother to optimize genCodeBranch
+   (can''t handle the general case anyway) *)
+
+
+private methods
+
+  (* in the moment, the parser drops the type annotations for the branches
+     hopefully, our inferencer gets better *)
+  doCheck(T <: Void, cont :Fun2(Type, Subst, T)) :T
+  {
+    let es = EmptySubst.instance,
+
+    condition.check(fun(t :Type, s :Subst) {
+      setError(pos, "Condition must be subtype of Bool", {
+        t.checkSubType(IdeType.new(Bool.typeIde), s, es)
+      })
+    }),
+
+    (* create the (yet unknown) return type and instantiate it with both branches *)
+    let resultType = UnifyType.new,
+
+    setError(pos, "Cannot derive result type from If-branches", {
+      trueBranch.check(fun(t :Type, s :Subst) {
+	t.checkSubType(resultType, s, es)
+      }),
+
+      falseBranch.check(fun(t :Type, s :Subst) {
+	t.checkSubType(resultType, s, es)
+      })
+    }),
+
+    cont[resultType, es]  (* ## EmptySubst ?? Is this the place where one can see that
+						 unification variables don''t care about substitutions ??? *)
+  }
+
+
+;
+
+
+
+

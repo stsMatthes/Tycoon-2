@@ -1,0 +1,81 @@
+class IntegerClass(T <: Integer(T))
+super AbstractClass
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+*)
+meta AbstractClass
+{
+zero :T
+  (* *)
+{fromInt(0)}
+
+one :T
+  (* *)
+{fromInt(1)}
+
+ten :T
+  (* *)
+{fromInt(10)}
+
+MAX_VALUE :T
+  (* *)
+deferred
+
+MIN_VALUE :T
+  (* *)
+deferred
+
+fromInt(i :Int) :T
+  (* *)
+deferred
+
+fromReader(reader :Reader(Char)) :T
+  (* *)
+{
+  fromReaderBase(reader, ten)
+}
+
+fromReaderBase(reader :Reader(Char), base :T) :T
+  (* *)
+{
+  n ::= zero
+  sign ::= one
+  ch ::= reader.read
+  digitVal :T := nil
+
+  while({ch.isNotNil && ch.isSpace} do: {
+    ch := reader.read
+  })
+    
+  if( ch == '+'
+  then: { ch := reader.read }
+  else: { if( ch == '-'
+      then: { ch := reader.read sign := sign.negated }) })
+
+  while({ch.isNotNil && ch.isAlphaNumeric &&  (digitVal := fromInt(ch.digitValue)) < base } do: {
+    ; ### check for MAX_VALUE 
+    n := base*n + digitVal
+    ch := reader.read
+  })
+
+  n * sign
+}
+
+}

@@ -1,0 +1,257 @@
+class InterfacePrintTool
+super TypePrettyPrintTool
+meta InterfacePrintToolClass
+{
+printSignature :Void
+{
+  _classObject.asType.accept(
+    TL2FunTypeVisitor.new
+      .ifOperType(fun(t :TL2OperType) {
+	 out << _className << '('
+	 t.domain.doBetween(fun(i :TL2TypeIde) {
+	   printPositionalParameter(i)
+	 }, {
+	   out << ", "
+	 })
+	 out << ")\n"
+       })
+      .otherwise(fun(:TL2Type){
+	out << _className
+      }))
+}
+
+printInterface :Void
+  (*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ print methods sorted by the class the method was last/first
+     redefined in *)
+{
+  Reader.cons(_classObject, _classObject.superclasses)
+    .do(fun(sup :TL2ClassPublic) {
+      className ::= Symbol.new(sup.name)
+      fromClasses.lookup(className, fun(selectors :Set(Symbol)) {
+	printClassSeparator(className)
+
+	;; sort methods by selector name
+	selectors ::= selectors.as(MutableArray)
+	selectors.quicksort(fun(a:Symbol,b:Symbol){ a.order(b) })
+	selectors.do(fun(selector :Symbol) {
+	  methodSubst ::= methodSubsts[selector]
+	  printMethod(methodSubst.first, methodSubst.second)
+	})
+      },
+      { })  ;; ifNotFound
+    })
+}
+
+
+printClassSeparator(className :String) :Void
+{
+  sgmlOut.startTag("H3")
+  out << className
+  sgmlOut.endTag("H3")
+  out.nl
+}
+
+printMethod(m :TL2Method, s :TL2Subst) :Void
+{
+  mt ::= reduceMethodType(m.methodType, s)
+  mt.accept(self)
+  out.nl
+  out << "  (*" << m.documentation << "*)"
+  if( m.precondition.isNotNil then: {
+    out.withRelIndent(2, {
+      out << "\nrequire "
+      m.precondition.accept(
+        ValuePrettyPrintTool.new(out,
+	  fun(t :TL2Type) {
+	    funReduce(t, s).accept(self)
+	  }))
+    })
+  }) 
+  if( m.postcondition.isNotNil then: {
+    out.withRelIndent(2, {
+      out << "\nensure "
+      m.postcondition.accept(
+        ValuePrettyPrintTool.new(out,
+	  fun(t :TL2Type) {
+	    funReduce(t, s).accept(self)
+	  }))
+    })
+  })
+  out.nl
+  out.nl
+}
+
+sgmlOut :SgmlGenerator
+{ _sgmlOut }
+
+visitClassInstanceType(t :TL2ClassInstanceType) :Void
+  (* *)
+{ if( t == selfType then: {
+    out << "Self"
+  } else: {
+    super.visitClassInstanceType(t)
+  })
+}
+
+visitIdeType(t :TL2IdeType) :Void
+  (* *)
+{
+  ide ::= t.ide
+  typeManager ::= tycoon.tl.typeManager
+  if( ide.name.isNotNil
+      && typeManager.isDefined(ide.name)
+      && typeManager.signatures[ide.name] == ide then: {
+    printTypeLink(ide.name)
+  } else: {
+    super.visitIdeType(t)
+  })
+}
+
+private
+
+printSelector(sel :Symbol) :Void
+{
+  sgmlOut.startTag("B")
+  super.printSelector(sel)
+  sgmlOut.endTag("B")
+}
+
+printTypeLink(name :String) :Void
+{
+  sgmlOut.beginStartTag("A")
+  sgmlOut.attr("HREF", "interface.stml?class="+name)
+  sgmlOut.endStartTag
+  sgmlOut << name
+  sgmlOut.endTag("A")
+}
+
+methodsFromDict(dict :TL2MethodDictionaryPublic,
+		seen :Set(Symbol)) :Void
+  (* insert the methods from <dict> that have not been <seen> into
+     self.fromClasses under dict''s class name *)
+{
+  if( dict !== tycoon.tl.pool.poolMethods then: {
+    newSelectors ::=
+      dict.keys.select(fun(s :Symbol) {
+        !seen.includes(s) && !dict[s].isPrivate
+      }).as(GapArray)
+    if( !newSelectors.isEmpty then: {
+      seen.addAll(newSelectors)
+      className ::= Symbol.new(dict.class_.name)
+      fromClasses.memoize(className, { Set.new }).addAll(newSelectors)
+    })
+  })
+}
+
+_className :String
+_unfiltered :Output
+_printAtLatestRedefinition :Bool
+
+_classObject :TL2ClassPublic
+_sgmlOut :SgmlGenerator
+
+selfType :TL2Type
+  (* the TL2ClassInstanceType that should be printed "Self" *)
+
+methodSubsts :Dictionary(Symbol, Pair(TL2Method, TL2Subst))
+  (* mapping selector to method + type substitution *)
+
+fromClasses :Dictionary(Symbol, Set(Symbol))
+  (* mapping class name to set of selectors to be printed in that section *)
+
+_init :Void
+{
+  super._init
+  _sgmlOut := SgmlGenerator.new(_unfiltered)
+  entOut ::= SgmlEntityOutput.new(_unfiltered)
+  entOut.addHtmlLatin
+  entOut.addIsoLat1
+  entOut.addUmlauts
+  _out := Printer.new(entOut)  ;; Printer: for preformatted output
+
+  _classObject := tycoon.tl.classManager.get(_className)
+
+  selfType :=
+    _classObject.asType.accept(
+      TL2FunTypeVisitor.new
+	.ifOperType(fun(t :TL2OperType) {
+	   t.range
+	 })
+	.otherwise(fun(t:TL2Type){
+	  t
+	}))
+
+  ;; collect substitutions for all methods
+  methodSubsts := Dictionary(:Symbol, :Pair(TL2Method, TL2Subst)).new
+  selfType.methodsDo(TL2EmptySubst.instance, false,
+    fun(m :TL2Method, s :TL2Subst) {
+      methodSubsts[m.selector] := Pair.new(m, s)
+    })
+
+  ;; compute where the selectors come from
+  seen ::= Set(:Symbol).new
+  fromClasses := Dictionary.new
+  if( _printAtLatestRedefinition then: {
+    _classObject.methodDictionaries.do(fun(dict :TL2MethodDictionaryPublic) {
+      methodsFromDict(dict, seen)
+    })
+  } else: {
+    _classObject.methodDictionaries.reverseDo(fun(dict :TL2MethodDictionaryPublic) {
+      methodsFromDict(dict, seen)
+    })
+  })
+}
+
+reduceMethodType(t :TL2MethodType, subst :TL2Subst) :TL2MethodType
+{
+  TL2MethodType.newK(
+    t.pos,
+    t.selector,
+    t.domain.map(fun(i :TL2Ide) {
+      i.case(:TL2Ide,
+        fun(vi :TL2ValueIde) {
+	  TL2ValueIde.new(vi.pos, vi.name, vi.component, funReduce(vi.type, subst))
+	},
+	fun(ti :TL2TypeIde) {
+	  TL2TypeIde.new(ti.pos, ti.name, funReduce(ti.type, subst))
+	},
+	fun(sti :TL2SubTypeIde) {
+	  TL2SubTypeIde.new(sti.pos, sti.name, funReduce(sti.type, subst))
+	}) })
+     .as(List),
+    t.keywords,
+    funReduce(t.range, subst))
+}
+
+funReduce(t :TL2Type, s :TL2Subst) :TL2Type
+  (* non-cps variant of reduce that constructs a substType if necessary *)
+{
+  t.reduce(s, fun(t1 :TL2Type, s1 :TL2Subst) {
+    if( s1.isEmpty then: {
+      t1
+    } else: {
+      TL2SubstType.new(t1, s1)
+    })
+  })
+}
+
+}

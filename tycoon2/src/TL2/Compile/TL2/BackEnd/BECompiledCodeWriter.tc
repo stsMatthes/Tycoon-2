@@ -1,0 +1,423 @@
+class BECompiledCodeWriter
+super BEBackEnd
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+*)
+meta BECompiledCodeWriterClass
+{
+
+vmInterface :TL2VMInterface
+
+newLabel :BELabel
+  (* *)
+{ labelCnt := labelCnt + 1
+  l ::= BELabel.new
+  l.n := labelCnt
+  labels := List.cons(l, labels)
+  l
+}
+
+defineLabel(l :BELabel) :Void
+  (* *)
+{ assert({ !l.isDefined })
+  l.position := code.size
+  previousInstructionIdx := nil
+}
+
+send(selector :TL2Selector) :Void
+  (* emitting *)
+{ 
+  previousInstructionIdx := code.size
+  emit(opcodes[#send].n)
+  emit16(getSelectorId[selector])
+}
+
+sendShort(selector :TL2Selector) :Void
+  (* emitting *)
+{ 
+  previousInstructionIdx := code.size
+  emit(opcodes[vmInterface.shortSends[selector.arity]].n)
+  emit16(getSelectorId[selector])
+}
+
+sendSpecial(selector :TL2Selector) :Void
+  (* *)
+{
+  previousInstructionIdx := code.size
+  ; " sendSpecial ".print, selector.print, 
+  opcode ::= vmInterface.specialSends[selector]
+  emit(opcodes[opcode].n)
+  emit16(getSelectorId[selector])
+}
+
+sendTail(selector :TL2Selector) :Void
+  (* *)
+{
+  previousInstructionIdx := code.size
+  emit(opcodes[#sendTail].n)
+  emit16(getSelectorId[selector])
+}
+
+sendSuper(selector :TL2Selector) :Void
+  (* *)
+{
+  previousInstructionIdx := code.size
+  emit(opcodes[#sendSuper].n)
+  emit16(getSelectorId[selector])
+}
+
+loadLiteral(literalIdx :Int) :Void
+  (* *)
+{ assert({ literalIdx >= 0 })
+  if( literalIdx < 256 then: {
+    arg1(#literal8, literalIdx)
+  } else: {
+    previousInstructionIdx := code.size
+    emit(opcodes[#literal16].n)
+    emit16(literalIdx)
+  })
+}
+
+loadChar(c :Char) :Void
+  (* special literals *)
+{ arg1(#char, c.asInt) }
+
+loadByte(b :Int) :Void
+  (* *)
+require (-128 )<= b & b < 128
+{
+  previousInstructionIdx := code.size
+  emit(opcodes[#byte].n)
+  emitSigned(b)
+}
+
+loadShort(s :Int) :Void
+  (* *)
+require (-32768 )<= b & b < 32767
+{
+  previousInstructionIdx := code.size
+  emit(opcodes[#short].n)
+  emitSigned16(s)
+}
+
+loadSpecial(o :Object) :Void
+  (* *)
+{
+  arg0( if( o.isNil then:{ #nil }else:{ vmInterface.specialLiterals[o] }))
+}
+
+loadArgument(argIdx :Int) :Void
+  (* *)
+{ arg1(#arg, argIdx) }
+
+loadLocal(localIdx :Int) :Void
+  (* *)
+{ arg1(#local, localIdx) }
+
+storeLocal(localIdx :Int) :Void
+  (* *)
+{ arg1(#storeLocal, localIdx) }
+
+loadGlobal(globalIdx :Int) :Void
+  (* *)
+{ arg1(#global, globalIdx) }
+
+cellNew :Void
+  (* *)
+{ arg0(#cellNew) }
+
+cellLoad :Void
+  (* *)
+{ arg0(#cellLoad) }
+
+cellStore :Void
+  (* *)
+{ arg0(#cellStore) }
+
+drop(n :Int) :Void
+  (* n times pop *)
+{
+  ;;; peephole optimization: merge adjacent pop/drop instructions
+  n ::= n  ;; make mutable binding
+  if( previousInstructionIdx.isNotNil then: {
+    op ::= code[previousInstructionIdx]
+    if( op = opcodes[#pop].n then: {
+      n := n + 1
+      replacePreviousInstruction
+    } else: {
+      if( op = opcodes[#drop].n then: {
+	n := n + code[previousInstructionIdx+1]
+        replacePreviousInstruction
+      })
+    })
+  })
+  if( n = 1 then: {
+    arg0(#pop)
+  } else: {
+    ;; ### range check?
+    arg1(#drop, n)
+  })
+}
+
+pop :Void
+  (* *)
+{
+  drop(1)
+}
+
+adjust(n :Int) :Void
+  (* let x = pop, drop(n), push(x) *)
+{
+  ;;; peephole optimization: merge adjacent adjust instructions
+  n ::= n  ;; make mutable binding
+  if( previousInstructionIdx.isNotNil then: {
+    if( code[previousInstructionIdx] = opcodes[#adjust].n then: {
+      n := n + code[previousInstructionIdx+1]
+      replacePreviousInstruction
+    })
+  })
+  ;; ### range check?
+  arg1(#adjust, n)
+}
+
+closure(nbGlobals :Int) :Void
+  (* *)
+{ arg1(#closure, nbGlobals) }
+
+makeArray(nSlots :Int) :Void
+  (* *)
+{ arg1(#makeArray, nSlots) }
+
+sync :Void
+  (* *)
+{ arg0(#sync) }
+
+return :Void
+  (* *)
+{ arg0(#return) }
+
+ifTrue(dest :BELabel) :Void
+  (* *)
+{ labelRefs :=
+    List.cons( BELabelRef.new( dest, code.size,
+			     opcodes[#ifTrue8].n, opcodes[#ifTrue16].n),
+	       labelRefs )
+  previousInstructionIdx := code.size
+  emit(255) emit(255)  ; FILLER 
+}
+
+ifFalse(dest :BELabel) :Void
+  (* *)
+{ labelRefs :=
+    List.cons( BELabelRef.new( dest, code.size,
+			     opcodes[#ifFalse8].n, opcodes[#ifFalse16].n),
+	       labelRefs )
+  previousInstructionIdx := code.size
+  emit(255) emit(255)  ; FILLER 
+}
+
+jump(dest :BELabel) :Void
+  (* *)
+{ labelRefs :=
+    List.cons( BELabelRef.new( dest, code.size,
+			     opcodes[#jump8].n, opcodes[#jump16].n),
+	       labelRefs )
+  previousInstructionIdx := code.size
+  emit(255) emit(255)  ; FILLER 
+}
+
+referenceArgument(argIdx :Int) :Void
+  (* self == nb_args, last argument is 1 *)
+{ arg1(#referenceArgument, argIdx) }
+
+takeFromArgument(argIdx :Int) :Void
+  (* self == nb_args, last argument is 1 *)
+{ arg1(#takeFromArgument, argIdx) }
+
+referenceLocal(localIdx :Int) :Void
+  (* 0 <= n < current stack size *)
+{ arg1(#referenceLocal, localIdx) }
+
+takeFromLocal(localIdx :Int) :Void
+  (* 0 <= n < current stack size *)
+{ arg1(#takeFromLocal, localIdx) }
+
+moveToLocal(localIdx :Int) :Void
+  (* 0 <= n < current stack size *)
+{ arg1(#moveToLocal, localIdx) }
+
+componentCellNew :Void
+  (* *)
+{ arg0(#componentCellNew) }
+
+cellReference :Void
+  (* *)
+{ arg0(#cellReference) }
+
+takeFromCell :Void
+  (* *)
+{ arg0(#takeFromCell) }
+
+moveToCell :Void
+  (* *)
+{ arg0(#moveToCell) }
+
+componentPop :Void
+  (* *)
+{ arg0(#componentPop) }
+
+componentAdjust :Void
+  (* let x = pop, componentPop, push(x) *)
+{ arg0(#componentAdjust) }
+
+finished :ByteArray
+  (* get the result of our efforts *)
+{
+  assert({ labels.all(fun(l :BELabel){ l.isDefined }) })
+  labelRefs := List.reverse(labelRefs)
+
+  ; labelRefs are in ascending order by position now 
+  labelRefs.inject((-1), fun(lastPos :Int, r :BELabelRef) {
+    assert({ r.position > lastPos })
+    r.position
+  })
+
+  while({expansion} do: {})
+
+  labelRefs.do(fun(l:BELabelRef) {
+    pos ::= l.position
+    dist ::= l.distance
+    ; tycoon.stdout.writeln("patching at "+pos.printString+" distance "+dist.printString), 
+    if( l.isShort
+     then: { assert({ !l.shouldBeLong })
+         code[pos] := l.shortOp
+         code[pos+1] := dist }
+     else: { code[pos] := l.longOp
+         code[pos+1] := dist & 255
+	 code[pos+2] := dist.">>"(8) })
+  })
+  code.asByteArray
+}
+
+private
+
+getSelectorId :Fun(:TL2Selector) :Int
+  (* function mapping selectors to integer IDs
+     depends on the root object *)
+
+opcodes :Dictionary(Symbol, TL2OpcodeDescriptor)
+  (* copied from vmInterface.opcodes (save one indirection) *)
+
+code :GapByteArray
+
+labelRefs :List(BELabelRef)
+
+labels :List(BELabel)
+
+labelCnt :Int
+
+previousInstructionIdx :Int
+  (* position in code of opcode of previous instruction, or nil *)
+
+_init :Void
+  (* *)
+{ super._init
+  code := GapByteArray.new0
+  labelCnt := 0
+  labelRefs := EmptyList.new
+  labels := EmptyList.new
+  opcodes := vmInterface.opcodes
+  self
+}
+
+emit(i :Int) :Void
+  (* *)
+{ assert({ 0 <= i })
+  assert({ i < 256 })
+  code.add(i) }
+
+emitSigned(i :Int) :Void
+  (* *)
+{ assert({ (-128 )<= i })
+  assert({ i <= 127 })
+  emit(i & 255) }
+
+emit16(i :Int) :Void
+  (* *)
+{ emit(i & 255)
+  emit(i.">>"(8))
+}
+
+emitSigned16(i :Int) :Void
+  (* *)
+{ emit(i & 255)
+  emitSigned(i.">>"(8))
+}
+
+arg0(s :Symbol) :Void
+  (* *)
+{
+  previousInstructionIdx := code.size
+  emit(opcodes[s].n)
+}
+
+arg1(s :Symbol, byte :Int) :Void
+  (* *)
+require 0 <= byte & byte < 256
+{
+  previousInstructionIdx := code.size
+  emit(opcodes[s].n)
+  emit(byte)
+}
+
+replacePreviousInstruction :Void
+{
+  tycoon.stdout << "(Piep)"
+  code.removeSubSequence(code.size - previousInstructionIdx,
+			 previousInstructionIdx)
+  assert({ code.size = previousInstructionIdx })
+  previousInstructionIdx := nil
+}
+
+expansion :Bool
+  (* expand short to long branches if necessary. *)
+{
+  inserted ::= 0  ; number of bytes inserted up to now 
+  labelRefs.do(fun(ref :BELabelRef) {
+    ref.position := ref.position + inserted
+    if( ref.isShort &&  ref.shouldBeLong  then: {
+      pos ::= ref.position
+      ; tycoon.stdout.writeln("expansion at "+pos.printString), 
+      ; code.print, code.asArray.print, code.print, 
+      code.insert(0, pos)   ; FILLER 
+      ; code.print, code.asArray.print, code.print, 
+      inserted := inserted + 1
+      ref.isShort := false
+      labels.do(fun(l:BELabel) {
+        if( l.position > pos then: {
+	  l.position := l.position + 1
+	})
+      })
+    })
+  })
+  inserted > 0
+}
+
+}

@@ -1,0 +1,222 @@
+class Collection(E <: Object)
+super Object
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+Abstract collections of elements of type E 
+
+Note: we would like 
+
+  E1 <: E2 => Collection(E1) <: Collection(E2)
+
+  i.e. Collection(Student) <: Collection(Person)
+
+  This relationship cannot, of course, hold for
+  subclasses that introduce update operations
+  with contravariant occurrences of the element type.
+  
+Author:  Andreas Gawecki
+Date:    13-Feb-1996
+Updates: (Date)	  (Name)	(Description)
+*)
+meta AbstractClass
+{
+includes(e :Object) :Bool
+  (* Answer true iff the receiver contains an element that is 'equal' to e.
+     Subclasses define some notion of element equality by
+     means of the private method '_elementEqual'.
+     The default implementation uses object equality ("=").
+     Result implies !isEmpty.
+     Note that we cannot declare e of type E, since that would violate
+     our design goal of subtyping collections (see header). *)
+{
+  r ::= reader
+  result ::= r.includes(e)
+  r.close
+  result
+  }
+
+reader :Reader(E)
+  (* *)
+deferred
+
+as(T <: Object,
+   containerClass :AbstractContainerGenerator(E,T)):T
+  (* Stream over the elements of the container.
+     ## monitor readers wich must be closed
+	with WeakRef and finalize it...
+   *)
+{ containerClass.fromReader(reader) }
+
+do(statement :Fun(:E):Void) :Void
+  (* Perform statement for each e in the receiver.
+     Default implementation, subclasses may re-implement this method more efficiently *)
+{
+  r ::= reader
+  protect({ r.do(statement) }, { r.close })
+  }
+
+map(F <:Object, f :Fun(:E):F) :Reader(F)
+  (* *)
+{
+  r ::= reader
+  protect({ r.map(f) }, { r.close })
+  }
+
+inject(T <:Object, base :T, g :Fun(:T,:E):T) :T
+  (* Accumulate each element of the receiver using g, starting with 'base'. *)
+{
+  r ::= reader
+  protect({ r.inject(base, g)}, { r.close })
+  }
+
+fold(T <:Object, f :Fun(:E):T, g :Fun(:T,:T):T) :T
+  (* Apply f to each element of the receiver and accumulate the result using g  *)
+{
+  r ::= reader
+  protect({ r.fold(f, g) }, { r.close })
+  }
+
+some(p :Fun(:E):Bool) :Bool
+  (* answer true if p(e) holds for some element in the receiver *)
+{
+  r ::= reader
+  protect({ r.some(p) }, { r.close })
+  }
+
+all(p :Fun(:E):Bool) :Bool
+  (* answer true if p(e) holds for all elements in the receiver *)
+{
+  !some( fun(e :E){!p[e]})
+  }
+
+count(p :Fun(:E):Bool) :Int
+  (* Return the number of elements that fulfil p(e). *)
+{
+  count ::= 0
+  do(fun(e :E) { if( p[e] then: {count := count + 1})})
+  count
+  }
+
+occurrencesOf(e :Object) :Int
+  (* Answer the number of ocurrences of e within the receiver.
+     ensure result >= 0
+     Note that we cannot declare e of type E, since that would violate
+     our design goal of subtyping collections (see header). *)
+{
+  count(fun(e1 :E) {_elementEqual(e1, e)})
+  }
+
+select(p :Fun(:E):Bool) :Reader(E)
+  (* *)
+{
+  r ::= reader
+  protect({ r.select(p) }, { r.close })
+  }
+
+reject(p :Fun(:E):Bool) :Reader(E)
+  (* Return an iteration over the elements in the receiver  that do not 
+     fullfill p. *)
+{
+  select(fun(e :E){!p[e]})
+  }
+
+sfw(F <:Object, select :Fun(:E):F, where :Fun(:E):Bool) :Reader(F)
+  (* Abbreviation for map(select(self where) target) to achieve a
+     SQL-like syntax:
+        stream.sfw(let select = ...
+                   let where  = ...)  *)
+{
+  self.select(where).map(:F, select)
+  }
+
+detect(p :Fun(:E):Bool) :E
+  (* returns an arbitrary element of the receiver that
+     fulfills <p>, or nil if there is no such element. 
+     If the collection imposes an order on its elements, the
+     first matching element is returned. *)
+{
+  r ::= reader
+  protect({ r.detect(p) }, { r.close })
+}
+
+find(x :Object) :E
+  (* Returns an element 'equal' to e, or nil if there is no such element.
+     May deliver an element to the caller which is not identical to x.
+     If the collection imposes an order on its elements, the
+     first matching element is returned. 
+ normative implementation *)
+{
+  detect( fun(e:E){ _elementEqual(e,x) } )
+}
+
+maximum(T <: Ordered(T), rating :Fun(:E):T) :Pair(T,E)
+  (* return an maximal element of self together with its rating.
+     there is no element with a higher rating than result.second.
+     requires !isEmpty *)
+{
+  r ::= reader
+  bestElement ::= r.read
+  r.close
+  bestRating ::= rating[bestElement]
+  do(fun(e :E) {
+    thisRating ::= rating[e]
+    if( thisRating > bestRating
+    then: { bestRating := thisRating
+        bestElement := e })
+  })
+  Pair.new(bestRating, bestElement)
+}
+
+without(e :Object) :Self
+  (* Answer a collection of the same kind of the receiver,
+     but without the element e.
+     Note that we cannot declare e of type E, since that would violate
+     our design goal of subtyping collections (see header).
+     Note that only containers with variable size support this
+     operation (in other classes, it simply remains unimplemented). *)
+deferred
+
+doBetween(statement :Fun(:E):Void, between :Fun():Void) :Void
+  (* Perform <statement> for each e in the receiver.
+     Call <between> once between successive elements. *)
+{
+  inject(false, fun(inside :Bool, e :E){
+    if( inside then: { between[] })
+    statement[e]
+    true
+  })
+}
+
+insertInto(dynSequence :DynSequenceSink(E), at :Int) :Void
+  (* *)
+{
+  dynSequence.insertCollection(self, at)
+}
+
+private
+
+_elementEqual(e1 :E, e2 :Object) :Bool
+  (* default implementation uses object equality *)
+{
+  e1 = e2
+  }
+
+}

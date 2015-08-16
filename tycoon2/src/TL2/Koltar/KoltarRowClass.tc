@@ -1,0 +1,20 @@
+class KoltarRowClass
+super Koltar, ConcreteClass(KoltarRow)
+meta MetaClass
+{
+new(date :Date, werWas :Dictionary(KoltarSklave, KoltarDienst)) :KoltarRow
+{
+  i ::= _new
+  i.date := date
+  i.werWas := werWas
+  i
+}
+
+load(in :Input, application :KoltarApplication) :KoltarRow
+{
+  i ::= _new
+  i._load(in, application)
+  i
+}
+
+}

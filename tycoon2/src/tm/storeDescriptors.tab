@@ -1,0 +1,95 @@
+Unused	Array	
+WeakRef	WeakRef	
+Array	Array	
+String	ByteArray	
+ByteArray	ByteArray	
+ShortArray	ShortArray	
+IntArray	IntArray	
+LongArray	LongArray	
+Thread	Thread	
+TVMStack	Stack	
+MutableArray	Array	
+MutableString	ByteArray	
+Symbol	ByteArray	
+True	Struct	i
+False	Struct	i
+Bool	Struct	i
+Char	Struct	C
+Int	Struct	i
+Long	Struct	w
+Real	Struct	d
+Nil	Array	
+Fun3	Array	
+Fun4	Array	
+Fun5	Array	
+Fun6	Array	
+Fun7	Array	
+Fun8	Array	
+Fun9	Array	
+Fun10	Array	
+EmptyList	Array	
+List	Array	
+Class	Array	
+TL2MethodDictionary	Array	
+DLL	Array	
+TL2Selector	Struct	oii
+TL2Method	Struct	ooooooiiii
+TL2CompiledMethod	Struct	ooooooiiiioioooiio
+TL2BuiltinMethod	Struct	ooooooiiiioioooiioii
+TL2ExternalMethod	Struct	ooooooiiiiooooii
+TL2SlotMethod	Struct	ooooooiiiioi
+TL2SlotAccessMethod	Struct	ooooooiiiioi
+TL2SlotUpdateMethod	Struct	ooooooiiiioi
+TL2PoolMethod	Struct	ooooooiiiio
+TL2PoolAccessMethod	Struct	ooooooiiiio
+TL2PoolUpdateMethod	Struct	ooooooiiiio
+TL2CSlotAccessMethod	Struct	ooooooiiiioiC
+TL2CSlotUpdateMethod	Struct	ooooooiiiioiC
+TL2SlotReferenceMethod	Struct	ooooooiiiioi
+TL2SlotTakeFromMethod	Struct	ooooooiiiioi
+TL2SlotMoveToMethod	Struct	ooooooiiiioi
+TL2CSlotReferenceMethod	Struct	ooooooiiiioiC
+TL2CSlotTakeFromMethod	Struct	ooooooiiiioiC
+TL2CSlotMoveToMethod	Struct	ooooooiiiioiC
+TL2CompiledFun	Struct	ooooooiiiioioooiiooi
+Function	Array	
+TL2DeferredMethod	Struct	ooooooiiii
+TL2UnimplementedMethod	Struct	ooooooiiii
+TL2Slot	Struct	ooooiio
+TypeError	Array	
+DoesNotUnderstand	Array	
+MustBeBoolean	Array	
+DLLOpenError	Array	
+DLLCallError	Array	
+DivisionByZero	Array	
+IndexOutOfBounds	Array	
+BlockingCallInterrupt	Array	
+ThreadCancelled	Array	
+CommitError	Array	
+WrongSignature	Array	
+FetchBoundComponent	Array	
+PerformArityMismatch	Array	
+WriteToImmutable	Array	
+CyclicComponent	Array	
+Root	Struct	ooooooooiiooio
+Tycoon	Array	
+TL2Debugger	Array	
+Object	Array	
+Mutex	Struct	io
+Condition	Struct	i
+BroadcastingCondition	Struct	i
+AtArray	Array	
+Fun0	Array	
+FunC	Array	
+Fun1	Array	
+FunCR	Array	
+FunRC	Array	
+FunCC	Array	
+Fun2	Array	
+FunCRR	Array	
+FunRCR	Array	
+FunCCR	Array	
+FunRRC	Array	
+FunCRC	Array	
+FunRCC	Array	
+FunCCC	Array	

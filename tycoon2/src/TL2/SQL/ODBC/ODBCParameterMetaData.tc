@@ -1,0 +1,86 @@
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+Data parameters of the associated SQL-Statement
+
+Author:  Michael Skusa
+Date:    16-Aug-1996
+Updates: (Date)		(Name)	(Description)
+
+         11-Mar-1997	MS	replaced integer values for return codes, SQL-types
+				and ODBC-standard-parameters with integer-constants defined
+				in class ODBC
+*)
+
+class ODBCParameterMetaData
+
+super SQLParameterMetaData
+
+metaclass SimpleConcreteClass(ODBCParameterMetaData)
+
+public methods
+
+retrieveParameterMetaData(hstmt:Int32)
+{
+  let pc = CShortHolder.new(),
+  (odbc.SQLNumParams(hstmt,pc.handle) = odbc.SQL_SUCCESS)
+  ? {_parameterCount:=pc.value}
+  : {pc.close(),
+     ODBCError.new(odbc.NULL,odbc.NULL,hstmt).raise},
+  pc.close(),
+  _parameterNulls := MutableArray.new(_parameterCount),
+  _parameterPrecisions := MutableArray.new(_parameterCount),
+  _parameterScales := MutableArray.new(_parameterCount),
+  _parameterTypes := MutableArray.new(_parameterCount),
+  let fSqlType = CShortHolder.new(),
+  let pcbColDef = CIntHolder.new(),
+  let pibScale = CShortHolder.new(),
+  let pfNullable = CShortHolder.new(),
+  for(0,_parameterCount-1, fun(i:Int)
+    {
+      (odbc.SQLDescribeParam(hstmt,i+1,fSqlType.handle,pcbColDef.handle,
+                             pibScale.handle,pfNullable.handle) = odbc.SQL_SUCCESS)
+      ? {_parameterTypes[i]:=fSqlType.value,
+         _parameterNulls[i]:=pfNullable.value,
+	 _parameterPrecisions[i]:=pcbColDef.value,
+	 _parameterScales[i]:= (_parameterTypes[i] = odbc.SQL_TIMESTAMP)
+	                       ? {odbc.timestampScale}
+	                       : {pibScale.value}
+	}
+      : {fSqlType.close(),
+         pcbColDef.close(),
+         pibScale.close(),
+         pfNullable.close(),
+	 ODBCError.new(odbc.NULL,odbc.NULL,hstmt).raise}
+    }),
+  fSqlType.close(),
+  pcbColDef.close(),
+  pibScale.close(),
+  pfNullable.close()
+}
+
+;
+
+
+
+
+
+
+

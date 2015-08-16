@@ -1,0 +1,186 @@
+class CompiledMethod
+super Method
+metaclass CompiledMethodClass
+public
+body :Value,
+
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ slots used by the machine: (sync with tvm.doc) *)
+
+compiledIn :ClassPublic,
+byteCode :ByteArray,
+literals :Array(Object),
+selectorID :Int,
+stackPeak :Int,
+exceptionTable :ShortArray   (* may be nil. six short integers: fromIP..toIP -> handlerIP, sp, nativeCode (two shorts) *)
+
+methods
+
+prettyPrint(out :Printer)
+{
+  super.prettyPrint(out),
+  body.isNil
+  ? { tycoon.stdout.writeString("\n  (* finalized *)") }
+  : { out.writeAll("\n{"),
+      out.withRelIndent(2, {
+	out.nl,
+	body.prettyPrint(out)
+      }),
+      out.writeAll("\n}") }
+}
+
+scopeMethod(env :Scoper)
+{
+  let saved = env.warnUnused,
+  env.warnUnused := warnUnused,
+  domain.do(fun(i:Ide){ i.setImmutable }),
+  env.withScopedSignatures(domain, {
+    range.isNotNil ? { range := env.scope(range) },  (* for Funs *)
+    body := env.scope(body)
+  }),
+  env.warnUnused := saved
+}
+
+warnUnused :Bool
+{ true }
+
+compile( env :Bindings, selfSig :ValueIde, compiler :Compiler)
+{
+  let bek = MethodManager.new(self, env, compiler),
+
+  let extendedDomain =
+    selfSig.isNil
+     ? { domain }
+     : { List(:Ide).cons(selfSig, domain) },
+  let valueArgs =
+    List.fromReverseReader(
+      extendedDomain.sfw(
+        (* select *) fun(i :Ide){ i.asValueIde },
+	(* where *) fun(i :Ide){ i.isValueIde })),
+  valueArgs.keysAndElementsDo(fun(idx :Int, ide :ValueIde) {
+    bek.bindArgument(ide, idx),
+    ide.setImmutable
+  }),
+
+  arity := valueArgs.size,
+  selfSig.isNotNil ? { arity := arity - 1 },  (* do not count receiver *)
+
+  body.genCodeReturn(bek),
+
+  bek.finished
+}
+
+disassembleOn(out :Printer, reader :ByteCodeReader)
+{
+  methodType.prettyPrint(out),
+  out.withRelIndent(1, {
+    out << '\n'
+        << "Selector id = " << selectorID
+	<< " ("<<compiledIn.classManager.root.idToSelector(selectorID) << ")\n",
+    out << "Stack peak = " << stackPeak << '\n',
+    freeVarHook(out),
+    out.writeString( "Literals:" ),
+    out.withRelIndent(1, {
+      literals.keysAndElementsDo(fun(i :Int, o :Object) {
+        out.nl,
+	i.printOn(out), out.writeString(": "),
+	o."class" == CompiledFun ? {
+	  let cf = _typeCast(o, :CompiledFun),
+	  out.withRelIndent(4, {
+	    cf.disassembleOn(out, reader)
+	  })
+	} : {
+	  o.printOn(out)
+	}
+      })
+    }),
+    exceptionTable.isNotNil ? {
+      out.writeln("\nException Handlers:"),
+      forStep(0, exceptionTable.size - 6, 6, fun(p :Int) {
+        out.nl,
+        out << exceptionTable[p] << '-' << exceptionTable[p+1] << ": "
+	    << exceptionTable[p+2] << ", sp=" << exceptionTable[p+3]
+      })
+    },
+    out.writeString("\nCode:"),
+    out.withRelIndent(1, {
+      let disass = makeDisassembler,
+      reader.do(byteCode, disass),
+      disass.finished.do(fun(s:String) {
+	out.nl,
+        out.writeString(s)
+      })
+    })
+  }),
+  out.nl, out.nl
+}
+
+makeDisassembler :Disassembler
+{
+  let dis = Disassembler.new,
+  let args =
+    MutableArray.fromReader(
+      Reader.cons("self",
+	domain.select(fun(i:Ide){ i.isValueIde })
+	      .map(fun(i:Ide){ i.name }))),
+  args.reverse,
+  dis.argumentNames := args,
+  dis.root := compiledIn.classManager.root,
+  dis
+}
+
+freeVarHook(out :Printer)
+{ }
+
+finalize
+{ body := nil,
+  submethods.do(fun(cm :CompiledMethod) {
+    cm.finalize
+  })
+}
+
+(* since the class object doesn''t exist already during compilation,
+   we need an extra pass to fill the compiledIn-fields afterwards *)
+patchClass(compiledIn :ClassPublic)
+{
+  self."compiledIn:="(compiledIn),
+  submethods.do(fun(cm :CompiledMethod){
+    cm.patchClass(compiledIn)
+  })
+}
+
+private methods
+
+submethods :Reader(CompiledMethod)
+{
+  literals.sfw(
+    (* select *) fun(o: Object) {
+      _typeCast(o, :CompiledMethod)
+    },
+    (* where *) fun(o :Object) {
+      o."class" == CompiledMethod
+      || { o."class" == CompiledFun
+         || { o."class" == BuiltinMethod }}
+     })
+}
+;
+
+

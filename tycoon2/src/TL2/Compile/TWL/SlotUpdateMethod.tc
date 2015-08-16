@@ -1,0 +1,19 @@
+class SlotUpdateMethod
+super SlotMethod
+metaclass SlotUpdateMethodClass
+public
+slotName :Symbol
+
+methods
+slotType :Type
+{ methodType.domain[0].type }
+
+private methods
+_init :Self
+{ super._init,
+  arity := 1,
+  self
+}
+;
+
+

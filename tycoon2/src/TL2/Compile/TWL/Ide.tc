@@ -1,0 +1,108 @@
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ File: Ide.tc
+ Author: Axel Wienberg
+   Date: ??-Jun-1996
+Purpose: names with a type in the abstract syntax tree
+*)
+
+class Ide
+super TWLProgramObject
+metaclass AbstractClass
+
+public 
+
+name :String,
+type :Type
+
+methods
+
+case( T <: Void,
+      value :Fun1(ValueIde,T),
+      type :Fun1(TypeIde,T),
+      subType :Fun1(SubTypeIde,T)) :T
+  deferred
+
+(* SubTypeIde or TypeIde *)
+asTypeIde :TypeIde
+{
+  case( :TypeIde,
+        fun(i:ValueIde){ nil },
+	fun(i:TypeIde){ i },
+	fun(i:SubTypeIde){ i })
+}
+
+asSubTypeIde :SubTypeIde
+{
+  case( :TypeIde,
+        fun(i:ValueIde){ nil },
+	fun(i:TypeIde){ nil },
+	fun(i:SubTypeIde){ i })
+}
+
+
+asValueIde :ValueIde
+{
+  case( fun(i:ValueIde){ i },
+	fun(i:TypeIde){ nil },
+	fun(i:SubTypeIde){ nil })
+}
+
+isValueIde :Bool
+{ asValueIde.isNotNil
+}
+
+isTypeIde :Bool
+{ asTypeIde.isNotNil }
+
+isSubTypeIde :Bool
+{ asSubTypeIde.isNotNil }
+
+isAnonymous :Bool
+{ name.isNil }
+
+setImmutable
+{ }
+
+scope(env :Scoper) :Ide
+{
+  assert !isAnonymous,
+    (* anonymous ides can only appear in signatures, but ides in signatures
+       are never scoped themselves *)
+  env[name]
+}
+
+relationName :String
+  deferred
+
+prettyPrint(out :Printer)
+{
+  name.isNotNil ? {
+    out.writeAll(name)
+(*    out.writeAll("[" + identityHash.printString + "]") *)
+  },
+  out.writeAll(relationName),
+  type.isNil ? {
+    out.writeAll("??")
+  } : {
+    type.prettyPrint(out)
+  }}
+
+;

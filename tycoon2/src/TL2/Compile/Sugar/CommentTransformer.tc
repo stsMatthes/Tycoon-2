@@ -1,0 +1,105 @@
+class CommentTransformer
+super Sugar
+metaclass SingletonClass(CommentTransformer)
+public methods
+
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ For method body comments:
+   turn (*...*) into ;... *)
+transform(s :String) :String
+{
+  (* we are slightly abusing the scanner idea here:
+     everything is done via side effects. *)
+  let input = StringInput.new(s),
+  let out = StringBuilderOutput.new,
+  let scanner =
+    UserScanner.new(tables, input,
+       CommentTransformerState.new(out)),
+  scanner.read,
+  out.contents
+}
+
+private
+
+tables :UserScannerTables(Nil, CommentTransformerState)
+
+methods
+
+buildScannerTables(S = UserScanner(Nil, CommentTransformerState))
+{
+  let sb = ScannerBuilder(:Nil, :CommentTransformerState).new,
+  let normMode = 0,
+  let commentMode = sb.newMode,
+
+  sb.addTokenMode(normMode, "\\(\\*", fun(s :S) {
+      s.mode := commentMode,
+      s.userState.nesting := 1,
+      s.userState.out << ';',
+      s.read
+    }),
+
+  (* do not transform comments inside strings! *)
+  sb.addTokenMode(normMode, "\"([^\"]|\\\\\")*\"", fun(s :S) {
+    s.userState.out << s.token,
+    s.read
+  }),
+
+  sb.addTokenMode(normMode, "[^]", fun(s :S) {
+    s.userState.out << s.token[0],
+    s.read
+  }),
+
+  sb.addTokenMode(commentMode, "[^\n]", fun(s:S) {
+    s.userState.out << s.token[0],
+    s.read
+  }),
+  sb.addTokenMode(commentMode, "\n", fun(s:S) {
+    s.userState.out << '\n',   (* ### indentation? *)
+    for(1,s.userState.nesting,fun(:Int){
+      s.userState.out << ';'
+    }),
+    s.read
+  }),
+  sb.addTokenMode(commentMode, "\\(\\*", fun(s:S) {
+    s.userState.nesting := s.userState.nesting + 1,
+    s.userState.out << ';',
+    s.read
+  }),
+  sb.addTokenMode(commentMode, "\\*\\)[ \t]*\n?", fun(s:S) {
+    s.userState.nesting := s.userState.nesting -1,
+    s.userState.out.nl,
+    s.userState.nesting = 0
+    ? { s.mode := normMode }
+    : { for(1,s.userState.nesting,fun(:Int){
+	  s.userState.out << ';'
+	}) },
+    s.read
+  }),
+
+  tables := sb.generate
+}
+
+_init :Void
+{ super._init,
+  buildScannerTables,
+  self
+}
+;

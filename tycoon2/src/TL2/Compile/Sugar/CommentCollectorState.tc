@@ -1,0 +1,19 @@
+class CommentCollectorState
+super Sugar
+metaclass CommentCollectorStateClass
+public
+
+commentOut :Output,
+otherOut :Output,
+nesting :Int,
+nComments :Int
+
+private methods
+
+_init :Void
+{ super._init,
+  nesting := 0,
+  nComments := 0,
+  self
+}
+;

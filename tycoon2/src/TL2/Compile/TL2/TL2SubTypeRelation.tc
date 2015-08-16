@@ -1,0 +1,126 @@
+class TL2SubTypeRelation
+super TL2
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+*)
+meta TL2SubTypeRelationClass()
+
+{
+small :TL2Type
+  (* *)
+{ _small }
+
+big   :TL2Type
+  (* *)
+{ _big   }
+
+smallSubst :TL2Subst
+  (* *)
+{ _smallSubst }
+
+bigSubst   :TL2Subst
+  (* *)
+{ _bigSubst   }
+
+shouldBeStored :Bool
+  (* *)
+{
+    storeType(small) &&  storeType(big) 
+  }
+
+"="(x :Object) :Bool
+  (* *)
+{
+    self == x || 
+      x.clazz == clazz && (
+        x ::= _typeCast(x, :Self)
+      
+        equalTypes(small, x.small)              && 
+        equalTypes(big, x.big)                 && 
+        equalSubsts(smallSubst, x.smallSubst)  && 
+        equalSubsts(bigSubst, x.bigSubst)     
+      )
+    
+  }
+
+equalityHash :Int
+  (* *)
+{
+    ; substs are mostly empty 
+    typeHash(small).xor(typeHash(big) * 123)
+  }
+
+printOn(o :Output) :Void
+  (* *)
+{
+    o.writeAll("(")
+    small.printOn(o)
+    smallSubst.printOn(o)
+    o.writeAll(" <: ")
+    big.printOn(o)
+    bigSubst.printOn(o)
+    o.writeAll(")")
+  }
+
+private
+
+_small :TL2Type
+
+_big   :TL2Type
+
+_smallSubst :TL2Subst
+
+_bigSubst :TL2Subst
+
+storeType(t :TL2Type) :Bool
+  (* *)
+{
+    TL2SubTypeRelation.storeType(t)
+  }
+
+equalTypes(t1 :TL2Type, t2 :TL2Type) :Bool
+  (* *)
+{
+    TL2SubTypeRelation.equalTypes(t1, t2)
+  }
+
+equalSubsts(s1 :TL2Subst, s2 :TL2Subst) :Bool
+  (* *)
+{
+    TL2SubTypeRelation.equalSubsts(s1, s2)
+  }
+
+typeHash(t :TL2Type) :Int
+  (* *)
+{
+    TL2SubTypeRelation.typeHash(t)
+  }
+
+_init4(small :TL2Type, big :TL2Type, smallSubst :TL2Subst, bigSubst :TL2Subst) :Void
+  (* *)
+{
+    _small := small
+    _smallSubst := smallSubst
+
+    _big := big
+    _bigSubst := bigSubst
+  }
+
+}

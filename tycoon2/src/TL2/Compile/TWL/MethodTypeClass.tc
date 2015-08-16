@@ -1,0 +1,20 @@
+class MethodTypeClass
+super ConcreteClass(MethodType)
+metaclass MetaClass
+public methods
+new(selector :Positioned(Symbol), domain :List(Ide), range :Type) :MethodType
+{
+  new1(selector.pos, selector.value, domain, range)
+}
+
+new1(pos :SourcePos, selector :Symbol, domain :List(Ide), range :Type)
+	:MethodType
+{
+  let instance = _new,
+  instance.pos := pos,
+  instance.selector := selector,
+  instance.domain := domain,
+  instance.range := range,
+  instance._init
+}
+;

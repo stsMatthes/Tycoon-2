@@ -1,0 +1,431 @@
+class TL2ClassLoader
+super TL2
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ File: TL2ClassLoader.tc
+ Author: Axel Wienberg
+   Date: 17-Dec-1996
+Purpose: automated reloading of classes
+
+Phase 0:
+  The user informs the system about class file locations by
+  calling "registerClassFile" either directly or conveniently
+  via "registerDirectory" and "registerFile".
+
+  The user calls <update>.
+Phase 1:
+  All class files that have changed on disc are parsed.
+Phase 2:
+  The loader traverses all classes in dependency depth-first order and compiles them.
+
+  
+Ad 1:
+  Creates ClassBuilders in <builders>, in addition to
+  those left over from previous runs.
+Ad 2:
+  If build is successful, the TL2ClassBuilder is removed
+  from <builders>.
+
+### the loader assumes that no classes are compiled behind its back:
+    if there is a builder for class Foo, we do not verify that it is indeed
+    younger than class Foo.
+### the fingerprint is computed twice:  once, when checking, and the second
+    time, when parsing the file.
+*)
+meta TL2ClassLoaderClass
+{
+errorLog :ErrorLog
+
+registerDirectory(relDirPath :String) :Void
+  (* look for all files with extension ".tc" under directory <path>.
+   These are assumed to hold the definition of the class with the corresponding class name.
+   <path> is interpreted relative to an element of the environment variable TL2_PATH *)
+{
+  resolvedDirPath ::= _search(relDirPath)
+  if( resolvedDirPath.isNotNil
+  then: { ; ### check if <path> is actually a Directory 
+      dir ::= Directory.new(resolvedDirPath)
+      r ::= dir.reader
+      r.do(fun(c :DirectoryContents) {
+	c.case(:Void, fun(:Directory) {
+	  ; ignore 
+	},
+	fun(f :File) {
+	  fs ::= tycoon.os.fs
+	  relPath ::= fs.composePath(List.with2(relDirPath, fs.lastArc(f.path)))
+	  _registerFile(relPath)
+	})
+      })
+      r.close }
+  else: { tycoon.stdout.writeln("Cannot find directory "+relDirPath+" in "+tl2Path) })
+}
+
+registerFile(path :String) :Void
+  (* register the file in <path>.
+   <path> should be of the form   <directory>/<ClassName>.tc
+   where <ClassName> consists of alphanumeric characters or underscore.
+   The file is assumed to hold class <ClassName>.
+   <path> is interpreted relative to an element of the environment variable TL2_PATH *)
+{
+  if( !_registerFile(path)
+  then: { tycoon.stdout.writeln("Malformed path (expecting <dir>/<class>.tc): "+path) })
+}
+
+registerClassFile(className :String, path :String) :Void
+  (* register the class <className> to reside in file <path>.
+   <path> is interpreted relative to an element of the environment variable TL2_PATH. *)
+{
+  errorLog.reset
+  path ::= tycoon.os.fs.canonicalizePath(path)
+  classManager.classTable.lookup(className,
+    fun(cl:TL2ClassPublic) {
+      if( cl.pos.where != path
+      then: { errorLog.warning(cl.pos, "old definition of class "+cl.name+", moved to "+path)
+	  cl.pos := SourcePos.new(path,0,0)
+	  cl.sourceTime := Long.fromInt(0) })
+    },
+    { ; build a dummy (forward) class 
+      defaultMetaClass ::=
+	TL2CPLType.new(TL2TypeIde.newRef(nil, "AbstractClass"), emptyList)
+      b ::=
+       TL2ClassBuilder.new(
+	 SourcePos.new(path,0,0),
+	 className,
+	 emptyList,	; domain 
+	 emptyList,	; supers 
+	 nil,		; documentation 
+	 nil,		; selfTypeSig 
+	 defaultMetaClass) ; metaClassDeclaration 
+      b.sourceTime := Long.fromInt(0)  ; infinitely old, needs update 
+      b.publicMethods := emptyList
+      b.privateMethods := emptyList
+      b.publicSlots := emptyList
+      b.privateSlots := emptyList
+      b.build(compiler, classManager, errorLog)
+    })
+}
+
+update :Void
+  (* *)
+{
+  errorLog.reset
+  parseNewFiles
+  if( !errorLog.hasErrors
+  then: { tycoon.stdout.writeln("[Checking for unknown class names...]")
+      checkUnknown
+      if( !errorLog.hasErrors
+      then: { makeClasses }) })
+}
+
+unregisterClass(className :String) :Void
+  (* *)
+{
+  errorLog.reset
+  if( builders.includesKey(className)
+  then: { builders.removeKey(className) })
+  classManager.classTable.lookup(className,
+    fun(cl:TL2ClassPublic) :Void {
+      cl.pos := SourcePos.new("<string>",0,0)
+      nil
+    },
+    { tycoon.stdout.writeln("Unknown class name: "+className)
+    })
+}
+
+compiler :TL2Compiler
+  (* *)
+{ _compiler }
+
+classManager :TL2ClassManager
+  (* *)
+{ _classManager }
+
+private
+
+builders :Dictionary(String, TL2ClassBuilder)
+
+_oldSyntax :AbstractTL2Syntax
+
+_newSyntax :AbstractTL2Syntax
+
+_compiler :TL2Compiler
+
+_classManager :TL2ClassManager
+
+_registerFile(path :String) :Bool
+  (* like registerFile, but no error message. Instead,
+   returns true iff <path> has a sensible format. *)
+{
+  fs ::= tycoon.os.fs
+  fs.pathExtension(path) = "tc"
+  && ( className ::= fs.lastArc(fs.pathBase(path))
+       className.all(fun(c:Char){ c.isAlphaNumeric ||  c = '_'  })
+       && ( registerClassFile(className, path) true ) )
+}
+
+_search(relpath :String) :String
+  (* *)
+{
+  result ::= tycoon.os.fs.search(tl2Path, relpath)
+  ; tycoon.stdout.writeln(relpath+" => "+result.printString), 
+  result
+}
+
+tl2Path :String
+  (* *)
+{
+  result ::= tycoon.ansiC.getenv("TL2_PATH")
+  if( result.isNotNil
+  then: { result }
+  else: { tycoon.os.fs.currentPath })
+}
+
+parseNewFiles :Void
+  (* *)
+{
+  classManager.classTable.do(fun(cl :TL2ClassPublic) {
+    relPath ::= cl.pos.where
+    if( relPath != "<stdin>" &&  relPath != "<string>" 
+    then: { ; class comes from a file. 
+        resolvedPath ::= _search(relPath)
+        if( resolvedPath.isNotNil
+	then: { if( needsReload(cl, resolvedPath)
+	    then: { parseFile(getSyntax(resolvedPath),
+			  cl.name, relPath, resolvedPath) }) }
+	else: { errorLog.warning(SourcePos.new(relPath,0,0),
+			     "Cannot find file for class "+cl.name+" in "+tl2Path) }) })
+  })
+}
+
+needsReload(cl :TL2ClassPublic, resolvedPath :String) :Bool
+  (* *)
+{
+  currentSourceTime ::= pathLastModified(resolvedPath)
+  if( currentSourceTime.isNotNil
+  then: { if( (cl.sourceTime.isNil ||  currentSourceTime != cl.sourceTime )
+      then: { ; version on disk is younger (or older(?)) than compiled version 
+	  currentFingerPrint ::= MD5.file(resolvedPath)
+	  if( currentFingerPrint != cl.fingerPrint
+	  then: { ; version on disk differs from compiled version (or no fingerprint) 
+	      builders.lookup(cl.name, fun(b :TL2ClassBuilder) {
+		if( b.pos.where != cl.pos.where
+		then: { ; ouch: builder comes from different file. 
+		    errorLog.warning(cl.pos, "(3) class "+cl.name+" moved from "+b.pos.where+" to "+cl.pos.where)
+		    b.pos := cl.pos })
+		if( currentFingerPrint != b.fingerPrint
+		then: { builders.removeKey(cl.name)	     ; builder is out of date 
+		    true  }
+		else: { false ; builder needs to be started 
+})
+	      },
+	      { true ; no builder 
+}) }
+	  else: { ; version on disc is unchanged 
+	      tycoon.stdout << "class " << cl.name << " not modified\n"
+	      cl.sourceTime := currentSourceTime  ; no need to compute fingerprint next time 
+	      false}) }
+	else: { false ; compiled version is up to date 
+}) }
+  else: { errorLog.warning(SourcePos.new(resolvedPath,0,0), "Cannot access file for class "+cl.name)
+      false })
+}
+
+pathLastModified(path :String) :Long
+  (* *)
+{
+  f ::= File.new(path)
+  try({
+    f.lastModified
+  } else: fun(:Exception){
+    nil
+  })
+}
+
+getSyntax(resolvedPath :String) :AbstractTL2Syntax
+  (*
+withSyntax(resolvedPath :String,
+	   T <: Void,
+           f :Fun(Scanner <: AbstractTL2Scanner,
+		  syntax :AbstractTL2Syntax(Scanner)) :T) :T
+{ ... }
+*)
+{
+  fs ::= tycoon.os.fs
+  dir ::= fs.pathPrefix(resolvedPath)
+  if( File.new(fs.composePath(List.with2(dir, "SYNTAX10"))).exists
+  then: { _newSyntax }
+  else: { _oldSyntax })
+}
+
+parseFile(syntax :AbstractTL2Syntax,
+	  expectedName :String, relPath :String, resolvedPath :String) :Void
+  (* try to parse file <path> and add a TL2ClassBuilder for it to <self.builders> *)
+{
+  tycoon.stdout.writeln("["+relPath)
+  try({
+    f ::= File.openRead(resolvedPath)
+    time ::= f.lastModified
+    md5 ::= MD5.new
+    input ::= FunInput.new(
+      fun(buffer :MutableString, start :Int, n :Int) :Int {
+        nRead ::= f.readBuffer(buffer, start, n)
+	md5.updateSubString(buffer, start, nRead)
+	nRead
+      })
+    oldNbErrors ::= errorLog.nbErrors
+ 
+    try({
+      parseUnit ::=
+        syntax.scanAndParse(relPath, input, errorLog)  ; bufferCapacity=1024 ? 
+      if( parseUnit.isNotNil then: {
+	parseUnit.accept(TL2FunParseUnitVisitor.new
+	  .ifClass(fun(pu :TL2PUClass) {
+	    node ::= pu.builder
+	    node.sourceTime := time
+	    node.fingerPrint := md5.final
+
+	    if( node.name != expectedName
+	    then: { ; ### maybe refuse the file? 
+		errorLog.warning(node.pos, "expected class "+expectedName+", found "+node.name) })
+
+	    ; check for existing class / builder with that name 
+	    builders.lookup(node.name, fun(b :TL2ClassBuilder) {
+	      errorLog.warning(node.pos, "(1) class "+node.name+" moved from "+b.pos.where+" to "+relPath)
+	    }, {
+	      classManager.classTable.lookup(node.name, fun(cl :TL2ClassPublic) {
+		if( cl.pos.where != relPath
+		then: { errorLog.warning(node.pos, "(2) class "+node.name+" moved from "+cl.pos.where+" to "+relPath) })
+	      }, { ; aok 
+})
+	    })
+
+	    builders[node.name] := node
+	  })
+	  .otherwise(fun(pu :TL2ParseUnit) {
+	    errorLog.error(pu.pos, "Expected a class definition")
+	    nil
+	  })
+        )
+      } else: {
+        ; parseUnit.isNil 
+	if( errorLog.nbErrors = oldNbErrors
+	then: { ; parseUnit is only nil if there was an error or if the input is empty. 
+	    errorLog.error(SourcePos.new(relPath,0,0), "empty input, expected class definition") })
+      })
+      nil
+    } else: fun(e:Exception){
+      tycoon.stdout << "Exception: " << e.printString
+      nil
+    })
+
+    if( !md5.isFinalized then: { md5.final })  ; free C structure (### one day, use CStructs) 
+    f.close
+  } else: fun(e:Exception) {
+    errorLog.error(SourcePos.new(relPath, 0,0), "Could not open: "+e.printString)
+  })
+  tycoon.stdout.writeln("]")
+}
+
+checkUnknown :Void
+  (* *)
+{
+  builders.do(fun(n:TL2ClassBuilder) {
+    checkUnknown1(n.metaClassDeclaration)
+    n.supers.do(fun(cplType :TL2CPLType) {
+      checkUnknown1(cplType)
+    })
+  })
+}
+
+checkUnknown1(cplType :TL2CPLType) :Void
+  (* *)
+{
+  name ::= cplType.ide.name
+  if( !builders.includesKey(name)
+  &&  !classManager.classTable.includesKey(name) 
+  then: { errorLog.error(cplType.pos, "unknown class name: "+name) })
+}
+
+makeClasses :Void
+  (* *)
+{
+  try({
+    ; another depth first numbering... 
+    visited ::= Set(:TL2ClassState).new
+    busy ::= EmptyList.new
+    classManager.classTable.do(fun(c:TL2ClassState) {
+      makeByName(c.name, visited, busy)
+    })
+  } else: fun(e:Exception){
+    ; ignore ErrorLogError 
+    if( e."class" !== ErrorLogError
+    then: { e.raise })
+  })
+}
+
+ensureDependencies(c :TL2ClassState, visited :Set(TL2ClassState), busy :List(TL2ClassState)) :Void
+  (* *)
+{
+  if( !visited.includes(c) then: {
+    if( busy.includes(c) then: {
+      if( !List.with4("MetaClass", "ConcreteClass", "AbstractClass", "Class").includes(c.name)
+      then: { tycoon.stdout.writeln("Circular relationship in class "+c.name)
+	  r ::= busy.reader
+	  red :TL2ClassState := nil
+	  while({(red := r.read).isNotNil &&  red !== c } do:{
+	    tycoon.stdout.writeln(" needed by "+red.name)
+	  })
+	  tycoon.stdout.writeln(" needed by "+c.name) })
+    } else: {
+      busy ::= List.cons(c, busy)
+      makeByName(c.metaClassDeclaration.ide.name, visited, busy)
+      c.supers.map(fun(t :TL2CPLType){ t.ide.name }).do(fun(str :String) {
+	makeByName(str, visited, busy)
+      })
+    })
+  })
+}
+
+makeByName(name :String, visited :Set(TL2ClassState), busy :List(TL2ClassState)) :Void
+  (* *)
+{
+  ; tycoon.stdout.writeln("{"+name), 
+  builders.lookup(name, fun(c:TL2ClassBuilder) {
+    ensureDependencies(c, visited, busy)
+    if( builders.includesKey(name)   ; might have disappeared due to recursion 
+    then: { builders.removeKey(name)  ; the builder is spoiled by executing it 
+        c.build(compiler, classManager, errorLog)
+        errorLog.raiseError }) ; ### a bit harsh maybe? 
+  }, {
+    ensureDependencies(classManager.classTable[name], visited, busy)
+  })
+  ; tycoon.stdout.writeln("}"), 
+  visited.add(classManager.classTable[name])
+}
+
+_init :Void
+  (* *)
+{ super._init
+  builders := Dictionary.new
+  errorLog := ErrorLog.new
+  self
+}
+
+}

@@ -1,0 +1,77 @@
+class Rule(D <: Object)
+super Parse
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ Grammar-specific number for this rule *)
+meta RuleClass(D )
+
+{
+number :Int
+
+lhs :Nonterminal(D)
+  (* left hand side *)
+{ _lhs }
+
+rhs :Array(SymbolO)
+  (* right hand side *)
+{ _rhs }
+
+action :Fun(:Stack(Object)):D
+  (* action called when reducing this Rule *)
+{ _action }
+
+precedence :Precedence
+  (* precedence for this rule.
+     shift/reduced conflicts are solved using the participating
+     rule's and terminal's precedence. *)
+{ _precedence }
+
+withPrecedence(p :Precedence) :Self
+  (* hack: should be an optional creation argument *)
+{
+  _precedence := p
+  self
+}
+
+printOn(out :Output) :Void
+  (* *)
+{
+  out.nl
+  number.printOn(out)
+  out.writeAll(": ")
+  lhs.printOn(out)
+  out.writeAll(" ->")
+  rhs.do(fun(s:SymbolO){
+    out.write(' ')
+    s.printOn(out)
+  })
+}
+
+private
+
+_lhs :Nonterminal(D)
+
+_rhs :Array(SymbolO)
+
+_action :Fun(:Stack(Object)):D
+
+_precedence :Precedence
+
+}

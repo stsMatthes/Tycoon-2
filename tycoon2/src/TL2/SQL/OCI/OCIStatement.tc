@@ -1,0 +1,299 @@
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+SQL-Statement produced by OCIConnection
+
+Author:  Michael Skusa
+
+Date:    03-Sep-1996
+
+Updates: (Date)		(Name)	(Description)
+	 14-mar-1997	MS	replaced integers for return-, type- and
+				error-codes with named constants
+*)
+
+class OCIStatement
+
+super SQLStatement
+
+metaclass SimpleConcreteClass(OCIStatement)
+
+public methods
+
+cancel():Void
+  (* Closes cursor,
+     cancels odbc-cursor,
+     raises ODBCError.
+   *)
+{
+  _cursor.isNotNil ?
+  {
+    oci.ocan(_hstmt),
+    _cursor.close
+  }
+}
+
+getUpdateCount():Int
+  (* returns the number of rows affected by execute,
+     returns nil if _hstmt is nil
+   *)
+{
+  _hstmt.isNotNil ? { tycoon.rts.tymem_peekInt(_hstmt,4) }
+                  : {let n:Int = nil}
+}
+
+  
+
+setInt(parameterIndex:Int, value:Int):Int
+{
+  value.isNil
+  ? {_indp[parameterIndex].setShortValue(oci.NULL_DATA)}
+  : {
+      _parameterDataArea[parameterIndex].setIntValue(value),
+      _indp[parameterIndex].setShortValue(0),
+      _alen[parameterIndex].setShortValue(4)
+    },
+  value
+}
+
+setReal(parameterIndex:Int, value:Real):Real
+{
+  value.isNil
+  ? {_indp[parameterIndex].setShortValue(oci.NULL_DATA)}
+  : {
+      _parameterDataArea[parameterIndex].setRealValue(value),
+      _indp[parameterIndex].setShortValue(0),
+      _alen[parameterIndex].setShortValue(8)
+    },
+  value
+}
+
+setString(parameterIndex:Int, value:String):String
+{
+  value.isNil
+  ? {_indp[parameterIndex].setShortValue(oci.NULL_DATA)}
+  : {
+      _parameterDataArea[parameterIndex].setStringValue(value),
+      _indp[parameterIndex].setShortValue(0),
+      _alen[parameterIndex].setShortValue(value.size+1)
+    },
+  value
+}
+
+setDate(parameterIndex:Int, value:Date):Date
+{
+  value.isNil
+  ? {_indp[parameterIndex].setShortValue(oci.NULL_DATA)}
+  : {
+      _parameterDataArea[parameterIndex].setStringValue(value.format("%Y-%m-%d %H:%M:%S")),
+      _indp[parameterIndex].setShortValue(0),
+      _alen[parameterIndex].setShortValue(20)
+    },
+  value
+}
+
+setRaw(parameterIndex:Int, value:File):File
+{
+  _parameterDataArea[parameterIndex].close,
+  let var maxlength = 0,
+  value.isNil
+  ? {
+      _indp[parameterIndex].setShortValue(oci.NULL_DATA),
+      _parameterDataArea[parameterIndex]:=CRawStringHolder.new(0),
+      maxlength := 0
+    }
+  : {
+      maxlength := value.contentSize.asInt,
+      _parameterDataArea[parameterIndex]:=CRawStringHolder.new(maxlength),
+      _parameterDataArea[parameterIndex].setFileValue(value),
+      _indp[parameterIndex].setShortValue(0)
+    },
+  let error = (oci.obndrv(_hstmt,
+                          _parameterNames[parameterIndex],-1,
+	         	  _parameterDataArea[parameterIndex].handle,
+		          maxlength,
+			  oci.fTypeCode[File],-1,
+			  _indp[parameterIndex].handle,
+		          "",-1,-1) != 0),
+   (* Do not replace obndrv with obndra ! Obndra does NOT work with data
+      larger than 64 K. *)
+   error ? { let er = OCIError.new(_hdbc,_hstmt),
+	     er.raise },
+   value
+}
+    
+private
+
+_hdbc:Int32,
+
+_indp:MutableArray(CShortHolder),
+
+_alen:MutableArray(CShortHolder),
+
+_arcode:MutableArray(CShortHolder)
+
+methods
+
+_open(hdbc:Int32):Void
+{
+  _hstmt := tycoon.ansiC.malloc(64),
+  oci.oopen(_hstmt,hdbc,"",oci.NTS,-1,"",oci.NTS) != 0
+  ? {let error = OCIError.new(hdbc,_hstmt),
+     tycoon.ansiC.free(_hstmt),_hstmt:=nil,
+     error.raise},
+  _hdbc:=hdbc
+}
+
+_createParameterMetaData(hstmt:Int32):SQLParameterMetaData
+{
+  nil
+}
+
+_freeOCIAreas:Void
+{
+  _indp.isNotNil ? {
+  for(0,_indp.size-1,fun(i:Int)
+    {
+      _indp[i].close,
+      _alen[i].close,
+      _arcode[i].close
+    }),
+  _indp:=nil,_alen:=nil,_arcode:=nil}
+}
+
+_allocateParameterDataArea()
+{
+  _parameterDataArea:=MutableArray.new(_parameterClasses.size),
+  for (0,_parameterClasses.size-1,fun (i:Int)
+    {
+      _parameterClasses[i] = Int
+      ? {_parameterDataArea[i]:=CIntHolder.new,
+         setMaxLength(i,4)} :{
+      _parameterClasses[i] = Real
+      ? {_parameterDataArea[i]:=CRealHolder.new,
+         setMaxLength(i,8)} :{
+      _parameterClasses[i] = Date
+      ? {_parameterDataArea[i]:=CStringHolder.new(19),
+         setMaxLength(i,19)} :{
+      _parameterClasses[i] = String
+      ? {_parameterDataArea[i]:=CStringHolder.new(_parameterMaxLength[i])} :{
+      _parameterClasses[i] = File
+      ? {_parameterDataArea[i]:=CRawStringHolder.new(0)}
+      : {CoerceError.new("class not supported",_parameterClasses[i]).raise}}}}}
+    })
+}
+
+_allocateParameterLengthDataArea()
+{
+  _parameterLengthDataArea:=
+    MutableArray.new(_parameterClasses.size),
+  _freeOCIAreas,
+  _indp:=MutableArray.new(_parameterClasses.size),
+  _alen:=MutableArray.new(_parameterClasses.size),
+  _arcode:=MutableArray.new(_parameterClasses.size),
+  for (0,_parameterClasses.size-1,fun (i:Int)
+    {
+	_parameterLengthDataArea[i]:=CShortHolder.new,
+        _indp[i]:=CShortHolder.new, _indp[i].setShortValue(oci.NULL_DATA),
+        _alen[i]:=CShortHolder.new,
+        _arcode[i]:=CShortHolder.new
+    })
+}
+
+_bindParameters
+{
+  for(0,_parameterClasses.size-1, fun (i:Int)
+    {
+      _parameterClasses[i] != Reader ?
+      {
+        let maxLength = _parameterDataArea[i]."class" == CStringHolder
+                        ? {_parameterMaxLength[i] + 1} (* trailing 0 *)
+		        : {_parameterMaxLength[i]},
+        let error = (oci.obndra(_hstmt,
+                                _parameterNames[i],oci.NTS,
+	      		        _parameterDataArea[i].handle,
+		                maxLength,
+			        oci.fTypeCode[_parameterClasses[i]],-1,
+			        _indp[i].handle,
+			        _alen[i].handle,
+			        _arcode[i].handle,
+			        0,Int32.fromInt(0),
+			        "",oci.NTS,-1) != 0),
+        error ? { let er = OCIError.new(_hdbc,_hstmt),
+                  _freeParameterAreas,
+	  	  _freeOCIAreas,
+		  er.raise }
+      }
+     })
+}
+
+_nativeParameter(name:String):String { ":"+name }
+
+_freeParameterAreas:Void
+{
+  super._freeParameterAreas,
+  _freeOCIAreas
+}
+
+_dropStatement()
+{
+  oci.oclose(_hstmt) != 0 ? {OCIError.new(_hdbc,_hstmt).raise},
+  tycoon.ansiC.free(_hstmt)
+}
+
+_prepare(sql:String):Void
+{
+  (oci.oparse(_hstmt,sql,oci.NTS,0,1) != 0)
+  ? {OCIError.new(_hdbc,_hstmt).raise}
+}
+
+_execute():Void
+{
+  (oci.oexec(_hstmt) != 0) ? {OCIError.new(_hdbc,_hstmt).raise}
+}
+
+_executeDirect(sql:String):Void
+{
+  _parameterClasses:=MutableArray.new(0),
+  _parameterNames:=MutableArray.new(0),
+  _prepare(sql),
+  _execute
+}
+
+_unbindParameters():Void
+{
+  nil
+}
+
+_createCursor(_hstmt:Int32):OCICursor
+{
+  let c = OCICursor.new,
+  c.hdbc:=_hdbc,
+  c.open(_hstmt),
+  c
+}
+
+;
+
+
+
+
+
+

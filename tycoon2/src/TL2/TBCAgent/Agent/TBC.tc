@@ -1,0 +1,84 @@
+class TBC
+super MutexHolder
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ TBC.tc
+   
+   Tycoon Business Conversations (TBC) for Tycoon 2
+   ------------------------------------------------
+   This class provides some useful methods of general nature and
+   an agent-pool to keep track of all srtaed agents.
+   
+   18.10.97 hw : created
+   
+*)
+meta SingletonClass(TBC)
+{
+
+startConversation(customer :String, withPerformer :String) :Void
+  (*
+   * Get a customer to start a conversation with a performer.
+   * Both customer and performer must be specified as name of their 
+   * itc-addresses. A "startConversation"-msg is then sent.
+   * Note that no object references to the agent or the roles are
+   * necessary.
+   *)
+{
+  start ::= MessageStartConversation.new(nil, ITCAddress.new(customer))
+  start.with := ITCAddress.new(withPerformer)
+  AgentITCSystem.instance.send(start)
+}
+
+stop :Void
+  (*
+   * Stop _all_ agents.
+   *)
+{
+  lock({_agents.do(fun(a:Agent){a.stop})})
+}
+
+addAgent(a:Agent):Void
+  (*
+   * Add an agent to the agent-pool.
+   *)
+{
+  lock({_agents.add(a)})
+}
+
+remAgent(a:Agent):Void
+  (*
+   * Remove an agent from the agent pool.
+   *)
+{
+  lock({_agents.remove(a)})
+}
+
+private
+
+_agents :Set(Agent)
+
+_init :Void
+  (* *)
+{
+  super._init
+  _agents := Set.new
+}
+
+}

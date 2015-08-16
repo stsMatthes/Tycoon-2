@@ -1,0 +1,60 @@
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ special descriptor for class TL2Class - bootstrap hack.
+   Instances of TL2Class in the pre-bootstrap system become
+   instances of their metaclass in the post-bootstrap system.
+   user-defined class slots are set to <nil>, and will have to
+   be initialized on system startup.
+*)
+
+class ClassDescriptor
+super ArrayDescriptor
+metaclass SingletonClass(ClassDescriptor)
+public methods
+
+allocate(o :Object, tl2Class :TL2Class, tracer :Tracer) :Int
+  require o."class".name = tl2Class.name
+{
+  assert o."class" == TL2Class,
+  assert tl2Class.name = "Class",
+
+  let o = _typeCast(o, :TL2Class),
+  
+  (* the allocated object will be an instance of <meta> *)
+  let metaName = o.metaClassDeclaration.className,
+  let meta = tracer.root.classes.detect(fun(c:TL2Class){ c.name = metaName }), (* ### slow? *)
+  let classId = meta.id,
+  (* the allocated object must be a class
+     (its class must inherit from TL2Class) *)
+  assert meta.cpl.includes(tl2Class),
+  let extraSlots =
+    meta.instanceSize - tl2Class.instanceSize,
+  assert extraSlots >= 0,
+  assert o.__basicSize = tl2Class.instanceSize,
+
+  let bytes = objectSize(o, tracer) + extraSlots * 4,
+  tracer.allocate(o, bytes, classId, o.identityHash, {
+    dumpInstance(o, tracer),
+    for(1,extraSlots,fun(i:Int) {
+      tracer.dumpOID(nil)
+    })
+  })
+} 
+;

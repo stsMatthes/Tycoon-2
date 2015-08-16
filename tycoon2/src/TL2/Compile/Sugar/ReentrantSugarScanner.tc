@@ -1,0 +1,206 @@
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ This class creates scanners that return Tycoon source tokens (old syntax) as
+   Strings, with interleaving `space` tokens.  There is exactly one space token
+   at the beginning and the end of the token stream and between two normal
+   tokens.
+ *)
+
+class ReentrantSugarScanner
+super Sugar
+metaclass ReentrantSugarScannerClass
+public
+
+verbose :Bool
+
+methods
+
+scan(input :Input) :SugarScanner
+{
+  UserScanner.new(tables, input, Cell.new(0))
+}
+
+private
+
+sugarTerminals :SugarTerminals,
+
+tables :UserScannerTables(Token(Object), Cell(Int)),
+
+escapes :Dictionary(Char, Char)
+
+methods
+
+_init :Void
+{ super._init,
+
+  verbose := false,
+
+  (* add regexps for sugarTerminals standard terminal symbols *)
+
+  let string = sugarTerminals.string,
+  let char = sugarTerminals.char,
+  let int = sugarTerminals.int,
+  let real = sugarTerminals.real,
+  let space = sugarTerminals.space,
+
+  escapes := Dictionary.new,
+  escapes['n'] := '\n',
+  escapes['t'] := '\t',
+  escapes['r'] := '\r',
+  escapes['f'] := '\f',
+  escapes['\''] := '\'',
+  escapes['\"'] := '\"',
+  escapes['\\'] := '\\',
+
+  let digit = "[0-9]",
+  let alpha = "[a-zA-Z_]",
+  let special = "[!#$%&*+-/:;<=>?@^`|~]",
+  let simpleEscape = quoteRE(String.fromReader(escapes.keys)),  (* for '\\' *)
+  let escape = "\\\\(["+simpleEscape+"]|"+digit+digit+digit+")",
+  let delimiter = "([()\\{\\}.,]|\\[|\\])",
+
+  let digits = digit+"+",
+  let idRegExp = alpha+"("+alpha+"|"+digit+")*",
+
+  let sb = EagerScannerBuilder(:Token(Object), :Cell(Int)).new,
+  
+  let spaceMode = 0,  (* initial scanner mode *)
+  let commentMode = sb.newMode,
+  let nonSpaceMode = sb.newMode,
+
+  sb.addTokenMode(spaceMode, "[ \t\r\f\n]*",
+    fun(s :SugarScanner) {
+      s.mode := nonSpaceMode,
+      (* ### transform comments to `;`-single-line-comments *)
+      space.token(s.token)
+    }),
+
+  sb.addTokenMode(spaceMode, "[ \t\r\f\n]*\\(\\*",
+    fun(s :SugarScanner) {
+      s.mode := commentMode,
+      s.userState.value := 1,
+      s.readAppend
+    }
+  ),
+
+  sb.addTokenMode(commentMode, "[^]", fun(s:SugarScanner) {
+    s.readAppend
+  }),
+  sb.addTokenMode(commentMode, "\\(\\*", fun(s:SugarScanner) {
+    s.userState.value := s.userState.value + 1,
+    s.readAppend
+  }),
+  sb.addTokenMode(commentMode, "\\*\\)", fun(s:SugarScanner) {
+    s.userState.value := s.userState.value -1,
+    s.userState.value = 0 ? {
+      s.mode := spaceMode
+    },
+    s.readAppend
+  }),
+
+
+  let recognize = fun(n :ValueTerminal(String)) {
+    fun(s :SugarScanner) {
+      let t = n.token(s.token),
+      verbose ? { tycoon.stdout << t.value << ' ' },
+      s.mode := spaceMode,
+      t
+    } },
+  
+  sb.addTokenMode(nonSpaceMode, 
+	      "\"(" + digit +
+		"|" + alpha +
+		"|" + special +
+		"|" + escape +
+		"|" + delimiter + "| )*\"",
+    recognize[string]),
+
+  sb.addTokenMode(nonSpaceMode,
+	      "\'(" + digit +
+		"|" + alpha +
+		"|" + special +
+		"|" + escape +
+		"|" + delimiter + "| )\'",
+    recognize[char]),
+
+
+  sb.addTokenMode(nonSpaceMode, digits,
+    recognize[int]),
+
+  let realAction = recognize[real],
+  sb.addTokenMode(nonSpaceMode, digits+"."+digits, realAction),
+  sb.addTokenMode(nonSpaceMode, digits+"(."+digits+")?(E|e)(+|-)?"+digits, realAction),
+
+  sb.addTokenMode(nonSpaceMode, ";",
+    fun( :SugarScanner) {
+      nil
+    }),
+
+  sb.addTokenMode(nonSpaceMode, idRegExp, fun(s:SugarScanner) {
+    let t = identify(s.token),
+    verbose ? { tycoon.stdout << t.value << ' ' },
+    s.mode := spaceMode,
+    t
+  }),
+
+  (* add regexps for symbols *)
+
+  sugarTerminals.symbols.keysAndElementsDo(
+    fun(name: String, term :ValueTerminal(String)) {
+      sb.addTokenMode(nonSpaceMode, quoteRE(name),
+        recognize[term])
+    }),
+
+  (* ... and go *)
+  tables := sb.generate,
+
+  self
+}
+
+(* return the current token as an identifier or keyword *)
+identify(token :String) :Token(Object)
+{
+  let ident = sugarTerminals.ident,
+  sugarTerminals.keywords.lookup(token,
+    fun(kw :ValueTerminal(String)) {
+      kw.token(token)
+    },
+    { (*let token =   (* ### bootstrap hack *)
+        token = "Class_" ? { "Class" }
+	: { token = "MetaClass_" ? { "MetaClass" }
+	    : { token }}, *)
+      ident.token(token)
+    }
+  )
+}
+
+(* ### what a hack! *)
+quoteRE(s :String) :String
+{
+  let qs = MutableString.new(s.size * 2),
+  for(0, s.size-1, fun(i :Int) {
+    qs[2*i] := '\\',
+    qs[2*i+1] := s[i]
+  }),
+  qs
+}
+;
+
+

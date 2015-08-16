@@ -1,0 +1,126 @@
+class Agent
+super NamedMixin, Trace, MutexHolder
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ Agent.tc
+   
+   Tycoon Business Conversations (TBC) for Tycoon 2
+   ------------------------------------------------
+   The agent-skeleton. This skeleton provides functionality to add
+   roles with associated conversation-specs. Each role must have an 
+   unique name within the agent.
+
+   20.08.97 hw : created
+   
+*)
+meta NamedClass(Agent)
+{
+
+addRole(role @:Role(AgentRule)) :Void
+  (* ======== direct interface to agent-object ============================== 
+ 
+   * Add a new role (performer or customer) to the agent.
+   * This method is to be used by Role.new only!
+   * Done by directly manipulationg the agents role-dictionary.
+   * After adding a role, it must not be accessed directly anymore.
+   *)
+{
+  lock({_roles.add(role@)})   ; protected! 
+}
+
+getRole(name:String):Role(AgentRule)
+  (*
+   * Return the Role with name 'name'. ###only a hack for Volker?
+   *)
+{
+  lock({_roles[name]})
+}
+
+stop :Void
+  (* 
+   * ###notbremse
+   *)
+{
+  _stop := true
+  _roles.do(fun(r:Role(AgentRule)){r.stop})  ; stop all conversations 
+  _port.put(nil@)                             ; kill agent thread 
+}
+
+private
+
+_address :ITCAddress
+  (* This agents address. Set by _init, wont change after that. *)
+
+_port :MessagePort
+  (* The message port of this agent. Set by _init, wont change after that. 
+     This port will be published to the itc-system under the above address. *)
+
+_thread :Thread(Void)
+  (* The thread of this agent. Each newly instanciated agent will have one. *)
+
+_roles @:AtNameIndex(Role(AgentRule))
+  (* The roles this agent has. Added via addRole(). 
+     All accesses (read and r/w) must be protected by lock (fromMutexHolder),
+     since roles may be added while the agent is already running. *)
+
+_stop :Bool
+  (* A flag for the threads main-loop. *)
+
+_init :Void
+  (* *)
+{
+  super._init
+
+  ; Initialize slots. 
+  _address:= ITCAddress.new(name)
+  _roles  := AtNameIndex.new@
+  _stop   := false
+
+  traceInit(name)
+
+  ; Start a new thread for this agent. 
+  _thread := Thread.new(fun():Void{
+    ;==== thread code:
+    Thread.this.name := name
+    trace("agent thread launched for address "+name)
+    ; this port will receive the messages for all roles. 
+    _port := AgentITCSystem.instance.newPort(_address)
+    until({_stop},{
+      msg @::= _port.get@                    ; wait for next message 
+      if( msg.isNotNil then: {
+	role ::= lock({_roles[msg.to.nameTail]})  ; find receiver 
+	trace("got "+msg.clazz.name+", dispatch to role "+role.name)
+	; ### ^add error handling  
+	msg := msg.handle(role)@                  ; call roles handler 
+	; ### ^try/catch 
+	AgentITCSystem.instance.send(msg@)        ; reply result (maybe nil)  
+      })
+    })
+    AgentITCSystem.instance.unregisterPort(_port)
+    trace("agent thread ended for address "+name)
+    TBC.instance.remAgent(self)
+    ;==== end thread code. 
+  })
+
+  ; register agent in agent pool for debugging purposes 
+  TBC.instance.addAgent(self)
+}
+
+}

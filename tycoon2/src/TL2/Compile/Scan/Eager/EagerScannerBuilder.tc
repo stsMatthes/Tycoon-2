@@ -1,0 +1,193 @@
+class EagerScannerBuilder(E <:Object, UserState <: Void)
+super Eager, ScannerBuilder(E, UserState)
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+  File: EagerScannerBuilder.tc
+  Author: Axel Wienberg
+ Purpose: builder for scanner tables
+ Updates: 10-Jun-1997 ScannerBuilder --> EagerScannerBuilder
+*)
+meta SimpleConcreteClass(EagerScannerBuilder(E,UserState))
+{
+computeDfas :Array(DFAInterface(Fun(:UserScanner(E,UserState)):E))
+  (* *)
+{
+  Array.fromReader(
+    _modes.map(fun(s :DynSequence(Pair(NFA, Fun(:UserScanner(E,UserState)):E))) {
+      computeDfa(s)
+    }))
+}
+
+computeDfa(tokens :Sequence(Pair(NFA, Fun(:UserScanner(E,UserState)):E)))
+			:EagerDFA(Fun(:UserScanner(E,UserState)):E)
+  (* *)
+{
+  moves.clear
+  offsets.clear
+  offset := 0
+
+  tycoon.stdout.writeln("  ...generating DFA")
+ 
+  _dfaActionTable.clear
+  _dfa := DFAGenerator.new.genDFA(tokens, _dfaActionTable)
+
+  tycoon.stdout.writeln("  ...renumbering DFA")
+ 
+  renumberDFA
+
+  tycoon.stdout.writeln("  ...generating tables")
+
+  emitTransitions
+
+  tycoon.stdout << "  NFA States: "
+  << tokens.inject(0,fun(accu :Int, p :Pair(NFA, Object)) {
+       nfa ::= p.first
+       accu + nfa.states.size
+     })
+  << '\n'
+  tycoon.stdout.writeln("  DFA States: " + states.size.printString)
+  tycoon.stdout.writeln("  Move Table: " + moves.size.printString)
+
+  EagerDFA.new(
+    initialState,
+    firstFinal,
+    ShortArray.fromSequence(moves),
+    Array.fromSequence(offsets),
+    Array.fromSequence(actions))
+}
+
+private
+
+_dfa :DFA
+
+_dfaActionTable :Dictionary(DFAState, Fun(:UserScanner(E,UserState)):E)
+
+initialState :Int
+
+firstFinal :Int
+
+states :MutableArray(DFAState)
+
+actions :List(Fun(:UserScanner(E,UserState)):E)
+
+offset :Int
+
+moves :GapArray(Int)
+
+offsets :GapArray(Int)
+
+emitTransition(i :Int, n :Int) :Void
+  (* *)
+{
+  moves.addLast(i)
+  moves.addLast(n)
+  offset := offset+2
+}
+
+emitTransitions :Void
+  (* *)
+{
+  states.do(fun(s1 :DFAState) {
+    thisOffset ::= offset
+    i ::= 1
+    while({i <= 255} do: {
+      ch ::= i.asChar
+      s2 ::= s1.transitions.lookup(ch,
+        ; ifPresent 
+fun(s2 :DFAState) {s2},
+	; ifAbsent 
+{nil})
+
+      i2 ::= i+1
+      while({i2 <= 255 && 
+        s2 = s1.transitions.lookup(i2.asChar,
+	  ; ifPresent 
+fun(s2_1 :DFAState) {s2_1},
+	  ; ifAbsent 
+{nil})} do:
+	{i2 := i2 + 1})
+
+
+      if( s2.isNil
+        then: { if( i2 <= 255 then: {
+	      emitTransition(i2, (-1))}) }      ; terminator 
+	else: { emitTransition(i2, s2.n) })
+
+      i := i2
+      })
+
+    if( offset = thisOffset && thisOffset > 0
+      then: { offsets.addLast(offset-1) }	; there is already a terminator 
+      else: { offsets.addLast(thisOffset)
+	  moves.addLast((-1))
+	  offset := offset+1 })
+    })
+}
+
+renumberDFA :Void
+  (* *)
+{
+  nNonFinals ::= 0
+  nFinals ::= 0
+  nStates ::= _dfa.states.size
+  states := MutableArray.new(nStates)
+  actions := List.with0
+
+  ; for all modes, collect all the states and actions, and seperate final and
+;     nonfinal states  (nonfinal state numbers grow from 0, final state numbers
+;     shrink from nStates-1) 
+
+  if( _dfaActionTable.includesKey(_dfa.start) then: {
+    tycoon.stdout.writeln("warning: dfa accepts the empty string")
+  })
+
+  _dfa.states.do(fun(s :DFAState) {
+    _dfaActionTable.lookup(s, :Void, 
+      ; ifPresent 
+fun(action :Fun(:UserScanner(E,UserState)):E) {
+	nFinals := nFinals + 1
+	s.n := nStates - nFinals
+	states[s.n] := s
+	actions := List.cons(action, actions)
+      },
+      ; ifAbsent 
+{
+	s.n := nNonFinals
+	states[s.n] := s
+	nNonFinals := nNonFinals + 1
+      }
+    )
+  })
+  assert({ nFinals + nNonFinals = nStates })
+
+  firstFinal := nNonFinals
+  initialState := _dfa.start.n
+}
+
+_init :Void
+  (* *)
+{ super._init
+  moves := GapArray.new(200)
+  offsets := GapArray.new(200)
+  _dfaActionTable := Dictionary.new1(10)
+  self
+}
+
+}

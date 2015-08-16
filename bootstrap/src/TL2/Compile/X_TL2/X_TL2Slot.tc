@@ -1,0 +1,113 @@
+class X_TL2Slot
+super X_TL2ProgramObject
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+*)
+meta X_TL2SlotClass
+{
+name :Symbol
+
+type :X_TL2Type
+
+documentation :String
+
+isPrivate :Bool
+
+isComponent :Bool
+
+prettyPrint(out:Printer) :Void
+  (* *)
+{ out ; << (isPrivate?{"private "}:{"public "}) 
+      << name <<if(isComponent then:{" @:"}else:{" :"})<<type
+  if( documentation.isNotNil
+  then: { out.withRelIndent(2, {
+        out << "\n(*"<<documentation<<"*)"
+      }) })
+  out.nl
+}
+
+scopeSlot(env :X_TL2Scoper) :Void
+  (* *)
+{ type := type.scope(env) }
+
+selectors :Array(X_TL2Selector)
+{
+  if( isComponent then: {
+    #( X_TL2Selector.new(name, #()),
+       X_TL2Selector.new(Symbol.new(name+"@"), #()),
+       X_TL2Selector.new(Symbol.new(name+":="), #(true)))
+  } else: {
+    #( X_TL2Selector.new(name, #()),
+       X_TL2Selector.new(Symbol.new(name+":="), #(false)))
+  })
+}
+
+accessMethods(offset :Int, isStruct :Bool) :Array(X_TL2SlotMethod)
+  (* find or create a set of slot method for this slot with the desired properties *)
+{
+  found ::=
+    cache.detect(fun(a :Array(X_TL2SlotMethod)) {
+      m ::= a[0] ;; the same for all elements of a
+      m.offset = offset && m.isStruct = isStruct
+    })
+  if( found.isNil then: {
+    found := generate(offset, isStruct)
+    cache := List.cons(found, cache)
+  })
+  found
+}
+
+private
+
+generate(offset :Int, isStruct :Bool) :Array(X_TL2SlotMethod)
+{
+  if( isStruct then: {
+    if( isComponent then: {
+      Array(:X_TL2SlotMethod).with3(
+        X_TL2CSlotReferenceMethod.new(self, offset),
+	X_TL2CSlotTakeFromMethod.new(self, offset),
+	X_TL2CSlotMoveToMethod.new(self, offset) )
+    } else: {
+      Array(:X_TL2SlotMethod).with2(    
+        X_TL2CSlotUpdateMethod.new(self, offset),
+        X_TL2CSlotAccessMethod.new(self, offset) )
+    })
+  } else : {
+    if( isComponent then: {
+      Array(:X_TL2SlotMethod).with3(
+        X_TL2SlotReferenceMethod.new(self, offset),
+	X_TL2SlotTakeFromMethod.new(self, offset),
+	X_TL2SlotMoveToMethod.new(self, offset) )
+    } else: {
+      Array(:X_TL2SlotMethod).with2(    
+        X_TL2SlotUpdateMethod.new(self, offset),
+        X_TL2SlotAccessMethod.new(self, offset) )
+    })
+  })
+}
+
+cache :List(Array(X_TL2SlotMethod))
+  (* all slot methods generated for this slot so far *)
+
+_init :Void
+{ super._init
+  cache := emptyList
+}
+}

@@ -1,0 +1,44 @@
+class DbgTest1
+super Debug
+meta SingletonClass(DbgTest1)
+{
+
+startStepper :Void
+{
+  isStopRequest := false
+  stepper := Thread.new({
+    Thread.this.name := "stepper"
+    stepLoop
+  })
+}
+
+step :Void
+{
+  stepper.resume
+}
+
+stop :Void
+{
+  isStopRequest := true
+  stepper.resume
+}
+
+private
+
+isStopRequest :Bool
+
+stepper :Thread(Void)
+
+stepLoop :Void
+{
+  Thread.suspend
+  Thread.sleep(2L)
+  if( !isStopRequest then: {
+    tycoon.stdout << "Step\n"
+    stepLoop
+  } else: {
+    tycoon.stdout << "Stepper done\n"
+  })
+}
+
+}

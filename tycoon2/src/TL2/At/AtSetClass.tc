@@ -1,0 +1,48 @@
+class AtSetClass(E <: Object)
+super ConcreteClass(AtSet(E))
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ ...super AtAddGeneratorMixin(E, AtSet(E)) *)
+meta MetaClass
+{
+new @:AtSet(E)
+{
+  _newCapacity(0)@
+}
+
+new1(initialCapacity :Int) @:AtSet(E)
+  (* *)
+{
+  _newCapacity(initialCapacity)@
+}
+
+private
+
+_newCapacity(initialCapacity :Int) @:AtSet(E)
+  (* create a new instance, to which <capacity> new elements can
+     efficiently be added *)
+  ensure result.size = 0
+{
+  instance @::= _new@
+  instance._init1(initialCapacity)
+  instance@
+}
+
+}

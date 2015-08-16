@@ -1,0 +1,42 @@
+class AtGapArrayClass(E<:Object)
+super ConcreteClass(AtGapArray(E))
+meta MetaClass
+{
+
+new @:AtGapArray(E)
+  ensure result.size = 0
+{
+  _new2(0,0)@
+}
+
+newCapacity(initialCapacity :Int) @:AtGapArray(E)
+  require initialCapacity >= 0
+  ensure result.size = 0
+{
+  _new2(initialCapacity, 0)@
+}
+
+newCapacitySize(initialCapacity :Int, initialSize :Int) @:AtGapArray(E)
+  require initialCapacity >= initialSize && initialSize >= 0
+  ensure result.size = initialSize
+{
+  _new2(initialCapacity, initialSize)@
+}
+
+newSize(initialSize :Int) @:AtGapArray(E)
+  require initialSize >= 0
+  ensure result.size = initialSize
+{
+  _new2(initialSize, initialSize)@
+}
+
+private
+
+_new2(initialCapacity :Int, initialSize :Int) @:AtGapArray(E)
+{
+  instance @::= _new@
+  instance._init2(initialSize, initialCapacity)
+  instance@
+}
+
+}

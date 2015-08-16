@@ -1,0 +1,63 @@
+class SequenceContentSpec
+super ContentSpec
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ SequenceContentSpec.tc
+
+   Tycoon Business Conversation (TBC) for Tycoon 2 
+   -----------------------------------------------
+   Content type for sequences.  A sequence spec describes a aggregation of 
+   contents of a uniform type. This type is passed to the new method on creating
+   a SequenceContentSpec. Note that in difference to RecordContentSpec and 
+   VariantContentSpec the elements are not named.
+  
+   17.08.97 hw : created
+   
+*)
+meta SequenceContentSpecClass
+{
+
+seqSpec @:ContentSpec
+  (* The common type of the sequence elements. *)
+
+visit(v :ContentSpecVisitor) :Void
+  (* *)
+{
+  v.sequenceContentSpec(self)
+}
+
+matches(other :ContentSpec) :Bool
+  (* Return true, iff other spec is a SequenceSpec AND the embedded
+     specs for the type of the sequence also match. *)
+{
+  (other.clazz = self.clazz) && (
+    other2 ::= _typeCast(other, :Self)    
+			     ; safe, since same class and no type parameters! 
+    seqSpec.matches(other2.seqSpec)
+  )
+}
+
+instance() @:SequenceContent
+  (* *)
+{
+  SequenceContent.new(self)@
+}
+
+}

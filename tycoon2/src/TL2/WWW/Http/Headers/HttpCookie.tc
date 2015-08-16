@@ -1,0 +1,25 @@
+class HttpCookie
+super Http
+
+public methods
+
+name :String   { _name }
+value :String  { _value }
+
+private
+
+_name :String,
+_value :String
+
+methods
+
+_init2(n :String, v :String)
+{
+  _name := n,
+  _value := v
+}
+
+;
+
+
+

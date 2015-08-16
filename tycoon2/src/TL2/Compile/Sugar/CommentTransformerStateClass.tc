@@ -1,0 +1,13 @@
+class CommentTransformerStateClass
+super ConcreteClass(CommentTransformerState)
+metaclass MetaClass
+public methods
+
+new(out :Output) :CommentTransformerState
+{
+  let instance = _new,
+  instance.out := out,
+  instance._init,
+  instance
+}
+;

@@ -1,0 +1,11 @@
+class IntArrayDescriptor
+super AbstractArrayDescriptor
+metaclass SingletonClass(IntArrayDescriptor)
+public methods
+
+layout :Int
+{ layoutShortArray }
+
+elementFmt :Char
+{ 'i' }
+;

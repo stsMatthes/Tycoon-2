@@ -1,0 +1,14 @@
+class AndValueClass
+super ConcreteClass(AndValue)
+metaclass MetaClass
+public methods
+new(cond1 :Value, cond2 :Value) :AndValue
+{
+  let instance = _new,
+  instance.pos := cond1.pos,
+  instance.condition := cond1,
+  instance.trueBranch := cond2,
+  instance.falseBranch := LiteralValue.new1(nil, false),
+  instance._init
+}
+;

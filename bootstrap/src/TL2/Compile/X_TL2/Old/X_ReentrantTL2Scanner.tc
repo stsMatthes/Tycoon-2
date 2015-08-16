@@ -1,0 +1,230 @@
+class X_ReentrantTL2Scanner
+super X_TL2
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+*)
+meta X_ReentrantTL2ScannerClass
+{
+scan(where :String, input :Input, errorLog :ErrorLog ) :X_TL2Scanner
+  (*, bufferCapacity :=100*)
+{ scan1(where, input, errorLog, 100) }
+
+scan1(where :String, input :Input, errorLog :ErrorLog, bufferCapacity :Int) :X_TL2Scanner
+  (* *)
+{
+  s ::=
+    UserScanner.new1(tables, input, bufferCapacity,
+      X_TL2ScannerState.new(twlTerminals.keywords, where, errorLog))
+  s.errorHandler :=   ; ### should become an argument when optional parameters are available 
+    fun(ch :Char){ s.userState.error(ch) }
+  s.userState.scanner := s  ; backward reference for source positions 
+  s
+}
+
+private
+
+twlTerminals :X_TL2Terminals
+
+tables :UserScannerTables(Token(Object), X_TL2ScannerState)
+
+escapes :Dictionary(Char, Char)
+
+_init :Void
+  (* *)
+{ super._init
+
+  ; add regexps for twlTerminals standard terminal symbols 
+
+  ident ::= twlTerminals.ident
+  string ::= twlTerminals.string
+  char ::= twlTerminals.char
+  int ::= twlTerminals.int
+  real ::= twlTerminals.real
+
+  escapes := Dictionary.new
+  escapes['n'] := '\n'
+  escapes['t'] := '\t'
+  escapes['r'] := '\r'
+  escapes['f'] := '\f'
+  escapes['\''] := '\''
+  escapes['\"'] := '\"'
+  escapes['\\'] := '\\'
+
+  digit ::= "[0-9]"
+  alpha ::= "[a-zA-Z_]"
+  special ::= "[!#$%&*+-/:;<=>?@^`|~]"
+  simpleEscape ::= quoteRE(String.fromReader(escapes.keys))  ;; for '\\'
+  escape ::= "\\\\(["+simpleEscape+"]|"+digit+digit+digit+")"
+  delimiter ::= "([()\\{\\}.,]|\\[|\\])"
+
+  digits ::= digit+"+"
+  idRegExp ::= alpha+"("+alpha+"|"+digit+")*"
+
+  sb ::= EagerScannerBuilder(:Token(Object), :X_TL2ScannerState).new
+  
+  sb.addToken("\"(" + digit +
+		"|" + alpha +
+		"|" + special +
+		"|" + escape +
+		"|" + delimiter + "| )*\"",
+    fun(s :X_TL2Scanner) {
+      r ::= s.token.subSequenceReader(1,s.tokenSize-2)
+      string.token(Positioned.new(s.userState.position,
+        String.fromReader(FunReader.new({ decodeChar(r) }))
+      ))
+    }
+  )
+
+  sb.addToken("\'(" + digit +
+		"|" + alpha +
+		"|" + special +
+		"|" + escape +
+		"|" + delimiter + "| )\'",
+    fun(s :X_TL2Scanner) {
+      char.token(Positioned.new(s.userState.position,
+        decodeChar(s.token.subSequenceReader(1,s.tokenSize-2))
+      ))
+    }
+  )
+
+
+  sb.addToken(digits,
+    fun(s :X_TL2Scanner) {
+      int.token(Positioned.new(s.userState.position,
+        s.token.asInt	    ; ### better? 
+; Int.fromReader(s.tokenReader) 
+      ))
+    }
+  )
+
+  realAction ::=
+    fun(s :X_TL2Scanner) {
+      real.token(Positioned.new(s.userState.position,
+        s.token.asReal
+      ))
+    }
+  sb.addToken(digits+"."+digits, realAction)
+  sb.addToken(digits+"(."+digits+")?(E|e)(+|-)?"+digits, realAction)
+
+  sb.addToken("[ \t\r\f]+",
+    fun(s :X_TL2Scanner) {
+      s.read
+    }
+  )
+
+  sb.addToken("\n",
+    fun(s :X_TL2Scanner) {
+      s.userState.newline
+      s.read
+    }
+  )
+
+  sb.addToken(";",
+    fun(s :X_TL2Scanner) {
+      nil
+    }
+  )
+
+  commentMode ::= sb.newMode
+  
+  sb.addToken("\\(\\*",
+    fun(s :X_TL2Scanner) {
+      s.mode := commentMode
+      s.userState.nesting := 1
+      s.readAppend
+    }
+  )
+
+  sb.addTokenMode(commentMode, "[^\n]", fun(s:X_TL2Scanner) {
+    s.read
+  })
+  sb.addTokenMode(commentMode, "\n", fun(s:X_TL2Scanner) {
+    s.userState.newline
+    s.read
+  })
+  sb.addTokenMode(commentMode, "\\(\\*", fun(s:X_TL2Scanner) {
+    s.userState.nesting := s.userState.nesting + 1
+    s.read
+  })
+  sb.addTokenMode(commentMode, "\\*\\)", fun(s:X_TL2Scanner) {
+    s.userState.nesting := s.userState.nesting -1
+    if( s.userState.nesting = 0 then: { s.mode := 0 })
+    s.read
+  })
+
+  sb.addToken(idRegExp, fun(s:X_TL2Scanner) {
+    s.userState.identify(ident)
+  })
+
+  ; add regexps for symbols 
+
+  twlTerminals.symbols.keysAndElementsDo(
+    fun(name: String, term :ValueTerminal(SourcePos)) {
+      sb.addToken(quoteRE(name), fun(s:X_TL2Scanner) {
+        term.token(s.userState.position)
+      })
+    }
+  )
+
+  ; ... and go 
+  tables := sb.generate
+
+  self
+}
+
+decodeChar(r :Reader(Char)) :Char
+  (* *)
+{
+  c ::= r.read
+  if( c.isNil ||  c !== '\\'  then: {
+    c
+  } else: {
+    c ::= r.read
+    escapes.lookup(c,
+      fun(coded :Char) {
+        coded
+      },
+      { 
+        assert({ c.isDigit })
+	i ::= c.digitValue
+	c ::= r.read
+	assert({ c.isNotNil & c.isDigit })
+	i ::= i * 10 + c.digitValue
+	c ::= r.read
+	assert({ c.isNotNil & c.isDigit })
+	i ::= i * 10 + c.digitValue
+	i.asChar
+      }
+    )
+  })
+}
+
+quoteRE(s :String) :String
+  (* ### what a hack! *)
+{
+  qs ::= MutableString.new(s.size * 2)
+  for(0 to: s.size-1 do: fun(i :Int) {
+    qs[2*i] := '\\'
+    qs[2*i+1] := s[i]
+  })
+  qs
+}
+
+}

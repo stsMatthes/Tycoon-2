@@ -1,0 +1,457 @@
+class Object
+super
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ 
+Object - The Root of the Tycoon Class Inheritance Hierarchy.
+
+Author:  Andreas Gawecki
+Date:    01-Mar-1995
+Updates: (Date)	  (Name)	(Description)
+
+ empty sequence of supers *)
+meta AbstractClass
+{
+yourself :Self
+  (* answer the receiver *)
+{
+  self
+  }
+
+"=="(x :Object) :Bool
+  (* test for object identity.
+     should not be redefined *)
+builtin
+
+"!=="(anObject :Object) :Bool
+  (* *)
+{
+  !(self == anObject)
+  }
+
+"="(x :Object) :Bool
+  (* Object equality. Default implementation uses object identity *)
+{
+  self == x
+}
+
+"!="(x :Object) :Bool
+  (* *)
+{
+  !(self = x)
+}
+
+copy :Self
+  (* return a deep copy of the receiver.
+     Default implementation uses shallowCopy. *)
+{
+  shallowCopy
+}
+
+componentCopy @: Self
+  (* return a deep copy of the receiver, recursively following
+     component links, but keeping reference links between subcomponents
+     intact. *)
+{
+  mapping ::= IdDictionary(:Object, :Object).new
+  __deepHollowCopy(mapping)
+  mapping.keysAndElementsDo(fun(org:Object, cc:Object){
+    cc.__copyFrom(org, mapping)
+  })
+  fetch(_typeCast(mapping[self], :Self))@
+}
+
+identityHash :Int
+  (* answer a hash value reflecting the receivers identity, not its contents *)
+{
+  _hash
+}
+
+equalityHash :Int
+  (* answer a hash value reflecting the receivers contents.
+     Default implementation is identityHash. *)
+{
+  identityHash
+}
+
+isNotNil :Bool
+  (* *)
+{
+  true
+}
+
+isNil :Bool
+  (* *)
+{
+  false
+}
+
+"class" :Class
+  (* *)
+builtin
+
+clazz :Class
+  (* *)
+{
+  self."class"
+}
+
+superComponent :Object
+  (* return the object that I am a component of, or nil if there is no such object. *)
+builtin
+
+writeOn(out :Output) :Void
+  (* append the pure 'value' or 'contents' of the receiver to the given output stream.
+     this method is called by Output:"<<".     
+     the default implementation uses printOn(), subclasses should override it appropriately.
+     this is done, for example, by String and Char in order
+     to strip the quotes.
+   *)
+{
+  printOn(out)  
+}
+
+printOn(out :Output) :Void
+  (* append to the given output stream a textual representation	that describes
+     the receiver. default implementation, subclasses should override it appropriately.
+  *)
+{
+  className :String := self."class".name  ;##allow 'class' as identifier  
+  out << if( className[0].isVowel then: {"an "} else: {"a "}) << className
+}
+
+printString :String
+  (* To obtain a string from the printed representation of the receiver,
+     print it on a string and answer the printed subsequence. *)
+{
+  buffer ::= StringBuilderOutput.new1(10)
+  printOn(buffer)
+  buffer.contents
+}
+
+print :Void
+  (* *)
+{
+  printOn(tycoon.stdout)
+}
+
+perform(selector :TL2Selector, args :Array(Object)) :Nil
+  (* *)
+  require selector.arity == args.size
+{
+  if( selector.isComponent then: fun():Nil{
+    ref(_perform(selector, args)@)
+  } else: {
+    _perform(selector, args)
+  })
+}
+
+__basicSize :Int
+  (* answer the number of slots of the receiver
+   for system use only *)
+builtin
+
+__basicAt(i :Int) :Object
+  (* answer the contents of slot #i of the receiver
+   for system use only *)
+builtin
+
+__basicAtPut(i :Int, value :Object) :Object
+  (* change the contents of slot #i of the receiver
+   for system use only *)
+builtin
+
+__deepHollowCopy(mapping: IdDictionary(Object, Object)) :Void
+  (* recursively allocate hollow copies for all transitive components,
+     and set mapping[original] := hollow copy.
+     Helper method for componentCopy. *)
+{
+  ;; default implementation, unsuitable for classes with varying size (arrays)
+  mapping[self] := __hollowCopy
+  assert({ __basicSize == self."class".slotMap.size })
+  self."class".slotMap.keysAndElementsDo(fun(i:Int, slot :TL2Slot) {
+    if( slot.isComponent then: {
+      __basicAt(i).__deepHollowCopy(mapping)
+    })
+  })    
+}
+
+__copyFrom(original :Object, mapping :IdDictionary(Object,Object)) :Void
+{
+  assert({ original."class" == self."class" })
+  for(0 to: __basicSize-1 do: fun(i:Int){
+    originalValue ::= original.__basicAt(i)
+    __basicAtPut(i, mapping.lookup(originalValue, fun(o:Object){ o }, { originalValue }))
+  })
+  if( original.isImmutable then: { setImmutable })
+}
+
+isImmutable :Bool
+  (* Is the immutable flag of this object set? *)
+  builtin
+
+setImmutable :Void
+  (* set the immutable flag. *)
+  builtin
+
+isTracedComponent :Bool
+  (* If set, a Thread with the TRACE_INTERCOMPONENT_ONLY flag signals events
+     that cross the border of the component formed by this object *)
+  builtin
+
+"isTracedComponent:="(:Bool):Bool
+  (* If set, a Thread with the TRACE_INTERCOMPONENT_ONLY flag signals events
+     that cross the border of the component formed by this object *)
+  builtin
+
+private
+
+_init :Void
+  (* Initialize the object after some slots have been set by the metaclass.
+   Default implementation does nothing.
+   Subclasses should take care always to call super._init in order to support
+   mixin-style programming. *)
+{ self }
+
+"true" :Bool
+  (* *)
+builtin
+
+"false" :Bool
+  (* *)
+builtin
+
+"nil" :Nil
+  (* *)
+builtin
+
+nil @: Nil
+  (* *)
+{ fetch(nil)@ }
+
+fetch(T <:Object, x:T) @: T
+  (* make the object referred to by x a local component of the caller.
+     Throws an exception if x is already a component of some object. *)
+  builtin
+{ nil@ }
+
+ref(T <: Object, x @:T ) :T
+  (* set the component x free and return a reference to it *)
+{ x }
+
+"void" :Void
+  (* help kill the type checker messenger *)
+{ nil } 
+
+emptyList :EmptyList
+  (* *)
+{
+  EmptyList.instance
+}
+
+if(T <: Void, cond :Bool, then :Fun():T, else :Fun():T) :T
+  (* *)
+{ cond.case(then,   ; ifTrue 
+	    else)   ; ifFalse 
+}
+
+if(T <: Void, cond :Bool
+     then: then :Fun()@:T
+     else: else :Fun()@:T) @:T
+  (* *)
+{ cond.case(then,   ; ifTrue 
+	    else)@   ; ifFalse 
+}
+
+while(cond :Fun():Bool, statement :Fun():Void) :Void
+  (* *)
+{
+  if( cond[] then: {statement[] while(cond do: statement)})
+  }
+
+until(cond :Fun():Bool, statement :Fun():Void) :Void
+  (* old syntax *)
+{
+  statement[] if( !cond[] then: {until(cond, statement)})
+  }
+
+repeat(statement :Fun():Void, until :Fun():Bool) :Void
+  (* *)
+{
+  statement[] if( !until[] then: {repeat(statement until: until)})
+}
+
+forStep(from :Int, to :Int, step :Int, statement :Fun(:Int):Void) :Void
+  (* *)
+{
+  if( (from <= to) then: {statement[from] forStep(from+step, to, step, statement)})
+  }
+
+for(from :Int, to :Int, statement :Fun(:Int):Void) :Void
+  (* *)
+{
+  forStep(from, to, 1, statement)
+  }
+
+forDowntoStep(from :Int, to :Int, step :Int, statement :Fun(:Int):Void) :Void
+  (* *)
+{
+  if( (from >= to) then: {statement[from] forDowntoStep(from-step, to, step, statement)})
+  }
+
+forDownto(from :Int, to :Int, statement :Fun(:Int):Void) :Void
+  (* *)
+{
+  forDowntoStep(from, to, 1, statement)
+  }
+
+"try"(T <:Void, block :Fun():T, handler :Fun(:Exception):T) :T
+  (* *)
+builtin
+
+"try"(T <:Void, block :Fun()@:T
+	else: handler :Fun(:Exception)@:T) @:T
+  (* *)
+{
+  ;; unpleasant hack
+  result @:T:=nil@
+  try({
+    result := block[]@
+  } else: fun(e:Exception) {
+    result := handler[e]@
+  })
+  result@
+}
+
+protect(T <: Void, statement :Fun():T, finally :Fun():Void) :T
+  (* execute 'statement' and subsequently 'finally'.
+   answer the value of 'statement'.
+   
+   'finally' is guaranteed to be executed even if some exception
+   is raised during execution of 'statement'.
+   
+   in the latter case, yet another exception raised in 'finally' will take precedence,
+   i.e. will not be caught.
+*)
+{
+  result ::= 
+    try({statement[]} else:
+      fun(e :Exception) {
+       ; don't ignore exceptions raised in finally: 
+       finally[]
+       ; re-raise original exception: 
+       e.raise
+       })     
+  finally[]
+  result
+}
+
+"assert"(assertion :Fun():Bool) :Nil
+  (* *)
+{ if( !assertion[]
+  then: fun() :Nil { if( assertion."class" == Fun0
+      then: { code ::= _typeCast( assertion.__basicAt(0), :TL2CompiledFun)
+	  pos ::= code.pos
+	  _raiseAssertError(pos.line, pos.column, pos.where) }
+      else: { _raiseAssertError((-1), (-1), "<unknown>") }) }
+  else: { nil })
+}
+
+_raiseAssertError(line :Int, column :Int, where :String) :Nil
+  (* *)
+{
+  AssertError.new(line,column,where).raise
+  }
+
+_raiseMethodNotImplemented(selector :String) :Nil
+  (* *)
+{
+  MethodNotImplementedError.new(self,selector).raise
+  }
+
+_raiseDoesNotUnderstand(selector :String) :Nil
+  (* *)
+{
+  DoesNotUnderstand.new(self,selector).raise
+  }
+
+_raiseCoerceError(source :Object,type:Class) :Nil
+  (* *)
+{
+  CoerceError.new(source,type).raise
+  }
+
+shallowCopy :Self
+  (* deprecated - unsafe in objects that have components slots - use componentCopy! *)
+builtin
+
+__hollowCopy : Self
+  (* *)
+builtin
+
+_typeCast(x :Object, T <:Object) :T
+  (*## will be replaced by safe downcast some day *)
+builtin
+
+_typeComponent(x @:Object, T <:Object, xRef :T) @:T
+  (* get a more accurately typed component if you already have
+     an accurately typed reference. *)
+  require x == xRef
+  ensure result == xRef
+{
+  assert({ x == xRef })
+  ;; a bit clumsy (maybe this would better be implemented as a builtin)
+  ref(x@)
+  ;; now, x has no superComponent, so we can safely fetch the typed xRef
+  fetch(xRef)@
+}
+
+_hash :Int
+  (* *)
+builtin
+
+_setHash(hash :Int) :Int
+  (* *)
+builtin
+
+_perform(selector :TL2Selector, args :Array(Object)) :Nil
+  (* *)
+builtin
+
+_perform(selector :TL2Selector, args :Array(Object)) @:Nil
+  (* *)
+builtin
+{ nil@ }
+
+_doesNotUnderstand(selector :TL2Selector, :Array(Object)) :Nil
+  (* *)
+{
+  DoesNotUnderstand.new(self, selector.symbol).raise
+}
+
+__doesNotUnderstand(selector :TL2Selector, args :Array(Object)) :Nil
+  (* *)
+builtin
+; do not redefine this method in any subclass! 
+{
+  _doesNotUnderstand(selector, args)
+}
+
+}

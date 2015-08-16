@@ -1,0 +1,191 @@
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ Mixin for argument substitution resp. subsignature test *)
+class ApplyMixin
+  super TypeCheckMixin
+  metaclass AbstractClass
+
+private methods
+
+(* Put actual arguments in for formal parameters by computing
+   the appropriate substitution for 'range'.
+   Will introduce UniVars when needed.
+
+   If 'check'=true, check if these are legal arguments
+   call cont with self.range and expanded subst
+
+   useful for 'Sub Oper', 'ApplyType::expose', 'SendValue.check'
+
+   ## caveat emptor:
+
+      this is the case where you really need SubstTypes. The idea was to say:
+
+      OperSubst[Oper].applyTo(ArgsSubst[Args])
+    = Replace(Oper.domain by: ArgsSubst[Args])[OperSubst[Oper.range]]
+
+			  ???
+			   =
+
+      ArgsSubst[Replace(Oper.domain by: Args)[OperSubst[Oper.range]]]
+    = (OperSubst o Replace(Oper.domain by: Args) o ArgsSubst)[Oper.range]
+
+    which fails because ArgsSubst may substitute formal type parameters
+    of an enclosing type oper (ask M.Ernst for an example).
+
+    Therefore we must use a SubstType to constrain ArgsSubst to Args:
+
+	      (OperSubst o Replace(Oper.domain by: SubstType(Args, ArgsSubst)))[Oper.range]
+
+*)
+
+
+  applyArgs(T <: Void,
+	    pos :SourcePos,	       (* point of application *)
+            domain :List(Ide),         (* formal parameters *)
+	    args :List(Value),	       (* actual parameters *)
+	    subst :Subst,	       (* applying to domain and range *)
+	    argsSubst :Subst,	       (* applying to args *)
+	    range :Type,               (* formal result type *)
+	    check :Bool,	       (* check the actual vs the formal parameters ? *)
+	    genMsg :Bool,	       (* generate error messages *)
+	    synthIdeArgs :Bool,	       (* types in <args> are synthesized IdeTypes *)
+	    cont :Fun2(Type, Subst, T) (* continuation *)
+	   ) :T
+  {
+    (* make arguments assignable *)
+    let var domain = domain,
+    let var args   = args,
+
+    let valuesToBeChecked = GapArray(:Pair(ValueIde, Value)).new(4),
+    let typesToBeChecked = GapArray(:Pair(TypeIde, Type)).new(4),
+  
+    let errorWrapper = genMsg ? {
+      (* either we are to generate error msgs *)
+      fun(pos :SourcePos, msg :String, t :Fun0(Void)) {
+        setError(pos, msg, t)
+      }
+    } : {
+      fun(pos :SourcePos, msg :String, t :Fun0(Void)) {
+        t[]
+      }
+    },
+
+
+    (* substitutions of formal by actual parameters in the result *)
+    let var formalsSubst :Subst = EmptySubst.instance,
+
+    while({!domain.isEmpty}, {
+      let formal = domain.head,
+      
+      (* Omitted type argument ? *)
+      formal.isTypeIde && { args.isEmpty || { !args.head.isType }} ? {
+        let uniVar = UnifyType.new,
+	args := List.cons(uniVar, args)
+      },
+      
+      args.isEmpty ? {
+        errorWrapper[pos, "missing argument: "+formal.name.printString, {
+	  raiseError
+	}]
+      },
+
+      let actual = args.head,
+
+      (*
+        now actual and formal are both popped off the argument lists,
+	checking is delayed and sorted to check value arguments first.
+	This is a heuristic to instantiate the univars more intelligently.
+      *)
+
+      formal.isValueIde ? {
+        actual.isType ? {
+	  errorWrapper[pos, "type argument where value argument expected: "+formal.name.printString, {
+	    raiseError
+	  }]
+	},
+
+	(* typically value arguments are more accurately typed, so we use them first to instantiate the univars *)
+	check ? { valuesToBeChecked.add(Pair.new(formal.asValueIde, actual)) }
+      } : {
+        assert actual.isType, (* if it would have been a value, a univar would have been introduced above *)
+	let actual = actual.asType,
+
+	(* see discussion above, why you need a SubstType here *)
+	formalsSubst := ConsSubst.new(formal, SubstType.new(actual, argsSubst), formalsSubst),
+
+	(* having type args checked at the end eliminates the danger of subtyping two uninitialized univars *)
+	check ? { typesToBeChecked.add(Pair.new(formal.asTypeIde, actual)) }
+      },
+
+      domain := domain.tail,
+      args   := args.tail
+    }),
+
+    !args.isEmpty ? {
+      errorWrapper[pos, "Superflouus argument "+args.head.printString, {
+        raiseError
+      }]
+    },
+
+    (* all arguments are ready in the formalsSubst now *)
+
+    let resultSubst =
+      subst        == EmptySubst.instance ? { formalsSubst } : {
+      formalsSubst == EmptySubst.instance ? { subst } : {
+      CompositeSubst.new(subst, formalsSubst) }},
+
+    check ? {
+      valuesToBeChecked.do(fun(p :Pair(ValueIde, Value)) {
+        let formal = p.first,
+	let actual = p.second,
+
+	actual.check(fun(actualType :Type, actualSubst :Subst) {
+	  errorWrapper[actual.pos, "Wrong-typed actual argument for "+formal.name.printString, {
+	    actualType.checkSubType(formal.type, CompositeSubst.new(actualSubst, argsSubst), resultSubst)
+	  }]
+	})
+      }),
+
+      let asIdeType = FunTypeVisitor.new.ifIdeType(fun(t :IdeType){ t }),
+
+      typesToBeChecked.do(fun(p :Pair(TypeIde, Type)) {
+        let formal = p.first,
+	let actual = p.second,
+
+	let actual =
+	  synthIdeArgs ? { actual.visit(asIdeType).ide.type } : { actual },
+
+	errorWrapper[actual.pos, "Wrong-typed actual argument for "+formal.name.printString, {
+	  actual.checkSubType(formal.type, argsSubst, resultSubst)
+	}],
+
+	(* T = X *)
+	(!formal.isSubTypeIde) ? {
+	  errorWrapper[actual.pos, "Wrong-typed actual argument for "+formal.name.printString, {
+	    formal.type.checkSubType(actual, resultSubst, argsSubst)
+	  }]
+	}
+      })
+    },
+
+    cont[range, resultSubst]
+  }
+
+  ;

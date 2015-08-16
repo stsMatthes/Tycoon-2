@@ -1,0 +1,10 @@
+class DeferredMethodClass
+super CStructClass(DeferredMethod)
+metaclass MetaClass
+public methods
+new :DeferredMethod
+{
+  let instance = _new,
+  instance._init
+}
+;

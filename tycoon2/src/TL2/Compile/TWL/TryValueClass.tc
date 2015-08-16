@@ -1,0 +1,15 @@
+class TryValueClass
+super ConcreteClass(TryValue)
+metaclass MetaClass
+public methods
+
+new1(pos :SourcePos, body :Value, sig :ValueIde, handler :Value) :TryValue
+{
+  let instance = _new,
+  instance.pos := pos,
+  instance.body := body,
+  instance.sig := sig,
+  instance.handler := handler,
+  instance._init
+}
+;

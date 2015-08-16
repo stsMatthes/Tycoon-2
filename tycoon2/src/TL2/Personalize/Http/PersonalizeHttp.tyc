@@ -1,0 +1,33 @@
+(*
+DO load "../TWL/Personalize/Personalize.tyc";
+DO load "../TWL/Personalize/Http/PersonalizeHttp.tyc";
+*)
+
+DO load "../TWL/Personalize/Http/PersonalizeHttp.tc";
+
+class HttpPersonalizer metaclass AbstractClass;
+class PersonalizeHttpClient metaclass AbstractClass;
+class PersonalizeHttpCookieState metaclass AbstractClass;
+class PersonalizeHttpResponseFilter metaclass AbstractClass;
+class PersonalizeHttpResponseFilterClass metaclass AbstractClass;
+class PersonalizeHttpState metaclass AbstractClass;
+class PersonalizeHttpURLEncodeState metaclass AbstractClass;
+class PersonalizeHttpUndecidedState metaclass AbstractClass;
+
+DO load "../TWL/Personalize/Http/HttpPersonalizerClass.tc";
+DO load "../TWL/Personalize/Http/HttpPersonalizer.tc";
+			   
+DO load "../TWL/Personalize/Http/PersonalizeHttpClient.tc";
+			   
+DO load "../TWL/Personalize/Http/PersonalizeHttpResponseFilterClass.tc";
+DO load "../TWL/Personalize/Http/PersonalizeHttpResponseFilter.tc";
+			   
+DO load "../TWL/Personalize/Http/PersonalizeHttpState.tc";
+			   
+DO load "../TWL/Personalize/Http/PersonalizeHttpUndecidedState.tc";
+DO load "../TWL/Personalize/Http/PersonalizeHttpCookieState.tc";
+DO load "../TWL/Personalize/Http/PersonalizeHttpURLEncodeState.tc";
+
+
+
+

@@ -1,0 +1,266 @@
+tycoon.tl.loader.registerDirectory("../X_TL2/Compile/X_TL2");
+
+(* All defines can be :Void since we are in Smalltalk-mode now :-*)
+
+define newTypeIde :Void;
+newTypeIde := fun(name :String, type :X_TL2Type) { X_TL2TypeIde.new1(nil, name, type) };
+
+define newSubTypeIde :Void;
+newSubTypeIde := fun(name :String, type :X_TL2Type) { X_TL2SubTypeIde.new1(nil, name, type) };
+
+define newIdeType :Void;
+newIdeType := fun(ide :X_TL2TypeIde) { X_TL2IdeType.new(ide) };
+
+define printTS :Void;
+printTS := fun(t :X_TL2Type, s :X_TL2Subst) { t.print, s.print, tycoon.stdout.nl };
+
+define N :Void;
+N := X_TL2NilType.instance;
+
+define es :Void;
+es := X_TL2EmptySubst.instance;
+
+define V :Void;
+V := X_TL2VoidType.instance;
+
+(* T <: Void *)
+define T_ide :Void; define T :Void;
+T_ide := newSubTypeIde["T", V];
+T := newIdeType[T_ide];
+
+(* The identity TypeOp: \-/ X<:Void . X *)
+define IO :Void;
+IO := { let X = newSubTypeIde["X", V], X_TL2OperType.new(List.with1(X), newIdeType[X]) }[];
+
+IO.apply(List.with1(T), es, es, false, fun(type :X_TL2Type, subst :X_TL2Subst) { type.print, subst.print, tycoon.stdout.nl });
+
+(* something nice with F-Bound *)
+define NO :Void;
+NO := {
+  (* T <: IO(T) *)
+  let T = newSubTypeIde["T", N],
+  T.type := X_TL2ApplyType.new(IO, List.with1(newIdeType[T])),
+
+  (* U <: T *)
+  let U = newSubTypeIde["U", newIdeType[T]],
+
+  X_TL2OperType.new(List.with2(T, U), X_TL2ApplyType.new(IO, List.with1(newIdeType[U])))
+}[];
+
+
+
+define typify :Fun0(Void);
+let giveType = fun(c :Class) {
+  c.typeIde.type := c.domain.isEmpty ? {
+    X_TL2ClassInstanceType.new(c)
+  } : {
+    X_TL2OperType.new(c.domain, X_TL2ClassInstanceType.new(c))
+  }},
+
+typify := {
+    tycoon.tl.classManager.classTable.do(fun(c :Class) { giveType[c] })
+  }
+;
+
+
+
+let t = X_TL2ApplyType.new(Dictionary.typeIde.type, List.with2(String.typeIde.type, Int.typeIde.type)), let s = Symbol.new("includes"), for(1, 1000, fun(:Int) { t.lookup(s, es, fun(:X_TL2Type, :X_TL2Subst) {}) });
+
+X_TL2ApplyType.new(Dictionary.typeIde.type,
+	      List.with2(String.typeIde.type, Int.typeIde.type)).
+	        expose(es, true, fun(t :X_TL2Type, subst :X_TL2Subst) {
+		   let s = Symbol.new("includes"), t.lookup(s, subst, printTS)
+		});
+		
+X_TL2ApplyType.new(List.typeIde.type,
+	      List.with1(String.typeIde.type)).
+	        lookup(Symbol.new("tail"), es, printTS
+
+		(* fun(:X_TL2Type, s :X_TL2Subst) {
+
+	           X_TL2IdeType.new(AbstractList.typeIde.type.domain[0]).expose(s, true, printTS)
+		} *)
+);
+
+
+		
+class A(PA <: Object) metaclass AbstractClass public methods a :A(Int) deferred;
+
+class M super A(Char) metaclass AbstractClass;
+class N super M metaclass AbstractClass;
+
+typify[];
+
+X_TL2IdeType.new(N.typeIde).checkSubType(X_TL2IdeType.new(M.typeIde), es, es);
+
+
+X_TL2IdeType.new(B.typeIde).checkSubType(X_TL2IdeType.new(A.typeIde), es, es);
+
+class D metaclass AbstractClass public methods d :String deferred;
+class E metaclass AbstractClass public methods d :Void deferred;
+
+X_TL2IdeType.new(D.typeIde).checkSubType(X_TL2IdeType.new(E.typeIde), es, es);
+
+class F metaclass AbstractClass public methods m :Self deferred;
+class G metaclass AbstractClass public methods m :Self deferred   g :G deferred;
+
+typify[];
+
+X_TL2IdeType.new(G.typeIde).checkSubType(X_TL2IdeType.new(F.typeIde), es, es);
+
+X_TL2IdeType.new(Symbol.typeIde).checkSubType(X_TL2IdeType.new(String.typeIde), es, es);
+
+(* B(String) <: A(String) *)
+
+X_TL2ApplyType.new(X_TL2IdeType.new(List.typeIde),
+	      List.with1(X_TL2IdeType.new(Symbol.typeIde))).
+checkSubType(
+  X_TL2ApplyType.new(X_TL2IdeType.new(List.typeIde),
+	        List.with1(X_TL2IdeType.new(String.typeIde))),
+  es,
+  es);
+  
+X_TL2ApplyType.new(X_TL2IdeType.new(List.typeIde),
+	      List.with1(X_TL2IdeType.new(String.typeIde))).
+checkSubType(
+  X_TL2ApplyType.new(X_TL2IdeType.new(List.typeIde),
+	        List.with1(X_TL2IdeType.new(Symbol.typeIde))),
+  es,
+  es);
+  
+	      
+
+	        lookup(Symbol.new("yourself"), es, fun(t :X_TL2Type, s :X_TL2Subst) {
+		  printTS[t, s],
+		  X_TL2IdeType.new(Object.selfTypeSig).expose(s, false, printTS)
+		}
+);
+
+let theSelf = X_TL2IdeType.new(List.typeIde.type.range.selfTypeSig),
+let theSubst = X_TL2ConsSubst.new(List.typeIde.type.domain[0], X_TL2IdeType.new(String.typeIde), X_TL2EmptySubst.instance),
+theSelf.lookup(Symbol.new("head"), theSubst, fun(t :X_TL2Method, s :X_TL2Subst) { t.methodType.range.expose(s, false, printTS) });
+
+
+
+define stdinValue :Void;
+stdinValue := { tycoon.tl.topLevel.parser.parse(tycoon.tl.topLevel.scanner.scan(nil, tycoon.stdin, nil), nil).b };
+
+
+
+
+
+
+define fixPoolMethods :Void;
+fixPoolMethods := {
+  let s = X_TL2Scoper.new,
+  s.currentClassSig := tycoon.tl.classManager.get("Nil").typeIde,
+  
+  tycoon.tl.pool.poolMethods.do(fun(pm :X_TL2Method) {
+    pm.methodType := s.scope(pm.methodType)
+  })
+};
+
+define fixSlotUpdateMethods :Void;
+fixSlotUpdateMethods := {
+    tycoon.tl.classManager.classTable.do(fun(c :Class) {
+      c.methodDictionaries.do(fun(dict :X_TL2MethodDictionary) {
+        dict.do(fun(m :X_TL2Method) {
+	  m."class" == X_TL2SlotUpdateMethod ? {
+	    m.methodType.range := m.slotType    
+	  }
+	})
+      })
+    })
+  }
+;
+
+define errors :StringBuilderOutput;
+define checkAllClasses :Void;
+checkAllClasses := {
+    errors := StringBuilderOutput.new,
+    
+    tycoon.tl.classManager.classTable.do(fun(c :Class) {
+      try({
+        checkClass[c]
+      }, fun(e :Exception) { errors.writeln(e.printString) })
+    })
+  }
+;
+
+define inspectDB :Void;
+inspectDB := {
+ tycoon.tl.typeManager.typeChecker.subTypeDB._elements.do(fun(e :Void) { tycoon.stdout.write(e.isNil ? {'.'} : {'X'}) })
+};
+
+(* in X_TL2LetValueClass ? *)
+define _replaceUnifyTypeVisitor :Void;
+_replaceUnifyTypeVisitor :=
+  X_TL2FunTypeVisitor.new.
+    ifUnifyType(fun(:X_TL2UnifyType) { X_TL2UnifyType.new }).
+    otherwise(fun(t :X_TL2Type) { t });
+
+
+define _storeTypeVisitor :Void;
+define _typeHashVisitor :Void;
+define _equalTypesVisitor :Void;
+
+define fixSelfIdes :Void;
+fixSelfIdes := {
+    tycoon.tl.classManager.classTable.do(fun(c :Class) {
+      c.methodDictionary.do(fun(m :X_TL2Method) {
+        m."class" == X_TL2CompiledMethod ? {
+	  fixSelfIdesInValue[c, m.body]
+	}
+      })
+    })
+  }
+;
+
+define fixSelfIdesInValue :Void;
+fixSelfIdesInValue := fun(c :Class, v :X_TL2Value) {
+  v."class" == X_TL2IdeValue ? {
+    v.ide.name = "self" ? {
+      v.ide.type := X_TL2IdeType.new(c.selfTypeSig)
+    }
+  },
+
+  v.children.do(fun(v :X_TL2Value) { fixSelfIdesInValue[c, v] })
+};
+
+Thread.new({
+let errors = File.openWrite("typeCheckErrors.txt"),
+tycoon.tl.classManager.classTable.do(fun(c :Class) { try({ tycoon.tl.typeManager.checkClass(c) }, fun(e :Exception) { errors << e << "\n" }) }),
+errors.close
+});
+
+
+
+
+X_TL2Root.instance.classes.do(fun(c :Class) {
+  tycoon.stdout << "Rescoping " << c.name << "\n",
+  let s = X_TL2Scoper.new,
+  s.currentClassSig := c.typeIde,
+  s.errorLog := ErrorLog.new,
+  s.withScopedSignatures(c.domain, {
+    s.withSignature(c.selfTypeSig, {
+      let slf = X_TL2ValueIde.new1(c.selfTypeSig.pos, "self", X_TL2IdeType.new(c.selfTypeSig)),
+      s.withSignature(slf, {
+        s.do(fun(i :X_TL2Ide) { tycoon.stdout << i }),
+	c.methodDictionary.do(fun(m :X_TL2Method) {
+	  m.scopeMethod(s)
+	})
+      })
+    })
+  })
+});
+
+let s = X_TL2Scoper.new,
+s.currentClassSig := tycoon.tl.classManager.get("Nil").typeIde,
+s.errorLog := ErrorLog.new,
+X_TL2Pool.instance.poolMethods.do(fun(m :X_TL2Method) { m.scopeMethod(s) })
+;
+
+class MyAppend super Object metaclass AbstractClass
+public methods
+  myAppend { let l :List(Int) = List.with1(3), List.append(l, List.with1(10)) }
+;

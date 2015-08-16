@@ -1,0 +1,26 @@
+<!DOCTYPE stml system>
+<html>
+  <head>
+    <title>Comments</title>
+  </head>
+
+  <body>
+      <h1>Comments</h1>
+
+     <define name=x> <!--Kommentar--> Text </define>
+     <ref name=x//
+     <define name=f> <!--Kommentar--> <fun param="x">Hallo <ref name=x//</fun> </define>
+
+     <apply name=f>
+       <!-- ignoriert -->
+       <arg>Icks <!--x--></arg>
+     </apply>
+
+      <hr>
+      <address><a href="mailto:">Axel Wienberg</a></address>
+<!-- Created: Fri Jul 25 11:57:12 MET DST 1997 -->
+<!-- hhmts start -->
+Last modified: Fri Jul 25 12:00:39 MET DST 1997
+<!-- hhmts end -->
+  </body>
+</html>

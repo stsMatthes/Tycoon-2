@@ -1,0 +1,176 @@
+class Parse
+super Compile
+metaclass AbstractClass
+;
+
+class SetStack(E <: Object) metaclass AbstractClass;
+DO load "../TWL/Compile/Parse/SetStackClass.tc";
+DO load "../TWL/Compile/Parse/SetStack.tc";
+
+
+class ProgressIndicator metaclass AbstractClass;
+DO load "../TWL/Compile/Parse/ProgressIndicatorClass.tc";
+DO load "../TWL/Compile/Parse/ProgressIndicator.tc";
+
+class Node(T <: Object) metaclass AbstractClass;
+DO load "../TWL/Compile/Parse/NodeClass.tc";
+DO load "../TWL/Compile/Parse/Node.tc";
+
+class Graph(T <: Object) metaclass AbstractClass;
+DO load "../TWL/Compile/Parse/GraphClass.tc";
+DO load "../TWL/Compile/Parse/Graph.tc";
+
+DO load "../TWL/Compile/Parse/SCC.tc";
+
+(* ------------------------------------------------------------ *)
+(* 		    ingredients for a grammar 			*)
+(* ------------------------------------------------------------ *)
+
+class Precedence metaclass AbstractClass;
+DO load "../TWL/Compile/Parse/PrecedenceClass.tc";
+DO load "../TWL/Compile/Parse/Precedence.tc";
+
+class SimpleToken metaclass AbstractClass;
+class SimpleTerminal metaclass AbstractClass;
+
+DO load "../TWL/Compile/Parse/ParserUtil.tc";
+
+class Nonterminal(D <: Object) metaclass AbstractClass;
+class NonterminalO metaclass AbstractClass;
+class Terminal(D <: Object) metaclass AbstractClass;
+class TerminalO metaclass AbstractClass;
+DO load "../TWL/Compile/Parse/GrammarSymbol.tc";
+DO load "../TWL/Compile/Parse/SymbolO.tc";
+
+
+class Rule(D <: Object) metaclass AbstractClass;
+DO load "../TWL/Compile/Parse/RuleClass.tc";
+DO load "../TWL/Compile/Parse/Rule.tc";
+DO load "../TWL/Compile/Parse/RuleO.tc";
+
+DO load "../TWL/Compile/Parse/Nonterminal.tc";
+DO load "../TWL/Compile/Parse/NonterminalO.tc";
+
+class MutableNonterminal(D <: Object) metaclass AbstractClass;
+DO load "../TWL/Compile/Parse/MutableNonterminalClass.tc";
+DO load "../TWL/Compile/Parse/MutableNonterminal.tc";
+
+DO load "../TWL/Compile/Parse/Terminal.tc";
+DO load "../TWL/Compile/Parse/TerminalO.tc";
+
+DO load "../TWL/Compile/Parse/Token.tc";
+
+DO load "../TWL/Compile/Parse/SimpleTokenClass.tc";
+DO load "../TWL/Compile/Parse/SimpleToken.tc";
+DO load "../TWL/Compile/Parse/SimpleTerminalClass.tc";
+DO load "../TWL/Compile/Parse/SimpleTerminal.tc";
+
+class Grammar(D <: Object) metaclass AbstractClass;
+DO load "../TWL/Compile/Parse/GrammarClass.tc";
+DO load "../TWL/Compile/Parse/Grammar.tc";
+
+
+(* ------------------------------------------------------------ *)
+(* 		   classes for the algorithms 			*)
+(* ------------------------------------------------------------ *)
+
+(* interface for the result of our efforts *)
+DO load "../TWL/Compile/Parse/AbstractParser.tc";
+
+(* first sets *)
+class FirstSetMap metaclass AbstractClass;
+DO load "../TWL/Compile/Parse/FirstSetMapClass.tc";
+DO load "../TWL/Compile/Parse/FirstSetMap.tc";
+
+
+(* automata recognizing viable prefixes *)
+
+class Item metaclass AbstractClass;
+DO load "../TWL/Compile/Parse/ItemClass.tc";
+DO load "../TWL/Compile/Parse/Item.tc";
+DO load "../TWL/Compile/Parse/ItemState.tc";
+
+DO load "../TWL/Compile/Parse/LR0State.tc";
+
+class LR0ItemFA metaclass AbstractClass;
+DO load "../TWL/Compile/Parse/LR0ItemFAClass.tc";
+DO load "../TWL/Compile/Parse/LR0ItemFA.tc";
+
+class LR1Item metaclass AbstractClass;
+DO load "../TWL/Compile/Parse/LR1ItemClass.tc";
+DO load "../TWL/Compile/Parse/LR1Item.tc";
+
+DO load "../TWL/Compile/Parse/LR1State.tc";
+
+class PropagateBlock metaclass AbstractClass;
+DO load "../TWL/Compile/Parse/PropagateBlockClass.tc";
+DO load "../TWL/Compile/Parse/PropagateBlock.tc";
+
+class LALRItemFA metaclass AbstractClass;
+DO load "../TWL/Compile/Parse/LALRItemFAClass.tc";
+DO load "../TWL/Compile/Parse/LALRItemFA.tc";
+
+(* entries in the (preliminary) parser action tables *)
+
+class ShiftAction metaclass AbstractClass;
+class ReduceAction metaclass AbstractClass;
+class AcceptAction metaclass AbstractClass;
+class ErrorAction metaclass AbstractClass;
+DO load "../TWL/Compile/Parse/LALRAction.tc";
+DO load "../TWL/Compile/Parse/ShiftActionClass.tc";
+DO load "../TWL/Compile/Parse/ShiftAction.tc";
+DO load "../TWL/Compile/Parse/ReduceActionClass.tc";
+DO load "../TWL/Compile/Parse/ReduceAction.tc";
+DO load "../TWL/Compile/Parse/AcceptAction.tc";
+DO load "../TWL/Compile/Parse/ErrorAction.tc";
+
+(* back-end for the Parser generator *)
+DO load "../TWL/Compile/Parse/AbstractParserBuilder.tc";
+
+class ParserGen metaclass AbstractClass;
+DO load "../TWL/Compile/Parse/ParserGenClass.tc";
+DO load "../TWL/Compile/Parse/ParserGen.tc";
+
+(* skeleton for LALR parser machine
+   is fleshed out in Naive / Compact *)
+DO load "../TWL/Compile/Parse/LALR1Parser.tc";
+
+(* concrete implementations of LALR Parser
+   including Builder and Machine *)
+
+DO load "../TWL/Compile/Parse/Naive/Naive.tyc";
+DO load "../TWL/Compile/Parse/Compact/Compact.tyc";
+
+
+(* ------------------------------------------------------------ *)
+(* 		    for concrete grammars 			*)
+(* ------------------------------------------------------------ *)
+
+class ValueToken(D <: Object) metaclass AbstractClass;
+class ValueTerminal(D <: Object) metaclass AbstractClass;
+DO load "../TWL/Compile/Parse/ValueTokenClass.tc";
+DO load "../TWL/Compile/Parse/ValueToken.tc";
+DO load "../TWL/Compile/Parse/ValueTerminalClass.tc";
+DO load "../TWL/Compile/Parse/ValueTerminal.tc";
+
+(* ------------------------------------------------------------ *)
+(* 		         utility classes 			*)
+(* ------------------------------------------------------------ *)
+
+class SourcePos metaclass AbstractClass;
+DO load "../TWL/Compile/Parse/SourcePosClass.tc";
+DO load "../TWL/Compile/Parse/SourcePos.tc";
+class Positioned metaclass AbstractClass;
+DO load "../TWL/Compile/Parse/PositionedClass.tc";
+DO load "../TWL/Compile/Parse/Positioned.tc";
+class ErrorLog metaclass AbstractClass;
+DO load "../TWL/Compile/Parse/ErrorLogError.tc";
+DO load "../TWL/Compile/Parse/ErrorLog.tc";
+DO load "../TWL/Compile/Parse/StoredErrorLog.tc";
+
+(*
+DO check;
+*)
+
+ParserUtil.init;
+

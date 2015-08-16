@@ -1,0 +1,127 @@
+class Finalizer
+super MutexHolder
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+
+  In the Tycoon system, there is always one Finalizer running it's own Thread,
+  waiting for the Tycoon engine to signal a garbage collection event.  Each
+  time a garbage collection is over, the Finalizer fetches the WeakRef objects
+  the Tycoon engine found obsolete, and runs their finalizer function.
+
+  Author: Andreas Gawecki
+  Date: 06-Feb-1997
+
+*)
+meta FinalizerClass()
+
+{
+commit(statement :Fun():Void) :Void
+  (* wait for finalizer thread to finish and execute 'statement'.
+     block the finalizer until 'statement' has finished. 
+   *)
+{
+  lock({
+    while({ _running } do: {
+	_idle.wait(_mx)
+      })
+    statement[]
+  })
+}
+
+launchRunner :Void
+  (* Start collecting.
+     Called during system startup after the Finalizer has been registered in
+     the root object *)
+{
+  _runner := Thread.new(fun(){ run })
+  _runner.name := "Finalizer"
+}
+
+private
+
+_cv :Condition
+
+  (* the condition signaled by the Tycoon engine *)
+
+_weaks :WeakRef(Object)
+
+  (* this slot is manipulated exclusively my the Tycoon engine *)
+
+_runner :Thread(Void)
+
+_running :Bool
+
+  (* true iff finalizer thread is active *)
+
+_idle :Condition
+  (* signaled if finalizer thread is finished *)
+
+_init :Void
+  (* establish a weak reference to the receiver *)
+{
+  super._init
+  _cv := Condition.new
+  _idle := Condition.new
+  _running := false
+  
+  self
+  }
+
+__fetchWeaks :WeakRef(Object)
+  (* *)
+builtin
+
+run :Void
+  (* atomically fetch the head of the WeakRef list in _weaks and set _weaks to nil *)
+{
+  weaks :WeakRef(Object) := nil
+  while({true} do: {
+    lock({
+      while({ (weaks := __fetchWeaks).isNil } do: {
+	_cv.wait(_mx)
+      })
+      _running := true
+    })
+    runFinalizers(weaks)
+  })
+}
+
+runFinalizers(weaks :WeakRef(Object)) :Void
+  (* *)
+{
+  wr ::= weaks
+  while({wr.isNotNil} do: {
+    ;tycoon.debug ? { tycoon.stdout.writeln("Running finalizer of: " + wr.printString) },
+    try({ wr.finalize } else:
+      fun(e :Exception) {
+        if( tycoon.debug then: { tycoon.stdout.writeln("Exception while running finalizer: " + e.printString) })
+	nil
+      })
+    wr := wr.next
+  })
+  
+  lock({
+    _running := false
+    _idle.signal
+  })
+}
+
+}

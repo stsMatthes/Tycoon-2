@@ -1,0 +1,48 @@
+(*
+DO load "../TWL/WWW/Http/Http.tyc";
+*)
+
+(*
+  Needs: ../TWL/WWW/WWW.tyc
+         ../TWL/WWW/Mime/Mime.tyc
+         ../TWL/WWW/Html/Html.tyc
+*)
+
+  
+
+DO load "../TWL/WWW/Http/Http.tc";
+
+DO load "../TWL/WWW/Http/Headers/Headers.tyc";
+
+class HttpMessage metaclass AbstractClass;
+class HttpMessageClass metaclass MetaClass;
+class HttpEntityMessage metaclass AbstractClass;
+class HttpRequest metaclass AbstractClass;
+class HttpResponse metaclass AbstractClass;
+
+class HeaderParserClass metaclass MetaClass;
+DO load "../TWL/WWW/Http/HeaderParser.tc";
+DO load "../TWL/WWW/Http/HeaderParserClass.tc";
+
+DO load "../TWL/WWW/Http/HttpMessageParser.tc";
+DO load "../TWL/WWW/Http/HttpRequestParser.tc";
+DO load "../TWL/WWW/Http/HttpResponseParser.tc";
+
+DO load "../TWL/WWW/Http/HttpMessageClass.tc";
+DO load "../TWL/WWW/Http/HttpMessage.tc";
+
+DO load "../TWL/WWW/Http/HttpEntityMessageClass.tc";
+DO load "../TWL/WWW/Http/HttpEntityMessage.tc";
+
+DO load "../TWL/WWW/Http/HttpRequestClass.tc";
+DO load "../TWL/WWW/Http/HttpRequest.tc";
+
+DO load "../TWL/WWW/Http/HttpResponseClass.tc";
+DO load "../TWL/WWW/Http/HttpResponse.tc";
+
+
+DO load "../TWL/WWW/Http/HttpTest.tc";
+
+DO load "../TWL/WWW/Http/Init.tyc";
+
+

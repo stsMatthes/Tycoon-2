@@ -1,0 +1,144 @@
+class HttpResponseClass
+super ConcreteClass(HttpResponse)
+metaclass MetaClass
+
+public methods
+
+status(statusCode :Int) :String
+{
+  _status[defaultCode(statusCode)]
+}
+
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ if out of range, the code should be interpreted as rounded down by hundred *)
+defaultCode(statusCode :Int) :Int {
+  _status.includesKey(statusCode)
+    ? { statusCode }
+    : { (statusCode / 100) * 100 }
+}
+
+
+new :HttpResponse { new6(1, 1, 200, "Ok", MimeHeaderDictionary.new, nil) }
+
+new6(major :Int, minor :Int, statusCode :Int, status :String,
+    headers :MimeHeaderDictionary(MimeHeaderValue),
+    body :Input) :HttpResponse {
+
+    _new._init6(major, minor, statusCode, status, headers, body)
+}
+
+CONTINUE		:Int { 100 }
+SWITCHING_PROTOCOLS	:Int { 101 }
+
+OK			:Int { 200 }
+CREATED			:Int { 201 }
+ACCEPTED		:Int { 202 }
+NON_AUTHORATIVE_INFORMATION :Int { 203 }
+NO_CONTENT		:Int { 204 }
+RESET_CONTENT		:Int { 205 }
+PARTIAL_CONTENT		:Int { 206 } 
+
+MULTIPLE_CHOICES	:Int { 300 }
+MOVED_PERMANENTLY	:Int { 301 }
+MOVED_TEMPORARILY	:Int { 302 }
+SEE_OTHER		:Int { 303 }
+NOT_MODIFIED		:Int { 304 }
+USE_PROXY		:Int { 305 }
+
+BAD_REQUEST		:Int { 400 }
+UNAUTHORIZED		:Int { 401 }
+PAYMENT_REQUIRED	:Int { 402 }
+FORBIDDEN		:Int { 403 }
+NOT_FOUND		:Int { 404 }
+METHOD_NOT_ALLOWED	:Int { 405 }
+NONE_ACCEPTABLE		:Int { 406 }
+PROXY_AUTHENTIFICATION_REQUIRED :Int { 407 }
+REQUEST_TIMEOUT		:Int { 408 }
+CONFLICT		:Int { 409 }
+GONE			:Int { 410 }
+LENGTH_REQUIRED		:Int { 411 }
+UNLESS_TRUE		:Int { 412 }
+
+INTERNAL_SERVER_ERROR	:Int { 500 }
+NOT_IMPLEMENTED		:Int { 501 }
+BAD_GATEWAY		:Int { 502 }
+SERVICE_UNAVAILABLE	:Int { 503 }
+GATEWAY_TIMEOUT		:Int { 504 }
+ 
+ 
+(* insert the status codes *)
+init {
+  _status := Dictionary.new,
+  
+  _status[CONTINUE] := "Continue",
+  _status[SWITCHING_PROTOCOLS] := "Switching Protocols",
+
+  _status[OK] := "Ok",
+  _status[CREATED] := "Created",
+  _status[ACCEPTED] := "Accepted",
+  _status[NON_AUTHORATIVE_INFORMATION] := "Non-Authorative Information",
+  _status[NO_CONTENT] := "No Content",
+  _status[RESET_CONTENT] := "Reset Content",
+  _status[PARTIAL_CONTENT] := "Partial Content",
+
+  _status[MULTIPLE_CHOICES] := "Multiple Choices",
+  _status[MOVED_PERMANENTLY] := "Moved Permanently",
+  _status[MOVED_TEMPORARILY] := "Moved Temporarily",
+  _status[SEE_OTHER] := "See Other",
+  _status[NOT_MODIFIED] := "Not Modified",
+  _status[USE_PROXY] := "Use Proxy",
+
+  _status[BAD_REQUEST] := "Bad Request",
+  _status[UNAUTHORIZED] := "Unauthorized",
+  _status[PAYMENT_REQUIRED] := "Payment Required",
+  _status[FORBIDDEN] := "Forbidden",
+  _status[NOT_FOUND] := "Not Found",
+  _status[METHOD_NOT_ALLOWED] := "Method Not Allowed",
+  _status[NONE_ACCEPTABLE] := "None Acceptable",
+  _status[PROXY_AUTHENTIFICATION_REQUIRED] := "Proxy Authentification Required",
+  _status[REQUEST_TIMEOUT] := "Request Timeout",
+  _status[CONFLICT] := "Conflict",
+  _status[GONE] := "Gone",
+  _status[LENGTH_REQUIRED] := "Length Required",
+  _status[UNLESS_TRUE] := "Unless True",
+
+  _status[INTERNAL_SERVER_ERROR] := "Internal Server Error",
+  _status[NOT_IMPLEMENTED] := "Not Implemented",
+  _status[BAD_GATEWAY] := "Bad Gateway",
+  _status[SERVICE_UNAVAILABLE] := "Service Unavailable",
+  _status[GATEWAY_TIMEOUT] := "Gateway Timeout",
+
+
+
+
+  (* response specific headers *)
+  MimeHeaderRegistry.instance.registerHeader("set-cookie", HttpSetCookiesHeader),
+  MimeHeaderRegistry.instance.registerHeader("www-authenticate", WWWAuthenticateHeader)
+}
+
+private
+
+_status :Dictionary(Int, String)
+
+methods
+
+;
+

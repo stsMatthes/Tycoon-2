@@ -1,0 +1,18 @@
+class CStringHolderClass
+
+super ConcreteClass(CStringHolder)
+
+metaclass MetaClass
+
+public methods
+
+new(length:Int):CStringHolder
+{
+  let s = _new(),
+  s._length := length,
+  s._allocate(length),
+  s
+}
+
+;
+

@@ -1,0 +1,19 @@
+(* open database-connection *)
+
+let connection = SQLDriverManager.instance.connect(
+  URL.fromString("tysql:/oci/DBIS;user=scott;password=tiger")),
+ 
+(* create statement *)
+let statement=connection.newStatement,
+
+(* delete table *)
+statement.executeDirectUpdate("drop table testtable"),
+
+(* close statement and disconnect user hoxdba *)
+statement.close,
+connection.close;
+
+
+
+
+

@@ -1,0 +1,18 @@
+class KoltarSklaveClass
+super Koltar, ConcreteClass(KoltarSklave)
+meta MetaClass
+{
+new(name :String) :KoltarSklave
+{
+  i ::= _new
+  i.name := name
+  i
+}
+
+load(in :Input) :KoltarSklave
+{
+  i ::= _new
+  i._load(in)
+  i
+}
+}

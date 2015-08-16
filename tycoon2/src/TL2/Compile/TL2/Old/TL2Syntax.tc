@@ -1,0 +1,79 @@
+class TL2Syntax
+super AbstractTL2Syntax
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+*)
+meta SimpleConcreteClass(TL2Syntax)
+{
+private
+
+terminals :TL2Terminals
+
+scanner :ReentrantTL2Scanner
+
+makeScanner(where :String, input :Input, errorLog :ErrorLog, bufferCapacity :Int) :AbstractTL2Scanner
+  (* *)
+{ scanner.scan1(where, input, errorLog, bufferCapacity) }
+
+normalizeClass(builder:TL2ClassBuilder, :ErrorLog) :Void
+  (* *)
+{ 
+  if( builder.selfTypeSig.isNil then: {
+    builder.selfTypeSig :=
+      TL2SubTypeIde.new(builder.pos, "Self", makeClassType(builder))
+  })
+  if( builder.metaClassDeclaration.isNil then: {
+    builder.metaClassDeclaration := makeMetaClassType(builder)
+  })
+}
+
+makeApplicationToDomain(ide :TL2TypeIde, domain :List(TL2TypeIde)) :TL2CPLType
+  (* *)
+{
+  TL2CPLType.new(ide, 
+    List.fromReader(domain.map(fun(i :TL2TypeIde){ TL2IdeType.new(i) })))
+}
+
+makeClassType(builder :TL2ClassBuilder) :TL2CPLType
+  (* *)
+{
+  classIde ::= TL2TypeIde.newRef(builder.pos, builder.name)
+  makeApplicationToDomain(classIde, builder.domain)
+}
+
+makeMetaClassType(builder :TL2ClassBuilder) :TL2CPLType
+  (* *)
+{
+  metaClassIde ::= TL2TypeIde.newRef(builder.pos, builder.name+"Class")
+  makeApplicationToDomain(metaClassIde, builder.domain)
+}
+
+_init :Void
+  (* *)
+{
+  terminals := TL2Terminals.new
+  grammar ::= TL2Gram.new(terminals)
+  parserBuilder ::= ParserGen(:ReentrantCompactParser).new(CompactParserBuilder.new)
+  _parser := parserBuilder.generate(grammar.gram)
+  scanner := ReentrantTL2Scanner.new(terminals)
+  self
+}
+
+}

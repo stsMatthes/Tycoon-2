@@ -1,0 +1,283 @@
+Root object
+-----------
+
+threads :List(Thread)          - circular list of threads
+classTable :Array(Object)      - mapping class ids to class objects
+selectorTable :Array(Object)   - mapping name to selector ids
+argumentTable :Array(Int)      - mapping arity to selector ids
+true  :Object
+false :Object
+charTable :Array(Object)
+...
+
+
+Registers
+---------
+
+  ip     instruction pointer
+  fp     frame pointer
+  sp     stack top pointer
+
+
+Stack frame layout
+------------------
+
+stack grows downwards  (towards zero)
+
+[high address]
+     [previous frames]
+     ...
+     arg0 (= self/receiver)
+     arg1
+     ...
+     argn
+     saved ip				first control word
+     saved fp
+     receiver
+     CompiledCode			last control word
+fp:  ByteCode
+     local1
+     ...
+sp:  localn
+     [first free word]
+
+Note: The bytecode is independent of the number of control words since there
+are special instructions to access local variables.
+
+Compiled Code Object
+--------------------
+
+CompiledCode objects represent both compiled methods and compiled functions.
+
+Slots:
+
+class_ :Class_		      the class the method is compiled in
+byteCode :ByteArray
+literals :Array(Object)
+selectorID :Int
+stackPeak :Int
+arguments :Int                without receiver
+exceptionTable :ShortArray    may be nil
+nativeCode :ByteArray	      may be nil
+
+
+exceptionTable: quadrupels fromIP..toIP -> handlerIP,sp
+
+Try/catch is implemented as follows.  For each 'try' that appears in the
+source, the exceptionTable contains the ip range of the corresponding try body,
+an ip to jump to if an exception occurs, and the corresponding stack depth (in
+words) relative to fp (must be positive).
+
+The list of exception handlers is sorted by ip. If one range is inside another,
+then outermost range (the one that encompasses the other) appears last in the
+list.  Therefore, it is possible to search forward, and the first one that
+matches is the innermost one.
+
+
+Instruction set
+---------------
+Instructions are encoded as one byte "opcode" followed by argument bytes.
+<selector-id>s consist of two bytes, <n> is a one-byte-value (->note 4).
+values > 1 byte are encoded in little endian. Jump offsets are relative
+to the current instruction.
+
+send <selector-id>
+	<selector-id> encodes the selector name and number of arguments.
+	Arguments are expected to be pushed from left to right, receiver first.
+	Performs a method lookup on the receiver (argument lowest on the stack).
+	- If no method is found, a DoesNotUnderstand exception is raised.
+	- If an OrdinaryMethod is found, the stackPeak is examined,
+	  extending the stack if necessary,
+	  and a new stack frame is created and initialized. Execution continues
+	  at the beginning of the method's byteCode.
+	- If a BuiltinMethod is found, the builtin code for the method's number
+	  gets a chance to handle the call.  If it can't, the TWL code is
+	  executed as in an OrdinaryMethod.
+	- SlotAccessMethods push their receiver's nth slot on the stack.
+	- SlotUpdateMethods set their receiver's nth slot to their argument,
+	  and return the argument.
+	- CStructAccessMethods and CStructUpdateMethods are similar, but
+	  consider the architecture-specific offset
+
+send0 <selector-id>
+send1      "           
+send2      "
+send3      "
+send4      "
+send5      "
+        like send <selector-id> with fixed number of arguments
+
+sendSuper <selector-id>
+        same as send, except that method lookup skips the method dictionaries
+	of the receiver's CPL up to and including the method dictionary which
+	points to the CompiledCode.class, i.e. the class in which the current
+	CompiledCode object has been defined in.
+
+global <n>
+	push the nth global variable.
+	The current CompiledCode object must be a CompiledFun
+	created by closure <nb_globals>, where 1 <= n <= nb_globals.
+	
+  pseudocode:
+	push(fp->receiver[n])
+
+literal8 <n>
+	push the nth element of the literal array (zero based)
+
+literal16 <nn>
+	like literal, with 15 bit offset (msb clear)
+
+arg <n>
+	push an argument. n must obey 0 <= n < nb_args.
+	self is argument number n, last argument is 0.
+  pseudocode:
+	push(fp[nb_control_Words + n])
+
+(-> note 1)
+	
+local <n>
+	push the nth local variable, 1 <= n <= nb_locals.
+  pseudocode:
+	push(fp[-n])
+
+char <n>
+	push oid for nth character object 
+  pseudocode:
+	push(pRoot->charTable[n])
+
+byte <n>
+	push signed byte extended to tagged int
+
+short <n>
+	push signed short extended to tagged int
+
+true, false, nil, minus_one, zero, one, two
+	push frequently used constants 
+
+storeLocal <n>
+	store (do not pop) the topmost stack element in the nth local variable,
+	1 <= n <= nb_locals.
+  pseudocode:
+	let val = top(),
+	fp[-n] := val  
+
+cellNew
+	create a new cell for mutable bindings (array(tsp_OID) with 1 element)
+	     sp: value
+  pseudocode:
+	*sp = tsp_newCell(*sp)
+	
+cellLoad
+	load value from allocated cell
+	     sp: cell oid
+  pseudocode:
+	*sp = (*sp)[0]
+
+cellStore
+	store value into cell
+	         value
+	     sp: cell oid
+  pseudocode:
+        (*sp)[0] = *(sp + 1)
+	pop()
+
+return
+	Pops the current frame and arguments from the stack,
+	and leaves the topmost stack element where the arguments were.
+	The number of arguments is accessible through the compiledCode pointer.
+  pseudocode:
+	let retval = top(),
+	sp = ((Word*)(fp + 1)) + fp->compiledCode->nArgs;
+	ip = fp->parent.ip;
+	fp = fp->parent.fp;
+	*sp = (retval)
+
+ifTrue <offset 8 bit> || <offset 16 bit>
+	If the topmost stack element is not a boolean, the exception
+	MustBeBoolean is raised.
+	Otherwise, the element is popped and the instruction pointer is
+	adjusted by offset, a one (or two, for a long jump version)
+	byte two's complement value, if the element is true
+	
+  pseudocode:
+	let val = pop(),
+	val == true ? {
+	  ip += offset
+	}
+
+ifFalse <offset 8 bit> || <offset 16 bit>
+	cf. ifTrue
+
+jump <offset 8 bit> || <offset 16 bit>
+	unconditional jump
+  pseudocode:
+	ip += pos
+
+pop
+	pop one element off the stack
+  pseudocode:
+	pop()
+	
+drop <n>
+	pop n elements off the stack 
+  pseudocode:
+	sp := sp + n
+
+adjust <n>
+	pop n element under the top element off the stack.
+  pseudocope:
+	v = *sp
+	sp := sp + n
+	*sp = v   
+	
+closure <n>
+	Create a closure. Stack contents before the instruction:
+	      globaln
+	      ...
+	      global1
+	  sp: CompiledFun
+	These are replaced by the newly created function object.
+
+sendTail <selector-id> <n>
+	Discards the current frame and arguments, leaving the n topmost stack elements
+	where the arguments in this stack frame were, and sends <selector-id>.
+	Similar effect like "send-tail <selector-id> ; return <n>", but avoids
+	harmful stack growth.
+
+send"+"/1
+send"=="/1
+...
+	Several instructions are allocated as sends with fixed selector.
+	This makes the code more compact (one byte instead of three).
+	In addition, the interpreter knows about builtins (like Int."+"/1),
+	and in these cases can skip the method lookup (-> note 3)
+
+
+----------
+	
+note 1: store_argument?
+	Will it be allowed to assign to variables not declared with "let var" ?
+	###ag: Es wird  nur noch 'var'-Bindungen geben
+
+note 2: Where do we leave Funs? aFun."[]" as a BuiltinMethod?  ###ag: genau,
+        fuer jede Aritaet eine builtin-Methode
+
+note 3: If the internal table of builtins contains Int."+"/1, the
+  compiler makes certain that "+" in class Int is always defined as
+  builtin with one argument.  Like this, the observed behaviour is
+  always as expected, only faster.
+
+note 4: Will one byte code positions suffice? ## ag: nein, fuer jumps brauchen
+wir 
+
+note 5: How does a compiled function access its global variables?
+  ## ag: durch die 'global' instruction
+----------------------------------------------------------------------
+
+-- 
+order: ... 9. (often cap. as part of a name) a society of people who lead a
+holy life according to a particular set of religious rules: an order of
+monks/nuns ...
+		Dictionary of Contemporary English, 2nd ed. 1987
+
+

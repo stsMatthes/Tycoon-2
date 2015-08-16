@@ -1,0 +1,60 @@
+class StmlSend
+super SimpleTypingMixin, StmlComponent
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+*)
+meta StmlSendClass
+{
+receiver :StmlTycoonSource
+
+selector :String
+
+args :Array(StmlArg)
+
+computeType(bindings :StmlBindings, errorLog :ErrorLog) :StmlType
+  (* *)
+{
+  args.do(fun(a:StmlArg){
+    a.value.computeSequenceType(bindings, errorLog, true)
+  })
+  ; the called method might indirectly call an sgml function 
+  StmlStringType.new(position)
+}
+
+compileAsString( out :StmlASTOutput ) :Void
+  (* *)
+{
+  out.tycoonExpression(
+    TL2SendValue.new(position,
+      receiver.compileToValue(out.context),
+      Symbol.new(selector),
+      List.fromReader(
+        args.map(fun(a :StmlArg) {
+	  a.value.compileToValue(out.context)
+	}))))
+}
+
+compileAsValue( out :StmlASTWriter ) :Void
+  (* *)
+{ ; this expression has string type, so putting it in a value context should
+;     create a type error.  If we get here, we can be sure that context is "string" 
+  assert({ false }) }
+
+}

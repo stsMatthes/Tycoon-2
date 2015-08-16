@@ -1,0 +1,321 @@
+class HttpdAdminProcessor
+super HtmlFormProcessor(HttpdAdminApplication)
+meta StmlProcessorClass(HttpdAdminApplication, HttpdAdminProcessor)
+{
+
+session :HttpdAdminSession
+
+process :Void
+{
+  _parseQuery ;; ### parsed twice
+  session :=
+    formFields.lookup("session",
+      fun(sessionId :String) {
+	multiFormFields.removeKey("session")
+        application.sessions.lookup(sessionId,
+	  fun(s :HttpdAdminSession){ s }, { nil })
+	;; ### exception if not found
+      },
+      { application.newSession })
+  if(session.isNil then: {
+    response.statusCode := HttpResponse.INTERNAL_SERVER_ERROR
+    response.status := HttpResponse.status(response.statusCode)
+
+    out.h1({ out << "Bad session id" })
+    out.p({
+      out << "The session `"<<formFields["session"]<<"\' is not known. "
+	  << "It may have expired. "
+    })
+    out.a(url(request.url.path, #()), nil, {
+      out << "Same document, new session"
+    })
+  } else: {
+    sourceStep ::=
+      formFields.lookup("step",
+	fun(stepStr :String) {
+	  multiFormFields.removeKey("step")
+	  stepStr.asInt  ;; ## check?
+	}, {
+	   ;; no step specified.
+	   if(session.lastStep = 0 then: {
+	     0
+	   } else: {
+	     ;; if not first step, redisplay the last page
+	     session.lastStep - 1
+	   })
+	})
+
+    completeUrl ::=
+      makeUrlMFF(request.url, session, sourceStep, multiFormFields)
+
+    if( session.lastUrl.isNotNil
+	&& completeUrl.asString = session.lastUrl.asString then: {
+      ;; hope this is not filtered...
+      out.writeString(session.lastResponse)
+    } else: {
+      if( sourceStep = session.lastStep then: {
+        if( multiFormFields.includesKey("fork") then: {
+	  multiFormFields.removeKey("fork")
+	  newSession ::= application.newSession
+	  newSession.lastOidMap := session.lastOidMap
+
+	  newUrl ::=
+	    makeUrlMFF(request.url, newSession, 0, multiFormFields)
+
+	  response.statusCode := HttpResponse.SEE_OTHER
+	  response.status := HttpResponse.status(response.statusCode)
+	  response.headers["Location"] := URLHeader.withValue(newUrl)
+
+	  out.html({
+	    out.head({
+	      out.beginStartTag("meta")
+	      out.attr("http-equiv", "Refresh")
+	      out.attr("content", "2; url="+newUrl.asString)
+	      out.endTag("meta")
+	      out.title({ out<<"Fork" })
+	    })
+	    out.body({
+	      out.h1({ out << "Fork" })
+	      out.p({
+		out << "Forking to "
+		out.a(newUrl.asString, nil, {
+		  out << "new session"
+		})
+		out << ".\n"
+	      })
+	    })
+	  })
+	} else: {
+	  oldOut ::= out
+	  buf ::= StringBuilderOutput.new
+	  out := decorateOutput(buf)
+	  exception :Exception := nil
+	  try({
+	    super.process
+	  } else: fun(e:Exception) {
+	    exception := e
+	  })
+	  if(exception.isNil || exception."class" == StmlJumpException then: {
+	    ;; ### modification of other aspects of response is lost,
+	    ;; ### only output is saved
+	    responseContents ::= buf.contents
+	    session.lastStep := sourceStep + 1
+	    session.lastUrl := completeUrl
+	    session.lastResponse := responseContents
+	    session.lastOidMap := byOid.as(Array)
+	  })
+	  if(exception.isNotNil then: {
+	    exception.raise
+	  })
+	  ;; hope this is not filtered...
+	  oldOut.writeString(session.lastResponse)
+        })
+      } else: {
+	response.statusCode := HttpResponse.INTERNAL_SERVER_ERROR
+	response.status := HttpResponse.status(response.statusCode)
+
+	out.h1({ out << "Out of date" })
+	out.p({
+	  out << "You cannot go back to previous conversation states "
+	      << "by using the Back/Forward buttons.  Please return "
+	      << "to the "
+	  out.a(session.lastUrl.asString, nil, {
+	    out << "current state"
+	  })
+	  out << " of the conversation.\n"
+	  out << "(last transmitted step: "<<session.lastStep<<", request source step: "<<sourceStep<<")"
+	})
+      })
+    })
+  })
+}
+
+url(relative :String, params :Array(Array(String))) :String
+{
+  makeUrl(relative, params).asString
+}
+
+jump(path :String, params :Array(Array(String))) :Void
+{
+  uri ::= makeUrl(path, params).asString
+  jumpUri(uri)
+}
+
+generateHiddenFields :Void
+{
+  out.input("hidden", "session", session.name, nil, false, false, nil, nil, nil)
+  out.input("hidden", "step", (session.lastStep+1).printString, nil, false, false, nil, nil, nil)
+}
+
+history :List(Object)
+{ session.history }
+
+historyVisit(o :Object) :Void
+{
+  if(o.isNotNil && (history.isEmpty || history[0] !== o) then: {
+    session.history := List.cons(o, history)
+  })
+}
+
+historyBackTo(o :Object) :Void
+{
+  history ::= history
+  i ::= history.detectKey(fun(o1:Object){o == o1})
+  if(i.isNotNil then: {
+    session.history := history.nthTail(i)
+  })
+}
+
+generateSessionParameters :Void
+{
+  out.beginStartTag("param")
+  out.attr("name", "session")
+  out.attr("value", session.name)
+  out.endStartTag
+  out.nl
+  out.beginStartTag("param")
+  out.attr("name", "step")
+  out.attr("value", (session.lastStep+1).printString)
+  out.endStartTag
+  out.nl
+}
+
+handleToObject(handle :String) :Object
+  (*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ get the object for a handle issued in the last response *)
+{
+  i ::= handle.asInt  ;; ### error checking?
+  session.lastOidMap[i]  ;; may raise IndexOutOfBounds
+}
+
+getHandle(o :Object) :String
+  (* get a handle for object o to be issued in this response. *)
+{
+  if( o.isNil then: { 0 } else: {
+    byObject.lookup(o, fun(handle :Int){
+      handle
+    }, {
+      handle ::= byOid.size
+      byOid.addLast(o)
+      byObject[o] := handle
+      handle
+    })
+  }).printString
+}
+
+subObjectsDo(o :Object, f :Fun(slotName :String, o :Object, isComponent :Bool):Void) :Void
+  (* for object.stml *)
+{
+  c ::= o."class"
+  size ::= o.__basicSize
+  if( size > 0 then: {
+    if( c.slotMap.size = size then: {
+      ;; regular object
+      c.slotMap.keysAndElementsDo(fun(idx:Int, slot :TL2Slot) {
+	f[slot.name, o.__basicAt(idx), slot.isComponent]
+      })
+    } else: {
+      if( c.slotMap.size = 0 then: {
+	;; some array class
+	isComponent ::= c == AtArray
+	for(0 to: size-1 do: fun(idx :Int) {
+	  f[idx.printString, o.__basicAt(idx), isComponent]
+	})
+      } else: {
+	tycoon.stdout << "Object size mismatch: class "<<c.name<<" requires "<<c.slotMap.size<<" slots, object size is "<<size<<"\n"
+      })
+    })
+  })
+}
+
+
+private
+
+makeUrl(relative :String, params :Array(Array(String))) :URL
+{
+  url ::= URL.fromString(relative)
+  multiFormFields ::= Dictionary.new
+  params.do(fun(a :Array(String)) {
+    multiFormFields[a[0]] :=
+      List.cons(a[1], multiFormFields.lookup(a[0], fun(l:List(String)){l}, { List.with0 }))
+  })
+  makeUrlMFF(url, session, session.lastStep+1, multiFormFields)
+}
+
+makeUrlMFF(base :URL,
+	   session :HttpdAdminSession,
+	   step :Int,
+	   multiFormFields: Dictionary(String, List(String))) :URL
+{
+  URL.new8(
+      base.scheme,
+      base.host,
+      base.port,
+      base.isAbsolute,
+      base.segments,
+      base.parameters,
+      encodeMultiFormFields(session, step, multiFormFields),
+      base.fragment)
+}
+
+encodeMultiFormFields(session :HttpdAdminSession, step :Int,
+		      mFF :Dictionary(String, List(String))) :String
+  (* this variant of URL.encodeMultiFormFields produces sorted output,
+     so structurally equal form fields will produce equal strings. *)
+{
+  assignments ::= GapArray(:String).new(mFF.size)
+
+  sbo ::= StringBuilderOutput.new
+
+  mFF.keysAndElementsDo(fun(key:String, values:List(String)) {
+    keyEncoded ::= URL.encodeQuery(key)
+    values.do(fun(value :String) {
+      sbo << keyEncoded
+      if(value.isNotNil then: {
+        sbo << '='
+	sbo << URL.encodeQuery(value)
+      })
+      assignments.add(sbo.contents)
+      sbo.clear
+    })
+  })
+  assignments.quicksort(fun(s1:String,s2:String){ s1.order(s2) })
+  assignments.add("session="+URL.encodeQuery(session.name))
+  assignments.add("step="+step.printString)
+  assignments.doBetween(fun(s :String) {
+    sbo << s
+  }, {
+    sbo << '&'
+  })
+  sbo.contents
+}
+
+byObject :IdDictionary(Object, Int)
+byOid :GapArray(Object)
+
+_init :Void
+{
+  super._init
+  byObject := IdDictionary.new
+  byOid := GapArray.with1(nil)
+}
+
+}

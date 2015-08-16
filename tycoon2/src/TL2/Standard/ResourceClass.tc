@@ -1,0 +1,87 @@
+class ResourceClass
+super AbstractClass
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+Metaclass of Resource.
+
+Author:  Andreas Gawecki
+Date:    01-Mar-1995
+Updates: (Date)	  (Name)	(Description)
+*)
+meta MetaClass
+{
+openResourceTransaction(T <:Resource, statement :Fun():T) :T
+  (* execute an Resource::open transaction
+     atomically with respect to system savepoints (Tycoon::commit).
+     if 'statement' completes normally, it returns a resource object
+     which has been sucessfully opened.
+     remember this resource, it will receive a 'commit' message
+     at the next system savepoint.
+   *)
+{
+  manager.openResourceTransaction(statement)
+}
+
+closeResourceTransaction(T <:Resource, resource :T, statement :Fun():Void) :Void
+  (* execute an Resource::close transaction
+     atomically with respect to system savepoints (Tycoon::commit).
+     
+     if 'statement' completes normally, it has
+     sucessfully closed the given resource.
+     remove the resource from the list of open reources,
+     it is no longer interested in 'commit' messages.
+     
+     raise ResourceNotOpenError if the resource is not
+     included in the list of open reources.
+  },
+
+   *)
+{
+  manager.closeResourceTransaction(resource, statement)
+}
+
+allOpenResources :List(WeakRef(Resource))
+  (* answer a list all resource objects currently 'open' *)
+{
+  manager.allOpenResources
+}
+
+commit(commitment :Commitment, statement :Fun():Void) :Void
+  (* notify all open reources to prepare for a commit,
+     and execute 'statement'.
+     if the system has been restarted,
+     all resources must be re-opened in chronological order.
+   *)
+{
+  manager.commit(commitment, statement)
+}
+
+init :Void
+  (* *)
+{
+  manager := ResourceManager.new
+}
+
+private
+
+manager :ResourceManager
+
+}

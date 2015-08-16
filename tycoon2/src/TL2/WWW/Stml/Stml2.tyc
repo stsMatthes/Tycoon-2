@@ -1,0 +1,62 @@
+(*
+DO load "WWW/Stml/Stml2.tyc";
+*)
+
+tycoon.tl.loader.registerDirectory("Net");
+tycoon.tl.loader.registerDirectory("Util");
+tycoon.tl.loader.registerDirectory("Sgml");
+tycoon.tl.loader.registerDirectory("WWW");
+tycoon.tl.loader.registerDirectory("WWW/Html");
+tycoon.tl.loader.registerDirectory("WWW/Mime");
+tycoon.tl.loader.registerDirectory("WWW/Mime/Encoding");
+tycoon.tl.loader.registerDirectory("WWW/Mime/Headers");
+
+tycoon.tl.loader.registerDirectory("WWW/Http");
+tycoon.tl.loader.registerDirectory("WWW/Http/Headers");
+tycoon.tl.loader.registerDirectory("WWW/Httpd/HttpResources");
+tycoon.tl.loader.registerDirectory("WWW/Httpd");
+  (*##hack, Hubertus hat bugfix!*)
+  (* ### warning: may crash your tvm *)
+  (* Pool.instance._poolCells._grow;
+     Pool.instance._poolMethods._grow;  *)
+tycoon.tl.loader.registerDirectory("WWW/Stml");
+
+tycoon.tl.loader.update;
+
+DO load "Util/Init.tyc";
+DO load "Sgml/Init.tyc";
+DO load "WWW/Mime/Init.tyc";
+DO load "WWW/Http/Init.tyc";
+DO load "WWW/Httpd/HttpResources/Init.tyc";
+DO load "WWW/Stml/Init.tyc";
+
+(*;
+
+(* In a new workspace, create your own copy of
+      tyhttpd/tyhttpd-launcher/conf/tyhttpd.conf
+   from the template, and
+      mkdir tyhttpd/tyhttpd-launcher/log
+*)
+
+(* Create Web Server Object and configure: *)
+define tyhttpd :Httpd;
+tyhttpd := Httpd.new;
+tyhttpd.home := tycoon.hoxHome + "/tyhttpd/tyhttpd-launcher";
+tyhttpd.configure;
+
+define stmlApplication :SimpleStmlApplication;
+stmlApplication := SimpleStmlApplication.new;
+let resourceFactory = HttpFunResourceFactory.new,
+resourceFactory.generators["jump"] :=
+  fun(file:File){
+    JumpResource.new(file)
+  },
+resourceFactory.generators["stml"] :=
+  fun(file:File){
+    StmlResource.new(stmlApplication, file)
+  },
+let dir = tyhttpd.root.lookupDirectory(EmptyList.new),
+dir.resourceFactory := resourceFactory,
+dir["stop"] := HttpShutdownResource.new(tyhttpd);
+tyhttpd.serve;
+*)

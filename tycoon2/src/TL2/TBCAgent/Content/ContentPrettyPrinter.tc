@@ -1,0 +1,189 @@
+class ContentPrettyPrinter
+super ContentVisitor, ContentSpecPrettyPrinter
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ ContentPrettyPrinter.tc
+
+   Tycoon Business Conversations (TBC) for Tycoon 2
+   ------------------------------------------------
+   An visitor for contents, which pretty-prints the content on stdout.
+   This visitor is also used by the 'Content::print' method.
+
+   19.09.97 vr : created
+   17.10.97 hw, vr : renamed etc. to integrate into TBCAgent/
+   23.10.97 hw : PPClass as metaclass
+   01.11.97 hw : added currencies  
+   03.03.98 hw : added specs
+
+*)
+meta PrettyPrinterClass(ContentPrettyPrinter)
+{
+
+boolContent(content :BoolContent) :Void
+  (* *)
+{
+  out << content.bool
+}
+
+dateContent(content :DateContent) :Void
+  (* *)
+{
+  out << content.date
+}
+
+intContent(content :IntContent) :Void
+  (* *)
+{
+  out << content.int
+}
+
+realContent(content :RealContent) :Void
+  (* *)
+{
+  out << content.real
+}
+
+stringContent(content :StringContent) :Void
+  (* *)
+{
+  content.str.printOn(out)
+}
+
+currencyContent(content :CurrencyContent) :Void
+  (* *)
+{
+  out << content.cur
+}
+
+convSpecContent(content :ConvSpecContent) :Void
+  (* *)
+{
+  out << content.cvspec
+}
+
+dialogSpecContent(content :DialogSpecContent) :Void
+  (* *)
+{
+  out << content.dlgspec
+}
+
+contentSpecContent(content :ContentSpecContent) :Void
+  (* *)
+{
+  out << content.contspec
+}
+
+recordContent(content :RecordContent) :Void
+  (* *)
+{
+  out << "Record\n"
+  tabInc
+  content.keysAndElementsDo(fun(key :String, c :Content) {
+    out << tab << key
+    assert({ content.spec[key].matches(c.spec) })
+    if( !c.spec.matches(content.spec[key]) then: {
+      ;; the type of content is a proper subtype of the declared type,
+      ;; so we print the declared type as well
+      out << " :"
+      content.spec[key].visit(self)
+    })
+    out << " = "
+    c.visit(self)
+    out << '\n'
+  })
+  tabDec
+  out << tab << "End Record"
+}
+
+variantContent( :VariantContent) :Void
+  (* *)
+{
+  ; ### not yet implemented
+  out << "=Variant...End Variant"
+}
+
+singleChoiceContent(content :SingleChoiceContent) :Void
+  (* *)
+{
+  out << "SingleChoice of "
+  content.spec.choiceSpec.visit(self)
+  out << " chosen: "
+  if( content.chosenContent.isNil then:{
+    out << "nothing"
+  } else: {
+    content.chosen.printOn(out)  ;; keep double quotes around tag
+  })
+  printChoices(content)
+  out << tab << "End SingleChoice"
+}
+
+multipleChoiceContent(content :MultipleChoiceContent) :Void
+  (* *)
+{
+  out << "MultipleChoice of "
+  content.spec.choiceSpec.visit(self)
+  out << " chosen: "
+  chosen:Array(String):=content.chosen
+  if( chosen.isEmpty then:{
+    out << "nothing"
+  } else: {
+    chosen.doBetween(fun(tag:String){
+      tag.printOn(out)
+    }, {
+      out << ", "
+    })
+  })
+  printChoices(content)
+  out << tab << "End MultipleChoice"
+}
+
+sequenceContent(content :SequenceContent) :Void
+  (* *)
+{
+  out << "Sequence of "
+  content.spec.seqSpec.visit(self)
+  if( content.size > 0 then: {
+    tabInc
+    content.do(fun(c :Content) {
+      out << '\n' << tab
+      c.visit(self)
+    })
+    tabDec
+  })
+  out << "End Sequence"
+}
+
+private
+
+printChoices(content :ChoiceContent(ChoiceContentSpec)) :Void
+{
+  out << " from:\n"
+  tabInc
+  content.keysAndElementsDo(fun(tag :String, c :Content) {
+    out << tab
+    tag.printOn(out)  ;; keep double quotes around tag
+    out << " => "
+    c.visit(self)
+    out << '\n'
+  })
+  tabDec
+}
+
+}

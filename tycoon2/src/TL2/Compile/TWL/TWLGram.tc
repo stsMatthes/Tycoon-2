@@ -1,0 +1,877 @@
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ File: TWLGram.tc
+ Author: Axel Wienberg
+   Date: ??-Jun-1996
+Purples: define a grammar and actions for building the TWL abstract syntax 
+	 tree.
+*)
+
+class TWLGram
+super TWL
+metaclass TWLGramClass
+public 
+
+(* MNO is a MutableNonterminal(Object) *)
+
+(* forward decls / exports: *)
+
+gram :Grammar(TWLParseUnit)
+
+private
+
+twlTerminals :TWLTerminals
+
+methods
+
+(* ### HACK *)
+mnnew(T <: Object, name :String) :MutableNonterminal(T)
+{
+  MutableNonterminal.new(name)
+}
+
+z(symName :String) :ValueTerminal(SourcePos)
+{
+  twlTerminals.symbol(symName)
+}
+
+k(name :String) :ValueTerminal(SourcePos)
+{
+  twlTerminals.keyword(name)
+}
+
+_init :Self
+{
+  createPrecedences,
+  let top = createRules,
+  gram := Grammar.new(top),
+  self
+}
+
+createPrecedences
+{
+  z(".").precedence :=
+  z("[").precedence :=
+  z("]").precedence := Precedence.left(120),
+  z("!").precedence := Precedence.right(110),
+  z("*").precedence :=
+  z("/").precedence :=
+  z("%").precedence := Precedence.left(100),
+  z("+").precedence :=
+  z("-").precedence := Precedence.left(90),
+  z("<<").precedence :=
+  z(">>").precedence := Precedence.left(85),
+  z("<").precedence :=
+  z("<=").precedence :=
+  z(">").precedence :=
+  z(">=").precedence := Precedence.left(80),
+  z("=").precedence :=
+  z("==").precedence :=
+  z("!=").precedence :=
+  z("!==").precedence := Precedence.left(70),
+  z("&").precedence :=
+  z("&&").precedence := Precedence.left(60),
+  z("|").precedence :=
+  z("||").precedence := Precedence.left(50),
+  z("=>").precedence :=
+  z("=>=>").precedence := Precedence.left(40),
+  z(":").precedence := Precedence.nonAssoc(31),
+  z("?").precedence := Precedence.right(30),
+  z(":=").precedence := Precedence.left(20),
+  k("assert").precedence := Precedence.nonAssoc(10)
+}
+
+
+opt(T <: Object, T1 <: Object,
+    t :Terminal(Object), nt :Nonterminal(T),
+    ifFound :Fun1(T, T1),
+    ifAbsent :Fun0(T1)) :Nonterminal(T1)
+{
+  let mno = mnnew("opt/"+t.name+"/"+nt.name),
+  mno.addRule2( t, nt,
+		fun(:Object, x:T) {
+		  ifFound[x]
+		}),
+  mno.addRule0(
+		ifAbsent),
+  mno
+}
+
+optS(T <: Object, T1 <: Object,
+    key :String, nt :Nonterminal(T),
+    ifFound :Fun1(T, T1),
+    ifAbsent :Fun0(T1)) :Nonterminal(T1)
+{
+  opt(z(key), nt, ifFound, ifAbsent)
+}
+
+optK(T <: Object, T1 <: Object,
+    key :String, nt :Nonterminal(T),
+    ifFound :Fun1(T, T1),
+    ifAbsent :Fun0(T1)) :Nonterminal(T1)
+{
+  opt(k(key), nt, ifFound, ifAbsent)
+}
+
+nonEmptyCommaList(E <: Object, nt :Nonterminal(E)) :Nonterminal(List(E))
+{
+  let nonempty :MutableNonterminal(List(E)) =
+    mnnew(nt.name+"/,+"),
+  nonempty.addRule3( nt, z(","), nonempty,
+		     fun(x:E, :Object, accu :List(E)) {
+		       List.cons(x, accu)
+		     }),
+  nonempty.addRule1( nt,
+		     fun(x:E) {
+		       List.with1(x)
+		     }),
+  nonempty
+}
+
+commaList(E <: Object, nt :Nonterminal(E)) :Nonterminal(List(E))
+{
+  let nonempty = nonEmptyCommaList(nt),
+  let result :MutableNonterminal(List(E)) =
+    mnnew(nt.name+"/,*"),
+  result.addRule1( nonempty,
+		   fun(x:List(E)){x}),
+  result.addRule0( 
+		   {EmptyList.new}),
+  result
+}
+
+binop(sel :String) :Fun3(Value,Object,Value,Value)
+{
+  fun(receiver :Value, :Object, arg :Value) {
+    SendValue.new(receiver, Symbol.new(sel), List.with1(arg))
+  }
+}
+
+createRules (
+    SlotsAndMethods = Pair(List(ValueIde), List(Method)),  (* ## simulated Let-Bindings *)
+    O               = Object
+  ) :MutableNonterminal(TWLParseUnit)
+{
+  let ident = twlTerminals.ident,
+  let string = twlTerminals.string,
+  let char = twlTerminals.char,
+  let int = twlTerminals.int,
+  let real = twlTerminals.real,
+
+  let type :MutableNonterminal(Type) = mnnew("type"),
+  let value :MutableNonterminal(Value) = mnnew("value"),
+  let signature :MutableNonterminal(Ide) = mnnew("signature"),
+  let typeSignature :MutableNonterminal(TypeIde) = mnnew("typeSignature"),
+  let valueSignature :MutableNonterminal(ValueIde) = mnnew("valueSignature"),
+  let sequence :MutableNonterminal(BlockValue) = mnnew("sequence"),
+
+  let optType = optS( ":", type, 
+		      fun(t:Type){ t }, 
+		      { nil }),
+
+  let argument :MutableNonterminal(Value) = mnnew("argument"),
+  argument.addRule1( value,
+		     fun(v:Value){ v }),
+  argument.addRule2( z(":"), type,
+		     fun(:O, t :Type){ t }),  (* ### ? *)
+  argument.addRule5( k("let"), ident, optType, z("="), value,
+		     fun(p :SourcePos, s :Positioned(String), t :Type, 
+			     :O, v :Value) {
+		       v
+		     }),  (* ### ? *)
+
+  let signatures = commaList(signature),
+  let typeSignatures = commaList(typeSignature),
+  let valueSignatures = commaList(valueSignature),
+  let arguments = commaList(argument),
+  let typeList = commaList(type),
+
+(* types *)
+
+  let typeIde :MutableNonterminal(TypeIde) = mnnew("typeIde"),
+  typeIde.addRule1( ident,
+		    fun(s :Positioned(String)) {
+		      TypeIde.newRef(s)
+		    }),
+
+  let selfTypeIdent :MutableNonterminal(Positioned(String)) = mnnew("Self"),
+  selfTypeIdent.addRule1( k("Self"),
+			  fun(p:SourcePos) {
+			    Positioned.new(p, "Self")
+			  }),
+
+  (* created above *)
+  type.addRule4( type, z("("), typeList, z(")"),
+		 fun(t :Type, :O, args :List(Type), :O) {
+		   ApplyType.new(t, args)
+		 }),
+  type.addRule1( k("Void"),
+		 fun(:O) {
+		   VoidType.instance
+		 }),
+  type.addRule1( k("Nil"),
+		 fun(:O) {
+		   NilType.instance
+		 }),
+  type.addRule1( selfTypeIdent,
+		 fun(ps :Positioned(String)) {
+		   IdeType.new(TypeIde.newRef(ps))
+		 }),
+  type.addRule1( typeIde,
+		 fun(i :TypeIde) {
+		   IdeType.new(i)
+		 }),
+  (* p=pIde:Type  ...was soll das heissen?! *)
+
+  (* no Void, Nil or Self in super type declaration;
+     no nested ApplyTypes *)
+  let cplType :MutableNonterminal(CPLType) = mnnew("cplType"),
+  let cplTypeList = commaList(cplType),
+  cplType.addRule4( typeIde, z("("), typeList, z(")"),
+		 fun(i :TypeIde, :O, args :List(Type), :O) {
+		   CPLType.new(i, args)
+		 }),
+  cplType.addRule1( typeIde,
+		    fun(i :TypeIde) {
+		      CPLType.new(i, List.with0)
+		    }),
+
+  (* classes *)
+
+(* classHeader *)
+  let className = mnnew("className"),
+  className.addRule1( ident,
+		      fun(s :Positioned(String)){ s }),
+  className.addRule1( k("Nil"),
+		      fun(p:SourcePos){ Positioned.new(p, "Nil") }),
+
+  let optClassDomain :MutableNonterminal(List(TypeIde)) = mnnew("optClassDomain"),
+  optClassDomain.addRule3( z("("), typeSignatures, z(")"),
+			   fun(:O, l :List(TypeIde), :O) {
+			     l
+			   }),
+  optClassDomain.addRule0(
+		           { EmptyList.new }),
+
+  let optMeta = optK( "metaclass", cplType, 
+		      fun(t :CPLType){ t },
+		      { nil }),
+
+  let optSelfSig :MutableNonterminal(TypeIde) = mnnew("optSelfSig"),
+  optSelfSig.addRule3( selfTypeIdent, z("="), type,
+		       fun(slf:Positioned(String), p:SourcePos, t :Type) {
+			 TypeIde.newSig(slf, p, t)
+		       }),
+  optSelfSig.addRule3( selfTypeIdent, z("<:"), type,
+		       fun(slf:Positioned(String), p:SourcePos, t :Type) {
+			 SubTypeIde.newSig(slf, p, t)
+		       }),
+  optSelfSig.addRule0(
+		       { nil }),  (* ### *)
+
+  let optSuper = optK("super", cplTypeList,
+		      fun(l :List(CPLType)){ l },
+		      { EmptyList.new }),
+
+  let classHeader :MutableNonterminal(ClassBuilder) = mnnew("classHeader"),
+  classHeader.addRule5( className, optClassDomain, optSuper, optSelfSig, optMeta,
+	fun( name :Positioned(String), 
+	     domain :List(TypeIde), 
+	     supers :List(CPLType),
+	     selfSig :TypeIde,
+	     metaclass_ :CPLType) {
+	  ClassBuilder.new( 
+	      name,
+	      domain,
+	      supers,
+	      selfSig,
+	      metaclass_)
+	}),
+
+(* optInv *)
+  let optInv = optK( "invariant", value,
+		     fun(v:Value){ v },
+		     { nil }),
+
+(* methods *)
+  let selector :MutableNonterminal(Positioned(Symbol)) = mnnew("selector"),
+  selector.addRule1( ident,
+		     fun(id :Positioned(String)){ 
+		       Positioned.new(id.pos, Symbol.new(id.value))
+		     }),
+  selector.addRule1( string,
+		     fun(s :Positioned(String)){ 
+		       Positioned.new(s.pos, Symbol.new(s.value))
+		     }),
+
+  (* fun return type: nil, will be inferred *)
+  let optRange = optS( ":", type,
+		       fun(t:Type){ t }, { nil }),  (* ### nil? *)
+  (* method return type: default is void *)
+  let optMethodRange = optS( ":", type,
+			     fun(t:Type){ t },
+			     { VoidType.instance }),
+
+  let optFormals :MutableNonterminal(List(Ide)) = mnnew("optFormals"),
+  optFormals.addRule3( z("("), signatures, z(")"),
+		       fun(:O, l :List(Ide), :O) {
+		         l
+		       }),
+  optFormals.addRule0(
+		       { EmptyList.new }),
+
+  let methodHeader :MutableNonterminal(Fun1(Method, Method)) = mnnew("methodHeader"),
+  methodHeader.addRule3( selector, optFormals, optMethodRange,
+			 fun(sel :Positioned(Symbol), domain :List(Ide), 
+						      range :Type) {
+			   fun(m :Method) :Method {
+			     m.pos := sel.pos,
+			     m.selector := sel.value,
+			     m.methodType := MethodType.new(sel, domain, range),
+			     m
+			   }
+			 }),
+
+
+  let optPre = optK( "require", value,
+		     fun(v:Value){ v },
+		     { nil }),
+
+  let optPost = optK( "ensure", value,
+		     fun(v:Value){ v },
+		     { nil }),
+
+  let methodCond = mnnew("methodCond"),
+  methodCond.addRule2( optPre, optPost,
+		       fun(:O,:O):O{ nil }),
+
+
+  let body :MutableNonterminal(BlockValue) = mnnew("body"),
+  body.addRule3( z("{"), sequence, z("}"),
+		 fun(p:SourcePos, s :BlockValue, :O) {
+		   s.pos := p,
+		   s
+		 }),
+
+  let optBody = mnnew("optBody"),
+  optBody.addRule1( body,
+		    fun(v:Value){ v }),
+  optBody.addRule0(
+		    { nil }),
+
+  let methodBody = mnnew("methodBody"),
+  methodBody.addRule1( k("deferred"),
+		       fun(:O) {
+		         DeferredMethod.new
+		       }),
+  methodBody.addRule0(  (* ### missing body *)
+		       { UnimplementedMethod.new
+		       }),
+  methodBody.addRule1( k("extern"),
+		       fun(:O) {
+		         ExternalMethod.new("","")
+		       }),
+  methodBody.addRule2( k("extern"), string,
+		       fun(:O, lang :Positioned(String)) {
+		         ExternalMethod.new(lang.value,"")
+		       }),
+  methodBody.addRule3( k("extern"), string, string,
+		       fun(:O, lang :Positioned(String), entry :Positioned(String)) {
+		         ExternalMethod.new(lang.value,entry.value)
+		       }),
+  methodBody.addRule2( k("builtin"), optBody,
+		       fun(p :SourcePos, body :Value) {
+		         BuiltinMethod.new(
+			   body.isNotNil
+			    ? { body }
+			    : { BlockValue.new1(p,EmptyList.new) })
+		       }),
+  methodBody.addRule1( body,
+		       fun(body :Value) {
+		         CompiledMethod.new(body)
+		       }),
+  (* ### externalMethod? *)
+
+  let method = mnnew("method"),
+  method.addRule3( methodHeader, methodCond, methodBody,
+		   fun(header :Fun1(Method, Method), :O, m :Method) {
+		     (* <body> returns a specialized method object, and <header> fills in
+		        the standard fields *)
+		     header[m]
+		   }),
+
+
+  let methods_ :MutableNonterminal(List(Method)) = mnnew("methods_"),
+  methods_.addRule2( method, methods_,
+		    fun(m :Method, l :List(Method)) {
+		      List.cons(m, l)
+		    }),
+  methods_.addRule0(
+		    { EmptyList.new }),
+
+(* slotsAndMethods *)
+  let optMethods = optK( "methods", methods_,
+			 fun(l :List(Method)){ l },
+			 { EmptyList.new }),
+
+
+  let noSlots :SlotsAndMethods = Pair.new(emptyList, emptyList),
+
+  let slotsAndMethods1 :MutableNonterminal(SlotsAndMethods) = mnnew("slotsAndMethods1"),
+  slotsAndMethods1.addRule2( valueSignatures, optMethods,
+			     fun(slots :List(ValueIde), methods_ :List(Method)) {
+			       Pair.new(slots, methods_)
+			     }),
+
+  let optPublic = optK( "public", slotsAndMethods1,
+		        fun(slom :SlotsAndMethods) {
+			  slom
+			},
+			{ noSlots }),
+  let optPrivate = optK( "private", slotsAndMethods1,
+		        fun(slom :SlotsAndMethods) {
+			  slom
+			},
+			{ noSlots }),
+
+  let class_ = mnnew("class_"),
+  class_.addRule5( k("class"), classHeader, optInv, optPublic, optPrivate,
+		   fun(:O, builder :ClassBuilder, :O,
+			   publicSloM :SlotsAndMethods,
+			   privateSloM :SlotsAndMethods) :ClassBuilder {
+		     builder.publicSlots := publicSloM.first,
+		     builder.publicMethods := publicSloM.second,
+		     builder.privateSlots := privateSloM.first,
+		     builder.privateMethods := privateSloM.second,
+		     builder
+		   }),
+
+
+(* values *)
+
+  let valueIde :MutableNonterminal(ValueIde) = mnnew("valueIde"),
+  valueIde.addRule1( ident,
+		     fun(s :Positioned(String)) {
+		       ValueIde.newRef(s)  (* will be scoped later *)
+		     }),
+
+
+  let optArguments :MutableNonterminal(List(Value)) = mnnew("optArguments"),
+  optArguments.addRule3( z("("), arguments, z(")"),
+			fun(:O, l:List(Value), :O) {
+			  l
+			}),
+  optArguments.addRule0(
+			{ EmptyList.new }),
+
+  (* for compatibility syntax (try, while, if,...) *)
+  let fun0 :MutableNonterminal(BlockValue) = mnnew("fun0"),
+  fun0.addRule5( k("fun"), z("("), z(")"), optRange, body,
+		  fun( p :SourcePos, :O, :O, range :Type, body :BlockValue) {
+		    body
+		  }),
+  fun0.addRule1( body,
+		 fun(body :BlockValue) {
+		   body
+		 }),
+
+  (* created above *)
+  value.addRule1( k("nil"),
+		  fun(p:SourcePos) {
+		    LiteralValue.new1(p, nil)
+		  }),
+  value.addRule1( k("true"),
+		  fun(p:SourcePos) {
+		    LiteralValue.new1(p, true)
+		  }),
+  value.addRule1( k("false"),
+		  fun(p:SourcePos) {
+		    LiteralValue.new1(p, false)
+		  }),
+  value.addRule1( k("self"),
+		  fun(p:SourcePos) { 
+		    IdeValue.new(ValueIde.newRef(Positioned.new(p, "self"))) 
+		  }),
+
+  let literalAction =
+    fun(o:Positioned(Object)) {
+      LiteralValue.new(o)
+    },
+		  
+  value.addRule1( string, literalAction ),
+  value.addRule1( char,   literalAction ),
+  value.addRule1( int,    literalAction ),
+  value.addRule1( real,   literalAction ),
+  value.addRule2( z("+"), int,
+		  fun(:O, i:Positioned(Int)) {
+		    LiteralValue.new(i)
+		  }),
+  value.addRule2( z("+"), real,
+		  fun(:O, r:Positioned(Real)) {
+		    LiteralValue.new(r)
+		  }),
+  value.addRule2( z("-"), int,
+		  fun(:O, i:Positioned(Int)) {
+		    LiteralValue.new1(i.pos, i.value.negated)
+		  }),
+  value.addRule2( z("-"), real,
+		  fun(:O, r:Positioned(Real)) {
+		    LiteralValue.new1(r.pos, r.value.negated)
+		  }),
+
+
+  value.addRule1( valueIde,
+		  fun(i:ValueIde) {
+		    IdeValue.new(i)
+		  }),
+  value.addRule3( valueIde, z(":="), value,
+		  fun(i:ValueIde, :O, v:Value) {
+		    AssignValue.new(i.pos, i, v)
+		  }),
+  value.addRule4( ident, z("("), arguments, z(")"),
+		  fun(sel:Positioned(String), :O, args :List(Value), :O) {
+		    SendValue.new( 
+		      IdeValue.new(
+		        ValueIde.newRef(Positioned.new(sel.pos, "self"))),
+		      Symbol.new(sel.value), args)
+		  }),
+		  
+  value.addRule6( k("fun"), z("("), signatures, z(")"), optRange, body,
+		  fun( p :SourcePos,
+		       :O, domain :List(Ide), :O, range :Type,
+		       body :Value) {
+		    CompiledFun.new(p, domain,range,body)
+		  }),
+  value.addRule1( body,
+		  fun(body :Value) {
+		    CompiledFun.new(body.pos, EmptyList.new, nil, body)
+		  }),
+  value.addRule3( z("("), value, z(")"),
+		  fun(:O,v:Value,:O) {
+		    v
+		  }),
+
+  value.addRule4( k("super"), z("."), selector, optArguments,
+		  fun(pos :SourcePos, :O, selector :Positioned(Symbol), 
+				       args :List(Value)) {
+                    let receiver =
+		      IdeValue.new(
+		        ValueIde.newRef(Positioned.new(pos, "self"))),
+		    SuperSendValue.new(pos, receiver, selector.value, args)
+		  }),
+  value.addRule5( k("super"), z("."), selector, z(":="), value,
+		  fun(pos :SourcePos, :O, selector :Positioned(Symbol), :O, 
+				       val :Value) {
+                    let receiver =
+		      IdeValue.new(
+		        ValueIde.newRef(Positioned.new(pos, "self"))),
+		    let assignSel = Symbol.new(selector.value.name + ":="),
+		    SuperSendValue.new(pos, receiver, assignSel, List.with1(val))
+		  }),
+
+  value.addRule4( value, z("."), selector, optArguments,
+		  fun(receiver :Value, :O, selector :Positioned(Symbol), 
+				       args :List(Value)) {
+		    SendValue.new(receiver, selector.value, args)
+		  }),
+  value.addRule5( value, z("."), selector, z(":="), value,
+		  fun(receiver :Value, :O, selector :Positioned(Symbol), :O, 
+				       val :Value) {
+		    let assignSel = Symbol.new(selector.value.name + ":="),
+		    SendValue.new(receiver, assignSel, List.with1(val))
+		  }),
+
+
+  value.addRule4( value, z("["), arguments, z("]"),
+		  fun(receiver:Value, :O, args :List(Value), :O) {
+		    SendValue.new(receiver, Symbol.new("[]"), args)
+		  }),
+  value.addRule6( value, z("["), arguments, z("]"), z(":="), value,
+		  fun(receiver :Value, :O, args :List(Value), :O,:O, val :Value) {
+		    SendValue.new( receiver, Symbol.new("[]:="), 
+				   List.append(args, List.with1(val)))
+		  }),
+		  
+
+
+  value.addRule2( z("!"), value,
+		  fun(p:SourcePos, v :Value) {
+		    NotValue.new1(p, v)
+		  }),
+
+  value.addRule3( value, z("*"), value,
+		  binop("*")),
+  value.addRule3( value, z("/"), value,
+		  binop("/")),
+  value.addRule3( value, z("%"), value,
+		  binop("%")),
+  value.addRule3( value, z(">>"), value,
+		  binop(">>")),
+  value.addRule3( value, z("<<"), value,
+		  binop("<<")),
+
+  value.addRule3( value, z("+"), value,
+		  binop("+")),
+  value.addRule3( value, z("-"), value,
+		  binop("-")),
+
+  value.addRule3( value, z("<"), value,
+		  binop("<")),
+  value.addRule3( value, z("<="), value,
+		  binop("<=")),
+  value.addRule3( value, z(">"), value,
+		  binop(">")),
+  value.addRule3( value, z(">="), value,
+		  binop(">=")),
+
+  value.addRule3( value, z("="), value,
+		  binop("=")),
+  value.addRule3( value, z("=="), value,
+		  binop("==")),
+  value.addRule3( value, z("!="), value,
+		  binop("!=")),
+  value.addRule3( value, z("!=="), value,
+		  binop("!==")),
+
+  value.addRule3( value, z("&"), value,
+		  binop("&")),
+  value.addRule3( value, z("&&"), fun0,
+		  fun(cond1 :Value, :O, cond2 :BlockValue) {
+		    AndValue.new(cond1, cond2)
+		  }),
+
+  value.addRule3( value, z("|"), value,
+		  binop("|")),
+  value.addRule3( value, z("||"), fun0,
+		  fun(cond1 :Value, :O, cond2 :BlockValue) {
+		    OrValue.new(cond1, cond2)
+		  }),
+
+  value.addRule3( value, z("=>"), value,
+		  binop("=>")),
+  value.addRule3( value, z("=>=>"), value,
+		  binop("=>=>")),
+
+  value.addRule3( value, z("?"), fun0,
+		  fun(condition :Value, :O, then :BlockValue) {
+		    let else = BlockValue.new,
+		    IfValue.new1(condition.pos, condition, then, else)
+		  }),
+  value.addRule( Rule.new5( value,
+			    value, z("?"), fun0, z(":"), fun0,
+		  fun(condition :Value, :O, then :BlockValue, :O, else :BlockValue) {
+		    IfValue.new1(condition.pos, condition, then, else)
+		  }).withPrecedence(z("?").precedence)),
+
+  value.addRule2( k("assert"), value,
+		  fun(p :SourcePos, val :Value) {
+		    AssertValue.new(p, val)
+		  }),
+
+  let catchPhrase = mnnew("catchPhrase"),
+  catchPhrase.addRule5( k("fun"), z("("), valueSignature, z(")"), body,
+		    fun(:O,:O,sig:ValueIde, :O, body:Value) {
+		      Pair.new(sig, body)
+		    }),
+
+  let optTypeComma :MutableNonterminal(O) = mnnew("optTypeComma"),
+  optTypeComma.addRule3( z(":"), type, z(","),
+			 fun(:O,:O,:O) {
+			   nil
+			 }),
+  optTypeComma.addRule0(
+			{ nil } ),
+
+  value.addRule7( k("try"), z("("), optTypeComma, fun0, z(","), catchPhrase, z(")"),
+		  fun(pos :SourcePos,:O,:O, body :Value, :O, catch :Pair(ValueIde,Value), :O) {
+		    let catchSig = catch.first,
+		    let catchBody = catch.second,
+		    TryValue.new1(pos, body, catchSig, catchBody)
+		  }),
+
+  value.addRule6( k("while"), z("("), fun0, z(","), fun0, z(")"),
+		  fun(pos :SourcePos, :O, condition :Value, :O, body :BlockValue, :O) {
+		    WhileValue.new1(pos, condition, body)
+		  }),
+
+(* signatures *)
+
+  let optIdent :MutableNonterminal(Positioned(String)) = mnnew("optIdent"),
+  optIdent.addRule1( ident,
+		     fun(s :Positioned(String)) {
+		       s
+		     }),
+  optIdent.addRule0(
+		     { nil }),
+
+
+  (* created above *)
+  signature.addRule3( optIdent, z("="), type,
+		      fun(s:Positioned(String), p:SourcePos, t :Type) {
+		        TypeIde.newSig(s, p, t)
+		      }),
+  signature.addRule3( optIdent, z("<:"), type,
+		      fun(s:Positioned(String), p:SourcePos, t :Type) {
+		        SubTypeIde.newSig(s, p, t)
+		      }),
+  signature.addRule3( optIdent, z(":"), type,
+		      fun(s:Positioned(String), p:SourcePos, t :Type) {
+		        ValueIde.newSig(s, p, t)
+		      }),
+
+  (* created above *)   (* ### reuse? *)   (* ### Let ? *)
+  typeSignature.addRule3( optIdent, z("<:"), type,
+		      fun(s:Positioned(String), p:SourcePos, t :Type) {
+		        SubTypeIde.newSig(s, p, t)
+		      }),
+
+  valueSignature.addRule3( optIdent, z(":"), type,
+		      fun(s:Positioned(String), p:SourcePos, t :Type) {
+		        ValueIde.newSig(s, p, t)
+		      }),
+
+		      
+(* sequence *)
+
+  let optVar :MutableNonterminal(Bool) = mnnew("optVar"),
+  optVar.addRule1( k("var"),
+		   fun(:O){ true }),
+  optVar.addRule0(
+		   { false }),
+
+  let sequence1 :MutableNonterminal(BlockValue) = mnnew("sequence1"),
+
+  let sequenceTail :MutableNonterminal(BlockValue) = mnnew("sequenceTail"),
+  sequenceTail.addRule2( z(","), sequence1,
+			 fun(:O, b :BlockValue) {
+			   b
+			 }),
+  sequenceTail.addRule0( 
+			 { BlockValue.new }),
+
+  sequence1.addRule2( value, sequenceTail,
+		     fun(v :Value, tail :BlockValue) {
+		       tail.values := List.cons(v, tail.values),
+		       tail.pos := v.pos,
+		       tail
+		     }),
+
+  sequence1.addRule7( k("let"), optVar, ident, optType, 
+				z("="), value, sequenceTail,
+		     fun(p :SourcePos, :Bool, s :Positioned(String), t :Type, 
+			     :O, v :Value, block :BlockValue) {
+		       let ide = ValueIde.newSig(s,nil,t),
+		       let body =
+		         block.values.isEmpty
+			  ? { let v :Value = IdeValue.new(ide) }
+			  : { block },
+		       BlockValue.new1(p, List.with1(LetValue.new(p, ide, v, body)))
+		     }),
+
+  (* ### OBSOLETE
+
+     'Let' is no longer part of the TL-2 language.
+     If you really want to bind types to identifiers, you can declare them
+     in the method signature (as the last type parameters !):
+
+     m(P = Pair(List(Int), List(Dictionary(String, Symbol))))
+     {
+
+     }
+
+     for both callee and caller this should not make any difference (except that
+     some private information is now exposed at the interface).
+
+
+     (incorrect translation to fun(...))
+     sequence1.addRule5( k("Let"), ident, z("="), type, sequenceTail,
+		     fun(p:SourcePos, s:Positioned(String), :O, t:Type, 
+			     block:BlockValue) {
+		       BlockValue.new1(p, List.with1(
+			 SendValue.new1(p, 
+			   CompiledFun.new(p, List.with1(TypeIde.newSig(s,nil,t)),
+					   nil, (* result type *)
+					   block),
+			   Symbol.new("[]"),
+			   List.with1(t))))
+		     }),
+  *)
+  
+  sequence.addRule1( sequence1,
+		     fun(b :BlockValue) {
+		       b
+		     }),
+  sequence.addRule0( 
+		     { BlockValue.new }),
+
+  let doArg :MutableNonterminal(String) = mnnew("doArg"),
+  doArg.addRule1(string,
+		 fun(ps :Positioned(String)) {
+		   ps.value
+		 }),
+  doArg.addRule1(ident,
+		 fun(ps :Positioned(String)) {
+		   ps.value
+		 }),
+  doArg.addRule1(k("true"),
+		 fun(:Object) {
+		   "true"
+		 }),
+  doArg.addRule1(k("false"),
+		 fun(:Object) {
+		   "false"
+		 }),
+
+  let doArgs :MutableNonterminal(List(String)) = mnnew("doArgs"),
+  doArgs.addRule0(
+		  { EmptyList.new }),
+  doArgs.addRule2( doArg, doArgs,
+		   fun(head :String, tail :List(String)) {
+		     List.cons(head, tail)
+		   }),
+
+  (* the top is the place
+     where nobody goes
+     you just imagine *)
+
+  (* export! *)
+  let top :MutableNonterminal(TWLParseUnit) = mnnew("top"),
+  top.addRule1( class_,
+		fun(builder :ClassBuilder) {
+		  TWLPUClass.new(builder)
+		}),
+  top.addRule1( sequence,
+		fun(b :BlockValue) {
+		  !b.values.isEmpty
+		   ? { TWLPUBindings.new(b) }
+		   : { (* empty sequence means end of parse *)
+		       nil }
+		}),
+  top.addRule2( k("define"), signatures,
+		fun(:O, l :List(Ide)) {
+		  TWLPUDefine.new(l)
+		}),
+  top.addRule3( k("DO"), ident, doArgs,
+		fun(pos :SourcePos, l :Positioned(String), args :List(String)) {
+		  TWLPUDo.new(pos, l.value, args)
+		}),
+  top
+}
+;

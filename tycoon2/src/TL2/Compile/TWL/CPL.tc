@@ -1,0 +1,95 @@
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ A ListSet with CPLTypes as elements.
+   Element equality is determined on equality of the classes
+   just like in the CPL itself
+*)
+class CPL
+  super TWL, ListSet(CPLType)
+
+private methods
+
+  _init1(clazz :ClassPublic)
+  {
+    super._init,
+    
+    clazz.supers.reverseDo(fun(t :CPLType) {
+      let subst = t.oper.apply(t.args, EmptySubst.instance, EmptySubst.instance, true, fun(:Type, s :Subst) { s }),
+      let oper  = t.operClass.typeIde.type, (* ## this could be done better *)
+
+      let cpl = oper.visitor(:List(CPLType)).
+        ifClassInstanceType(fun(oper :ClassInstanceType) {
+	  List.fromReader(oper.cpl.reader)
+	}).
+	ifOperType(fun(oper :OperType) {
+	  List.fromReader(_typeCast(oper.range, :ClassInstanceType).cpl.map(fun(t :CPLType) {
+	    CPLType.new(t.ide, List.fromReader(t.args.map(fun(arg :Type) { substituteType(arg, subst) })))
+	  }))
+	}).
+	visitType(oper),
+      
+      addAll(cpl.reverseReader)
+    }),
+    
+    addNew(
+      CPLType.new(
+        clazz.typeIde,
+	List.fromReader(clazz.domain.map(fun(t :TypeIde) { IdeType.new(t) }))
+      )
+    )
+  }
+
+  (* chance again to drop some ide''s --- use Type::reduce *)
+  substituteType(t :Type, s :Subst) :Type
+  {
+    t.reduce(s, fun(t :Type, s :Subst) {
+      s == EmptySubst.instance ? {
+        t
+      } : {
+        SubstType.new(t, s)
+      }
+    })
+  }
+    
+       
+      
+     
+
+  (*
+    It is prohibited to use the same class parameterized with different types
+    in the transitive closure of superclasses.
+    ## 'Different types' is interpreted by name not by structure
+    ##
+    ## class X super Y(Z);
+    ##
+    ## class A super T(X), T(Y(Z)); is therefore also forbidden.
+    ##
+  *)
+  _elementEqual(c1 :CPLType, c2 :Object) :Bool
+  {
+    c2."class" == CPLType && {
+      let c2 = _typeCast(c2, :CPLType),
+      (* ## not implemented yet *)
+      c1.ide == c2.ide
+    }
+  }
+
+;
+

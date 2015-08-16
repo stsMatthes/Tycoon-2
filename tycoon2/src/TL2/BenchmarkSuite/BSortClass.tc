@@ -1,0 +1,13 @@
+class BSortClass(Instance <: Object)
+super ConcreteClass(Instance)
+metaclass MetaClass
+
+public methods
+
+new1(elem :Int) :Instance
+{
+  let s = _new,
+  s._elem := elem,
+  s._init
+}
+;

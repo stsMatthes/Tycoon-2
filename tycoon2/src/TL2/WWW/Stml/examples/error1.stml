@@ -1,0 +1,15 @@
+<!DOCTYPE STML SYSTEM>
+<html>
+<title>
+Error 1
+</title>
+<body>
+<define name=x>
+  <fun>
+
+
+  </fun>
+  hallo
+</define>
+</body>  
+</html>  

@@ -1,0 +1,185 @@
+class HttpResource
+
+super Http
+
+metaclass AbstractClass
+
+public
+
+parent :HttpContainerResource,  (*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ the parent resource, or nil if root *)
+icon :String			(* HTML source for this resources icon *)
+
+methods
+
+  
+contentLength :Int
+  (* answer the content length of the resource, or nil if  *)
+{
+  nil
+}
+
+lastModified :Long
+  (* default is: dynamic output *)
+{
+  Long.MAX_VALUE
+}
+
+newResponse(status :Int) :HttpResponse
+{
+  HttpResponse.new6(1, 1,
+    status,
+    HttpResponse.status(status),
+    MimeHeaderDictionary.new,
+    nil)
+}
+
+pathLookup(request :HttpRequest, arcs :List(String)) :HttpResource
+  (* answer the target resource of the given request, with a path starting at
+     the receiver and following the given arcs, or nil if not found. *)
+{
+  (* we are not a composite resource: *)
+  arcs.isEmpty ? { self } : { nil }
+}
+
+lookupDirectory(arcs :List(String)) :HttpDirectoryResource
+  (* answer the directory resource with a path starting at
+     the receiver and following the given arcs, or nil if not
+     found or no directory.
+     Purpose: simplify server configuration.
+  *)
+{
+  (* we are neither a directory resource nor a composite resource: *)
+  nil
+}
+     
+validate :Void
+  (* validate any cached information. default: do nothing *)
+{
+}
+
+asDirectoryContentsResource :HttpDirectoryContentsResource
+  (* answer the receiver if it is a directory contents resource, or nil *)
+{
+  nil (* we are not a directory contents resource *)
+}
+
+asDirectoryResource :HttpDirectoryResource
+  (* answer the receiver if it is a directory resource, or nil *)
+{
+  nil (* we are not a directory resource *)
+}
+
+reindex
+  (* forget any automatically indexed child resources
+     re-index at subsequent requests.
+     But keep directory resources, propagate reindex down
+     the directory tree.
+     Default: do nothing.
+  *)
+{
+}
+
+preProcess(request :HttpRequest) :Void
+  (* perform any necessary action prior to processing the given request.
+     cached information is already up-to-date (see 'validate').
+     default is to do nothing
+     (##allow replacement with different request?) *)
+{
+}
+
+process(request :HttpRequest) :HttpResponse
+  (* perform the given request and answer a HttpResponse object.
+     every resource processes a request according to the following
+     scheme:
+       1. validate any cached information
+       2. preProcess the request and the generated response
+       3. dispatch on the HTTP request method
+       4. postProcess the request and the generated response
+       
+     This method should not be overridden since it is not propagated
+     by HttpResourceDecorator objects. Instead, override any of the
+     dispatched request methods, or one of validate, preProcess, postProcess.
+
+   *)
+{
+  validate,
+  preProcess(request),
+  let method = request.method,
+  let response =
+    method = "GET" ? { get(request) } : {
+    method = "HEAD" ? { head(request) } : {
+    method = "POST" ? { post(request) } : {
+    method = "OPTIONS" ? { options(request) } : {
+    method = "DELETE" ? { delete(request) } : {
+    method = "LINK" ? { link(request) } : {
+    method = "UNLINK" ? { unlink(request) } : {
+      extended(request)
+  }}}}}}},
+  postProcess(request, response)
+}
+
+
+postProcess(request :HttpRequest, response :HttpResponse) :HttpResponse
+  (* processing the given request is complete and yielded the given response.
+     perform any necessary action thereafter, possibly delivering a different response.
+     default is to do nothing. *)
+{
+  response
+}
+
+notImplemented(request :HttpRequest) :HttpResponse
+{
+  newResponse(HttpResponse.NOT_IMPLEMENTED)
+}
+
+head(request :HttpRequest) :HttpResponse
+  (* default implementation: perform GET and remove body *)
+  {
+  let response = get(request),
+  response.body.close,
+  response.body := nil,
+  response
+  }
+
+get(request :HttpRequest) :HttpResponse		{ notImplemented(request) }
+put(request :HttpRequest) :HttpResponse		{ notImplemented(request) }
+post(request :HttpRequest) :HttpResponse	{ notImplemented(request) }
+options(request :HttpRequest) :HttpResponse	{ notImplemented(request) }
+delete(request :HttpRequest) :HttpResponse	{ notImplemented(request) }
+link(request :HttpRequest) :HttpResponse	{ notImplemented(request) }
+unlink(request :HttpRequest) :HttpResponse	{ notImplemented(request) }
+extended(request :HttpRequest) :HttpResponse	{ notImplemented(request) }
+
+private
+
+methods
+
+_init :Void
+{
+  super._init,
+  icon := "/hox-icons/unknown.gif",
+  self
+}
+
+;
+
+

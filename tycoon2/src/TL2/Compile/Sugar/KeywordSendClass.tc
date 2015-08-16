@@ -1,0 +1,21 @@
+class KeywordSendClass
+super ConcreteClass(KeywordSend)
+metaclass MetaClass
+public methods
+
+new (oldSelector :String,
+     newSelector :String,
+     nPositional :Int,
+     nType :Int,
+     keywords :Array(String)) :KeywordSend
+{
+  let instance = _new,
+  instance.oldSelector := oldSelector,
+  instance.newSelector := newSelector,
+  instance.nPositional := nPositional,
+  instance.nType := nType,
+  instance.keywords := keywords,
+  instance._init,
+  instance
+}
+;

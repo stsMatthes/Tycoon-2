@@ -1,0 +1,71 @@
+class StmlTycoonSource
+super StructurePrintingMixin, Stml
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+*)
+meta StmlTycoonSourceClass
+{
+position :SgmlPos
+
+source :String
+
+compileToValue(context :StmlContext) :TL2Value
+  (* *)
+{
+  b ::= compileToBlock(context)
+  if( b.values.size = 1 then: {
+    b.values.head
+  } else: {
+    b
+  })
+}
+
+compileToBlock(context :StmlContext) :TL2BlockValue
+  (* *)
+{
+  tokenStream ::= context.syntax.scan(position.path, StringInput.new(source), context.errorLog)
+  tokenStream.userState.position := position
+
+;
+;  ts ::= tokenStream.map(fun(t :Token(Object)) {
+;    t.print, tycoon.stdout.nl,
+;    t
+;  }),
+;
+  
+  parseUnit ::= context.syntax.parse(tokenStream, context.errorLog)
+  if( parseUnit.isNotNil then: {
+    parseUnit.accept(TL2FunParseUnitVisitor.new
+      .ifBindings(fun(pu :TL2PUBindings) {
+	pu.b
+      }).otherwise(fun(:TL2ParseUnit) {
+	context.errorLog.error(position, "value bindings expected")
+	; dummy expression 
+	TL2BlockValue.new(position,
+	  List.with1(
+	    TL2LiteralValue.new(position, source)))
+      }))
+  } else: {
+    ; empty source 
+    TL2BlockValue.new(position, List.with0)
+  })
+}
+
+}

@@ -1,0 +1,14 @@
+class SlaveClass
+super ConcreteClass(Slave)
+metaclass MetaClass
+
+public methods
+
+new1(queue :WorkQueue(WorkItem(Int))) :Slave
+{
+  let m = _new,
+  m._workQueue := queue,
+  m
+}
+
+

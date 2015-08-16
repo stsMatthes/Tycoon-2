@@ -1,0 +1,14 @@
+class TypeCheckErrorClass
+  super ConcreteClass(TypeCheckError)
+  metaclass MetaClass
+
+public methods
+
+  new(msg :String) :TypeCheckError
+  {
+    let e = _new,
+    e.setError(msg),
+    e
+  }
+
+;

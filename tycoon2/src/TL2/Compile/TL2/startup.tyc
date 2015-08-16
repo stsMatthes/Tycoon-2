@@ -1,0 +1,48 @@
+(* the first commands executed by our post-bootstrap system *)
+fun(root :TL2Root, pool :TL2Pool, vmInterface :TL2VMInterface)
+{ root.active := true,
+
+  (* complete initialization of toplevel thread object *)
+  let t = Thread.this,
+  t._performCodeBuffer := ByteArray.new(4),
+  t._debugEventChanged := Condition.new,
+  t._mx := Mutex.new,
+  t._terminated := BroadcastingCondition.new,
+  t._state := 0,
+  t._name := "Toplevel",
+
+  Finalizer.init,
+  root.finalizer := Finalizer.instance,  (* machine needs this one *)
+
+  (* initialize singleton classes *)
+  TL2ArrayDescriptor.init,
+  TL2ByteArrayDescriptor.init,
+  TL2IntArrayDescriptor.init,
+  TL2LongArrayDescriptor.init,
+  TL2ShortArrayDescriptor.init,
+  TL2StackDescriptor.init,
+  TL2ThreadDescriptor.init,
+  TL2WeakRefDescriptor.init,
+  EmptyList.init,
+  TL2EmptySubst.init,
+  TL2NilType.init,
+  TL2VoidType.init,
+  ParserUtil.init,
+  Symbol.symbolTable := root.symbolTable,
+  TL2SubTypeRelation.init,
+
+  root.finalizer.launchRunner,
+  Resource.init,
+  Tycoon.new(fun(t:Tycoon){tycoon := t}),
+  StandardDateParser.init, (* needs tycoon.ansiC *)
+  tycoon.stdout.writeln("Glueckwunsch! (1)"),
+  tycoon.tl := TL2TL.new(root, pool, vmInterface),
+  tycoon.stdout.writeln("Glueckwunsch!! (2)"),
+  while({true},{
+    try({
+      tycoon.tl.topLevel.stdin
+    }, fun(:Exception) {
+      tycoon.stdout.writeln("Uncaught exception at toplevel. Restarting toplevel.")
+    })
+  })
+};

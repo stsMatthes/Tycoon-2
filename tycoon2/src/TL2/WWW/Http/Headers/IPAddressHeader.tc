@@ -1,0 +1,17 @@
+class IPAddressHeader
+super MimeHeaderValueImpl(IPAddress)
+metaclass MimeHeaderValueImplClass(IPAddress)
+
+private methods
+
+parseValue(s :String) :IPAddress
+{
+  IPAddress.byName(s)
+}
+
+unparseValue(a :IPAddress) :String
+{
+  a.printString
+}
+
+;

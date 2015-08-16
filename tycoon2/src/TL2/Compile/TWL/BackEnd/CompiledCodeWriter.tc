@@ -1,0 +1,282 @@
+class CompiledCodeWriter
+super BackEnd
+metaclass CompiledCodeWriterClass
+public
+code :GapByteArray,
+labelRefs :List(LabelRef),
+labels :List(Label),
+labelCnt :Int,
+
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ ### vmInterface ? *)
+opcodes :Dictionary(String, OpcodeDescriptor),
+specialLiterals :Dictionary(Object, String),
+specialSelectors :Dictionary(Int, String)
+
+methods
+
+newLabel :Label
+{ labelCnt := labelCnt + 1,
+  let l = Label.new,
+  l.n := labelCnt,
+  labels := List.cons(l, labels),
+  l
+}
+
+defineLabel(l :Label)
+{ assert !l.isDefined,
+  l.position := code.size
+}
+
+(* emitting *)
+
+send(selectorId :Int, nbArgs :Int)
+{ 
+  specialSelectors.includesKey(selectorId)
+  ? { sendSpecial(selectorId, nbArgs) }
+  : { let opcode = nbArgs < 6
+	? { "send" + String.with1(Char.digit(nbArgs)) }
+	: { "send" },
+      emit(opcodes[opcode].n),
+      emit16(selectorId) }
+}
+
+sendSpecial(selectorId :Int, nbArgs :Int)
+{
+  (* " sendSpecial ".print, Root.instance.selectors[selectorId].print, *)
+  let opcode = specialSelectors[selectorId],
+  emit(opcodes[opcode].n),
+  emit16(selectorId)
+}
+
+sendSuper(selectorId :Int, nbArgs :Int)
+{ emit(opcodes["sendSuper"].n),
+  emit16(selectorId)
+}
+
+loadLiteral(literalIdx :Int)
+{ assert literalIdx >= 0,
+  literalIdx < 256
+  ? { arg1("literal8", literalIdx) }
+  : { emit(opcodes["literal16"].n),
+      emit16(literalIdx) }
+}
+
+(* special literals *)
+loadChar(c :Char)
+{ arg1("char", c.asInt) }
+
+loadByte(b :Int)
+  require -128 <= b & b < 128
+{ emit(opcodes["byte"].n),
+  emitSigned(b)
+}
+
+loadShort(s :Int)
+  require -32768 <= b & b < 32767
+{ emit(opcodes["short"].n),
+  emitSigned16(s)
+}
+
+canLoadSpecial(o :Object) :Bool
+{ o.isNil || { specialLiterals.includesKey(o) } }
+
+loadSpecial(o :Object)
+  require canLoadSpecial(o)
+{
+  arg0( o.isNil ?{ "nil" }:{ specialLiterals[o] })
+}
+
+loadArgument(argIdx :Int)
+{ arg1("arg", argIdx) }
+
+loadLocal(localIdx :Int)
+{ arg1("local", localIdx) }
+
+storeLocal(localIdx :Int)
+{ arg1("storeLocal", localIdx) }
+
+loadGlobal(globalIdx :Int)
+{ arg1("global", globalIdx) }
+
+cellNew
+{ arg0("cellNew") }
+
+cellLoad
+{ arg0("cellLoad") }
+
+cellStore
+{ arg0("cellStore") }
+
+(* n times pop *)
+drop(n :Int)
+{ arg1("drop", n) }
+
+pop
+{ arg0("pop") }
+
+(* let x = pop, drop(n), push(x) *)
+adjust(n :Int)
+{ arg1("adjust", n) }
+
+closure(nbGlobals :Int)
+{ arg1("closure", nbGlobals) }
+
+sync
+{ arg0("sync") }
+
+return
+{ arg0("return") }
+
+sendTail(selectorId :Int, nbArgs :Int)
+{
+(*
+  specialSelectors.includesKey(selectorId)
+  ? { (* the machine must make sure that the call will be tail recursive if it
+	 is not handled specially *)
+      tycoon.stdout << " sendTailSpecial " << Root.instance.selectors[selectorId],
+      sendSpecial(selectorId, nbArgs),
+      return }
+  : { emit(opcodes["sendTail"].n),
+      emit16(selectorId) }
+ *)
+  emit(opcodes["sendTail"].n),
+  emit16(selectorId)
+}
+
+ifTrue(dest :Label)
+{ labelRefs :=
+    List.cons( LabelRef.new( dest, code.size,
+			     opcodes["ifTrue8"].n, opcodes["ifTrue16"].n),
+	       labelRefs ),
+  emit(0), emit(0)  (* FILLER *)
+}
+
+ifFalse(dest :Label)
+{ labelRefs :=
+    List.cons( LabelRef.new( dest, code.size,
+			     opcodes["ifFalse8"].n, opcodes["ifFalse16"].n),
+	       labelRefs ),
+  emit(0), emit(0)  (* FILLER *)
+}
+
+jump(dest :Label)
+{ labelRefs :=
+    List.cons( LabelRef.new( dest, code.size,
+			     opcodes["jump8"].n, opcodes["jump16"].n),
+	       labelRefs ),
+  emit(0), emit(0)  (* FILLER *)
+}
+
+(* get the result of our efforts *)
+finished :ByteArray
+{
+  assert labels.all(fun(l :Label){ l.isDefined }),
+  labelRefs := List.reverse(labelRefs),
+
+  (* labelRefs are in ascending order by position now *)
+  labelRefs.inject(-1, fun(lastPos :Int, r :LabelRef) {
+    assert r.position > lastPos,
+    r.position
+  }),
+
+  while({expansion}, {}),
+
+  labelRefs.do(fun(l:LabelRef) {
+    let pos = l.position,
+    let dist = l.distance,
+    (* tycoon.stdout.writeln("patching at "+pos.printString+" distance "+dist.printString), *)
+    l.isShort
+     ? { assert !l.shouldBeLong,
+         code[pos] := l.shortOp,
+         code[pos+1] := dist }
+     : { code[pos] := l.longOp,
+         code[pos+1] := dist & 255,
+	 code[pos+2] := dist.">>"(8) }
+  }),
+  code.asByteArray
+}
+
+private methods
+
+_init :Self
+{ super._init,
+  code := GapByteArray.new0,
+  labelCnt := 0,
+  labelRefs := EmptyList.new,
+  labels := EmptyList.new,
+  self
+}
+
+emit(i :Int)
+{ assert 0 <= i,
+  assert i < 256,
+  code.add(i) }
+
+emitSigned(i :Int)
+{ assert -128 <= i,
+  assert i <= 127,
+  emit(i & 255) }
+
+emit16(i :Int)
+{ emit(i & 255),
+  emit(i.">>"(8))
+}
+
+emitSigned16(i :Int)
+{ emit(i & 255),
+  emitSigned(i.">>"(8))
+}
+
+arg0(s :String)
+{ emit(opcodes[s].n) }
+
+arg1(s :String, byte :Int)
+  require 0 <= byte & byte < 256
+{ emit(opcodes[s].n),
+  emit(byte)
+}
+
+(* expand short to long branches if necessary. *)
+expansion :Bool
+{
+  let var inserted = 0,  (* number of bytes inserted up to now *)
+  labelRefs.do(fun(ref :LabelRef) {
+    ref.position := ref.position + inserted,
+    ref.isShort && { ref.shouldBeLong } ? {
+      let pos = ref.position,
+      (* tycoon.stdout.writeln("expansion at "+pos.printString), *)
+      (* code.print, code.asArray.print, code.print, *)
+      code.insert(0, pos),   (* FILLER *)
+      (* code.print, code.asArray.print, code.print, *)
+      inserted := inserted + 1,
+      ref.isShort := false,
+      labels.do(fun(l:Label) {
+        l.position > pos ? {
+	  l.position := l.position + 1
+	}
+      })
+    }
+  }),
+  inserted > 0
+}
+
+;

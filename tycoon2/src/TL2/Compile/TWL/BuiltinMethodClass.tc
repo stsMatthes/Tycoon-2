@@ -1,0 +1,11 @@
+class BuiltinMethodClass
+super CStructClass(BuiltinMethod)
+metaclass MetaClass
+public methods
+new(body :Value) :BuiltinMethod
+{
+  let instance = _new,
+  instance.body := body,
+  instance._init
+}
+;

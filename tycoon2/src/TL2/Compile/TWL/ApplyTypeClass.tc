@@ -1,0 +1,13 @@
+class ApplyTypeClass
+super ConcreteClass(ApplyType)
+metaclass MetaClass
+public methods
+new(oper :Type, args :List(Type)) :ApplyType
+{
+  let instance = _new,
+  instance.pos := oper.pos,
+  instance._oper := oper,
+  instance._args := args,
+  instance
+}
+;

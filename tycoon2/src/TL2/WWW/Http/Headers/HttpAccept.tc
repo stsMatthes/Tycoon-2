@@ -1,0 +1,12 @@
+class HttpAccept
+super Http
+
+public
+
+type    :String,
+subtype :String,
+parameters :List(Pair(String, String)),
+q       :Real,
+mxb     :Real
+
+;

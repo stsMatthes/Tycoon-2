@@ -1,0 +1,18 @@
+class AtTraceSendClass
+super ConcreteClass(AtTraceSend)
+meta MetaClass
+{
+
+new(sendingComponent :Object, sender :Object, receiver :Object, selector :TL2Selector, args :Array(Object)) :AtTraceSend
+{
+  instance ::= _new
+  instance.sendingComponent := sendingComponent
+  instance.sender := sender
+  instance.receiver := receiver
+  instance.selector := selector
+  instance.args := args
+  instance._init
+  instance
+}
+
+}

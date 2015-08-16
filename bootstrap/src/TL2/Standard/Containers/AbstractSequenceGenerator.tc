@@ -1,0 +1,90 @@
+class AbstractSequenceGenerator(E <: Object, Instance <: Sequence(E))
+super AbstractContainerGenerator(E, Instance)
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ 
+   standard creation protocol for sequences
+
+  Author: Axel Wienberg
+  Date: 9-5-96
+  Updates: (Date)	  (Name)	(Description)
+	   09-Jun-1998    Axel Wienberg made an abstract interface
+*)
+meta AbstractClass
+{
+
+concat(s1 :Sequence(E), s2 :Sequence(E)) :Instance
+  (* equivalent to
+     concatAll( #(s1,s2) )
+   *)
+{
+  concatAll( #(s1,s2) )
+}
+
+concatAll( sequences: Sequence(Sequence(E)) ) :Instance
+  (* The result is a concatenation of the given sequences at the time of creation
+     (i.e. there is no sharing of structure). *)
+deferred
+
+reverse(s :Sequence(E)) :Instance
+  (* the result contains the elements of s in reverse order. *)
+deferred
+
+fromReader(reader :Reader(E)) :Instance
+  (* result will contain exactly the elements delivered by reader,
+     with the element delivered earlier at the lower index. *)
+deferred
+
+fromReverseReader(reader :Reader(E)) :Instance
+  (* result will contain exactly the elements delivered by reader,
+     with the element delivered earlier at the higher index. *)
+deferred
+
+fromSequence(sequence :Sequence(E)) :Instance
+  (* result will contain exactly the elements contained in sequence
+     at the time of creation, in the same order. *)
+deferred
+
+fromSubSequence(sequence :Sequence(E), start :Int, n :Int) :Instance
+  (* result will contain the n elements contained in sequence
+     starting at position start at creation time, in the same order. *) 
+deferred
+
+
+with0: Instance
+  (* *)
+  ensure result.size=0
+deferred
+
+with1(e1 :E): Instance
+  (* *)
+  ensure result.size == 1 && result[0] == e1
+deferred
+
+with2(e1 :E, e2 :E): Instance
+  (* *)
+  ensure result.size == 2 && result[0] == e1 && result[1] == e2
+deferred
+
+with3(e1 :E, e2 :E, e3 :E): Instance
+  (* *)
+  ensure result.size == 3 && result[0] == e1 && result[1] == e2 && result[2] == e3
+deferred
+}

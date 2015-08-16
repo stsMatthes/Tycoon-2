@@ -1,0 +1,35 @@
+class SgmlContentTypeClass
+super ConcreteClass(SgmlContentType)
+metaclass MetaClass
+public
+
+contentTypes :Array(SgmlContentType)
+
+methods
+
+empty :SgmlContentType   { contentTypes[0] }
+cdata :SgmlContentType   { contentTypes[1] }
+rcdata :SgmlContentType  { contentTypes[2] }
+mixed :SgmlContentType   { contentTypes[3] }
+element :SgmlContentType { contentTypes[4] }
+
+init
+{
+  contentTypes :=
+    Array.with5(
+      new("empty"),
+      new("cdata"),
+      new("rcdata"),
+      new("mixed"),
+      new("element"))
+}
+
+private methods
+new(name :String) :SgmlContentType
+{
+  let instance = _new,
+  instance.name := name,
+  instance._init,
+  instance
+}
+;

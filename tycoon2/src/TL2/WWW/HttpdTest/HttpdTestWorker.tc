@@ -1,0 +1,100 @@
+class HttpdTestWorker
+
+super SimpleHttpClient(HttpRequest, HttpResponse)
+
+metaclass SimpleConcreteClass(HttpdTestWorker)
+
+public
+
+n :Int,
+connection :Input,
+uri :String,
+manager :HttpdTest,
+verbose :Bool
+
+methods
+
+wait
+{
+  manager.wait
+}
+
+pick
+  (*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ choose some uri at random *)
+{
+  let i = (manager.random.read.xor(n * 127)).abs % manager.uriList.size,
+  uri := manager.uriList[i]
+}
+
+fetch
+{
+  let req = HttpRequest.new6(
+    "GET", uri, 1, 1,
+    MimeHeaderDictionary.new,
+    InputReader.new(EmptyReader.new)),
+  request(manager.server, manager.port, req,
+    fun(in :Input) {
+      connection := in,
+      let var line = in.readln,
+      while({line.isNotNil}, {
+        line := in.readln
+      }),
+      nil
+    },
+    fun(response :HttpResponse) {
+      (*handle(response)*)
+    }
+  )
+}
+
+fork
+{
+  Thread.new(fun() {
+    while ({!manager.stop}, {
+      verbose ? { tycoon.stdout << "Thread " << n << ": waiting...\n" },
+      wait,
+      pick,
+      verbose ? { tycoon.stdout << "Thread " << n << ": fetching " << uri << "\n" },
+      try({ fetch }, fun(e :Exception) {
+        verbose ? { tycoon.stdout << "Thread " << n << ": exception: " << e << "\n"}
+      })
+    })
+  })
+}
+
+interrupt
+{
+  connection.close
+}
+
+private
+
+methods
+
+_init :Self
+{
+  super._init,
+  verbose := false,
+  self
+}
+
+;

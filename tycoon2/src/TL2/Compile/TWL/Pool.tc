@@ -1,0 +1,118 @@
+class Pool
+super TWL
+metaclass SimpleConcreteClass(Pool)
+public methods
+
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ observers for globalIdeChanged *)
+observers :DynSequence(PoolObserver)
+{ _observers }
+
+poolMethods :MethodDictionary(PoolMethod)
+{ _poolMethods }
+
+poolCells :KeyedContainer(Symbol, Cell(Object))
+{ _poolCells }
+
+defineVariable(v :ValueIde)
+{
+  let sym = Symbol.new(v.name),
+  let assignSym = Symbol.new(v.name + ":="),
+  let cell = memoizeCell(sym),
+  cell.value := nil,
+
+  _poolMethods[sym] :=
+     PoolAccessMethod.new(v.pos, sym, EmptyList.new, v.type, cell),
+  _poolMethods[assignSym] :=
+     PoolUpdateMethod.new(v.pos, assignSym, v.type, cell),
+
+  globalIdeChanged(sym),
+  globalIdeChanged(assignSym)
+}
+
+defineClass(clazz :ClassPublic)
+{
+  let sym = Symbol.new(clazz.name),
+  let cell = memoizeCell(sym),
+  cell.value := clazz,
+  _poolMethods[sym] :=
+     PoolAccessMethod.new(clazz.pos,
+	    sym,
+	    clazz.domain, clazz.metaClassDeclaration,
+	    cell),
+  Symbol.symbolTable.includes(sym.name + ":=")
+  ? { _poolMethods.removeKey(Symbol.new(sym.name + ":=")) },
+
+  globalIdeChanged(sym),
+  globalIdeChanged(sym+":=")
+}
+
+(* remove a pool variable, and its access and update method.
+   <name> must have been previously created using definePoolVariable.
+   Warning: Don''t call this for classes... *)
+(* ### need to flush the method cache *)
+undefinePoolVariable(name :String)
+{
+  let sym = Symbol.new(name),
+  let assignSym = Symbol.new(name + ":="),
+  
+  _poolCells.removeKey(sym),
+  _poolMethods.removeKey(sym),
+  _poolMethods.removeKey(assignSym),
+
+  globalIdeChanged(sym),
+  globalIdeChanged(assignSym)
+}
+
+private
+
+_observers :DynSequence(PoolObserver),
+_poolCells :Dictionary(Symbol, Cell(Object)),
+_poolMethods :MethodDictionary(PoolMethod)
+
+methods
+
+globalIdeChanged(name :String)
+{
+  (* ### transition only - this has to go *)
+   observers."class" == TypeChecker
+   ? { _observers := GapArray.with1(_typeCast(observers, :TypeChecker)) },
+  (* ### end of transition code *)
+
+  observers.do(fun(o :PoolObserver) {
+    o.globalIdeChanged(name)
+  })
+}
+
+memoizeCell(sym :Symbol) :Cell(Object)
+{
+  _poolCells.memoize(sym, { Cell(:Object).new(nil) })
+}
+
+_init :Self
+{
+  super._init,
+  _observers := GapArray.new0,
+  _poolCells := Dictionary.new,
+  _poolMethods := MethodDictionary.new1(3000),
+  self
+}
+;

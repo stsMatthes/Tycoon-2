@@ -1,0 +1,169 @@
+class CustomerRole(S<:Void)
+super Role(CustomerRule(S))
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ CustomerRole.tc
+
+   Tycoon Business Conversations (TBC) for Tycoon 2
+   ------------------------------------------------
+   Implementation of the customer.
+   
+   20.08.97 hw : created
+   29.10.97 hw : own address for threads port
+   10.11.97 hw : introduced :S
+
+*)
+meta RoleClass(CustomerRule(S), CustomerRole(S))
+{
+
+addRule(dName :String, rule :CustomerRule(S)) :Void
+  (* ======== direct interface for initialization. ========================== 
+
+   * Adds (or replaces) an customer rule to this role. 
+   * -------------------------------------------------------------------------
+   *)
+{
+  if( dName = _convSpec.breakdownDialogName      ; breakdown? 
+    then: {
+	_rules[dName]:= rule
+	trace("set rule "+dName)
+      }
+    else: {
+	if( _convSpec.includesKey(dName)              ; does dialog exist? 
+	  then: {
+	      _rules[dName]:= rule
+	      trace("set rule "+dName)
+	    }
+	  else: {_error("rule for unknown dialog: "+dName)})
+      })
+
+  nil
+}
+
+startConversation(m :MessageStartConversation) :Message
+  (* ======== message handlers ============================================== 
+
+   * Get customer to try to connect to a performer. 
+   * -------------------------------------------------------------------------
+   *)
+{
+  trace("try to start conversation with "+m.with.name)
+
+  start ::= MessageRequestConversation.new(_address, m.with)
+  start.convSpec := _convSpec
+  start
+}
+
+acceptConversation(m :MessageAcceptConversation) :Message
+  (*
+   * Handle performers reply on a MessageRequestConversation.
+   * -------------------------------------------------------------------------
+   * Once a connection between a customer and a performer is established, each 
+   * of them forks a new thread to perform the conversation.  This is 
+   * especially important to be able to do subconversation, since the 
+   * conversation initiating a subconversation has to wait until its end.  If 
+   * only one (agent) thread had to do this, it would block all other parallel 
+   * conversations.
+   *)
+{
+  peer ::= m.performer.name ; get the new address 
+  if( m.accepted then: {
+    trace("established conversation with "+peer)
+
+    ; create port before launching thread to be sure it can be accessed! 
+    port:MessagePort := MessagePort.new
+    address ::= 
+      ITCAddress.new(_address.name+"/"+Global.instance.uniqueNumber.printString)
+    AgentITCSystem.instance.registerPort(port, address)
+    _addPort(port)  ; register within role 
+
+    ; create new thread doing this conversation. 
+    Thread.new(fun():Void{
+      ; ==== thread code: the core of the customer. 
+      ; create own trace object having different name than role. 
+      t ::= Trace.new
+      t.traceInit(address.nameTail)
+      t.trace("customer thread launched for peer "+peer)
+      ; create context 
+      cv:Conversation(S) := Conversation(:S).new(_convSpec)
+      stop ::= false
+      until({stop},{
+	m :MessagePerformerDialog := port.get.asMessagePerformerDialog
+	if( m.isNotNil then: {
+	  t.trace("got dialog "+m.dialog.name+" from "+m.from.name)
+	  reply ::= MessageCustomerDialogRequest.newReply(m)      
+	  ; find rule. 
+	  _rules.lookup(m.dialog.name, :Void, 
+	    fun(rule :CustomerRule(S))
+	    {
+	      cv.saveDialog(m.dialog) ; refers to content changed by handle!
+	      t.trace("executing rule "+m.dialog.name)
+	      reply.requestName := rule.handle(cv, m.dialog)
+	      t.trace("handle returned request "+reply.requestName)
+	      reply.dialog      := m.dialog
+	      if( cv.isFinalDialog(reply.dialog) then: {
+		t.trace("end session with final dialog "+reply.dialog.name)
+		stop := true
+	      } else: {
+		AgentITCSystem.instance.send(reply)
+	      })
+	    }, {
+	      ; Found no rule for this dialog. So break down. 
+	      t.trace("*** undefined rule "+m.dialog.name)
+	      reply.requestName := _convSpec.breakdownRequestName
+	      reply.dialog := cv.breakdownDialog("customer knows no rule")
+	      AgentITCSystem.instance.send(reply)
+	      stop := true
+	    }
+	  ) ; lookup 
+	})
+	{stop:=true} ; m.isNil -> signal to stop 
+      }) ;until
+      ; stop client 
+      AgentITCSystem.instance.unregisterPort(port)
+      _remPort(port)
+      t.trace("customer thread ended for peer "+peer)
+      ; ==== end thread code. 
+    })
+
+    ; request initial dialog: 
+    trace("requesting initial dialog...")
+    ; !!! important: sender is the new 'address', replies will go there.
+;         !!! AND the message will go to m.'performer', not to m.from 
+    cdr ::= MessageCustomerDialogRequest.new(address,m.performer)
+    cdr.dialog  := nil  ; no current dialog! 
+    cdr.requestName := _convSpec.initialRequestName
+    cdr
+  } else: {
+    trace("could not establish conversation with "+peer)
+    nil
+  }) ; not accepted. 
+}
+
+performerDialog(m :MessagePerformerDialog) :Message
+  (*
+   * Should not arrive here, but at the threads port!
+   *)
+{
+  trace("*** ERROR, got "+m.clazz.name)
+  nil
+}
+
+}

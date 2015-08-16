@@ -1,0 +1,127 @@
+class WWWAuthenticateHeader
+super MimeHeaderValueImpl(List(WWWAuthenticate))
+metaclass MimeHeaderValueImplClass(List(WWWAuthenticate))
+
+private methods
+
+parseValue(s :String) :List(WWWAuthenticate)
+{
+  let var challenges :List(WWWAuthenticate) = EmptyList.new,
+  let p = MimeParser.new(s.reader),
+
+  p.char != nil ? {
+    let var lastWord :String = p.nextToken,
+
+    let var scheme = lastWord,
+    let var schemeRead :Bool = true,
+    let var realm :String = nil,
+    let var parameters :Dictionary(String, String) = Dictionary.new,
+    
+    let var stop = false,
+    while({!stop}, {
+      schemeRead ? fun() :Void {
+        p.skipws,
+
+	p.skip('r'),
+	p.skip('e'),
+	p.skip('a'),
+	p.skip('l'),
+	p.skip('m'),
+	p.skip('='),
+
+	realm := p.nextUnquoted
+      },
+
+      (*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+        now try to read one parameter, three cases are possible:
+	1. end of reader -> back out
+	2. ',' parameter '=' '"' value '"' -> add that parameter
+	3. ',' scheme ' ' -> finish the previous authenticate and begin new
+      *)
+      
+      p.char = nil ? fun():Void {
+        challenges := List.cons(
+	  WWWAuthenticate.new(scheme, realm, parameters),
+	  challenges
+	),
+        stop := true
+      } : {
+	p.skip(','),
+	p.skipws,
+	
+        lastWord := p.nextToken,
+	p.char = ' ' ? fun() :Void {
+	  challenges := List.cons(
+	    WWWAuthenticate.new(scheme, realm, parameters),
+	    challenges),
+	    
+	  parameters := Dictionary.new,
+	  scheme := lastWord,
+	  schemeRead := true
+	} : {
+	p.char = '=' ? {
+	  p.skip('='),
+	  let param = p.nextUnquoted,
+	  
+	  parameters[lastWord] := param,
+	  schemeRead := false
+	} : {
+	MimeParserError.new("Expected SP or comma "+s).raise
+	}}
+      }
+    })
+  },
+
+  challenges
+}
+
+unparseValue(l :List(WWWAuthenticate)) :String
+{
+  l.fold(fun(w :WWWAuthenticate) {
+           w.scheme + " realm=" + quote(w.realm) +
+	   (w.parameters != nil ? {
+	     w.parameters.keysAndElementsInject(
+	       "",
+	       fun(s :String, k :String, v :String) {
+	         s + "," + k + "=" + quote(v)
+	       }
+	     )
+	    } : { "" }
+	   )
+         },
+	 fun(s :String, w :String) {
+	   s + "," + w
+	 }
+  )
+}
+
+quote(s :String) :String
+{
+  MimeQuoted.withValue(s).string
+}
+
+;
+
+
+	  
+
+

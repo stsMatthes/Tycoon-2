@@ -1,0 +1,82 @@
+class Method
+super TWLProgramObject
+metaclass AbstractClass
+
+public
+
+selector :Symbol,
+methodType :MethodType,
+isPrivate :Bool,
+arity :Int,                (*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ number of value arguments, without receiver *)
+nativeCode :ByteArray	   (* may be nil *)
+
+methods
+
+domain :List(Ide)
+{ methodType.domain }
+
+range :Type
+{ methodType.range }
+
+"range:="(t :Type) :Type
+{ methodType.range := t }
+
+prettyPrint(out:Printer)
+{
+(*selector.printOn(out),
+  out.write(' '),*)
+  out.writeAll(isPrivate ? {"private "} : {"public "}),
+  methodType.prettyPrint(out)
+}
+
+scopeMethod(env :Scoper)
+{
+  methodType := env.scope(methodType),
+  arity := domain.count(fun(i :Ide){ i.isValueIde })
+}
+
+compile(env :Bindings, selfSig :ValueIde, compiler :Compiler)
+{ (* CompiledMethod implements this *) }
+
+disassemble(reader :ByteCodeReader)
+{ disassembleOn(Printer.new(tycoon.stdout), reader) }
+
+disassembleOn(out :Printer, reader :ByteCodeReader)
+{ (* CompiledMethod implements this *) }
+
+finalize
+{ (* CompiledMethod implements this *) }
+
+patchClass(compiledIn :ClassPublic)
+{ (* CompiledMethod implements this *) }
+
+(* If b is nonnil, then this method is defined in b''s class under b''s name,
+   and is supposed to be a builtin method with b''s number of arguments.
+   If b is nil, self must not be a builtin method.
+ *)
+setBuiltin(b :BuiltinDescriptor, :String, errorLog :ErrorLog)
+{
+  (* default implementation for non-builtin methods *)
+  b.isNotNil
+   ? { errorLog.error(pos, b.name+": expected builtin method") }
+}
+;

@@ -1,0 +1,12 @@
+class TWLGramClass
+super ConcreteClass(TWLGram)
+metaclass MetaClass
+public methods
+
+new(twlTerminals :TWLTerminals) :TWLGram
+{
+  let instance = _new,
+  instance.twlTerminals := twlTerminals,
+  instance._init
+}
+;

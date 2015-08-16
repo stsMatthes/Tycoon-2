@@ -1,0 +1,60 @@
+(*;
+DO load "../TWL/WWW/FTP/FTP.tc";
+class FTPResponseClass metaclass MetaClass;
+DO load "../TWL/WWW/FTP/FTPResponse.tc";
+DO load "../TWL/WWW/FTP/FTPResponseClass.tc";
+class FTPErrorClass metaclass MetaClass;
+DO load "../TWL/WWW/FTP/FTPError.tc";
+DO load "../TWL/WWW/FTP/FTPErrorClass.tc";
+class FTPClientClass metaclass MetaClass;
+DO load "../TWL/WWW/FTP/FTPClient.tc";
+DO load "../TWL/WWW/FTP/FTPClientClass.tc";
+*)
+;
+tycoon.tl.loader.registerDirectory("WWW/FTP");
+
+tycoon.tl.loader.update;
+
+
+(*;
+
+define client :FTPClient;
+
+client := FTPClient.new(IPAddress.byName("hoxsun01"), "test", "kodak", true);
+client.open;
+
+(* client;
+client.list(".", fun(in :Input) {
+  let buffer = MutableString.new(200),
+  let var n = in.readBuffer(buffer, 0, buffer.size),
+  while({n > 0}, {
+    tycoon.stdout.writeBuffer(buffer, 0, n),
+    n := in.readBuffer(buffer, 0, buffer.size)
+  })
+});
+
+client.nameList(".", fun(in :Input) {
+  let tokenizer = Tokenizer.new(in, "\n"),
+  let var fileName :String = tokenizer.read,
+  while ({fileName.isNotNil}, {
+    tycoon.stdout.writeln("Next File: "+fileName),
+    fileName := tokenizer.read
+  })
+});
+
+client.binary;
+client.get("/var/adm/messages", File.openWrite("/tmp/t"));
+
+client.makeDirectory("/home/test/tmp");
+client.put("/home/test/tmp/t", File.openRead("/tmp/t"));
+client.get("/home/test/tmp/t", File.openWrite("/tmp/t2"));
+client.removeDirectory("/home/test/tmp");
+client.delete("/home/test/tmp/t");
+client.removeDirectory("/home/test/tmp");
+
+client.currentDirectory;
+client.changeDirectory("/home");
+
+client.close;
+
+*)

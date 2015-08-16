@@ -1,0 +1,89 @@
+class StructDescriptor
+super TspDescriptor
+metaclass StructDescriptorClass
+public
+
+format :String,		     (*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ descriptor string. -> tsp_Field in tsp.h *)
+
+_tracerId :Cell(Object),     (* uniquely identifiy tracer without referencing the object *)
+			     (* (for offset cache) *)
+offsets :Array(Int),         (* offset table for fast access *)
+packedSize :Int
+
+methods
+
+printOn(out :Output)
+{  out << "StructDescriptor{"<<format<<"}"
+}
+
+layout :Int
+{ layoutStruct }
+
+isStruct :Bool
+  (* Should the class manager generate CStruct access methods? *)
+{ true }
+  
+(* size of an instance when output to <tracer> *)
+objectSize(o :Object, tracer :Tracer) :Int
+{
+  tracer.identification !== _tracerId
+  ? { computeOffsets(tracer) },
+
+  format.size != o.__basicSize ? {
+    tycoon.stdout << "struct size mismatch: "
+		  << o."class".name << ": found "
+		  << o.__basicSize << " slots, expected "
+		  << format.size << '\n'
+  },
+  assert format.size = o.__basicSize,
+
+  packedSize
+}
+
+dumpInstance(o :Object, tracer :Tracer)
+{
+  try({
+    for(0,o.__basicSize-1,fun(i:Int){
+      tracer.dumpC(o.__basicAt(i), format[i])
+    })
+  }, fun(e:Exception){
+    tycoon.stdout.writeln("while dumping "+o.printString),
+    e.raise
+  })
+}
+
+computeOffsets(tracer :Tracer)
+{
+  _tracerId := tracer.identification,
+  let offsets = MutableArray.new(format.size),
+  let var offset = 0,
+  format.keysAndElementsDo(fun(i:Int, format :Char) {
+    offsets[i] := offset := tracer.align(offset, tracer.alignment(format)),
+    offset := offset + tracer.sizeof(format)
+  }),
+  self.offsets := offsets,
+  packedSize := offset
+}
+;
+
+
+

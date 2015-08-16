@@ -1,0 +1,34 @@
+class Test
+super Object
+{
+message :String
+
+idC(x @: Object)@:Object
+{ x@ }
+
+idR(x :Object):Object
+{ x }
+
+aufDiesenNamenKommtSonstKeiner :Int
+
+hi :Void 
+{ tycoon.stdout.writeln(message) }
+
+arr1 :Void
+{ #("a", "b") }
+
+arr2: Void
+{ #(1, 2, true, #(nil, 'x')) }
+
+arr3: Void
+{ #(1, 2+1, true, #(nil, 'x')) }
+
+componentClosure1 :Void
+{
+  (c @::= nil@
+   closure ::= { c }
+   closure[])
+  true
+}
+
+}

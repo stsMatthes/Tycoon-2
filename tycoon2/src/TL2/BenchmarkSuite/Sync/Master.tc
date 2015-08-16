@@ -1,0 +1,39 @@
+class Master
+super Object
+metaclass MasterClass
+
+public methods 
+
+run :Thread(Void)
+{
+  Thread.new({
+    for(1, _items, fun(i :Int) {
+      let w = WorkItem.new1(fun() {
+        let n = Work.new,
+	n.doWork,
+        i
+      }),
+      _workQueue.addWork(w),
+      _workList := List.cons(w, _workList)
+    })
+  })
+}
+
+workList :List(WorkItem(Int))
+{_workList}
+
+private
+
+_workQueue :WorkQueue(WorkItem(Int)),
+_workList  :List(WorkItem(Int)),
+_items :Int
+
+methods
+
+_init :Self
+{
+  _workList := List.new,
+  self
+}
+
+

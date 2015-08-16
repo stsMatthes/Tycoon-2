@@ -1,0 +1,17 @@
+DO load "../TWL/WWW/Mime/Encoding/Encoding.tc";
+
+class EncoderClass metaclass MetaClass;
+DO load "../TWL/WWW/Mime/Encoding/Encoder.tc";
+DO load "../TWL/WWW/Mime/Encoding/ConcreteEncoderClass.tc";
+DO load "../TWL/WWW/Mime/Encoding/EncoderClass.tc";
+
+DO load "../TWL/WWW/Mime/Encoding/Base64Encoder.tc";
+DO load "../TWL/WWW/Mime/Encoding/Base64Decoder.tc";
+
+
+(* init *)
+
+Encoder.init;
+
+
+

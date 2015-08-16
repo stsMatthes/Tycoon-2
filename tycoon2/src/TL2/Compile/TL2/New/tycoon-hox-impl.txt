@@ -1,0 +1,30 @@
+This document describes the differences between the Tycoon 1.0 language as
+defined in the "Report on the Tycoon-2 Programming Language Version 1.0" and
+the implementation available at Higher-Order.
+
+1. Implementation Restrictions
+
+Tycoon Version 1.0 has the following limitations:
+
+o Formal parameter lists in fun expressions and function types are restricted
+to positional value parameters.
+
+o Keyword arguments are not generally supported. Only a fixed set of keyword
+arguments in the standard system library are hardwired into the compiler.
+The for method does not support the step: keyword.
+
+o Keyword parameter declarations are only recognized syntactically but not
+semantically.
+
+o pre- and postconditions are recognized syntactically and are scoped.  "old"
+expressions are not treated correctly, but are incorrectly normalized to
+message send with selector "old".  No code is generated for pre- or
+postconditions, and they are not typechecked.
+
+o ...number of arguments...
+
+o ...number of local variables...
+
+
+
+

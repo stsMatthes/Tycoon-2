@@ -1,0 +1,153 @@
+class Linux
+super Posix
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+My instance represents the linux operating system
+
+Author:  Axel Wienberg
+Date:    30-Dec-1996
+Derived From: SunOS5.tc
+Updates: (Date)	  	(Name)		(Description)
+         03-May-1999	A.Willomat	Use Posix.system, no SIGUSR1, SIBUSR2,
+					use own LinuxFS
+*)
+meta SimpleConcreteClass(Linux)
+{
+visit(T <: Void, aVisitor :OSVisitor(T)) :T
+  (* *)
+{
+  aVisitor.visitLinux(self)
+}
+
+SIGUSR1 :Int
+  (* User Signal 1 -- NOT SUPPORTED BECAUSE OF LINUXTHREADS *)
+{ nil }
+
+SIGUSR2 :Int
+  (* User Signal 2 -- NOT SUPPORTED BECAUSE OF LINUXTHREADS *)
+{ nil }
+
+ENOENT :Int
+  (* *)
+{ 2 }
+
+EINTR :Int
+  (* *)
+{ 4 }
+
+EIO :Int
+  (* *)
+{ 5 }
+
+EACCES :Int
+  (* *)
+{ 13 }
+
+EEXIST :Int
+  (* *)
+{ 17 }
+
+ENOTDIR :Int
+  (* *)
+{ 20 }
+
+EISDIR :Int
+  (* *)
+{ 21 }
+
+ENFILE :Int
+  (* *)
+{ 23 }
+
+EMFILE :Int
+  (* *)
+{ 24}
+
+EFBIG :Int
+  (* *)
+{ 27 }
+
+ENOSPC :Int
+  (* *)
+{ 28 }
+
+EROFS :Int
+  (* *)
+{ 30 }
+
+EMLINK :Int
+  (* *)
+{ 31 }
+
+EDEADLK :Int
+  (* *)
+{ 35 }
+
+ENOLCK :Int
+  (* *)
+{ 37 }
+
+ENOTSUP :Int
+  (* EOPNOTSUPP - Operation not supported on transport endpoint *)
+{ 95 }
+
+EDQUOT :Int
+  (* *)
+{ 122 }
+
+ENAMETOOLONG :Int
+  (* *)
+{ 36 }
+
+EBADFD :Int
+  (* *)
+{ 77 }
+
+ELOOP :Int
+  (* *)
+{ 40 }
+
+ENOTEMPTY :Int
+  (* *)
+{ 39 }
+
+SOCK_STREAM :Int
+  (* *)
+{ 1 }
+
+SOCK_DGRAM :Int
+  (* *)
+{ 2 }
+
+SOCK_RAW :Int
+  (* *)
+{ 3 }
+
+private
+
+getFS: FS
+  (* allocate my filesystem object. We need our own
+     filesystem under linux because of marginal differences
+     to posix
+   *)
+{ LinuxFS.new }
+
+}

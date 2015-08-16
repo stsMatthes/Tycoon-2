@@ -1,0 +1,147 @@
+class Integer(F <:Integer(F))
+super Number(F)
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+Integer values
+
+Author:  Andreas Gawecki
+Date:    01-Mar-1995
+Updates: (Date)	  (Name)	(Description)
+
+*)
+Self <:F
+meta AbstractClass
+{
+truncated :Self
+  (* *)
+{self}
+
+rounded :Self
+  (* *)
+{self}
+
+ceiling :Self
+  (* *)
+{self}
+
+floor :Self
+  (* *)
+{self}
+
+identityHash :Int
+  (* *)
+{
+  asInt 
+  }
+
+equalityHash :Int
+  (* *)
+{
+  identityHash
+  }
+
+"&"(x :F) :F
+  (* *)
+deferred
+
+"|"(x :F) :F
+  (* *)
+deferred
+
+"^"(x :F) :F
+{ self.xor(x) }
+
+"~" :F
+{ self.not }
+
+xor(x :F) :F
+  (* *)
+deferred
+
+not :F
+  (* *)
+{
+  negated - one
+  }
+
+even :Bool
+  (* *)
+{
+  (self & one) == zero
+  }
+
+odd :Bool
+  (* *)
+{
+  !even
+  }
+
+gcd(x :F)  :F
+  (* *)
+{
+  remainder ::= x % self
+  if( remainder.isZero
+  then: { self }
+  else: { remainder.gcd(self) })
+}
+
+">>"(nBits :Int) :F
+  (* *)
+{
+  if( isNegative
+  then: { ~(~self >> nBits) }
+  else: { two ::= one+one
+      twoPowerN ::= two.intPower(nBits)
+      if( twoPowerN.isZero
+      then: { f:F := zero }
+      else: { self / twoPowerN }) })
+}
+
+"<<"(nBits :Int) :F
+  (* *)
+{
+  two ::= one+one
+  twoPowerN ::= two.intPower(nBits)
+  if( twoPowerN.isZero
+  then: { f:F := zero }
+  else: { self * twoPowerN })
+}
+
+printOn(out :Output) :Void
+  (* *)
+{
+  buff ::= Stack(:Char).new1(50)
+  radix ::= ten
+  value :F := self
+  if( value < zero
+  then: { out.write('-') })
+      
+  buff.addFirst(Char.digit((value % radix).asInt.abs))
+  
+  while({(value := value / radix) != zero} do: {
+      buff.addFirst(Char.digit((value % radix).asInt.abs))
+  })
+  out.writeAll(buff)
+}
+
+private
+
+}

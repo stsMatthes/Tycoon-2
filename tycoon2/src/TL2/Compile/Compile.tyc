@@ -1,0 +1,8 @@
+class Compile
+super Object
+metaclass AbstractClass
+;
+
+
+DO load "../TWL/Compile/AbstractFAState.tc";
+DO load "../TWL/Compile/AbstractFA.tc";

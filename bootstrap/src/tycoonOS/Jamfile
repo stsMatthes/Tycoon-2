@@ -1,0 +1,68 @@
+#
+# Jamfile 1.0  98/05/03  Andre Willomat
+#
+# Portable Tycoon-2 Operating System Layer (TycoonOS)
+#
+
+SubDir HOX_HOME src tycoonOS ;
+
+
+#
+# Define all sources in a variable, header-file dependencies
+# will be detected automaticly
+#
+SRCS = tos.c      tosLog.c       tosError.c     tosString.c tosFilename.c tosDll.c 
+       tosMutex.c tosCondition.c tosTLS.c       tosThread.c tosProcess.c  tosStdio.c
+       tosFile.c  tosFilemode.c  tosDirectory.c tosSystem.c tosDate.c     ;
+
+
+#
+# Additional sources, not needed by the virtual machine, but by the TL2 runtime
+#
+SRCS += tosLong.c tosReal.c tosInt32.c    tosMemory.c tosFileinfo.c tosFilepos.c
+        tosMd5.c  tosNet.c  tosSecurity.c tosSocket.c ;
+
+
+#
+# For all MS Windows systems we need the winsocket library
+#
+if $(NT) || $(WIN95) || $(WIN98)
+{
+  LINKSYSLIBS += $(WINSOCKLIBS) ;
+}
+
+#
+# On Windows NT we have special security support
+#
+if $(NT)
+{
+  LINKSYSLIBS += $(SECURITYLIBS) ;
+}
+
+
+#
+# Cleanup of debug symbols for MS Visual C++
+#
+if $(HOX_COMPILER) = MSVC {
+   makeDirName DBG_TOS : $(HOX_BIN) libtos.pdb ;
+   makeDirName VC50PDB : $(HOX_HOME) src tycoonOS vc50.pdb ;
+   makeDirName VC60PDB : $(HOX_HOME) src tycoonOS vc60.pdb ;
+   Clean clean : $(DBG_TOS) $(VC50PDB) $(VC60PDB) ;
+}
+
+
+#
+# Build dynamic library tos (shortname for TycoonOS):
+#  - members are all sources in $(SRCS)
+#  - .def file needed under MS Windows, ignored on other systems
+#
+LibMember tos : $(SRCS) ;
+BuildLib tos : : libtos.def ;
+
+
+#
+# Optional test programm
+#
+#Main Test : Test.c ;
+#LinkLibraries Test : $(LIBPREFIX)tos ;
+

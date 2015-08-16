@@ -1,0 +1,667 @@
+diff -u Jambase
+--- Jambase.orig
++++ Jambase	Mon Oct 05 16:55:47 1998
+@@ -136,6 +136,8 @@
+ #	$(UNIX) - true on UNIX
+ #	$(VMS) - true on VMS
+ #	$(NT) - true on NT
++#	$(WIN95) - true on WIN95
++#	$(WIN98) - true on WIN98
+ #	$(OS) - name of OS - varies wildly
+ #	$(JAMVERSION) - version number (2.1)
+ #
+@@ -269,7 +271,7 @@
+ 	YACCFLAGS	default = -d ;
+ 	YACCFILES	default = y.tab ;
+ }
+-else if $(NT)
++else if $(NT) || $(WIN95) || $(WIN98)
+ {
+ 	AWK		default = awk ;
+ 	CHMOD		default = chmod ;
+@@ -280,15 +282,27 @@
+ 	FILEMODE	default = 644 ;
+ 	MKDIR		default = mkdir ;
+ 	MV		default = mv -f ;
+-	OS			= NT ;		# replace Windows_NT
+ 	RCP		default = rcp ;
+ 	RSH		default = rsh ;
+-    	RM		default = del /f/q ;
+ 	SED		default = sed ;
+     	SLASH		default = \\ ;
+     	SUFLIB		default = .lib ;
+     	SUFOBJ		default = .obj ;
+     	SUFEXE		default = .exe ;
++        if $(NT) {
++		OS		= NT ;		# replace Windows_NT
++    		RM	default = del /f/q ;
++	}
++	else {
++        	if $(WIN95) {
++			OS		= WIN95 ;
++    			RM	default = rm ;          # Need a working rm on WIN95
++		}
++		else {
++			OS		= WIN98 ;
++    			RM	default = rm ;          # Need a working rm on WIN98
++		}
++	}
+      
+     if $(BCCROOT)
+     {
+@@ -335,7 +349,7 @@
+     {
+ 	ECHO "Compiler is Microsoft Visual C++" ;
+ 
+-	AR		default = lib ;
++	AR		default = lib /nologo ;
+ 	AS		default = masm386 ;
+ 	CC		default = cl /nologo ;
+ 	CCFLAGS		default = ;
+@@ -353,7 +367,7 @@
+     }
+     else
+     {
+-	EXIT On NT, set BCCROOT, MSVCNT, or MSVC to the root of the
++	EXIT On NT, WIN95 and WIN98, set BCCROOT, MSVCNT, or MSVC to the root of the
+ 		Borland or Microsoft directories. ;
+     }
+ 
+@@ -474,7 +488,7 @@
+ # are not yet added to Jambase)
+ #
+ 
+-if $(NT) || $(OS2)
++if $(NT) || $(OS2) || $(WIN95) || $(WIN98)
+ {
+ 	MSLIB 		default = lib ;
+ 	MSLINK		default = link ;
+@@ -897,7 +911,7 @@
+ 
+ 	    s = $(<:P) ;
+ 
+-	    if $(NT)
++	    if $(NT) || $(WIN95) || $(WIN98)
+ 	    {
+ 	        switch $(s)
+ 		{
+@@ -1607,7 +1621,7 @@
+ 	}
+     }
+ }
+-else if $(NT) || $(OS2)
++else if $(NT) || $(OS2) || $(WIN95) || $(WIN98)
+ {
+     if $(BCCROOT)
+     {
+@@ -1634,10 +1648,11 @@
+     }
+     else if $(MSVC) 
+     {
+-	actions updated together piecemeal Archive
+-	{
+-	$(AR) $(<) -+$(>) ;
+-	}
++        actions updated together piecemeal Archive
++        {
++        if exist $(<) set _$(<:B)_=$(<)
++        $(AR) /out:$(<) %_$(<:B)_% $(>)
++        }
+ 
+ 	actions Cc
+ 	{
+diff -u Jamfile
+--- Jamfile.orig
++++ Jamfile	Sun Oct 04 23:28:29 1998
+@@ -23,7 +23,9 @@
+ # We have some different files for UNIX, VMS, and NT.
+ #
+ 
+-if $(NT) 	{ code = execunix.c filent.c pathunix.c ; } 
++if $(NT)        { code = execunix.c filent.c pathunix.c ; } 
++else if $(WIN95) { code = execdos.c filent.c pathunix.c ; } 
++else if $(WIN98) { code = execdos.c filent.c pathunix.c ; } 
+ else if $(OS2)	{ code = execunix.c fileos2.c pathunix.c ; } 
+ else if $(VMS) 	{ code = execvms.c filevms.c pathvms.c ; } 
+ else if $(MAC)	{ code = execmac.c filemac.c pathmac.c ; }
+@@ -34,6 +36,8 @@
+ 
+ 
+ if $(OS) = NT { CCFLAGS += /DNT ; }
++if $(OS) = WIN95 { CCFLAGS += /DWIN95 ; }
++if $(OS) = WIN98 { CCFLAGS += /DWIN98 ; }
+ if $(OS) = MVS { CCFLAGS += -DMVS ; }
+ if $(OS)$(OSVER) = AIX41 { CCFLAGS += -D_AIX41 ; }
+ 
+diff -u Makefile.nt
+--- Makefile.nt.orig
++++ Makefile.nt	Sun Oct 04 23:28:29 1998
+@@ -0,0 +1,23 @@
++# Makefile for jam
++
++# NT (with Microsoft compiler)
++# Use FATFS if building on a DOS FAT file system
++Lib = $(MSVCNT)/lib
++Include = $(MSVCNT)/include
++CC = cl /nologo
++CFLAGS = -I $(Include) -DNT 
++TARGET = /Fejam0
++LINKLIBS = $(Lib)/oldnames.lib $(Lib)/kernel32.lib $(Lib)/libc.lib
++
++SOURCES = \
++	command.c compile.c execunix.c execvms.c expand.c \
++	filent.c fileos2.c fileunix.c filevms.c glob.c hash.c \
++	headers.c jam.c jambase.c jamgram.c lists.c make.c make1.c \
++	newstr.c option.c parse.c pathunix.c pathvms.c regexp.c \
++	rules.c scan.c search.c timestamp.c variable.c
++
++all: jam0
++	jam0
++
++jam0:
++	$(CC) $(TARGET) $(CFLAGS) $(SOURCES) $(LINKLIBS)
+diff -u Makefile.w95
+--- Makefile.w95.orig
++++ Makefile.w95	Sun Oct 04 23:28:29 1998
+@@ -0,0 +1,25 @@
++# Makefile for jam
++
++# WIN95 (with Microsoft compiler)
++# Use FATFS if building on a DOS FAT file system
++Lib = $(MSVCNT)/lib
++Include = $(MSVCNT)/include
++CC = cl /nologo /Zi
++CFLAGS = -I $(Include) -DWIN95 # -DNT
++TARGET = /Fejam0
++LINKLIBS = $(Lib)/oldnames.lib $(Lib)/kernel32.lib $(Lib)/libc.lib
++
++SOURCES = \
++	command.c compile.c execunix.c execdos.c execvms.c expand.c \
++	filent.c fileos2.c fileunix.c filevms.c glob.c hash.c \
++	headers.c jam.c jambase.c jamgram.c lists.c make.c make1.c \
++	newstr.c option.c parse.c pathunix.c pathvms.c regexp.c \
++	rules.c scan.c search.c timestamp.c variable.c
++
++all: jam0.exe
++	jam0
++
++jam0.exe:
++	$(CC) $(TARGET) $(CFLAGS) $(SOURCES) $(LINKLIBS)
++
++
+diff -u Makefile.w98
+--- Makefile.w98.orig
++++ Makefile.w98	Sun Oct 04 23:28:29 1998
+@@ -0,0 +1,25 @@
++# Makefile for jam
++
++# WIN98 (with Microsoft compiler)
++# Use FATFS if building on a DOS FAT file system
++Lib = $(MSVCNT)/lib
++Include = $(MSVCNT)/include
++CC = cl /nologo /Zi
++CFLAGS = -I $(Include) -DWIN98 # -DNT
++TARGET = /Fejam0
++LINKLIBS = $(Lib)/oldnames.lib $(Lib)/kernel32.lib $(Lib)/libc.lib
++
++SOURCES = \
++	command.c compile.c execunix.c execdos.c execvms.c expand.c \
++	filent.c fileos2.c fileunix.c filevms.c glob.c hash.c \
++	headers.c jam.c jambase.c jamgram.c lists.c make.c make1.c \
++	newstr.c option.c parse.c pathunix.c pathvms.c regexp.c \
++	rules.c scan.c search.c timestamp.c variable.c
++
++all: jam0.exe
++	jam0
++
++jam0.exe:
++	$(CC) $(TARGET) $(CFLAGS) $(SOURCES) $(LINKLIBS)
++
++
+diff -u execdos.c
+--- execdos.c.orig
++++ execdos.c	Sun Oct 04 23:28:29 1998
+@@ -0,0 +1,198 @@
++/*
++ * Copyright 1993, 1995 Christopher Seiwald.
++ *
++ * This file is part of Jam - see jam.c for Copyright information.
++ */
++
++# if defined ( WIN95 ) || defined ( WIN98 )
++
++# include "jam.h"
++# include "execcmd.h"
++# include "lists.h"
++# include <errno.h>
++
++# include <process.h>
++
++/*
++ * execunix.c - execute a shell script on UNIX/WinNT/OS2
++ *
++ * If $(JAMSHELL) is defined, uses that to formulate execvp()/spawnvp().
++ * The default is:
++ *
++ *	/bin/sh -c %		[ on UNIX ]
++ *	cmd.exe /c %		[ on OS2/WinNT ]
++ *	command.exe /c %	[ on WIN95 ]
++ *
++ * Each word must be an individual element in a jam variable value.
++ *
++ * In $(JAMSHELL), % expands to the command string and ! expands to 
++ * the slot number (starting at 1) for multiprocess (-j) invocations.
++ * If $(JAMSHELL) doesn't include a %, it is tacked on as the last
++ * argument.
++ *
++ * Don't just set JAMSHELL to /bin/sh or cmd.exe - it won't work!
++ *
++ * External routines:
++ *	execcmd() - launch an async command execution
++ * 	execwait() - wait and drive at most one execution completion
++ *
++ * Internal routines:
++ *	onintr() - bump intr to note command interruption
++ *
++ * 04/08/94 (seiwald) - Coherent/386 support added.
++ * 05/04/94 (seiwald) - async multiprocess interface
++ * 01/22/95 (seiwald) - $(JAMSHELL) support
++ * 06/02/97 (gsar)    - full async multiprocess support for Win32
++ */
++
++static void (*istat)( int );
++void onintr( int );
++
++/*
++ * onintr() - bump intr to note command interruption
++ */
++
++static int intr ;
++
++void
++onintr( disp )
++int disp;
++{
++	intr++;
++	printf( "...interrupted\n" );
++}
++
++/*
++ * execcmd() - launch an async command execution
++ */
++
++void
++execcmd( string, func, closure, shell )
++char *string;
++void (*func)();
++void *closure;
++LIST *shell;
++{
++	int ret;
++	int rstat;
++	char *argv[ MAXARGC + 1 ];	/* +1 for NULL */
++
++	static char *comspec = 0;
++	static char *tempfile = 0;
++	char *p;
++
++	/* XXX this is questionable practice, since COMSPEC has
++	 * a high degree of variability, resulting in Jamfiles
++	 * that frequently won't work.  COMSPEC also denotes a shell
++	 * fit for interative use, not necessarily/merely a shell
++	 * capable of launching commands.  Besides, people can
++	 * just set JAMSHELL instead.
++	 */
++	if ( comspec == 0) {
++	  comspec = getenv( "COMSPEC" );
++
++	  if ( comspec == 0) {
++	    comspec = "command.com";
++	  }
++	}
++
++        if (tempfile == 0) {
++            char *tempdir;
++
++            if( !( tempdir = getenv( "TEMP" ) ) &&
++                !( tempdir = getenv( "TMP" ) ) )
++                    tempdir = "\\temp";
++
++	    tempfile = malloc( strlen( tempdir ) + 14 );
++
++	    sprintf(tempfile, "%s\\jamtmp.bat", tempdir);
++	}
++
++	/* Trim leading, ending white space */
++
++	while( isspace( *string ) )
++		++string;
++
++	p = strchr( string, '\n' );
++
++	while( p && isspace( *p ) )
++		++p;
++
++	/* If multi line or too long, write to bat file. */
++	/* Otherwise, exec directly. */
++	/* Frankly, if it is a single long line I don't think the */
++	/* command interpreter will do any better -- it will fail. */
++
++	if( p && *p || strlen( string ) > MAXLINE )
++	{
++	    FILE *f;
++
++	    /* Write command to bat file. */
++
++	    f = fopen( tempfile, "w" );
++	    fputs( string, f );
++	    fclose( f );
++
++	    string = tempfile;
++	}
++
++
++	/* Forumulate argv */
++	{
++        int i = 0;
++	    argv[i++] = comspec;
++	    argv[i++] = "/C";		/* anything more is non-portable */
++            while (*string) {
++              char *pt;
++              while (isspace(*string)) {
++                string++;
++              }
++              if (!*string) {
++				break;
++			  }
++              pt = strchr(string, ' ');
++              argv[i++] = string;
++              if (pt) {
++                *pt++ = 0;
++                string = pt;
++              }
++              else {
++                break;
++              }
++            }
++            argv[i] = 0;
++	}
++
++	/* Catch interrupts whenever commands are running. */
++
++       istat = signal( SIGINT, onintr );
++
++	/* Start the command */
++
++	ret = spawnvp( P_WAIT, argv[0], argv );
++
++	if (ret < 0 )
++	{
++	    perror( "spawn" );
++	    exit( EXITBAD );
++	}
++
++        signal( SIGINT, istat );
++
++	if ( intr )
++	    rstat = EXEC_CMD_INTR;
++	else if ( ret != 0 )
++	    rstat = EXEC_CMD_FAIL;
++	else
++	    rstat = EXEC_CMD_OK;
++
++	(*func)( closure, rstat );
++}
++
++int execwait()
++{
++  return(0);
++}
++
++# endif
++
+diff -u filent.c
+--- filent.c.orig
++++ filent.c	Mon Oct 05 23:28:45 1998
+@@ -3,8 +3,8 @@
+  *
+  * This file is part of Jam - see jam.c for Copyright information.
+  */
+-
+-# ifdef NT
++ 
++# if defined ( NT ) || defined ( WIN95 ) || defined ( WIN98 )
+ 
+ # ifdef __BORLANDC__
+ # include <dir.h>
+@@ -34,8 +34,10 @@
+  * file.   If file_dirscan() or file_archscan() do not provide the file's
+  * timestamp, interested parties may later call file_time().
+  *
+- * 07/10/95 (taylor)  Findfirst() returns the first file on NT.
+- * 05/03/96 (seiwald) split apart into pathnt.c
++ * 07/10/95 (taylor)   Findfirst() returns the first file on NT.
++ * 05/03/96 (seiwald)  split apart into pathnt.c
++ * 04/10/98 (willomat) Error by _findfirst with 'c:\\*' or 'c:\/*'
++ *                     under Windows 95/98
+  */
+ 
+ /*
+@@ -71,8 +73,10 @@
+  	    (*func)( dir, 0 /* not stat()'ed */, (time_t)0 );
+ 
+ 	/* Now enter contents of directory */
+-
+-	sprintf( filespec, "%s/*", dir );
++	if (f.f_dir.ptr[f.f_dir.len - 1] == '\\')
++	   sprintf( filespec, "%s*", dir );
++	else
++           sprintf( filespec, "%s\\*", dir );
+ 
+ 	if( DEBUG_BINDSCAN )
+ 	    printf( "scan directory %s\n", dir );
+diff -u jam.c
+--- jam.c.orig
++++ jam.c	Sun Oct 04 23:28:29 1998
+@@ -132,12 +132,8 @@
+ 
+ static char *othersyms[] = { OSSYMS OSPLATSYM, JAMVERSYM, 0 } ;
+ 
+-# ifndef __WATCOM__
+-# ifndef __OS2__
+-# ifndef NT
++# if !defined ( __WATCOM__ ) && !defined ( __OS2__ ) && !defined ( NT) && !defined ( WIN95 ) && !defined ( WIN98 )
+ extern char **environ;
+-# endif
+-# endif
+ # endif
+ 
+ # ifdef macintosh
+diff -u jam.h
+--- jam.h.orig
++++ jam.h	Sun Oct 04 23:28:29 1998
+@@ -53,7 +53,7 @@
+ 
+ # else
+ 
+-# ifdef NT
++# if defined ( NT ) || defined ( WIN95 ) || defined ( WIN98 )
+ 
+ # include <fcntl.h>
+ # include <stdlib.h>
+@@ -65,9 +65,23 @@
+ # include <string.h>
+ # include <time.h>
+ 
++# if defined ( NT )
+ # define OSSYMS "NT=true","OS=NT"
+-# define SPLITPATH ';'
++# else
++# if defined ( WIN95 )
++# define OSSYMS "WIN95=true","OS=WIN95"
++# else
++# define OSSYMS "WIN98=true","OS=WIN98"
++# endif
++# endif
++
++# if defined ( NT )
++# define MAXLINE 10240	/* longest 'together' actions */
++# else
+ # define MAXLINE 996	/* longest 'together' actions */
++# endif
++
++# define SPLITPATH ';'
+ # define EXITOK 0
+ # define EXITBAD 1
+ 
+@@ -276,7 +290,11 @@
+ # define MAXSYM	1024	/* longest symbol in the environment */
+ # define MAXJPATH 1024	/* longest filename */
+ 
++# if defined ( WIN95 ) || defined ( WIN98 )
++# define MAXJOBS 1
++# else
+ # define MAXJOBS 64	/* silently enforce -j limit */
++# endif
+ # define MAXARGC 32	/* words in $(JAMSHELL) */
+ 
+ # define CMDBUF 10240	/* size of command blocks */
+diff -u jambase.c
+--- jambase.c.orig
++++ jambase.c	Mon Oct 05 17:55:41 1998
+@@ -105,7 +105,7 @@
+ "YACCFLAGS	default = -d ;\n",
+ "YACCFILES	default = y.tab ;\n",
+ "}\n",
+-"else if $(NT)\n",
++"else if $(NT) || $(WIN95) || $(WIN98)\n",
+ "{\n",
+ "AWK		default = awk ;\n",
+ "CHMOD		default = chmod ;\n",
+@@ -116,15 +116,27 @@
+ "FILEMODE	default = 644 ;\n",
+ "MKDIR		default = mkdir ;\n",
+ "MV		default = mv -f ;\n",
+-"OS			= NT ;		# replace Windows_NT\n",
+ "RCP		default = rcp ;\n",
+ "RSH		default = rsh ;\n",
+-"RM		default = del /f/q ;\n",
+ "SED		default = sed ;\n",
+ "SLASH		default = \\\\ ;\n",
+ "SUFLIB		default = .lib ;\n",
+ "SUFOBJ		default = .obj ;\n",
+ "SUFEXE		default = .exe ;\n",
++"if $(NT) {\n",
++"OS		= NT ;		# replace Windows_NT\n",
++"RM	default = del /f/q ;\n",
++"}\n",
++"else {\n",
++"if $(WIN95) {\n",
++"OS		= WIN95 ;\n",
++"RM	default = rm ;          # Need a working rm on WIN95\n",
++"}\n",
++"else {\n",
++"OS		= WIN98 ;\n",
++"RM	default = rm ;          # Need a working rm on WIN98\n",
++"}\n",
++"}\n",
+ "if $(BCCROOT)\n",
+ "{\n",
+ "ECHO \"Compiler is Borland C++\" ;\n",
+@@ -163,7 +175,7 @@
+ "else if $(MSVCNT)\n",
+ "{\n",
+ "ECHO \"Compiler is Microsoft Visual C++\" ;\n",
+-"AR		default = lib ;\n",
++"AR		default = lib /nologo ;\n",
+ "AS		default = masm386 ;\n",
+ "CC		default = cl /nologo ;\n",
+ "CCFLAGS		default = ;\n",
+@@ -181,7 +193,7 @@
+ "}\n",
+ "else\n",
+ "{\n",
+-"EXIT On NT, set BCCROOT, MSVCNT, or MSVC to the root of the\n",
++"EXIT On NT, WIN95 and WIN98, set BCCROOT, MSVCNT, or MSVC to the root of the\n",
+ "Borland or Microsoft directories. ;\n",
+ "}\n",
+ "}\n",
+@@ -288,7 +300,7 @@
+ "SUFEXE		default = \"\" ;\n",
+ "NOARSCAN	default = true ;\n",
+ "}\n",
+-"if $(NT) || $(OS2)\n",
++"if $(NT) || $(OS2) || $(WIN95) || $(WIN98)\n",
+ "{\n",
+ "MSLIB 		default = lib ;\n",
+ "MSLINK		default = link ;\n",
+@@ -573,7 +585,7 @@
+ "NOUPDATE $(<) ;\n",
+ "Depends dirs : $(<) ;\n",
+ "s = $(<:P) ;\n",
+-"if $(NT)\n",
++"if $(NT) || $(WIN95) || $(WIN98)\n",
+ "{\n",
+ "switch $(s)\n",
+ "{\n",
+@@ -1066,7 +1078,7 @@
+ "}\n",
+ "}\n",
+ "}\n",
+-"else if $(NT) || $(OS2)\n",
++"else if $(NT) || $(OS2) || $(WIN95) || $(WIN98)\n",
+ "{\n",
+ "if $(BCCROOT)\n",
+ "{\n",
+@@ -1091,7 +1103,8 @@
+ "{\n",
+ "actions updated together piecemeal Archive\n",
+ "{\n",
+-"$(AR) $(<) -+$(>) ;\n",
++"if exist $(<) set _$(<:B)_=$(<)\n",
++"$(AR) /out:$(<) %_$(<:B)_% $(>)\n",
+ "}\n",
+ "actions Cc\n",
+ "{\n",
+diff -u pathunix.c
+--- pathunix.c.orig
++++ pathunix.c	Sun Oct 04 23:28:31 1998
+@@ -7,7 +7,7 @@
+ # include "jam.h"
+ # include "filesys.h"
+ 
+-# if defined( unix ) || defined( NT ) || defined( __OS2__ )
++# if defined( unix ) || defined( NT ) || defined( __OS2__ ) || defined ( WIN95 ) || defined ( WIN98 )
+ 
+ # ifdef unix
+ # define DELIM '/'
+diff -u timestamp.c
+--- timestamp.c.orig
++++ timestamp.c	Mon Oct 05 18:15:11 1998
+@@ -67,7 +67,7 @@
+ 	BINDING	binding, *b = &binding;
+ 	char buf[ MAXJPATH ];
+ 
+-#if defined( NT ) || defined( VMS )
++#if defined( NT ) || defined( VMS ) || defined ( WIN95 ) || defined ( WIN98 )
+ 	char path[ MAXJPATH ];
+ 	char *p = path;
+ 
+@@ -149,7 +149,7 @@
+ 
+     afterscanning:
+ 
+-	if( b->progress == BIND_SPOTTED )
++    	if( b->progress == BIND_SPOTTED )
+ 	{
+ 	    if( file_time( b->name, &b->time ) < 0 )
+ 		b->progress = BIND_MISSING;
+@@ -168,7 +168,7 @@
+ {
+ 	BINDING	binding, *b = &binding;
+ 
+-#if defined( NT ) || defined( VMS )
++#if defined( NT ) || defined( VMS ) || defined ( WIN95 ) || defined ( WIN98 )
+ 	char path[ MAXJPATH ];
+ 	char *p = path;
+ 

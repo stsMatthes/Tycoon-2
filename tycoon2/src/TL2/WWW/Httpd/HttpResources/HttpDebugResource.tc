@@ -1,0 +1,65 @@
+class HttpDebugResource
+
+super HttpResourceDecorator
+
+metaclass HttpSimpleResourceDecoratorClass(HttpDebugResource)
+
+public
+
+log :Output
+
+methods
+
+pathLookup(request :HttpRequest, arcs :List(String)) :HttpResource
+{
+   logRequest(request),
+   let result = super.pathLookup(request, arcs),
+   logResource(result),
+   HttpDebugFilter.new(result, self)
+}
+
+
+logResource(resource :HttpResource) :Void
+{
+   log.writeln("Resource: " + resource.clazz.name)
+}
+
+logRequest(request :HttpRequest) :Void
+{
+   log.writeln("HTTP Request <" +
+     request.method.printString +
+     request.uri.printString +
+     request.major.printString +
+     request.minor.printString +
+     ">"),
+   logHeaders(request.headers)
+}
+
+logResponse(response :HttpResponse) :Void
+{
+  log.writeln("Response: " + response.statusCode.printString + " " + response.status),
+  logHeaders(response.headers)
+}  
+
+logHeaders(headers :Dictionary(String, MimeHeaderValue)) :Void
+{
+  headers.keysAndElementsDo(fun(k :String, v :MimeHeaderValue) {
+    log.writeln("  " +
+      k + "= " +
+      v.value.printString +
+      " :" + v.value."class".name)
+  })
+}  
+
+private methods
+
+_init :Void
+{
+  super._init,
+  log := tycoon.stdout,
+  self
+}
+
+;
+
+

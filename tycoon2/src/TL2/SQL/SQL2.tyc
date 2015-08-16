@@ -1,0 +1,9 @@
+(* File: SQL2.tyc
+   Author: Axel Wienberg
+   Date: 10-Jan-1997
+   Purpose: Tycoon-2 load script for SQL classes
+	    (can't use registerDirectory because of ODBC etc)
+*)
+tycoon.tl.loader.registerDirectory("SQL");
+tycoon.tl.loader.update;
+SQLDriverManager.init;

@@ -1,0 +1,2 @@
+MimeHeaderRegistry.init;
+MimeMessage.init;

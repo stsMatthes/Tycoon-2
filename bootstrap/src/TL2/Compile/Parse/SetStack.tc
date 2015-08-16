@@ -1,0 +1,79 @@
+class SetStack(E <: Object)
+super Container(E)
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+  File: SetStack
+  Author: Axel Wienberg
+    Date: 30-May-95
+ Purpose: Stack with (almost) O(1) test for membership.
+	  No element may be on the stack more than once.
+	  Special purpose class for SCC.
+*)
+meta SetStackClass(E)
+{
+includes(e :Object) :Bool
+  (* *)
+{
+  _prev.includesKey(_typeCast(e, :E))
+}
+
+size :Int
+  (* *)
+{ _prev.size }
+
+reader :Reader(E)
+  (* *)
+{
+  el ::= _top
+  FunReader.new({
+    result ::= el
+    if( el.isNotNil then: { el := _prev[el] })
+    result
+  })
+}
+
+top :E
+  (* *)
+{ _top }
+
+push(e :E) :E
+  (* *)
+require !includes(e)
+{
+  _prev[e] := _top
+  _top := e
+}
+
+pop :E
+  (* *)
+{
+  oldTop ::= _top
+  _top := _prev[oldTop]
+  _prev.removeKey(oldTop)
+  oldTop
+}
+
+private
+
+_prev :Dictionary(E,E)
+
+_top :E
+
+}

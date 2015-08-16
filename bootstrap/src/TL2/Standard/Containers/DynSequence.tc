@@ -1,0 +1,180 @@
+class DynSequence(E <: Object)
+super MutableSequence(E), DynSequenceSink(E), AddMixin(E), RemoveKeyMixin(Int, E)
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+Sequences whose domain can change
+i.e. elements can be inserted dynamically
+
+Author:  Axel Wienberg
+Date:    30-Apr-1997
+Updates: (Date)	  (Name)	(Description)
+*)
+meta AbstractClass
+{
+clear :Void
+  (* normative implementation *)
+  ensure isEmpty
+{ removeSubSequence1(size) }
+
+removeSubSequence(n :Int, at :Int ) :Void
+  (* remove n elements starting at position <at>.
+   All following elements move <n> positions back,
+   the receiver`s size shrinks by <n>. 
+ ::= 0 *)
+  require 0 <= at && at+n <= size
+deferred
+
+removeSubSequence1(n :Int) :Void
+  (* normative implementation *)
+{
+  removeSubSequence(n, 0)
+}
+
+removeKey(at :Int) :E
+  (* remove the element with key 'k'
+     normative implementation *)
+  require validKey(k)
+{
+  e ::= self[at]
+  removeSubSequence(1, at)
+  e
+}
+
+removeLast :E
+  (* normative implementation *)
+{
+  removeKey(size-1)
+}
+
+removeFirst :E
+  (* aka pop
+   aka dequeue 
+ normative implementation *)
+{
+  removeKey(0)
+}
+
+insert(e :E, at :Int)  :E
+  (* insert element <e> at position <at>.
+   All elements at positions >= <at> move one position forward,
+   the receiver`s size grows by one. *)
+  require 0 <= at & at <= size
+  deferred
+
+insertAll(aCollection :Collection(E), at :Int) :Void
+  (* insert all elements of <aCollection> starting at position <at>.
+   If aCollection is ordered, maintain the order of elements in self.
+ 
+ normative implementation *)
+require 0 <= at & at <= size
+  
+{
+  aCollection.insertInto(self, at)
+  ; calls back to some of the following 
+}
+
+insertCollection(aCollection :Collection(E), at :Int) :Void
+  (* normative implementation *)
+{
+  i ::= at
+  aCollection.do(fun(e :E) {
+    insert(e,i)
+    i := i + 1
+  })
+}
+
+insertContainer(aContainer :Container(E), at :Int) :Void
+  (* normative implementation *)
+{  insertCollection(aContainer, at)
+}
+
+insertSequence(seq :Sequence(E), at :Int) :Void
+  (* normative implementation *)
+{  insertSubSequence(seq, 0, seq.size, at)
+}
+
+insertSubSequence(seq :Sequence(E), start :Int, n :Int, at :Int) :Void
+  (* normative implementation *)
+{
+  insertCollection(seq.subSequenceReader(start,n), at)
+}
+
+addLast(e :E) :Void
+  (* aka enqueue *)
+{
+  insert(e, size)
+}
+
+addLastAll(aCollection :Collection(E)) :Void
+  (* normative implementation *)
+{
+  insertAll(aCollection, size)
+}
+
+addLastSubSequence(seq :Sequence(E), start :Int, n :Int) :Void
+  (* *)
+{
+  insertSubSequence(seq, start, n, size)
+}
+
+addFirst(e :E) :Void
+  (* aka push *)
+{
+  insert(e, 0)
+}
+
+addFirstAll(aCollection :Collection(E)) :Void
+  (* *)
+{
+  insertAll(aCollection, 0)
+}
+
+addFirstSubSequence(seq :Sequence(E), start :Int, n :Int) :Void
+  (* *)
+{
+  insertSubSequence(seq, start, n, size)
+}
+
+add(e :E) :Void
+  (* add and remove elements anywhere you like *)
+ ensure includes(e)
+	&& occurrencesOf(e) = old occurrencesOf(e) + 1
+{ insert(e, addPosition) }
+
+addSubSequence(seq :Sequence(E), start :Int, n :Int) :Void
+  (* *)
+{ insertSubSequence(seq, start, n, addPosition) }
+
+addSequence(seq :Sequence(E)) :Void
+  (* *)
+{ addAll(seq) }
+
+addAll(aCollection :Collection(E)) :Void
+  (* *)
+{ insertAll(aCollection, addPosition) }
+
+private
+
+addPosition :Int
+  (* where to add elements with unspecified position (beginning or end) *)
+deferred
+
+}

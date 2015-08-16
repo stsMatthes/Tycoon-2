@@ -1,0 +1,159 @@
+class StmlFunType
+super StmlType
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+*)
+meta StmlFunTypeClass
+{
+domain :List(Pair(String,StmlType))
+
+range :StmlType
+
+printOn(out :Output) :Void
+  (* *)
+{
+  out.writeString("Fun(")
+  domain.doBetween(fun(arg :Pair(String,StmlType)) {
+    name ::= arg.first
+    type ::= arg.second
+    if( name.isNotNil
+    then: { out.writeString(name) })
+    out.writeString(" :")
+    type.printOn(out)
+  },
+  { out.writeString(", ") })
+  out.writeString(")")
+  if( range.isNotNil
+  then: { out.writeString(" :")
+      range.printOn(out) })
+}
+
+equalType(t :StmlType) :Bool
+  (* *)
+{ t.equalFunType(self) }
+
+equalFunType(t :StmlFunType) :Bool
+  (* *)
+{
+  range.equalType(t.range)
+  &&  compareDomains(domain, t.domain,
+		      fun(t1:StmlType, t2:StmlType){t1.equalType(t2)}) 
+}
+
+before(t :StmlType) :StmlType
+  (* other equal methods remain false *)
+{ t.afterFun(self) }
+
+afterFun(t :StmlFunType) :StmlType
+  (* *)
+{ ; later stage will criticize the unused expression giving <t> 
+  self
+}
+
+afterString(t :StmlStringType) :StmlType
+  (* *)
+{
+  StmlWrongType.new(position, "Type error: fun after string", nil, t, nil, self)
+}
+
+afterWhiteString(t :StmlWhiteStringType) :StmlType
+  (* *)
+{ ; important: ignore whitespace 
+  self
+}
+
+afterTypeVariable(t :StmlTypeVariable) :StmlType
+  (* *)
+require !t.isBound
+{ ; either t is String and we lose or t is a value and its expression is ignored
+;     in any case we lose 
+  StmlWrongType.new(position, "Incompatible adjacent types", nil, t, nil, self)
+}
+
+afterBottom(t :StmlBottomType) :StmlType
+  (* *)
+{
+  self  ; important: ignore assign 
+}
+
+afterTop(t :StmlBottomType) :StmlType
+  (* *)
+{ nil }
+
+isSubTypeOf(t :StmlType) :Bool
+  (* *)
+{ t.isSuperTypeOfFun(self) }
+
+isSuperTypeOfFun(t :StmlFunType) :Bool
+  (* *)
+{ t.range.isSubTypeOf(range)
+  &&  compareDomains(domain, t.domain,
+		      fun(t1:StmlType, t2:StmlType){t1.isSubTypeOf(t2)}) 
+}
+
+isSuperTypeOfString(t :StmlStringType) :Bool
+  (* *)
+{ false }
+
+isSuperTypeOfWhiteString(t :StmlWhiteStringType) :Bool
+  (* *)
+{ false }
+
+isSuperTypeOfTycoon(t :StmlTycoonType) :Bool
+  (* *)
+{ ;; tycoon typechecking happens later - be good natured now
+  true
+}
+
+isStringContext :Bool
+  (* *)
+{ false }
+
+asTycoonType :TL2Type
+  (* *)
+{
+  n ::= domain.size
+  TL2ApplyType.new(
+    TL2IdeType.new(TL2TypeIde.newRef(position, "Fun"+n.printString)),
+    List.append(
+      domain.map(fun(p:Pair(String,StmlType)){ p.second.asTycoonType }).as(List),
+      List.with1(
+        if( range.equalStringType(StmlStringType.new(position)) then: {
+	  TL2VoidType.instance
+	} else: {
+          range.asTycoonType
+	}))))
+}
+
+private
+
+compareDomains( d1 :List(Pair(String,StmlType)),
+	        d2 :List(Pair(String,StmlType)),
+	        compare :Fun(:StmlType, :StmlType):Bool) :Bool
+  (* *)
+{
+  if( d1.isEmpty
+  then: { d2.isEmpty }
+  else: { !d2.isEmpty
+      && ( compare[d1.head.second, d2.head.second]
+        &&  compareDomains(d1.tail, d2.tail, compare)  ) })
+}
+
+}

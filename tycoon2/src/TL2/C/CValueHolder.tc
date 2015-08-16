@@ -1,0 +1,11 @@
+class CValueHolder(T<:Object)
+
+super AbstractCValueHolder(T,T)
+
+metaclass AbstractClass
+
+public methods
+
+
+;
+

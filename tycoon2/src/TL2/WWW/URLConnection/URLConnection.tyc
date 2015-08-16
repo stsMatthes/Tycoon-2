@@ -1,0 +1,6 @@
+DO load "../TWL/WWW/URLConnection/URLConnection.tc";
+DO load "../TWL/WWW/URLConnection/AbstractURLConnectionClass.tc";
+DO load "../TWL/WWW/URLConnection/FileURLConnection.tc";
+DO load "../TWL/WWW/URLConnection/HttpURLConnection.tc";
+DO load "../TWL/WWW/URLConnection/FtpURLConnection.tc";
+DO load "../TWL/WWW/URLConnection/URLConnectionFactory.tc";

@@ -1,0 +1,177 @@
+define sugarMain :SugarMain;
+sugarMain := SugarMain.new;
+sugarMain.newParser;
+sugarMain.newScanner;
+Thread.new({
+  let f = File.openWrite("/home/awienber/tmp/rules"),
+  protect({
+    sugarMain.grammar.rules.printOn(f)
+  }, {
+    f.close
+  }),
+  "kloing!".print
+});
+Thread.new({
+  let f = File.openWrite("/home/awienber/tmp/states").bufferedOutput,
+  let oldlog = sugarMain.parserBuilder.log,
+  protect({
+    sugarMain.parserBuilder.log := f,
+    f << "Start: " << sugarMain.parserBuilder.lalr.start.n <<"\n",
+    sugarMain.parserBuilder.debugDump
+  }, {
+    sugarMain.parserBuilder.log := oldlog,
+    f.close
+  }),
+  "pling!".print
+});
+sugarMain.scanner.scan(
+  StringInput.new("m(1, 2, \"blub\")"+59.asChar.asString)
+).do(
+  fun(o:Object){
+    o.print
+  });
+sugarMain.filterStringString( "(*0*) muffod (*1*) ( (*2*) rqment (*3*) ) (*4*) ");
+sugarMain.filterStringString( "a < b?{c}:{d}");
+sugarMain.filterStringString( "a < b?{c}");
+sugarMain.filterStringString( "a?{b}");
+sugarMain.filterStringString( "a?{b}:{c}");
+sugarMain.filterStringString( "(*1*)a(*2*)?(*3*)b(*4*):(*5*)c(*6*)");
+sugarMain.filterStringString( "a&&{b}");
+sugarMain.filterStringString( "a>10 &&{b}");
+sugarMain.filterStringString( "(*1*)a(*2*)&&(*3*){(*4*)b(*5*)}(*6*)");
+sugarMain.filterStringString( "!a");
+sugarMain.filterStringString( "!a.x");
+sugarMain.filterStringString( "a.x");
+sugarMain.filterStringString( "a != b ? { \"verschieden\" } : { \"gleich\" }");
+tycoon.stdout << sugarMain.filterStringString(
+ "a != b\n"
++"? { \"verschieden\" }\n"
++": { \"gleich\" }");
+
+sugarMain.sugarGram.splitWhite(" xx yy ", fun(inhalt :String, weiss :String){
+  tycoon.stdout << "inhalt: "<<inhalt.printString<<"\n"
+		<< "weiss:  "<<weiss.printString<<"\n"
+});
+(* inhalt: " xx yy"
+   weiss:  " "
+ *)
+sugarMain.sugarGram.splitWhite(" ", fun(inhalt :String, weiss :String){
+  tycoon.stdout << "inhalt: "<<inhalt.printString<<"\n"
+		<< "weiss:  "<<weiss.printString<<"\n"
+});
+(* inhalt: ""
+   weiss:  " "
+ *)
+sugarMain.sugarGram.splitWhite("  !", fun(inhalt :String, weiss :String){
+  tycoon.stdout << "inhalt: "<<inhalt.printString<<"\n"
+		<< "weiss:  "<<weiss.printString<<"\n"
+});
+(* inhalt: "  !"
+   weiss:  ""
+ *)
+sugarMain.sugarGram.splitWhite("", fun(inhalt :String, weiss :String){
+  tycoon.stdout << "inhalt: "<<inhalt.printString<<"\n"
+		<< "weiss:  "<<weiss.printString<<"\n"
+});
+(* inhalt: ""
+   weiss:  ""
+ *)
+sugarMain.sugarGram.splitWhite("! (* a *) (**) (*)*)", fun(inhalt :String, weiss :String){
+  tycoon.stdout << "inhalt: "<<inhalt.printString<<"\n"
+		<< "weiss:  "<<weiss.printString<<"\n"
+});
+(* inhalt: "!"
+   weiss:  " (* a *) (**) (*)*)"
+ *)
+sugarMain.sugarGram.splitWhite("(* *)", fun(inhalt :String, weiss :String){
+  tycoon.stdout << "inhalt: "<<inhalt.printString<<"\n"
+		<< "weiss:  "<<weiss.printString<<"\n"
+});
+(* folgende Faelle duerften in der Eingabe nicht vorkommen: *)
+sugarMain.sugarGram.splitWhite("(*)", fun(inhalt :String, weiss :String){
+  tycoon.stdout << "inhalt: "<<inhalt.printString<<"\n"
+		<< "weiss:  "<<weiss.printString<<"\n"
+});
+sugarMain.sugarGram.splitWhite("(*", fun(inhalt :String, weiss :String){
+  tycoon.stdout << "inhalt: "<<inhalt.printString<<"\n"
+		<< "weiss:  "<<weiss.printString<<"\n"
+});
+sugarMain.sugarGram.splitWhite("(*(**)*)", fun(inhalt :String, weiss :String){
+  tycoon.stdout << "inhalt: "<<inhalt.printString<<"\n"
+		<< "weiss:  "<<weiss.printString<<"\n"
+});
+
+sugarMain.filterPathStdout(tycoon.hoxHome+"/src/TL2/Standard/Object.tc"),
+
+sugarMain.filterPathPath(tycoon.hoxHome
+		   +"/src/TL2/Compile/Parse/LALRItemFA.tc",
+		   "/home/awienber/tmp/LALRItemFA.tc");
+sugarMain.filterPathPath(tycoon.hoxHome
+		   +"/src/TL2/Compile/Parse/ParserGen.tc",
+		   "/home/awienber/tmp/ParserGen.tc");
+sugarMain.filterPathPath(tycoon.hoxHome
+		   +"/src/TL2/Standard/Object.tc",
+		   "/home/awienber/tmp/Object.tc");
+sugarMain.filterPathPath(tycoon.hoxHome
+		   +"/src/TL2/Compile/TWL/UnifyType.tc",
+		   "/home/awienber/tmp/UnifyType.tc");
+sugarMain.filterPathPath(tycoon.hoxHome
+		   +"/src/TL2/Compile/Sugar/SugarGram.tc",
+		   "/home/awienber/tmp/SugarGram.tc");
+sugarMain.filterPathPath(tycoon.hoxHome
+		   +"/src/TL2/Standard/Input.tc",
+		   "/home/awienber/tmp/Input.tc");
+sugarMain.filterPathPath(tycoon.hoxHome
+		   +"/src/TL2/Standard/AnsiC.tc",
+		   "/home/awienber/tmp/AnsiC.tc");
+
+let c = StringBuilderOutput.new,
+let o = StringBuilderOutput.new,
+CommentCollector.instance.collect(
+  StringInput.new("hallo (*ko1*) du (*ko2*)!"),
+  c,
+  o),
+Pair.new(c.contents, o.contents);
+
+let c = StringBuilderOutput.new,
+let o = StringBuilderOutput.new,
+CommentCollector.instance.collect(
+  StringInput.new("hallo (*ko1(*nest*)*) du (*ko2*)!"),
+  c,
+  o),
+Pair.new(c.contents, o.contents);
+
+(*
+{
+  bla, (* dut *)
+(*##Auskommentiert:
+  blub, (* dda *) 
+  (*gruetz*)
+*)
+ ende
+}
+*)
+
+tycoon.stdout << CommentTransformer.instance.transform("{\n  bla, (* dut *)\n(*##Auskommentiert:\n  blub, (* dda *) \n  (*gruetz*)\n*)\n ende\n}\n");
+
+tycoon.stdout << sugarMain.filterStringString(
+  "\nwhile({x<10}, {\n  x:=x+1\n})\n");
+
+tycoon.stdout << sugarMain.filterStringString(
+  "\ntry({ 0/0 }, fun(e :Exception) {\n  0\n})\n");
+
+tycoon.stdout << sugarMain.filterStringString(
+  "\ntry(:Void, { 0/0 }, fun(e :Exception) {\n  0\n})\n");
+
+(* error *)
+tycoon.stdout << sugarMain.filterStringString(
+  "\ntry(1, :Void, { 0/0 }, fun(e :Exception) {\n  0\n})\n");
+
+(* error *)
+tycoon.stdout << sugarMain.filterStringString(
+  "\ntry(fun(e :Exception) {\n  0\n})\n");
+
+tycoon.stdout << sugarMain.filterStringString(
+  "for(0,10,fun(i:Int){\n  i.print\n})\n");
+
+sugarMain.filterDirectory(tycoon.hoxHome+"/src/TL2/NewStandard", ".OLD");

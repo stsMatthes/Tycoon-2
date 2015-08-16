@@ -1,0 +1,18 @@
+class AtTraceReturn
+super AtTraceOutgoingEvent
+meta AtTraceReturnClass
+{
+result :Void
+
+case(T<:Void,
+     :Fun(:AtTraceSend):T,
+     ifReturn :Fun(:AtTraceReturn):T,
+     :Fun(:AtTraceStart):T) :T
+{ ifReturn[self] }
+
+printOn(out :Output) :Void
+{
+  out<<"Return{a "<<sender."class".name<<"}"
+}
+
+}

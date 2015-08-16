@@ -1,0 +1,13 @@
+class SgmlGeneratorClass
+super ConcreteClass(SgmlGenerator)
+metaclass MetaClass
+public methods
+
+new(out :Output) :SgmlGenerator
+{
+  let instance = _new,
+  instance._out := out,
+  instance._init,
+  instance
+}
+;

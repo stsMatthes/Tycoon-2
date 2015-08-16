@@ -1,0 +1,8 @@
+class BPuzzleException
+super Exception
+metaclass SimpleConcreteClass(BPuzzleException)
+
+public
+
+val :Bool
+;

@@ -1,0 +1,92 @@
+class Condition
+super Finalized
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+
+  Author:  Andreas Gawecki, Marc Weikard
+  Date:    27-Jan-1997
+
+  A Condition object is typically used to synchronize threads in a
+  publisher/subscriber relationship where one or more threads produce data and
+  one or more threads consume it.
+
+  The subscriber(s) wait on a Condition object until notified by 
+  some publisher that data is available. The publisher notifies a
+  subscriber by calling Condition::signal.
+  
+  
+*)
+meta SimpleCStructClass(Condition)
+{
+signal :Void
+  (* notify some thread waiting on the receiver *)
+builtin
+
+wait(mx :Mutex) :Void
+  (* release the given Mutex and block the calling thread until some other
+     thread signals the receiver, or if some 'spurious wakeup' occurs.
+     On wakeup, the Mutex is owned again by the calling thread.
+     Spurious wakeups may occur as specified in the POSIX thread standard,
+     so ALWAYS check your condition after a wake up.     
+  *)
+builtin
+
+timedWait(mx :Mutex, abstime :Long) :Bool
+  (* same as Condition::wait, but returns an error if the system time
+     equals or exceeds the time specified by abstime before the
+     condition is signaled or broadcasted, or if the absolute time
+     specified by abstime has already passed at the time of the call.
+     answer true if the receiver was signaled (modulo spurious wake-ups!),
+     answer false if a timeout occured.
+     in either case, the given mutex is reacquired.
+  *)
+builtin
+
+finalize :Void
+  (* *)
+{
+  __finalize
+  super.finalize
+}
+
+private
+
+_handle :Int32
+  (* the OS handle *)
+
+__finalize :Void
+  (* *)
+builtin
+
+__init :Bool
+  (* *)
+builtin
+
+_init :Void
+  (* register the receiver with the TVM *)
+{
+  super._init
+  success ::= __init
+  assert({ success })
+  self
+}
+
+}

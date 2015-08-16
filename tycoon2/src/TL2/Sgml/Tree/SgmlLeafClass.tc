@@ -1,0 +1,12 @@
+class SgmlLeafClass
+super ConcreteClass(SgmlLeaf)
+metaclass MetaClass
+public methods
+new(position :SgmlPos, data :String) :SgmlLeaf
+{
+  let instance = _new,
+  instance.position := position,
+  instance.data := data,
+  instance._init
+}
+;

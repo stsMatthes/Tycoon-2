@@ -1,0 +1,41 @@
+(* installation of the store descriptors must be done
+   before the classes are registered or loaded for the first time
+   (no way to change this later) *)
+
+let d = tycoon.tl.root.storeDescriptors,
+d["TL2Selector"]           := X_StructDescriptor.new("oii"),
+d["TL2Method"] 		   := X_StructDescriptor.new("ooooooiiii"),
+d["TL2CompiledMethod"]	   := X_StructDescriptor.new("ooooooiiiioioooiio"),
+d["TL2BuiltinMethod"]	   := X_StructDescriptor.new("ooooooiiiioioooiioii"),
+d["TL2ExternalMethod"]	   := X_StructDescriptor.new("ooooooiiiiooooii"),
+d["TL2PoolMethod"]	   := X_StructDescriptor.new("ooooooiiiio"),
+d["TL2PoolAccessMethod"]   := X_StructDescriptor.new("ooooooiiiio"),
+d["TL2PoolUpdateMethod"]   := X_StructDescriptor.new("ooooooiiiio"),
+d["TL2SlotMethod"]	   := X_StructDescriptor.new("ooooooiiiioi"),
+d["TL2SlotAccessMethod"]   := X_StructDescriptor.new("ooooooiiiioi"),
+d["TL2SlotUpdateMethod"]   := X_StructDescriptor.new("ooooooiiiioi"),
+d["TL2CSlotMethod"]	   := X_StructDescriptor.new("ooooooiiiioiC"),
+d["TL2CSlotAccessMethod"]  := X_StructDescriptor.new("ooooooiiiioiC"),
+d["TL2CSlotUpdateMethod"]  := X_StructDescriptor.new("ooooooiiiioiC"),
+d["TL2SlotReferenceMethod"]:= X_StructDescriptor.new("ooooooiiiioi"),
+d["TL2SlotTakeFromMethod"] := X_StructDescriptor.new("ooooooiiiioi"),
+d["TL2SlotMoveToMethod"]   := X_StructDescriptor.new("ooooooiiiioi"),
+d["TL2CSlotReferenceMethod"]:=X_StructDescriptor.new("ooooooiiiioiC"),
+d["TL2CSlotTakeFromMethod"]:= X_StructDescriptor.new("ooooooiiiioiC"),
+d["TL2CSlotMoveToMethod"]  := X_StructDescriptor.new("ooooooiiiioiC"),
+d["TL2CompiledFun"]	   := X_StructDescriptor.new("ooooooiiiioioooiiooi"),
+d["TL2DeferredMethod"]	   := X_StructDescriptor.new("ooooooiiii"),
+d["TL2UnimplementedMethod"]:= X_StructDescriptor.new("ooooooiiii"),
+d["TL2Slot"] 		   := X_StructDescriptor.new("ooooiio"),
+d["TL2Root"] 		   := X_StructDescriptor.new("ooooooooiiooio"),
+true;
+
+tycoon.tl.loader.registerDirectory("SystemTracer");
+tycoon.tl.loader.registerDirectory("Compile/TL2");
+tycoon.tl.loader.registerDirectory("Compile/TL2/Old");
+tycoon.tl.loader.registerDirectory("Compile/TL2/New");
+tycoon.tl.loader.registerDirectory("Compile/TL2/BackEnd");
+tycoon.tl.loader.update;
+
+DO load "SystemTracer/Init.tyc";
+DO load "Compile/TL2/Init.tyc";

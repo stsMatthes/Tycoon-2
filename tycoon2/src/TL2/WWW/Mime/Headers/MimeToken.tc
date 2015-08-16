@@ -1,0 +1,17 @@
+class MimeToken
+super MimeHeaderValueImpl(String)
+metaclass MimeHeaderValueImplClass(String)
+
+private methods
+
+parseValue(s: String): String {
+  let p = MimeParser.new(s.reader),
+  p.skiphws,
+  p.nextToken
+}
+
+unparseValue(s: String): String {
+  s
+}
+
+;

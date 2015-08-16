@@ -1,0 +1,237 @@
+class TL2ApplyType
+super TL2TypeImpl
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+*)
+meta TL2ApplyTypeClass
+{
+oper :TL2Type
+  (* *)
+{ _oper }
+
+args :List(TL2Type)
+  (* *)
+{ _args }
+
+accept(T <: Void, visitor :TL2TypeVisitor(T)) :T
+  (* *)
+{ visitor.visitApplyType(self) }
+
+reduce(T <: Void, s :TL2Subst, cont: Fun(:TL2Type, :TL2Subst):T) :T
+  (* *)
+{
+    oper.reduce(s, fun(oper :TL2Type, os :TL2Subst) {
+      args ::= List.fromReader(args.map(fun(arg :TL2Type) {
+	arg.reduce(s, fun(arg :TL2Type, as :TL2Subst) {
+	  if( as == TL2EmptySubst.instance then: {
+	    arg
+	  } else: {
+	    TL2SubstType.new(arg, as)
+	  })
+	})
+      }))
+
+      cont[TL2ApplyType.new(
+	if( os == TL2EmptySubst.instance then: {
+	  oper
+	} else: {
+	  TL2SubstType.new(oper, os)
+	}),
+
+	args
+      ), TL2EmptySubst.instance]
+    })
+  }
+
+checkSubObjectType(big :TL2ObjectType, subst :TL2Subst, bigSubst :TL2Subst) :Void
+  (* inherit
+     checkSubNilType
+     checkSubIdeType
+     checkSubUnifyType
+     checkSubMethodType
+  *)
+{
+    expose(subst, false, fun(exposed :TL2Type, subst :TL2Subst) {
+      exposed.checkSubType(big, subst, bigSubst)
+    })
+  }
+
+checkSubApplyType (big :TL2ApplyType,  subst :TL2Subst, bigSubst :TL2Subst) :Void
+  (* *)
+{
+    ; first chance:
+;       O <: O'', A <: A'', A'' <: A
+;       -------------------------
+;          O(A) <: O''(A'')
+;
+;       Use first chance, if:
+;       - argument lists are equally long
+;       - small is not a Fun (could also check for big)
+;    
+
+    firstChance ::=
+      if( args.size == big.args.size then: {
+	isFun ::= oper.visitor.
+	  ifIdeType(fun(oper :TL2IdeType) {
+	    oper.ide.name.startsWith("Fun")
+	  }).
+	  otherwise(fun(:TL2Type) { false }).
+	  visitType(oper)
+
+	!isFun
+      } else: {
+        false
+      })
+
+    if( firstChance then: {
+      try({
+	oper.checkSubType(big.oper, subst, bigSubst)
+	checkEqualArgLists(args, big.args, subst, bigSubst)
+      } else: fun(e :Exception) {
+	if( e."class" == TL2TypeCheckTypeError then: {
+	  expose(subst, false, fun(t :TL2Type, subst :TL2Subst) {
+	    t.checkSubType(big, subst, bigSubst)
+	  })
+	} else: {
+	  e.raise
+	})
+      })
+    } else: {
+      expose(subst, false, fun(t :TL2Type, subst :TL2Subst) {
+	t.checkSubType(big, subst, bigSubst)
+      })
+    })
+  }
+
+checkSubOperType  (big :TL2OperType,   subst :TL2Subst, bigSubst :TL2Subst) :Void
+  (* *)
+{
+    ; A type application is never an oper in TL2TL-2 and so can't be subtype of an Oper 
+    raiseSubTypeError(self, big)
+  }
+
+prettyPrint(out :Printer) :Void
+  (* ########################################### *)
+{
+    oper.prettyPrint(out)
+    out.write('(')
+  ;  isSimple ? { 
+      args.doBetween(fun(t :TL2Type) {
+	t.prettyPrint(out)
+      }, {
+	out.writeAll(", ")
+      })
+  ;  } : {
+;      out.withRelIndent(2, {
+;	out.nl,
+;	args.doBetween(fun(t :TL2Type) {
+;	  t.prettyPrint(out)
+;	}, {
+;	  out.writeAll(",\n")
+;	})
+;      })
+;    } 
+    out.write(')')
+  }
+
+children :Reader(TL2ProgramObject)
+  (* *)
+{
+    List.cons(oper, args).reader
+  }
+
+scope(env :TL2Scoper) :TL2ApplyType
+  (* *)
+{
+    _oper := oper.scope(env)
+    _args := env.scopeList(:TL2Type, args)
+    self
+  }
+
+substArgs(subst :TL2Subst, args :List(TL2Type)) :List(TL2Type)
+  (* *)
+{
+    if( args.isEmpty then: {
+      args
+    } else: {
+      newHead ::= args.head.subst(subst)
+      newTail ::= substArgs(subst, args.tail)
+      if( newHead == args.head && newTail == args.tail then: {
+	args
+      } else: {
+	List.cons(newHead, newTail)
+      })
+    })
+  }
+
+subst(subst :TL2Subst) :TL2ApplyType
+  (* *)
+{
+    newOper ::= oper.subst(subst)
+    newArgs ::= substArgs(subst, args)
+    if( newOper == oper && newArgs == args then: fun():TL2ApplyType {
+      self
+    } else: {
+      TL2ApplyType.new(oper, args)
+    })
+  }
+
+private
+
+_oper :TL2Type
+
+_args :List(TL2Type)
+
+doCheckType(subst :TL2Subst) :Void
+  (* *)
+{
+    oper.checkType(subst)
+    args.do(fun(t :TL2Type) { t.checkType(subst) })
+    oper.checkApplication(args, subst)
+  }
+
+doExpose(T <: Void, subst :TL2Subst, exact :Bool, cont :Fun(:TL2Type, :TL2Subst):T) :T
+  (* *)
+{
+    oper.apply(args, subst, subst, exact, cont)
+  }
+
+checkEqualArgLists(args1 :List(TL2Type), args2 :List(TL2Type), s1 :TL2Subst, s2 :TL2Subst) :Void
+  (* *)
+require args1.size == args2.size
+  {
+    args1 ::= args1
+    args2 ::= args2
+    
+    while({
+      !args1.isEmpty
+    } do: {
+      t1 ::= args1.head
+      t2 ::= args2.head
+
+      t1.checkSubType(t2, s1, s2)
+      t2.checkSubType(t1, s2, s1)
+
+      args1 := args1.tail
+      args2 := args2.tail
+    })
+  }
+
+}

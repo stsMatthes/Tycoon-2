@@ -1,0 +1,299 @@
+class TypeImpl
+  super Type, TypeCheckMixin
+  metaclass AbstractClass
+
+public methods
+
+   visitor(T <: Void) :FunTypeVisitor(T) {
+     FunTypeVisitor.new
+   }
+
+  (*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ implementations for 'Value' *)	
+
+  isType :Bool
+  { true }
+
+  asType :Type
+  { self }
+
+  (* one of tyc_Type (-> tyc.h), or nil on error *)
+  charCode :Char
+  { 'O' }
+
+  (* type code when used as return type in an ExternalMethod *)
+  resultCharCode :Char
+  { 'O' }
+
+  (* comparable to well-formedness, only types that result out of sourcecode must be scoped
+     that applies to IdeType, ApplyType, CPLType and MethodType.
+     All others are correctly scoped by induction
+  *)
+  scope(env :Scoper) :Type
+  { self }
+
+
+  (* the compiler never tries to generate code for types *)
+  genCode(backEnd :MethodManager)
+  { assert false }
+
+  genCodeIgnore(backEnd :MethodManager)
+  { assert false }
+
+  genCodeReturn(backEnd :MethodManager)
+  { assert false }
+
+  genCodeBranch(backEnd :MethodManager, dest :MMLabel, branchIf :Bool)
+  { assert false }
+
+
+  (* implementations for 'Type' *)
+
+  (*
+     wrapper with notification to the central typeChecker
+     subclasses override doCheckType
+  *)
+  checkType(subst :Subst)
+  {
+    typeChecker.typeChecked(self, subst, {
+      subst == EmptySubst.instance ? {
+        traceType(self, {
+          doCheckType(subst)
+	})
+      } : {
+        doCheckType(subst)
+      }
+    })
+  }
+
+  (* check self and args
+     expose self and forward the test
+
+     Type Apply
+  *)
+  checkApplication(args :List(Type), subst :Subst)
+  {
+    self.expose(subst, false, fun(exposed :Type, subst :Subst) { exposed.checkApplication(args, subst) })
+  }
+  
+  expose(T <: Void, subst :Subst, exact :Bool, cont :Fun2(Type, Subst, T)) :T
+  {
+    (* ## maybe log ? *)
+    doExpose(subst, exact, cont)
+  }
+
+
+  (* expose self and forward the application *)
+  apply(T <: Void, args :List(Type), subst :Subst, argsSubst :Subst, exact :Bool, cont :Fun2(Type, Subst, T)) :T
+  {
+    self.expose(subst, exact, fun(exposed :Type, subst :Subst) { exposed.apply(args, subst, argsSubst, exact, cont) })
+  }
+
+  (* partially apply the substitution
+     needed to keep the SubTypeDB small and to enable cache hits
+
+     DEFAULT: do nothing, overriden in IdeType and ApplyType
+  *)
+  reduce(T <: Void, subst :Subst, cont :Fun2(Type, Subst, T)) :T { cont[self, subst] }
+  
+
+
+
+  (* method lookup, public *)
+  lookup(T <: Void,
+	 selector :Symbol,
+	 subst :Subst,
+	 withPrivate :Bool,
+	 cont :Fun2(Method, Subst, T)) :T
+  {
+    lookupWithSelf(selector, subst, withPrivate, self, subst, cont)
+  }
+
+
+  lookupWithSelf(T <: Void,
+	 selector :Symbol,
+	 subst :Subst,
+	 withPrivate :Bool,
+	 selfType :Type,
+	 selfTypeSubst :Subst,
+	 cont :Fun2(Method, Subst, T)) :T
+  {
+    self.expose(subst, false, fun(exposed :Type, subst :Subst) {
+      exposed.lookupWithSelf(selector, subst, withPrivate, selfType, selfTypeSubst, cont)
+    })
+  }
+
+  (* public *)
+  methodsDo(subst :Subst,
+	    withPrivate :Bool,
+	    callback :Fun2(Method, Subst, Void))
+  {
+    methodsWithSelfDo(subst, withPrivate, self, subst, callback)
+  }
+
+  methodsWithSelfDo(subst :Subst,
+		    withPrivate :Bool,
+		    selfType :Type,
+		    selfTypeSubst :Subst,
+	            callback :Fun2(Method, Subst, Void))
+  {
+    self.expose(subst, false, fun(exposed :Type, subst :Subst) {
+      exposed.methodsWithSelfDo(subst, withPrivate, selfType, selfTypeSubst, callback)
+    })
+  }
+    
+  
+  (* Dispatch on the type of big *)
+  checkSubType(big :Type, subst :Subst, bigSubst :Subst)
+  {
+    self.reduce(subst, fun(small :Type, smallSubst :Subst) {
+      big.reduce(bigSubst, fun(big :Type, bigSubst :Subst) {
+
+        (* this is a big function *)
+	let test = {
+	  typeChecker.checkSubType(small, big, smallSubst, bigSubst, {
+	    (small == big) & (smallSubst == bigSubst) ? {} : {		(* eliminate trivial case *)
+
+	      big.visitor.
+		ifObjectType(fun(big :ObjectType) { small.checkSubObjectType(big, smallSubst, bigSubst) }).
+		ifClassInstanceType(fun(big :ClassInstanceType) { small.checkSubClassInstanceType(big, smallSubst, bigSubst) }).
+		ifOperType(fun(big :OperType)     { small.checkSubOperType  (big, smallSubst, bigSubst) }).
+
+		ifApplyType(fun(big :ApplyType)   { small.checkSubApplyType (big, smallSubst, bigSubst) }).
+		ifIdeType(fun(big :IdeType)       { small.checkSubIdeType   (big, smallSubst, bigSubst) }).
+		ifMethodType(fun(big :MethodType) { small.checkSubMethodType(big, smallSubst, bigSubst) }).
+		ifNilType(fun(big :NilType)       { small.checkSubNilType   (big, smallSubst, bigSubst) }).
+
+		ifSubstType(fun(big :SubstType)   { small.checkSubSubstType (big, smallSubst, bigSubst) }).
+		ifUnifyType(fun(big :UnifyType)   { small.checkSubUnifyType (big, smallSubst, bigSubst) }).
+	      visitType(big)
+	    }
+	  })
+	}, (* end big function *)
+
+	smallSubst == EmptySubst.instance && { bigSubst == EmptySubst.instance } ? {
+	  traceSubType(small, big, test)
+	} : {
+	  test[]
+	}
+      })
+    })
+  }
+
+  (* is the receiver a subtype of this specific type ?
+     the default uses Subtype Trans, i.e. exposes the small type (the receiver) and
+     checks the result <: big
+
+     the target rules are ergo Sub Object and Sub Oper (because these are what expose evaluates to)
+  *)
+
+  checkSubAnyType(big :Type, subst :Subst, bigSubst :Subst)
+  {
+    expose(subst, false, fun(small :Type, subst :Subst) { small.checkSubType(big, subst, bigSubst) })
+  }
+
+  checkSubObjectType(big :ObjectType, subst :Subst, bigSubst :Subst) { checkSubAnyType(big, subst, bigSubst) }
+
+  checkSubClassInstanceType(big :ClassInstanceType, subst :Subst, bigSubst :Subst) { checkSubObjectType(big, subst, bigSubst) }
+
+  checkSubNilType   (big :NilType,    subst :Subst, bigSubst :Subst) { checkSubAnyType(big, subst, bigSubst) }
+
+  checkSubApplyType (big :ApplyType,  subst :Subst, bigSubst :Subst) { checkSubAnyType(big, subst, bigSubst) }
+
+  checkSubOperType  (big :OperType,   subst :Subst, bigSubst :Subst) { checkSubAnyType(big, subst, bigSubst) }
+
+  checkSubMethodType(big :MethodType, subst :Subst, bigSubst :Subst) { assert(false) }
+  
+
+
+  checkSubIdeType   (big :IdeType,    subst :Subst, bigSubst :Subst)
+  {
+    (* first of all, we must look whether this is really an IdeType, or if
+       it''s already substituted.
+       If it is not substituted, we can try:
+
+       C = B    A <: B
+       ---------------
+            A <: C
+
+       where C is the Ide, and B is its declared type
+
+
+       
+       A <: B    B <: C
+       ----------------
+            A <: C
+
+       exposing A will fail, since it will never evaluate to an Ide itself,
+       EXCEPT A is an Ide itself => look into IdeType
+    *)
+    
+    bigSubst.subst(big.ide, {
+      (* not found --- strip big if big = X, otherwise expose self *)
+      big.ide.isSubTypeIde ? fun() :Void {
+        raiseSubTypeError(self, big)
+      } : {
+        (* ## again (see IdeType), is it right to drop bigSubst ??? *)
+	checkSubType(big.ide.type, subst, EmptySubst.instance)
+      }
+    },
+    fun(big :Type, bigSubst :Subst) {
+      checkSubType(big, subst, bigSubst)
+    })
+  }
+
+
+  checkSubUnifyType (big :UnifyType,  subst :Subst, bigSubst :Subst)
+  {
+    big.instantiateSuper(self, subst)
+  }
+
+  (* unfold the SubstType *)
+  checkSubSubstType(big :SubstType, subst :Subst, bigSubst :Subst)
+  {
+    checkSubType(big.type, subst, CompositeSubst.new(bigSubst, big.substi))
+  }
+
+private methods
+
+
+
+  
+  (* subclasses:
+     all *Types must implement doExpose and doCheckType
+     all method suites and oper types must override apply, checkApplication, lookupWithSelf, methodsDoWithSelf
+  *)
+
+  (* it is only necessary to check ApplyTypes
+     all others are correct per se.
+     Why so ?
+     An IdeType is correct iff it is in the env iff the scoper didn't shout
+     All other types cannot be formulated on the syntax level and are
+     only introduced by the typechecker itself, who is correct by induction !
+  *)
+     
+  doCheckType(subst :Subst) { (* success *) }
+  doExpose(T <: Void, subst :Subst, exact :Bool, cont :Fun2(Type, Subst, T)) :T deferred
+  
+  
+  
+
+;

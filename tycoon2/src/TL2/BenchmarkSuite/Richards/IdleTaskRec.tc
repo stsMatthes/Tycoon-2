@@ -1,0 +1,23 @@
+class IdleTaskRec
+super TaskRec
+metaclass IdleTaskRecClass(IdleTaskRec)
+
+public
+
+control :Int,
+count   :Int
+
+methods
+
+init() :Self
+{
+  control := 1,
+  count := 10000,
+  self
+}
+
+print() :Void
+{}  
+
+
+;

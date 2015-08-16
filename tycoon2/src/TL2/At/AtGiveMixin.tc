@@ -1,0 +1,82 @@
+class AtGiveMixin(E <: Object)
+super At, Container(E)
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+  container that can give away component elements
+
+Author: Axel Wienberg
+Date:   30-Sep-1998
+*)
+meta AbstractClass
+{
+
+give(e :Object) @: E
+  (* Give an element equal to <e> to the caller.
+     If there is no such element, the receiver remains unchanged,
+     and nil@ is returned. *)
+  ensure _elementEqual(result, old find(e))
+	 && (!old includes(e)
+	     || size = old size - 1
+		&& occurrencesOf(e) = old occurrencesOf(e) - 1)
+  deferred
+
+giveAll(aCollection :Collection(Object)) :AtReader(E)
+  (* returns an AtReader over all elements of the receiver that
+     are referenced in <aCollection>.  Implementations are allowed to leave the
+     selected elements in the receiver until they are taken from the
+     returned AtReader.
+       <aCollection> must be independent of changes to the receiver. *)
+{
+  r ::= aCollection.reader
+  ;; warning: r.close is never called
+  FunAtReader.new({
+    el @:E := nil@
+    while({ e ::= r.read
+	    e.isNotNil
+	    && ( el := give(e)@
+		 el.isNil)}
+	do: { })
+    el@
+  })
+}
+
+giveWhere(pred :Fun(:E):Bool) :AtReader(E)
+  (* returns an AtReader over all elements of the receiver that
+     fulfill <pred>.  Implementations are allowed to leave the
+     selected elements in the receiver until they are taken from the
+     returned AtReader. *)
+{
+  giveAll( _giveSafeReader(select(pred)) )
+}
+
+private
+
+_giveSafeReader(T <: Object, aCollection :Collection(T)) :Reader(T)
+  (* return a reader on aCollection that can not be affected when
+     give is called on the receiver *)
+{
+  ;; default implementation: inefficient, but safe.
+  ;; If a subclass implementation of <give> does not affect active iterations,
+  ;; _giveSafeReader can be redefined simply to return <aCollection.reader>.
+  aCollection.as(List).reader
+}
+
+}

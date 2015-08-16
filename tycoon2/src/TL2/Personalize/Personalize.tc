@@ -1,0 +1,4 @@
+class Personalize
+super Object
+metaclass AbstractClass
+;

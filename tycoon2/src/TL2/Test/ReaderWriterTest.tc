@@ -1,0 +1,102 @@
+class ReaderWriterTest
+super ReaderWriter
+metaclass SimpleConcreteClass
+public
+
+workers :MutableArray(Thread(Void)),
+states :MutableString,
+mu :Mutex,
+coinRandom :RealRandom,
+durationRandom :LongRandom
+
+methods
+
+test(nThreads :Int, nCycles :Int)
+{
+  workers := MutableArray.new(nThreads),
+  states := MutableString.new(nThreads),
+  states.fill(nThreads, 0, '.'),
+  mu := Mutex.new,
+  coinRandom := RealRandom.new,
+  durationRandom := LongRandom.new,
+  durationRandom.maxRandom := 5,
+  for(1,nThreads,fun(i:Int){
+    workers[i-1] := Thread.new({ work(i, nCycles) })
+  })
+}
+
+work(processor :Int, cycles :Int)
+{
+  for(1,cycles, fun(cycle :Int) {
+    coin
+    ? { stateChange(processor, 'r'),
+        lockRead({
+	  busy(processor, 'R', duration)
+	}) }
+    : { stateChange(processor, 'w'),
+        lockWrite({
+	  busy(processor, 'W', duration)
+	}) }
+  }),
+  stateChange(processor, '.')
+}
+
+private methods
+
+coin :Bool
+{
+  mu.lock,
+  let result = coinRandom.read <= 0.7,
+  mu.unlock,
+  result
+}
+
+duration :Long
+{
+  mu.lock,
+  let result = durationRandom.read,
+  mu.unlock,
+  result
+}
+
+busy(processor :Int, c :Char, duration :Long)
+{
+  stateChange(processor, c),
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+  forDownto(duration.asInt-1, 0, fun(i:Int) {
+    Thread.sleep(1.asLong),
+    stateChange(processor, i.isZero ? { '-' } : { Char.digit(i) })
+  })
+*)
+ Thread.sleep(duration),
+ stateChange(processor, '-')
+}
+
+stateChange(processor :Int, state :Char)
+{
+  mu.lock,
+  states[processor-1] := state,
+  tycoon.stdout.writeln(states),
+  mu.unlock
+}
+
+;

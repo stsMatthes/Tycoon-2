@@ -1,0 +1,12 @@
+class ReentrantSugarScannerClass
+super ConcreteClass(ReentrantSugarScanner)
+metaclass MetaClass
+public methods
+new( sugarTerminals :SugarTerminals ) :ReentrantSugarScanner
+{
+  let instance = _new,
+  instance.sugarTerminals := sugarTerminals,
+  instance._init,
+  instance
+}
+;

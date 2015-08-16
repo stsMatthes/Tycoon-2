@@ -1,0 +1,363 @@
+class TL2
+super Compile
+metaclass AbstractClass
+;
+
+
+(* forward decls in no particular order *)
+
+class TL2AndValue metaclass AbstractClass;
+class TL2ApplyType metaclass AbstractClass;
+class TL2ApplyMixin metaclass AbstractClass;
+class TL2AssertValue metaclass AbstractClass;
+class TL2AssignValue metaclass AbstractClass;
+class BEBindings metaclass AbstractClass;
+class TL2BlockValue metaclass AbstractClass;
+class TL2BuiltinDescriptor metaclass AbstractClass;
+class TL2BuiltinMethod metaclass AbstractClass;
+class BEByteCodeReader metaclass AbstractClass;
+class BEByteCodeWriter metaclass AbstractClass;
+class TL2CPLType metaclass AbstractClass;
+class TL2CPL metaclass AbstractClass;
+class TL2CSlotAccessMethod metaclass AbstractClass;
+class TL2CSlotUpdateMethod metaclass AbstractClass;
+class TL2ClassBuilder metaclass AbstractClass;
+class TL2ClassInstanceType metaclass AbstractClass;
+class TL2ClassLoader metaclass AbstractClass;
+class TL2ClassManager metaclass AbstractClass;
+class TL2ClassPublic metaclass AbstractClass;
+class TL2ClassState metaclass AbstractClass;
+class TL2Class metaclass AbstractClass;
+class BECompiledCodeWriter metaclass AbstractClass;
+class TL2CompiledFun metaclass AbstractClass;
+class TL2CompiledMethod metaclass AbstractClass;
+class TL2Compiler metaclass AbstractClass;
+class TL2CompositeSubst metaclass AbstractClass;
+class TL2ConsSubst metaclass AbstractClass;
+class TL2DeferredMethod metaclass AbstractClass;
+class BEDisassembler metaclass AbstractClass;
+class TL2ExternalMethod metaclass AbstractClass;
+class TL2Ide metaclass AbstractClass;
+class TL2IdeType metaclass AbstractClass;
+class TL2IdeValue metaclass AbstractClass;
+class TL2IfValue metaclass AbstractClass;
+class BELabel metaclass AbstractClass;
+class BELabelRef metaclass AbstractClass;
+class TL2LetValue metaclass AbstractClass;
+class TL2LiteralValue metaclass AbstractClass;
+class BEMMLabel metaclass AbstractClass;
+class TL2MetaClass metaclass AbstractClass;
+class TL2MethodDictionary metaclass AbstractClass;
+class TL2MethodDictionaryPublic metaclass AbstractClass;
+class TL2MethodLookupError metaclass AbstractClass;
+class BEMethodManager metaclass AbstractClass;
+class TL2MethodType metaclass AbstractClass;
+class TL2Method metaclass AbstractClass;
+class TL2MutableClassState metaclass AbstractClass;
+class TL2NotValue metaclass AbstractClass;
+class TL2NilType metaclass AbstractClass;
+class TL2ObjectType metaclass AbstractClass;
+class TL2OpcodeDescriptor metaclass AbstractClass;
+class TL2OperType metaclass AbstractClass;
+class TL2OrValue metaclass AbstractClass;
+class TL2Pool metaclass AbstractClass;
+class TL2PoolAccessMethod metaclass AbstractClass;
+class TL2PoolUpdateMethod metaclass AbstractClass;
+class TL2RTStack metaclass AbstractClass;
+class ReentrantTL2Scanner metaclass AbstractClass;
+class TL2Root metaclass AbstractClass;
+class TL2Scoper metaclass AbstractClass;
+class TL2Scopable(R <: Object) metaclass AbstractClass;
+class TL2Selector metaclass AbstractClass;
+class TL2Selector metaclass AbstractClass;
+class TL2SendValue metaclass AbstractClass;
+class TL2SlotAccessMethod metaclass AbstractClass;
+class TL2SlotUpdateMethod metaclass AbstractClass;
+class TL2SubTypeIde metaclass AbstractClass;
+class TL2SubTypeDB metaclass AbstractClass;
+class TL2SubTypeRelation metaclass AbstractClass;
+class TL2Subst metaclass AbstractClass;
+class TL2SubstType metaclass AbstractClass;
+class TL2SuperSendValue metaclass AbstractClass;
+class TL2TL metaclass AbstractClass;
+class TL2Gram metaclass AbstractClass;
+class TL2PUBindings metaclass AbstractClass;
+class TL2PUClass metaclass AbstractClass;
+class TL2PUDefine metaclass AbstractClass;
+class TL2PUDo metaclass AbstractClass;
+class TL2ProgramObject metaclass AbstractClass;
+class TL2Scanner metaclass AbstractClass;
+class TL2ScannerState metaclass AbstractClass;
+class TL2Terminals metaclass AbstractClass;
+class TL2TopLevel metaclass AbstractClass;
+class TL2TryValue metaclass AbstractClass;
+class TspDescriptor metaclass AbstractClass;
+class TL2Type metaclass AbstractClass;
+class TL2TypeCheckError metaclass AbstractClass;
+class TL2TypeCheckMixin metaclass AbstractClass;
+class TL2TypeCheckTypeError metaclass AbstractClass;
+class TL2TypeCheckAbort metaclass AbstractClass;
+class TL2TypeChecker metaclass AbstractClass;
+class TL2TypeCheckTrace metaclass AbstractClass;
+class TL2TypeTrace metaclass AbstractClass;
+class TL2SubTypeTrace metaclass AbstractClass;
+class TL2ValueTrace metaclass AbstractClass;
+class TL2SimpleTrace metaclass AbstractClass;
+class TL2TypeImpl metaclass AbstractClass;
+class TL2TypeIde metaclass AbstractClass;
+class TL2TypeManager metaclass AbstractClass;
+class TL2TypeVisitor metaclass AbstractClass;
+class TL2FunTypeVisitor metaclass AbstractClass;
+class TL2UnificationDB metaclass AbstractClass;
+class TL2UnifyType metaclass AbstractClass;
+class TL2UnimplementedMethod metaclass AbstractClass;
+class TL2VMInterface metaclass AbstractClass;
+class TL2Value metaclass AbstractClass;
+class TL2ValueIde metaclass AbstractClass;
+class BEVariable metaclass AbstractClass;
+class TL2VoidType metaclass AbstractClass;
+class TL2WhileValue metaclass AbstractClass;
+
+DO load "../TL2/Compile/TL2/TL2MNO.tc";
+
+DO load "../TL2/Compile/TL2/TL2ScannerStateClass.tc";
+DO load "../TL2/Compile/TL2/TL2ScannerState.tc";
+DO load "../TL2/Compile/TL2/TL2Scanner.tc";
+DO load "../TL2/Compile/TL2/ReentrantTL2ScannerClass.tc";
+DO load "../TL2/Compile/TL2/ReentrantTL2Scanner.tc";
+
+DO load "../TL2/Compile/TL2/TL2Terminals.tc";
+
+(* DO load "../TL2/Compile/TL2/Transaction.tc"; *)
+
+(******************************* AST stuff *******************************)
+
+
+DO load "../TL2/Compile/TL2/TL2MethodLookupErrorClass.tc";
+DO load "../TL2/Compile/TL2/TL2MethodLookupError.tc";
+
+DO load "../TL2/Compile/TL2/TL2ScoperClass.tc";
+DO load "../TL2/Compile/TL2/TL2Scoper.tc";
+DO load "../TL2/Compile/TL2/TL2Scopable.tc";
+DO load "../TL2/Compile/TL2/TL2LeafMixin.tc";
+
+DO load "../TL2/Compile/TL2/TL2Subst.tc";
+DO load "../TL2/Compile/TL2/TL2EmptySubst.tc";
+
+DO load "../TL2/Compile/TL2/TL2TypeCheckMixin.tc";
+
+DO load "../TL2/Compile/TL2/TL2ProgramObject.tc";
+DO load "../TL2/Compile/TL2/TL2Ide.tc";
+DO load "../TL2/Compile/TL2/TL2ValueIdeClass.tc";
+DO load "../TL2/Compile/TL2/TL2ValueIde.tc";
+DO load "../TL2/Compile/TL2/TL2TypeIdeClass.tc";
+DO load "../TL2/Compile/TL2/TL2TypeIde.tc";
+DO load "../TL2/Compile/TL2/TL2SubTypeIdeClass.tc";
+DO load "../TL2/Compile/TL2/TL2SubTypeIde.tc";
+DO load "../TL2/Compile/TL2/TL2Value.tc";
+DO load "../TL2/Compile/TL2/TL2LiteralValueClass.tc";
+DO load "../TL2/Compile/TL2/TL2LiteralValue.tc";
+DO load "../TL2/Compile/TL2/TL2IdeValueClass.tc";
+DO load "../TL2/Compile/TL2/TL2IdeValue.tc";
+DO load "../TL2/Compile/TL2/TL2LetValueClass.tc";
+DO load "../TL2/Compile/TL2/TL2LetValue.tc";
+DO load "../TL2/Compile/TL2/TL2TryValueClass.tc";
+DO load "../TL2/Compile/TL2/TL2TryValue.tc";
+DO load "../TL2/Compile/TL2/TL2BlockValueClass.tc";
+DO load "../TL2/Compile/TL2/TL2BlockValue.tc";
+DO load "../TL2/Compile/TL2/TL2SendValueClass.tc";
+DO load "../TL2/Compile/TL2/TL2SendValue.tc";
+DO load "../TL2/Compile/TL2/TL2SuperSendValueClass.tc";
+DO load "../TL2/Compile/TL2/TL2SuperSendValue.tc";
+DO load "../TL2/Compile/TL2/TL2AssignValueClass.tc";
+DO load "../TL2/Compile/TL2/TL2AssignValue.tc";
+DO load "../TL2/Compile/TL2/TL2AssertValueClass.tc";
+DO load "../TL2/Compile/TL2/TL2AssertValue.tc";
+DO load "../TL2/Compile/TL2/TL2WhileValueClass.tc";
+DO load "../TL2/Compile/TL2/TL2WhileValue.tc";
+DO load "../TL2/Compile/TL2/TL2IfValueClass.tc";
+DO load "../TL2/Compile/TL2/TL2IfValue.tc";
+DO load "../TL2/Compile/TL2/TL2NotValueClass.tc";
+DO load "../TL2/Compile/TL2/TL2NotValue.tc";
+DO load "../TL2/Compile/TL2/TL2Bool2Value.tc";
+DO load "../TL2/Compile/TL2/TL2AndValueClass.tc";
+DO load "../TL2/Compile/TL2/TL2AndValue.tc";
+DO load "../TL2/Compile/TL2/TL2OrValueClass.tc";
+DO load "../TL2/Compile/TL2/TL2OrValue.tc";
+
+
+
+DO load "../TL2/Compile/TL2/TL2BuiltinDescriptorClass.tc";
+DO load "../TL2/Compile/TL2/TL2BuiltinDescriptor.tc";
+DO load "../TL2/Compile/TL2/TL2OpcodeDescriptorClass.tc";
+DO load "../TL2/Compile/TL2/TL2OpcodeDescriptor.tc";
+
+DO load "../TL2/Compile/TL2/TL2TypeVisitor.tc";
+DO load "../TL2/Compile/TL2/TL2FunTypeVisitor.tc";
+
+DO load "../TL2/Compile/TL2/TL2Type.tc";
+DO load "../TL2/Compile/TL2/TL2TypeImpl.tc";
+DO load "../TL2/Compile/TL2/TL2NilType.tc";
+DO load "../TL2/Compile/TL2/TL2IdeTypeClass.tc";
+DO load "../TL2/Compile/TL2/TL2IdeType.tc";
+DO load "../TL2/Compile/TL2/TL2ApplyTypeClass.tc";
+DO load "../TL2/Compile/TL2/TL2ApplyType.tc";
+
+DO load "../TL2/Compile/TL2/TL2CPLTypeClass.tc";
+DO load "../TL2/Compile/TL2/TL2CPLType.tc";
+DO load "../TL2/Compile/TL2/TL2SubstTypeClass.tc";
+DO load "../TL2/Compile/TL2/TL2SubstType.tc";
+DO load "../TL2/Compile/TL2/TL2UnifyTypeClass.tc";
+DO load "../TL2/Compile/TL2/TL2UnifyType.tc";
+DO load "../TL2/Compile/TL2/TL2MethodTypeClass.tc";
+DO load "../TL2/Compile/TL2/TL2MethodType.tc";
+DO load "../TL2/Compile/TL2/TL2ObjectType.tc";
+
+DO load "../TL2/Compile/TL2/TL2ApplyMixin.tc";
+DO load "../TL2/Compile/TL2/TL2ClassInstanceTypeClass.tc";
+DO load "../TL2/Compile/TL2/TL2ClassInstanceType.tc";
+DO load "../TL2/Compile/TL2/TL2VoidType.tc";
+DO load "../TL2/Compile/TL2/TL2OperTypeClass.tc";
+DO load "../TL2/Compile/TL2/TL2OperType.tc";
+DO load "../TL2/Compile/TL2/TL2ConsSubstClass.tc";
+DO load "../TL2/Compile/TL2/TL2ConsSubst.tc";
+DO load "../TL2/Compile/TL2/TL2CompositeSubstClass.tc";
+DO load "../TL2/Compile/TL2/TL2CompositeSubst.tc";
+
+DO load "../TL2/Compile/TL2/TL2CPLClass.tc";
+DO load "../TL2/Compile/TL2/TL2CPL.tc";
+DO load "../TL2/Compile/TL2/TL2SubTypeRelationClass.tc";
+DO load "../TL2/Compile/TL2/TL2SubTypeRelation.tc";
+DO load "../TL2/Compile/TL2/TL2SubTypeDBClass.tc";
+DO load "../TL2/Compile/TL2/TL2SubTypeDB.tc";
+DO load "../TL2/Compile/TL2/TL2UnificationDB.tc";
+
+DO load "../TL2/Compile/TL2/TL2TypeCheckError.tc";
+DO load "../TL2/Compile/TL2/TL2TypeCheckTypeErrorClass.tc";
+DO load "../TL2/Compile/TL2/TL2TypeCheckTypeError.tc";
+DO load "../TL2/Compile/TL2/TL2TypeCheckAbort.tc";
+
+DO load "../TL2/Compile/TL2/TL2TypeCheckTraceClass.tc";
+DO load "../TL2/Compile/TL2/TL2TypeCheckTrace.tc";
+DO load "../TL2/Compile/TL2/TL2TypeTraceClass.tc";
+DO load "../TL2/Compile/TL2/TL2TypeTrace.tc";
+DO load "../TL2/Compile/TL2/TL2SubTypeTraceClass.tc";
+DO load "../TL2/Compile/TL2/TL2SubTypeTrace.tc";
+DO load "../TL2/Compile/TL2/TL2ValueTraceClass.tc";
+DO load "../TL2/Compile/TL2/TL2ValueTrace.tc";
+DO load "../TL2/Compile/TL2/TL2SimpleTraceClass.tc";
+DO load "../TL2/Compile/TL2/TL2SimpleTrace.tc";
+
+
+DO load "../TL2/Compile/TL2/TL2Method.tc";
+DO load "../TL2/Compile/TL2/TL2CompiledMethodClass.tc";
+DO load "../TL2/Compile/TL2/TL2CompiledMethod.tc";
+DO load "../TL2/Compile/TL2/TL2CompiledFunClass.tc";
+DO load "../TL2/Compile/TL2/TL2CompiledFun.tc";
+DO load "../TL2/Compile/TL2/TL2DeferredMethodClass.tc";
+DO load "../TL2/Compile/TL2/TL2DeferredMethod.tc";
+DO load "../TL2/Compile/TL2/TL2ExternalMethodClass.tc";
+DO load "../TL2/Compile/TL2/TL2ExternalMethod.tc";
+DO load "../TL2/Compile/TL2/TL2UnimplementedMethodClass.tc";
+DO load "../TL2/Compile/TL2/TL2UnimplementedMethod.tc";
+DO load "../TL2/Compile/TL2/TL2BuiltinMethodClass.tc";
+DO load "../TL2/Compile/TL2/TL2BuiltinMethod.tc";
+DO load "../TL2/Compile/TL2/TL2SlotMethod.tc";
+DO load "../TL2/Compile/TL2/TL2SlotAccessMethodClass.tc";
+DO load "../TL2/Compile/TL2/TL2SlotAccessMethod.tc";
+DO load "../TL2/Compile/TL2/TL2SlotUpdateMethodClass.tc";
+DO load "../TL2/Compile/TL2/TL2SlotUpdateMethod.tc";
+DO load "../TL2/Compile/TL2/TL2CSlotMethod.tc";
+DO load "../TL2/Compile/TL2/TL2CSlotAccessMethodClass.tc";
+DO load "../TL2/Compile/TL2/TL2CSlotAccessMethod.tc";
+DO load "../TL2/Compile/TL2/TL2CSlotUpdateMethodClass.tc";
+DO load "../TL2/Compile/TL2/TL2CSlotUpdateMethod.tc";
+DO load "../TL2/Compile/TL2/TL2PoolMethod.tc";
+DO load "../TL2/Compile/TL2/TL2PoolAccessMethodClass.tc";
+DO load "../TL2/Compile/TL2/TL2PoolAccessMethod.tc";
+DO load "../TL2/Compile/TL2/TL2PoolUpdateMethodClass.tc";
+DO load "../TL2/Compile/TL2/TL2PoolUpdateMethod.tc";
+DO load "../TL2/Compile/TL2/TL2MethodDictionaryClass.tc";
+DO load "../TL2/Compile/TL2/TL2MethodDictionary.tc";
+DO load "../TL2/Compile/TL2/TL2MethodDictionaryPublic.tc";
+
+DO load "../TL2/Compile/TL2/TL2ClassState.tc";
+DO load "../TL2/Compile/TL2/TL2ClassPublic.tc";
+DO load "../TL2/Compile/TL2/TL2MutableClassState.tc";
+DO load "../TL2/Compile/TL2/Class.tc";
+DO load "../TL2/Compile/TL2/MetaClass.tc";
+
+DO load "../TL2/Compile/TL2/TL2ClassBuilderClass.tc";
+DO load "../TL2/Compile/TL2/TL2ClassBuilder.tc";
+
+(* ------------------------------------------------------------ *)
+(* actual grammar *)
+
+DO load "../TL2/Compile/TL2/TL2ParseUnitVisitor.tc";
+DO load "../TL2/Compile/TL2/TL2ParseUnit.tc";
+DO load "../TL2/Compile/TL2/TL2PUClassClass.tc";
+DO load "../TL2/Compile/TL2/TL2PUClass.tc";
+DO load "../TL2/Compile/TL2/TL2PUBindingsClass.tc";
+DO load "../TL2/Compile/TL2/TL2PUBindings.tc";
+DO load "../TL2/Compile/TL2/TL2PUDefineClass.tc";
+DO load "../TL2/Compile/TL2/TL2PUDefine.tc";
+DO load "../TL2/Compile/TL2/TL2PUDoClass.tc";
+DO load "../TL2/Compile/TL2/TL2PUDo.tc";
+
+DO load "../TL2/Compile/TL2/TL2GramClass.tc";
+DO load "../TL2/Compile/TL2/TL2Gram.tc";
+
+(* ------------------------------------------------------------ *)
+(* Backend *)
+
+DO load "../TL2/Compile/TL2/BEBackEnd/BEBackEnd.tyc";
+
+(* Store / Tracer *)
+DO load "../TL2/SystemTracer/SystemTracer.tyc";
+
+(* ------------------------------------------------------------ *)
+(* system *)
+
+DO load "../TL2/Compile/TL2/TL2SelectorClass.tc";
+DO load "../TL2/Compile/TL2/TL2Selector.tc";
+
+DO load "../TL2/Compile/TL2/TL2ClassManagerClass.tc";
+DO load "../TL2/Compile/TL2/TL2ClassManager.tc";
+DO load "../TL2/Compile/TL2/TL2TypeCheckerClass.tc";
+DO load "../TL2/Compile/TL2/TL2TypeChecker.tc";
+DO load "../TL2/Compile/TL2/TL2TypeManagerClass.tc";
+DO load "../TL2/Compile/TL2/TL2TypeManager.tc";
+
+DO load "../TL2/Compile/TL2/TL2RTStackClass.tc";
+DO load "../TL2/Compile/TL2/TL2RTStack.tc";
+DO load "../TL2/Compile/TL2/TL2RootClass.tc";
+DO load "../TL2/Compile/TL2/TL2Root.tc";
+DO load "../TL2/Compile/TL2/TL2VMInterfaceClass.tc";
+DO load "../TL2/Compile/TL2/TL2VMInterface.tc";
+
+
+(* glue *)
+DO load "../TL2/Compile/TL2/TL2CompilerClass.tc";
+DO load "../TL2/Compile/TL2/TL2Compiler.tc";
+
+DO load "../TL2/Compile/TL2/TL2TopLevelClass.tc";
+DO load "../TL2/Compile/TL2/TL2TopLevel.tc";
+
+DO load "../TL2/Compile/TL2/TL2ClassLoaderClass.tc";
+DO load "../TL2/Compile/TL2/TL2ClassLoader.tc";
+
+DO load "../TL2/Compile/TL2/TL2Pool.tc";
+
+DO load "../TL2/Compile/TL2/TL2TLClass.tc";
+DO load "../TL2/Compile/TL2/TL2TL.tc";
+
+(* DO check; *)
+
+TL2NilType.init;
+TL2EmptySubst.init;
+TL2VoidType.init;
+TL2SubTypeRelation.init;
+
+(* for the rest of the story, take a look at bootstrap.tyc. *)
+
+

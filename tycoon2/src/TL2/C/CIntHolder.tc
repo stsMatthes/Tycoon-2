@@ -1,0 +1,39 @@
+class CIntHolder
+
+super CValueHolder(Int)
+
+metaclass SimpleConcreteClass(CIntHolder)
+
+public methods
+
+valueClass():Class { Int }
+
+value():Int
+{ handle.isNotNil ? {tycoon.rts.tymem_peekInt(handle,0)}
+                  : {let i:Int = nil} }
+
+value32():Int32
+{ handle.isNotNil ? {tycoon.rts.tymem_peekInt32(handle,0)}
+                  : {nil} }
+
+intValue():Int { value() }
+
+"value:="(v:Int):Int
+{ handle.isNotNil ? {tycoon.rts.tymem_pokeInt(handle,0,v),
+                     tycoon.rts.tymem_peekInt(handle,0)}
+		  : {nil}}
+
+setIntValue(v:Int):Int { value:=v }
+
+private methods
+
+_init:Self
+{
+  super._init,
+  super._allocate(4),
+  tycoon.rts.tymem_pokeInt(handle,0,0),
+  self
+}
+
+;
+

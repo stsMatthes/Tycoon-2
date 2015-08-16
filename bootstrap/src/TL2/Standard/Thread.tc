@@ -1,0 +1,240 @@
+class Thread(T <:Void)
+super Object
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+
+  Author:  Andreas Gawecki, Marc Weicard
+  Date:    27-Jan-1997
+
+  An object of type Thread(T) is a thread that
+  computes a function with the result type T.
+     
+  NOTE: ALL slots of this class MUST be private.
+  
+*)
+meta ThreadClass(T)
+{
+
+value :T
+  (* the computed value, or nil if not yet available.
+     However, the computed value may also be nil,
+     use Thread::join to wait for it.
+  *)
+{
+  _value
+}
+
+join :T
+  (* join with the receiver. the receiver answers it's computed value *)
+{
+  _mx.lock
+  while({_state != Thread.STATE_TERMINATED} do: {
+    _terminated.wait(_mx)
+  })
+  _mx.unlock
+  _value
+}
+
+state :Int
+  (* one of Thread.STATE_RUNNING, Thread.STATE_TERMINATED... ###complete *)
+{
+   _mx.lock
+   result ::= _state
+   _mx.unlock
+   result
+}
+
+cancel() :Void
+  (* send cancellation request to target thread. throws the target thread
+     out of a blocking C-call (not on HPUX). interrupted calls are:
+     ServerSocket: accept,
+     StreamSocket: read, readBuffer, write, writeBuffer
+     File: copyContents, read, readBuffer, write, writeBuffer, _open,
+          _reopen *)
+builtin
+
+name() :String
+  (* ask for threads name *)
+{
+  _name
+}
+
+"name:="(s :String) :Void
+  (* set threads name *)
+{
+  _name := s
+}
+
+traceFlags :Int
+  (* see ThreadClass::TRACE_... *)
+  builtin
+
+"traceFlags:="(flags :Int) :Int
+  (* see ThreadClass::TRACE_... *)
+  builtin
+
+debugEvent :Int
+  (* the type of debug event due to which this thread is currently suspended.
+     This is one of TRACE_NONE, TRACE_SEND, TRACE_RETURN and
+     TRACE_EXCEPTION (combinations are not valid). *)
+  builtin
+
+inspectSendSelector :X_TL2Selector
+  require debugEvent = TRACE_SEND
+  builtin
+
+inspectSendReplyTo :Object
+  require debugEvent = TRACE_SEND
+{ inspectReturnReceiver }
+
+inspectActiveObject :Object
+  (* in suspended mode, inspect the object currently executing *)
+  require debugEvent != Thread.TRACE_NONE
+  builtin
+
+inspectReturnReceiver :Object
+  (* for debugEvent TRACE_RETURN, inspect the object receiving the return
+     value.  For debugEvent TRACE_EXCEPTION, inspect the object receiving
+     the exception.  For debugEvent TRACE_SEND, inspect the object
+     expecting the reply. *)
+  require debugEvent != Thread.TRACE_NONE
+  builtin
+
+inspectReturnComponent :Bool
+  (* for debugEvent TRACE_RETURN, return true iff this return event
+     transfers a component *)
+  require debugEvent == Thread.TRACE_RETURN
+  builtin
+
+inspectStack(n:Int) :Object
+  (* in suspended mode, inspect the n'th element from the top of the stack.
+     For send, n=0 is last argument, n=inspectSendSelector.arity is receiver.
+   *)
+  require    debugEvent = Thread.TRACE_SEND 
+	  && n >= 0 && n <= inspectSendSelector.arity
+	  || debugEvent = Thread.TRACE_RETURN
+	  && n = 0
+	  || debugEvent = Thread.TRACE_EXCEPTION
+	  && n = 0
+  builtin
+
+resume :Void
+  (* resume a thread that is suspended due to a debug event. *)
+  builtin
+
+private
+
+_handle :Int
+  (* OS handle for this thread. TVM only. *)
+
+_stack :TVMStack
+  (* execution stack. TVM only. *)
+
+_sp :Int
+  (* stack pointer. TVM only. *)
+
+_fp :Int
+  (* frame pointer. TVM only. *)
+
+_ip :Int
+  (* instruction pointer. TVM only. *)
+
+_stackLimit :Int
+  (* check against to prevent overflows. TVM only. *)
+
+_flags :Int
+  (* internal flags. TVM only. *)
+
+_localFlags :Int
+  (* internal flags only accessed by this Thread (requires no sync).
+     TVM only. *)
+
+_next :Thread(Void)
+  (* thread ring successor. TVM only. *)
+
+_previous :Thread(Void)
+  (* thread ring predecessor. TVM only. *)
+
+_performCodeBuffer :ByteArray
+  (* code buffer for generic perform. TVM only. *)
+
+_debugEventChanged :Condition
+  (* signalled whenever debugEvent changes. TVM only. *)
+
+_tvmFn :Fun():Void
+  (* closure started by TVM on Thread::__init *)
+
+_receiver :Object
+  (* In suspend mode: last receiver (for frameless methods, e.g. builtin or
+     slot access). TVM only. *)
+
+_fn :Fun():T
+  (* startup function from the threads creator. Tycoon only. *)
+
+_state :Int
+  (* abstract state. must be protected by _mx. Tycoon only.  *)
+
+_value :T
+  (* will receive the value computed by _fn. Tycoon only.  *)
+
+_mx :Mutex
+  (* synchronize state. Tycoon only. *)
+
+_terminated :BroadcastingCondition
+  (* joining this thread. Tycoon only. *)
+
+_name :String
+  (* name of this thread. Tycoon only. *)
+
+__init :Bool
+  (* *)
+builtin
+
+_init :Void
+  (* put the thread into the TVM thread ring and launch it *)
+{
+  _performCodeBuffer := ByteArray.new(4)
+  _debugEventChanged := Condition.new
+  _tvmFn := fun() {
+      value ::= try({ _fn[] } else:
+      fun(e :Exception) {
+        tycoon.stdout.nl
+        tycoon.stdout.writeln("Thread: Uncaught exception:")
+	e.print
+        tycoon.stdout.nl
+	nil
+      })
+    _mx.lock
+    _value := value
+    _state := _state | Thread.STATE_TERMINATED
+    _terminated.signal		; notify all threads waiting for the receiver inside 'join' 
+    _mx.unlock
+  }
+  _mx := Mutex.new
+  _terminated := BroadcastingCondition.new
+  _state := 0 
+  _name := "Unknown"
+  success ::= __init		   ; start _tvmFn 
+  assert({ success })
+  self
+}
+
+}

@@ -1,0 +1,80 @@
+class StmlTreeBuilder
+super Stml, AbstractSgmlTreeBuilder(StmlComponent)
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+*)
+meta SimpleConcreteClass(StmlTreeBuilder)
+{
+private
+
+defaultElement( gi :String, contentType :SgmlContentType,
+	        defaultAttributes :Dictionary(String, String)) :StmlGenericElement
+  (* create an SgmlElement that has no special meaning to the application.
+   SgmlElements with special meaning should be registered via addElement
+   during initialization. *)
+{ StmlGenericElement.new(gi, contentType)
+}
+
+makeLeaf(position :SgmlPos, value :String) :StmlComponent
+  (* *)
+{ StmlLeaf.new(position, value) }
+
+makeComment(position :SgmlPos, value :String) :StmlComponent
+  (* construct a comment leaf for the tree from character data *)
+{ StmlComment.new(position, value) }
+
+addApplicationElements :Void
+  (* *)
+{
+  addElement1(StmlDefine)
+  addElement1(StmlRef)
+  addElement1(StmlAssign)
+  addElement1(StmlFun)
+
+  addElement1(StmlApply)
+  addElement1(StmlSend)
+  addElement1(StmlArg)
+
+  addElement1(StmlIf)
+  addElement1(StmlElseIf)
+  addElement1(StmlElse)
+
+  addElement(StmlScriptElement.new)
+  addElement1(StmlTycoon)
+  addElement1(StmlStml)
+  ; addElement1(StmlInclude) 
+  ; addElement1(StmlEval) 
+}
+
+addElement1(b :StmlComponentBuilder) :Void
+  (* *)
+{
+  addElement(StmlAdaptorElement.new(b))
+}
+
+_init :Void
+  (* *)
+{ super._init
+  interestedInPosition := true
+  interestedInComments := false
+  self
+}
+
+}

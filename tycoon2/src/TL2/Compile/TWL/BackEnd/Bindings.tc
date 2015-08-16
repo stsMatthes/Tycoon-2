@@ -1,0 +1,32 @@
+class Bindings
+super BackEnd
+metaclass BindingsClass
+public
+
+env :Dictionary(ValueIde, Variable)
+
+methods
+
+printOn(out :Output)
+{ out.writeString("Bindings:"),
+  env.printOn(out)
+}
+
+"[]"(v :ValueIde) :Variable
+{ env[v] }
+
+add(v :Variable)
+{ env[v.ide] := v }
+
+remove(v :Variable)
+{ env.removeKey(v.ide) }
+
+private methods
+_init :Self
+{ super._init,
+  env := Dictionary.new,
+  self
+}
+;
+
+

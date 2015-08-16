@@ -1,0 +1,17 @@
+class PersonalizeHttpResponseFilterClass
+
+super ConcreteClass(PersonalizeHttpResponseFilter)
+
+metaclass MetaClass
+
+public methods
+
+new(resource :HttpResource, client :PersonalizeHttpClient) :PersonalizeHttpResponseFilter
+{
+  let instance =  _new._init,
+  instance.resource := resource,
+  instance.client := client,
+  instance
+}
+;
+

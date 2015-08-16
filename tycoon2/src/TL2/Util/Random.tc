@@ -1,0 +1,86 @@
+class Random(T <: Object)
+super Reader(T)
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ 
+ *  Author:   Henrik Ortlepp
+ *  Date:     13-Aug-1997
+ *  Updates: (Date)	  (Name)	(Description)
+ *
+ *  Subclasses:
+ *    LongRandom - creates a pseudorandom number generator for Long numbers
+ *                 (within a specified interval if desired)
+ *    RealRandom - creates a pseudorandom number generator for Real numbers
+ *		   with specified distribution (gaussian or uniform)
+ *
+ *  Algorithm used:
+ *  randomNumber = (multiplier * seed + addend) % mask
+ *  For more detail see Donald Knuth, The Art of Computer
+ *  Programming, Vol.2, Section 3.2.1.
+ *)
+meta AbstractClass
+{
+read :T
+  (* *)
+deferred
+
+"seed:="(newseed :Long) :Long
+  (* returns a pseudorandom number 
+  Every random-number-generator of a subclass of Random, will
+   *  produce exactly the same sequence of random-numbers every time
+   *  it is called with the same seed. Use this method to set the seed
+   *  to the desired value.
+   *)
+{
+    _seed := newseed.asLong
+}
+
+private
+
+_seed         :Long
+
+_mask         :Long
+
+_multiplier   :Long
+
+_addend       :Long
+
+_init :Void
+  (* *)
+{   _seed        := tycoon.clock.time
+    _mask        := Long.fromInt(1)<<32
+    ;    
+    ; _mask is set to a power of two and a relatively large number
+    ; which will still assure a correct calculation when multiplied
+    ; by _multiplier (see Knuth, p.171)
+    ;	
+    _multiplier  := Long.fromInt(314159261)
+    ;
+    ; According to Knuth a linear random number generator like this one
+    ; will produce numbers that are 'good enough' if certain principles
+    ; are followed. One of is that multiplier modulus 8 should be equal to 5.
+    ; 314159261 % 8 = 5
+    ;	
+    _addend      := Long.fromInt(1)
+       ; meets Knuth's principles mentioned above 
+    super._init
+}
+
+}

@@ -1,0 +1,206 @@
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ building classes 
+
+   The client (TWLGram) creates a ClassBuilder object, specifying some
+   information, and then sets private and public slots and methods.
+   (methods have to be assigned to {public,private}Methods, not into the
+   methodDictionary!)
+
+   Later, classBuilder.build creates a proper class from this
+   information and installs the class with the system. *)
+
+class ClassBuilder
+super MutableClassState
+metaclass ClassBuilderClass
+public
+
+privateMethods: List(Method),
+publicMethods: List(Method)
+
+methods
+
+normalize
+{
+  selfTypeSig.isNil ? {
+    selfTypeSig := SubTypeIde.new1(pos, "Self", makeClassType)
+  },
+  metaClassDeclaration.isNil ? {
+    metaClassDeclaration := makeMetaClassType
+  }
+}
+
+build(compiler :Compiler, classManager :ClassManager, errorLog :ErrorLog)
+{
+  tycoon.stdout.writeln("[Building class "+name),
+  normalize,
+  self.errorLog := errorLog,
+  checkSelectors,
+  let typeManager = classManager.typeManager,
+  scope(Scoper.new(typeManager.newClassSignature(name),
+		   errorLog,
+		   typeManager)),
+  !errorLog.hasErrors
+  ? { compile(compiler),
+      !errorLog.hasErrors
+      ? { classManager.set(self, errorLog) } },
+  tycoon.stdout.writeln("]"),
+  nil
+}
+
+private
+
+(* used during check/build *)
+
+errorLog :ErrorLog,
+used :Dictionary(String, SourcePos),
+selfSig :ValueIde,
+superSig :ValueIde
+
+methods
+
+_init :Self
+{ super._init,
+  publicSlots := EmptyList.new,
+  privateSlots := EmptyList.new,
+  publicMethods := EmptyList.new,
+  privateMethods := EmptyList.new,
+  self
+}
+
+(* check for doubly defined selectors, and
+   transfer all methods for {private,public}Methods into
+   the methodDictionary *)
+checkSelectors
+{
+  used := Dictionary.new,
+  methodDictionary := MethodDictionary.new,
+  publicSlots.do(fun(i:Ide) {
+    checkSelector(i.name, i.pos)
+  }),
+  publicMethods.do(fun(m:Method) {
+    m.isPrivate := false,
+    checkSelector(m.selector, m.pos),
+    methodDictionary.add(m)
+  }),
+  privateSlots.do(fun(i:Ide) {
+    checkSelector(i.name, i.pos)
+  }),
+  privateMethods.do(fun(m:Method) {
+    m.isPrivate := true,
+    checkSelector(m.selector, m.pos),
+    methodDictionary.add(m)
+  }),
+  (* avoid accidental access *)
+  used := nil,
+  privateMethods := nil,
+  publicMethods := nil
+}
+
+checkSelector(name :String, pos :SourcePos)
+{
+  used.lookup(name, fun(other :SourcePos) {
+    errorLog.error(pos, "Duplicate selector: "+name),
+    errorLog.error(other, "(other definition)")
+  }, {
+    used[name] := pos
+  })
+}
+
+(* scope everything *)
+scope(env :Scoper) :ClassBuilder
+{
+  env.withScopedSignatures(domain, {
+
+    selfTypeSig.type := env.scope(selfTypeSig.type),
+
+    supers := env.scopeList(:CPLType, supers),
+    metaClassDeclaration := env.scope(metaClassDeclaration),
+    publicSlots.do(fun(i:Ide) {
+      i.type := env.scope(i.type)
+    }),
+    privateSlots.do(fun(i:Ide) {
+      i.type := env.scope(i.type)
+    }),
+
+    (* ### typechecker: compute supertype, store in Scoper *)
+
+    (* self :Self *)
+    selfSig := ValueIde.new1(selfTypeSig.pos, "self", IdeType.new(selfTypeSig)),
+    selfSig.setImmutable,
+
+    (* do not bind the class name: 
+       value refs are converted to self messages, type refs are resolved via
+       env.currentClassSig *)
+
+    env.withSignatures(List(:Ide).with2(selfTypeSig, selfSig), {
+      methodDictionary.do(fun(m :Method) {
+        m.scopeMethod(env)
+      })
+    })
+  }),
+  self
+}
+
+
+(* code generation *)
+compile(compiler :Compiler)
+{
+  methodDictionary.do(fun(m :Method) {
+    try({
+      (* tycoon.stdout << '(' << m.selector, *)
+      compiler.errorLog := errorLog,
+      m.compile(Bindings.new, selfSig, compiler)
+      (* ,
+      let b =
+	compiler.vmInterface.builtins.detect(fun(b :BuiltinDescriptor) {
+	  b.selector = m.selector && { b.className = name }
+	}),
+      m.setBuiltin(b, name, errorLog) *)
+      (* , tycoon.stdout << ')' *)
+    }, fun(e :Exception) {
+      tycoon.stdout.writeln("While compiling "+m.selector+":"),
+      e.raise
+    })
+  })
+}
+
+
+makeApplicationToDomain(ide :TypeIde) :CPLType
+{
+  CPLType.new(ide, 
+    List.fromReader(domain.map(fun(i :TypeIde){ IdeType.new(i) })))
+}
+
+makeClassType :CPLType
+{
+  let classIde = TypeIde.newRef(Positioned.new(pos, name)),
+  makeApplicationToDomain(classIde)
+}
+
+makeMetaClassType :CPLType
+{
+  let metaClassIde = TypeIde.newRef(Positioned.new(pos, name+"Class")),
+  makeApplicationToDomain(metaClassIde)
+}
+;
+
+
+

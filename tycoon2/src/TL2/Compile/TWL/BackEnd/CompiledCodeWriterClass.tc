@@ -1,0 +1,29 @@
+class CompiledCodeWriterClass
+super ConcreteClass(CompiledCodeWriter)
+metaclass MetaClass
+public methods
+
+new1(vmInterface :VMInterface, 
+    getSelectorId :Fun1(Selector, Int)) :CompiledCodeWriter
+{
+  let instance = _new,
+  instance.opcodes := vmInterface.opcodes,
+  instance.specialLiterals := vmInterface.specialLiterals,
+  let d = Dictionary.new,
+  vmInterface.specialSends.keysAndElementsDo(
+    fun(selector :Selector, opcode :String) {
+      d[getSelectorId[selector]] := opcode
+    }),
+  instance.specialSelectors := d,
+  instance._init
+}
+
+new(vmInterface :VMInterface) :CompiledCodeWriter
+{
+  let instance = _new,
+  instance.opcodes := vmInterface.opcodes,
+  instance.specialLiterals := vmInterface.specialLiterals,
+  instance.specialSelectors := Dictionary.new,
+  instance._init
+}
+;

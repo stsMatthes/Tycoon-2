@@ -1,0 +1,18 @@
+class CompositeSubstClass
+super ConcreteClass(CompositeSubst)
+metaclass MetaClass
+
+public methods
+
+new(first :Subst, second :Subst) :Subst
+  {
+  first.isEmpty ? { second } : {
+    second.isEmpty ? { first } : {
+      let subst = _new,
+      subst.first := first,
+      subst.second := second,
+      subst
+      }}
+  }
+
+;

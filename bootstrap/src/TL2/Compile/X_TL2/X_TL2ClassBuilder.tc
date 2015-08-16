@@ -1,0 +1,250 @@
+class X_TL2ClassBuilder
+super X_TL2MutableClassState
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ building classes 
+
+   The client (X_TL2Gram) creates a X_TL2ClassBuilder object, specifying some
+   information, and then sets private and public slots and methods.
+   (methods have to be assigned to {public,private}Methods, not into the
+   methodDictionary!)
+
+   Later, classBuilder.build creates a proper class from this
+   information and installs the class with the system.
+
+   The {public,private}{Slots,Methods} slots are only writable until build has been called.
+*)
+meta X_TL2ClassBuilderClass
+{
+publicSlots :List(X_TL2Slot)
+{ 
+  if( methodDictionary.isNil then: { _publicSlots } else: { super.publicSlots })
+}
+
+"publicSlots:="(l :List(X_TL2Slot)) :Void
+  require methodDictionary.isNil
+{ assert({ methodDictionary.isNil })
+  _publicSlots := l
+}
+
+publicMethods: List(X_TL2Method)
+{ 
+  if( methodDictionary.isNil then: { _publicMethods } else: { super.publicMethods })
+}
+
+"publicMethods:="(l :List(X_TL2Method)) :Void
+  require methodDictionary.isNil
+{ assert({ methodDictionary.isNil })
+  _publicMethods := l
+}
+
+privateSlots :List(X_TL2Slot)
+{
+  if( methodDictionary.isNil then: { _privateSlots } else: { super.privateSlots })
+}
+
+"privateSlots:="(l :List(X_TL2Slot)) :Void
+  require methodDictionary.isNil
+{ assert({ methodDictionary.isNil })
+  _privateSlots := l
+}
+
+privateMethods: List(X_TL2Method)
+{
+  if( methodDictionary.isNil then: { _privateMethods } else: { super.privateMethods })
+}
+
+"privateMethods:="(l :List(X_TL2Method)) :Void
+  require methodDictionary.isNil
+{ assert({ methodDictionary.isNil })
+  _privateMethods := l
+}
+
+build(compiler :X_TL2Compiler, classManager :X_TL2ClassManager, errorLog :ErrorLog) :Void
+  (* *)
+{
+  tycoon.stdout.writeln("[Building class "+name)
+  self.errorLog := errorLog
+  checkSelectors
+  typeManager ::= classManager.typeManager
+  scope(X_TL2Scoper.new(typeManager.newClassSignature(name),
+		   errorLog,
+		   typeManager))
+  if( !errorLog.hasErrors then: {
+    compile(compiler)
+    if( !errorLog.hasErrors then: {
+      classManager.set(self, errorLog)
+    })
+  })
+  tycoon.stdout.writeln("]")
+  nil
+}
+
+private
+
+_publicSlots :List(X_TL2Slot)
+
+_publicMethods: List(X_TL2Method)
+
+_privateSlots :List(X_TL2Slot)
+
+_privateMethods: List(X_TL2Method)
+
+errorLog :ErrorLog
+
+used :Dictionary(String, SourcePos)
+  (* used during check/build *)
+
+selfSig :X_TL2ValueIde
+
+superSig :X_TL2ValueIde
+
+_init :Void
+  (* *)
+{ super._init
+  if( selfTypeSig.isNil then: {
+    selfTypeSig := X_TL2SubTypeIde.new(pos, "Self", makeClassType)
+  })
+  publicSlots := EmptyList.new
+  privateSlots := EmptyList.new
+  publicMethods := EmptyList.new
+  privateMethods := EmptyList.new
+  self
+}
+
+checkSelectors :Void
+  (* check for doubly defined selectors, and
+   transfer all methods for {private,public}Methods into
+   the methodDictionary *)
+{
+  used := Dictionary.new
+  methodDictionary ::= X_TL2MethodDictionary.new
+  slots ::= GapArray.new0
+  publicSlots.do(fun(slot:X_TL2Slot) {
+    slot.isPrivate := false
+    slot.selectors.do(fun(sel :X_TL2Selector) {
+      checkSelector(sel.symbol, slot.pos)
+    })
+    slots.addLast(slot)
+  })
+  publicMethods.do(fun(m:X_TL2Method) {
+    m.isPrivate := false
+    checkSelector(m.selector, m.pos)
+    methodDictionary.add(m)
+  })
+  privateSlots.do(fun(slot:X_TL2Slot) {
+    slot.isPrivate := true
+    slot.selectors.do(fun(sel :X_TL2Selector) {
+      checkSelector(sel.symbol, slot.pos)
+    })
+    slots.addLast(slot)
+  })
+  privateMethods.do(fun(m:X_TL2Method) {
+    m.isPrivate := true
+    checkSelector(m.selector, m.pos)
+    methodDictionary.add(m)
+  })
+  self.slots := slots.as(Array)
+  self.methodDictionary := methodDictionary
+  ; these are garbage now:
+  _publicSlots := nil
+  _privateSlots := nil
+  _privateMethods := nil
+  _publicMethods := nil
+  ; not needed:
+  used := nil
+}
+
+checkSelector(name :String, pos :SourcePos) :Void
+  (* *)
+{
+  used.lookup(name, fun(other :SourcePos) {
+    errorLog.error(pos, "Duplicate selector: "+name)
+    errorLog.error(other, "(conflicting definition)")
+  }, {
+    used[name] := pos
+  })
+}
+
+scope(env :X_TL2Scoper) :X_TL2ClassBuilder
+  (* scope everything *)
+{
+  env.withScopedSignatures(domain, {
+
+    selfTypeSig.type := selfTypeSig.type.scope(env)
+
+    supers := env.scopeList(:X_TL2CPLType, supers)
+    metaClassDeclaration := metaClassDeclaration.scope(env)
+    slots.do(fun(slot:X_TL2Slot) {
+      slot.scopeSlot(env)
+    })
+
+    ; ### typechecker: compute supertype, store in X_TL2Scoper 
+
+    ; self :Self 
+    selfSig := X_TL2ValueIde.new(selfTypeSig.pos, "self", false, X_TL2IdeType.new(selfTypeSig))
+    selfSig.setImmutable
+
+    ; do not bind the class name: 
+;       value refs are converted to self messages, type refs are resolved via
+;       env.currentClassSig 
+
+    env.withSignatures(List(:X_TL2Ide).with2(selfTypeSig, selfSig), {
+      methodDictionary.do(fun(m :X_TL2Method) {
+        m.scopeMethod(env)
+      })
+    })
+  })
+  self
+}
+
+compile(compiler :X_TL2Compiler) :Void
+  (* code generation *)
+{
+  slots.do(fun(slot:X_TL2Slot) {
+    slot.selectors.do(fun(sel :X_TL2Selector) {
+      ;; the actual access methods are created by the class manager,
+      ;; depending on CPL etc.  We just register the selector object
+      ;; for perform etc.
+      compiler.getSelectorId(sel)
+    })
+  })
+  methodDictionary.do(fun(m :X_TL2Method) {
+    try({
+      ; tycoon.stdout << '(' << m.selector, 
+      compiler.errorLog := errorLog
+      m.compileMethod(selfSig, compiler)
+      ; , tycoon.stdout << ')' 
+    } else: fun(e :Exception) {
+      tycoon.stdout.writeln("While compiling "+m.selector+":")
+      e.raise
+    })
+  })
+}
+
+makeClassType :X_TL2CPLType
+  (* *)
+{
+  classIde ::= X_TL2TypeIde.newRef(pos, name)
+  X_TL2CPLType.new(classIde, 
+    List.fromReader(domain.map(fun(i :X_TL2TypeIde){ X_TL2IdeType.new(i) })))
+}
+
+}

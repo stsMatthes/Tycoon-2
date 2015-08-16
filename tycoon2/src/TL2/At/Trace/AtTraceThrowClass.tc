@@ -1,0 +1,16 @@
+class AtTraceThrowClass
+super ConcreteClass(AtTraceThrow)
+meta MetaClass
+{
+
+new(sendingComponent :Object, sender :Object, exception :Exception) :AtTraceThrow
+{
+  instance ::= _new
+  instance.sendingComponent := sendingComponent
+  instance.sender := sender
+  instance.exception := exception
+  instance._init
+  instance
+}
+
+}

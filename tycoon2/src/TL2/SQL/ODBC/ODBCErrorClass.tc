@@ -1,0 +1,28 @@
+class ODBCErrorClass
+
+super ConcreteClass(ODBCError)
+
+metaclass MetaClass
+
+public methods
+
+new(henv:Int32, hdbc:Int32, hstmt:Int32):ODBCError
+{
+  let i=_new(),
+  let szSqlState = tycoon.ansiC.malloc(6),
+  let pfNativeError = tycoon.ansiC.malloc(4),  
+  let szErrorMessage = tycoon.ansiC.malloc(512),
+  let pcbErrorMessage = tycoon.ansiC.malloc(2),
+  odbc.sqlError(henv,hdbc,hstmt,szSqlState,pfNativeError,szErrorMessage,511,
+                pcbErrorMessage),
+  i.sqlState:=tycoon.rts.tymem_peekString(szSqlState,0),
+  i.errorCode:=tycoon.rts.tymem_peekInt(pfNativeError,0),
+  i.errorMessage:=tycoon.rts.tymem_peekString(szErrorMessage,0),
+  tycoon.ansiC.free(szSqlState),
+  tycoon.ansiC.free(pfNativeError),
+  tycoon.ansiC.free(szErrorMessage),
+  tycoon.ansiC.free(pcbErrorMessage),
+  i
+}
+;
+

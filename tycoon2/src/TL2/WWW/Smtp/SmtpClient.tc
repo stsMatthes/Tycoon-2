@@ -1,0 +1,227 @@
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+A simple and incomplete implementation of a
+Simple Mail Transfer Protocol (Smtp) client
+
+The Smtp protocol is specified in RFC 821
+
+Author:  Gerd Bremer
+Date:    25-Sep-1997
+Updates: (Date)	  (Name)	(Description)
+
+*)
+
+class SmtpClient   
+super Smtp
+metaclass SmtpClientClass
+
+public methods
+
+server :IPAddress { _server }
+
+"server:="(ipAddress :IPAddress) :Void
+  { ipAddress.isNotNil ?
+      { _server := ipAddress } :
+      { (* # error *) _server := IPAddress.localHost }
+  }
+
+  
+port :Int { _port }
+
+"port:="(no :Int) :Void
+  { no.isNotNil ?
+      { _port := no } :
+      { (* # error *) _port := 25 }
+  }
+
+  
+verbose :Bool { _verbose }
+
+"verbose:="(b :Bool) :Void
+  { b.isNotNil ?
+      { _verbose := b } :
+      { (* # error *) _verbose := true }
+  }
+  
+
+open :Void
+(* open a connection to the server.
+   raise IOError if the connection fails,
+   or SmtpError if the expected response fails.
+*)
+(* ------------------------------------------------------------ *)
+  {
+    _data := StreamSocket.new2(server, port),   
+    try({ _check(220, _readResponse) },
+      fun(e :Exception){
+	try({ _data.close }, fun(:Exception){}),
+	e.raise
+      }) 
+  }
+
+
+help :Void
+(* response codes are 211 or 214 *) 
+(* ------------------------------------------------------------ *)
+  {
+    _checkClass(2, _send("HELP"))
+  }
+
+
+hello(domain :String) :Void
+
+  require domain.isNotNil &
+    domain.size <= 64
+(* ------------------------------------------------------------ *)
+  {
+    _check(250, _send("HELO " + domain))
+  }
+
+
+sender(path :String) :Void
+
+  require path.isNotNil &
+    path.size <= 256
+(* ------------------------------------------------------------ *)
+  {
+    _check(250, _send("MAIL FROM: <" + path + ">"))
+  }
+
+
+recipient(path :String) :Void
+
+  require path.isNotNil &
+    path.size <= 256
+(* response codes are 250 or 251 *)
+(* ------------------------------------------------------------ *)
+  {
+    _checkClass(2, _send("RCPT TO: <" + path + ">"))
+  }
+
+
+data :Void
+(* ------------------------------------------------------------ *)
+  {
+    _check(354, _send("DATA"))
+  }
+
+
+body(content :String) :Void
+
+  require content.isNotNil
+(* no single dot (.) on a line (body terminator)
+   and each line in content including CRLF has size <= 1000 *) 
+(* ------------------------------------------------------------ *)
+  {
+    _check(250, _send(content + "\n."))
+  }
+
+
+sendmail(senderPath :String, recipientPath :String, content :String) :Void
+
+  require senderPath.isNotNil &
+    recipientPath.isNotNil &
+      content.isNotNil
+(* ------------------------------------------------------------ *)
+  {
+    open,
+    sender(senderPath),
+    recipient(recipientPath),
+    data,
+    body(content),
+    close
+  }
+
+
+reset :Void
+(* ------------------------------------------------------------ *)
+  {
+    _check(250, _send("RSET"))
+  }
+
+
+noop :Void
+(* ------------------------------------------------------------ *)
+  {
+    _check(250, _send("NOOP"))
+  }
+
+
+close :Void
+(* ------------------------------------------------------------ *)
+  {
+    _check(221, _send("QUIT")),
+    _data.isNotNil ? { _data.close }
+  }
+
+
+private
+
+_server :IPAddress,
+_port :Int,
+_verbose :Bool,
+_data :StreamSocket
+
+
+methods
+
+_init :Self
+(* ------------------------------------------------------------ *)
+  {
+    super._init,
+    self
+  }
+
+
+_send(command :String) :SmtpResponse
+
+  require command.isNotNil
+(* ------------------------------------------------------------ *)
+  {
+    _verbose ? { tycoon.stdout << "SmtpClient: " << command << '\n' },
+    _data << command + "\r\n",
+    _readResponse
+  }
+
+
+_readResponse :SmtpResponse
+(* ------------------------------------------------------------ *)
+  {
+    SmtpResponse.fromInput(_data, _verbose)
+  }
+
+
+_check(expected :Int, response :SmtpResponse) :Void
+(* ------------------------------------------------------------ *)
+  {
+    response.isNil || { response.code != expected } ?
+      { SmtpError.new(response).raise }
+  }
+
+
+_checkClass(expectedClass :Int, response :SmtpResponse) :Void
+(* ------------------------------------------------------------ *)
+  {
+    response.isNil || { (response.code / 100) != expectedClass } ?
+      { SmtpError.new(response).raise }
+  }
+
+;

@@ -1,0 +1,13 @@
+class CompilerClass
+super ConcreteClass(Compiler)
+metaclass MetaClass
+public methods
+
+new(vmInterface :VMInterface, root :Root) :Compiler
+{
+  let instance = _new,
+  instance.vmInterface := vmInterface,
+  instance.root := root,
+  instance._init
+}
+;

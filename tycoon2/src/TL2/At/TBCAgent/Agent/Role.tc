@@ -1,0 +1,164 @@
+class Role(R <: AgentRule)
+super MessageHandler, NamedMixin, Trace, MutexHolder
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ Role.tc
+
+   Tycoon Business Conversations (TBC) for Tycoon 2
+   ------------------------------------------------
+   Abstract superclass for Performer- and CustomerRole.  Each agent can 
+   have many (and at least should have one) roles.  Each role acts either 
+   as customer or as performer in the sense of business conversations.  
+   This distinction is done by adding an object of subclass CustomerRole or 
+   PerformerRole, respectivly.  Moreover, a role is bound to a single 
+   conversation specification on creation.  The spec cannot be changed in 
+   the current implementation.  There can be added several Roles with 
+   different conversation specifications.  This feature may be used to
+   do subconversations.
+   Every Role must be parametrized with specialized rules to implement the 
+   essential application logic.  This is done by subclasses of :AgentRule.  
+   Further a role can handle more than one conversation at a time, even if 
+   there exists only one instance of the role.  To each conversation, a 
+   context-object of class :Conversation is assigned to keep track of 
+   the session. This object is also passed to the rules.  In future,
+   the Conversation may be extended by special history methods etc.
+   Additionally, an independent context-object of arbitrary type is 
+   contained in the conversation for rules purpose (see Conversation.tc). 
+   All communication with roles is now done by passing :Messages.
+   Therfore, Role is subclass of MessageHandler and implements common 
+   handler-methods for both customer- and performer-role.  
+   Note that this class now must be parametrized by the proper subclass of 
+   AgentRule (this is used for the dictionary aggregating the rules).
+   
+   20.08.97 hw : created
+   22.09.97 hw : Trace
+   03.10.97 hw : Threads
+   29.10.97 hw : simplified
+   
+*)
+meta AbstractClass
+{
+
+errorReply(m :MessageErrorReply) @:Message
+  (* ==== message handlers directly called by agents thread. ================ 
+
+   * Signalize an error on the peers side.
+   * Should only be sent to a role as reply for a malformed message,
+   * indicating errors on this side.
+   *)
+{
+  m.error.raise
+  nil@
+}
+
+setDebug(m :MessageSetDebug) @:Message
+  (* 
+   * Set debug-state. No reply.  ### or Global?
+   *)
+{
+  if( m.flag then: {traceOn} else: {traceOff})
+  nil@
+}
+
+setSpec(m :MessageSetSpec) @:Message
+  (* 
+   * Set the conversation-spec. ### maybe unneccessary?
+   *)
+{
+  _convSpec := m.convSpec
+  nil@
+}
+
+getSpec(m :MessageGetSpec) @:Message
+  (*
+   * Ask for current spec. ### dito
+   *)
+{
+  reply @::= MessageGetSpec.newReply(m)@
+  reply.convSpec := _convSpec.componentCopy@
+  reply@
+}
+
+stop:Void
+  (* ======= other methods ================================================== 
+
+   * Stop all currently executing conversation threads.  This is simply done
+   * passing them a nil message, which causes them to stop their loop.
+   *)
+{
+  lock({_ports.do(fun(p:MessagePort){p.put(nil@)})})
+}
+
+private
+
+_agent :Agent
+  (* Reference back to agent, set by new() *)
+
+_convSpec :ConversationSpec
+  (* The TBCSpec this role has to execute. Set by new or a msg. *)
+
+_address :ITCAddress
+  (* This roles address. Set by new().
+     Consists of agents name plus own name separated by "/". 
+     This address should only be used to _establish_ a conversation (e.g.
+     by TBC::startConversation), further communication uses separate
+     (thread private) addresses and ports, see {Customer,Performer}Role. *)
+
+_rules @:AtDictionary(String, R)
+  (* The list of rules added to this role. Since each subclass of :Role 
+     has its own rule-class, the type of the elements is generic. *)
+
+_ports @:Set(MessagePort)
+  (* The set of the ports of all threads doing conversations.  Threads must
+     add and remove their port by "_addPort" and "_remPort".
+     Providing this set, the "stop" method, which may be called by the agents
+     on shutdown, can terminate all threads. *)
+
+_init :Void
+  (* *)
+{
+  super._init
+  _address := ITCAddress.new(_agent.name + "/" + name)
+  _rules   := AtDictionary.new@
+  _ports   := Set.new@
+  traceInit(name)
+}
+
+_addPort(p :MessagePort):Void
+  (* *)
+{
+  lock({_ports.add(p)})
+}
+
+_remPort(p :MessagePort):Void
+  (* *)
+{
+  lock({_ports.remove(p)})
+}
+
+_error(s :String) :Void
+  (* 
+   * Create and throw an special TBC exception. Use as abbreviation.
+   *)
+{
+  TBCError.new(s, _agent, self).raise
+}
+
+}

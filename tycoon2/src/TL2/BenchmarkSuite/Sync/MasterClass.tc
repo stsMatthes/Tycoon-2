@@ -1,0 +1,13 @@
+class MasterClass
+super ConcreteClass(Master)
+metaclass MetaClass
+
+public methods
+
+new2(queue :WorkQueue(WorkItem(Int)), items :Int) :Master
+{
+  let m = _new,
+  m._workQueue := queue,
+  m._items := items,
+  m._init
+}

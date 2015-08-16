@@ -1,0 +1,14 @@
+class SimpleTraceClass
+  super ConcreteClass(SimpleTrace)
+  metaclass MetaClass
+
+public methods
+
+  new(positions :Collection(SourcePos), msg :String) :SimpleTrace
+  {
+    let instance = _new,
+    instance._init2(positions, msg),
+    instance
+  }
+
+;

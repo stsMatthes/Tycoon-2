@@ -1,0 +1,103 @@
+class HttpContainerResource
+
+super HttpResource, MutableKeyedContainer(String, HttpResource)
+
+metaclass AbstractClass
+
+public
+
+methods
+
+add(resource :HttpResource) deferred
+remove(resource :HttpResource) :Void deferred
+replace(old :HttpResource, new :HttpResource) deferred
+
+reindex
+  (*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ forget any automatically indexed child resources
+     re-index at subsequent requests.
+     But keep directory resources, propagate reindex down
+     the directory tree.
+  *)
+{
+  do(fun(child :HttpResource) {
+    child.reindex
+  })
+}
+
+pathLookup(request :HttpRequest, arcs :List(String)) :HttpResource
+{
+  arcs.isEmpty ? { let result :HttpResource = self } : {
+    let name = arcs.head,
+    lookup(name,
+      let ifPresent = fun(resource :HttpResource) {
+        resource.pathLookup(request, arcs.tail)
+	},
+      let ifAbsent = fun() {
+        nil
+	}
+     )
+   }  
+}
+
+lookupDirectory(arcs :List(String)) :HttpDirectoryResource
+  (* answer the directory resource with a path starting at
+     the receiver and following the given arcs, or nil if not
+     found or no directory.
+     Purpose: simplify server configuration.
+  *)
+{
+  arcs.isEmpty
+   ? { asDirectoryResource }  
+   : {
+    let name = arcs.head,
+    lookup(name,
+      let ifPresent = fun(resource :HttpResource) {
+        resource.lookupDirectory(arcs.tail)
+	},
+      let ifAbsent = fun() {
+        nil
+	}
+     )
+   }  
+}
+
+newResource(dir :Directory, name :String) :HttpResource
+  (* create a new resource with the given name in the given directory.
+     default is to ask the receiver's parent, or, if there is no parent resource,
+     to delegate the task to the MimeFactory.
+  *)
+
+{
+   parent.isNotNil ? { parent.newResource(dir, name) } : {
+     MimeFactory.instance.newResource(dir, name)
+   }
+}
+
+
+  
+private
+
+methods
+
+;
+
+

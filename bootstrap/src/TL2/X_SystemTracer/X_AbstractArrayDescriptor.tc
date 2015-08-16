@@ -1,0 +1,18 @@
+class X_AbstractArrayDescriptor
+super X_TspDescriptor
+metaclass AbstractClass
+public methods
+
+objectSize(o :Object, tracer :X_Tracer) :Int
+{ o.__basicSize * tracer.sizeof(elementFmt) }
+
+elementFmt :Char
+  deferred
+
+dumpInstance(o :Object, tracer :X_Tracer)
+{
+  for(0,o.__basicSize-1,fun(i:Int){
+    tracer.dumpC(o.__basicAt(i), elementFmt)
+  })
+}
+;

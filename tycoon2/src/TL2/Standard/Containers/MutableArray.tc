@@ -1,0 +1,58 @@
+class MutableArray(E <: Object)
+super Array(E), MutableSequence(E)
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+Mutable arrayed sequence with indexed access in O(1) to every element
+and a fixed size.
+
+Author:  Andreas Gawecki
+Date:    13-Feb-1996
+Updates: (Date)	  (Name)	(Description)
+*)
+meta MutableArrayClass(E )
+
+{
+"[]:="(i :Int, e :E) :E
+  (* *)
+builtin
+
+replace(n :Int, at :Int, with :Sequence(E), startingAt :Int) :Void
+  (* Replace the elements in the range at..at+(n-1)
+     with consecutive elements of 'with' in
+     the range startingAt..startingAt+(n-1).
+     'with' may denote the receiver, overlapping is handled correctly. *)
+  require n >= 0
+	  & 0 <= at
+	  & at+n <= size
+	  & 0 <= startingAt
+	  & startingAt+n <= with.size
+  builtin
+{ super.replace(n,at,with,startingAt) }
+
+__basicAtPut(i :Int, value :Object) :Object
+  (* overwrite methods inherited from Object to call the right primitives: *)
+{
+  self[i] := _typeCast(value, :E)
+}
+
+private
+
+}

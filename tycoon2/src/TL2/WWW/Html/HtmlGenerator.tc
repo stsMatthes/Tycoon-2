@@ -1,0 +1,464 @@
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+
+A simple HTML Generator to create HTML documents on-the-fly.
+Useful for generating error messages, say.
+
+Use SgmlEntityOutputFilter (also an OutputDecorator, to be written)
+to replace special characters with entity references...
+
+09-Jan-1997 Andreas Gawecki
+
+##enhance (waiting for optional parameters...sooon Bart)
+*)
+
+class HtmlGenerator
+
+super Html, SgmlGenerator
+
+public
+
+methods
+
+allowBreak
+  (* indicate that this is a goot place for a line break.
+     ## enhance with quality factor *)
+  {
+  _preformatted == 0 ? { nl }
+  }
+
+
+validName(name :String) :Bool
+{
+  (* this implements the relevant part of the HTML SGML-Declaration:
+	 NAMING   LCNMSTRT ""
+		  UCNMSTRT ""
+		  LCNMCHAR ".-"
+		  UCNMCHAR ".-"
+	 NAMELEN  72  *)
+
+  !name.isEmpty
+  && { name.size <= 72
+  && { name[0].isAlpha
+  && { name.all(fun(c:Char){
+	 c.isAlphaNumeric || { c = '.' || { c = '-' } }
+       }) } } }
+}
+
+urlAttr(name :String, value :String)
+  (* URL attribute: if value is not nil, write 'name="value"'
+     to the output stream. *)
+  {
+  value !== nil ? { attr(name, value) }
+  }
+
+
+a(href :String, target :String, contents :Fun0(Void))
+  (* write an HMTL anchor element.
+     body is called to write the contents of the anchor. *)
+  {
+  let tag = "A",
+  beginStartTag(tag),
+  href.isNotNil ? { urlAttr("HREF", href) },
+  target.isNotNil ? { attr("TARGET", target) },
+  endStartTag,
+  contents[],
+  endTag(tag),
+  nl
+  }
+
+base(href :String)
+  {
+  beginStartTag("BASE"),
+  urlAttr("HREF", href),
+  endStartTag,
+  nl
+  }
+
+address(contents :Fun0(Void))
+  {
+  _h("ADDRESS", contents)
+  }
+
+b(contents :Fun0(Void))
+  {
+  _b("B", contents)
+  }
+
+blockquote(contents :Fun0(Void))
+  {
+  _h("BLOCKQUOTE", contents)
+  }
+
+body(contents :Fun0(Void))
+  {
+  _h("BODY", contents),
+  nl
+  }
+
+br
+  {
+  allowBreak,
+  startTag("BR"),
+  nl
+  }
+
+cite(contents :Fun0(Void))
+  {
+  _h("CITE", contents)
+  }
+
+cmd(contents :Fun0(Void))
+  {
+  _b("CMD", contents)
+  }
+
+code(contents :Fun0(Void))
+  {
+  _h("CODE", contents)
+  }
+
+dd(contents :Fun0(Void))
+  {
+  _p("DD", contents)
+  }
+
+dir(contents :Fun0(Void))
+  {
+  _h("DIR", contents)
+  }
+
+dt(contents :Fun0(Void))
+  {
+  _p("DT", contents)
+  }
+
+em(contents :Fun0(Void))
+  {
+  _b("EM", contents)
+  }
+
+form(action :String, contents :Fun0(Void))
+  {
+  let tag = "FORM",
+  beginStartTag(tag),
+  urlAttr("ACTION", action),
+  attr("METHOD", "GET"), 
+  endStartTag,
+  nl,
+  contents[],
+  endTag(tag),
+  nl
+  }
+
+h1(contents :Fun0(Void))
+  {
+  _h("H1", contents)
+  }
+
+h2(contents :Fun0(Void))
+  {
+  _h("H2", contents)
+  }
+
+h3(contents :Fun0(Void))
+  {
+  _h("H3", contents)
+  }
+
+h4(contents :Fun0(Void))
+  {
+  _h("H4", contents)
+  }
+
+h5(contents :Fun0(Void))
+  {
+  _h("H5", contents)
+  }
+
+h6(contents :Fun0(Void))
+  {
+  _h("H6", contents)
+  }
+
+head(contents :Fun0(Void))
+  {
+  _h("HEAD", contents)
+  }
+
+hr
+  {
+  allowBreak,
+  startTag("HR"),
+  nl
+  }
+
+html(contents :Fun0(Void))
+  {
+  _h("HTML", contents),
+  nl
+  }
+
+
+i(contents :Fun0(Void))
+  {
+  _b("I", contents)
+  }
+
+img(src :String, align :String, alt :String, border :Int, isMap :Bool, seeThru :Bool)
+  {
+  let tag = "IMG",
+  beginStartTag(tag),
+  urlAttr("SRC", src),
+  align.isNotNil ? { tokenAttr("ALIGN", align) },
+  attr("ALT", alt),
+  intAttr("BORDER", border),
+  flagAttr("ISMAP", isMap),
+  flagAttr("SEETHRU", seeThru),
+  endStartTag,
+  nl  
+  }
+
+input(type :String, name:String, value :String,
+    align :String,
+    checked :Bool,
+    disabled :Bool,
+    maxLength :Int,
+    min :Int,
+    size :Int)	   
+  {
+  let tag = "INPUT",
+  beginStartTag(tag),
+  align !== nil ? {tokenAttr("ALIGN", align)},
+  flagAttr("CHECKED", checked),
+  flagAttr("DISABLED", disabled),
+  intAttr("MAXLENGTH", maxLength),
+  intAttr("MIN", min),
+  attr("NAME", name), 
+  intAttr("SIZE", size),
+  tokenAttr("TYPE", type),
+  attr("VALUE", value),
+  endStartTag,
+  nl
+  }
+
+checkbox(name:String, value :String,
+    align :String,
+    checked :Bool,
+    disabled :Bool)	   
+  {
+  input("checkbox", name, value,
+    align, checked, disabled, nil, nil, nil) 
+  }
+
+font(size :String, color :String, contents :Fun0(Void))
+  {
+  beginStartTag("FONT"),
+  attr("SIZE", size),
+  attr("COLOR", color),
+  endStartTag,
+  contents[],
+  endTag("FONT")
+  }
+
+kbd(contents :Fun0(Void))
+  {
+  _b("KBD", contents)
+  }
+
+li(compact :Bool, contents :Fun0(Void))
+  {
+  _li("LI", compact, contents)
+  }
+
+listing(contents :Fun0(Void))
+  {
+  _h("LISTING", contents)
+  }
+
+menu(contents :Fun0(Void))
+  {
+  _h("MENU", contents)
+  }
+
+ol(compact :Bool, contents :Fun0(Void))
+  {
+  _li("OL", compact, contents)
+  }
+
+option(value :String, selected :Bool)
+  {
+  nl,
+  let tag = "OPTION",
+  beginStartTag(tag),
+  attr("VALUE", value),
+  flagAttr("SELECTED", selected),
+  endStartTag
+  }
+
+p(contents :Fun0(Void))
+  {
+  _p("P", contents),
+  endTag("P"),
+  nl
+  }
+
+pre(contents :Fun0(Void))
+  {
+  _h("PRE", fun() {
+    _preformatted := _preformatted+1,
+    contents[],
+    _preformatted := _preformatted-1
+    })
+  }
+
+quote(contents :Fun0(Void))
+  {
+  _b("QUOTE", contents)
+  }
+
+select(multiple :Bool, name :String, size :Int)
+  {
+  beginStartTag("SELECT"),
+  flagAttr("MULTIPLE", multiple),
+  attr("NAME", name),
+  intAttr("SIZE", size),
+  endStartTag
+  }
+
+strong(contents :Fun0(Void))
+  {
+  _b("STRONG", contents)
+  }
+
+table(border :Bool, contents :Fun0(Void))
+  {
+  let tag = "TABLE",
+  beginStartTag(tag),
+  flagAttr("BORDER", border),
+  endStartTag,
+  contents[],
+  endTag(tag)
+  }
+
+td(align :String, colspan :Int, rowspan :Int, contents :Fun0(Void))
+  {
+  _td("TD", align, colspan, rowspan, contents)
+  }
+
+th(align :String, colspan :Int, rowspan :Int, contents :Fun0(Void))
+  {
+  _td("TH", align, colspan, rowspan, contents)
+  }
+
+title(contents :Fun0(Void))
+  {
+  let tag = "TITLE",
+  beginStartTag(tag),
+  endStartTag,
+  contents[],
+  endTag(tag),
+  nl
+  }
+
+tr(contents :Fun0(Void))
+  {
+  _p("TR", contents)
+  }
+
+tt(contents :Fun0(Void))
+  {
+  _b("TT", contents)
+  }
+
+ul(compact :Bool, contents :Fun0(Void))
+  {
+  _li("UL", compact, contents)
+  }
+
+(* details of the HTML Stml declaration *)
+
+(* maximum allowed name length.
+   Corresponds to the NAMELEN attribute in the Sgml declaration`s SYNTAX section *)
+nameLen :Int
+{ 72 }
+
+(* nameChars is default *)
+
+private
+
+_preformatted :Int (* nesting level of <pre> *)
+
+methods
+
+_init :Self
+{
+  _preformatted := 0,
+  super._init
+}
+
+_td(tag :String, align :String, colspan :Int, rowspan :Int,
+    contents :Fun0(Void))
+  {
+  allowBreak,
+  beginStartTag(tag),
+  align.isNotNil ? { tokenAttr("ALIGN", align) },
+  intAttr("COLSPAN", colspan),
+  intAttr("ROWSPAN", rowspan),
+  endStartTag,
+  contents[],
+  endTag(tag)
+  }
+
+_li(tag :String, compact :Bool, contents :Fun0(Void))
+  {
+  allowBreak,
+  beginStartTag(tag),
+  flagAttr("COMPACT", compact),
+  endStartTag,
+  contents[],
+  endTag(tag)
+  }
+
+_b(tag :String, contents :Fun0(Void))
+  {
+  beginStartTag(tag),
+  endStartTag,
+  contents[],
+  endTag(tag)
+  }
+
+_h(tag :String, contents :Fun0(Void))
+  {
+  allowBreak,
+  _b(tag, contents)
+  }
+
+_p(tag :String, contents :Fun0(Void))
+  {
+  allowBreak,
+  startTag(tag),
+  contents[]
+  }
+
+;
+
+

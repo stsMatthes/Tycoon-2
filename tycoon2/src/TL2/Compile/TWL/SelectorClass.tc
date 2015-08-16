@@ -1,0 +1,14 @@
+class SelectorClass
+super ConcreteClass(Selector)
+metaclass MetaClass
+public methods
+
+new(symbol :Symbol, arity :Int) :Selector
+{
+  let instance = _new,
+  assert arity >= 0 & arity < 256,
+  instance.symbol := symbol,
+  instance.arity := arity,
+  instance._init
+}
+;

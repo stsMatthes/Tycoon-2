@@ -1,0 +1,39 @@
+<!DOCTYPE STML SYSTEM>
+<html>
+<title>
+Zahlen als Funktionen
+</title>
+<body>
+
+<define name=zero>
+  <fun param="doit :Fun():String">
+  </fun>
+</define>
+
+<define name=succ>
+  <fun param="n :Fun(doit:Fun():String):String">
+    <fun param="doit :Fun():String">
+      <apply name=n><arg><ref name=doit//</apply>
+      <apply name=doit></apply>
+    </fun>
+  </fun>
+</define>
+
+<define name=one>
+  <apply name=succ>
+    <arg><ref name=zero//</arg>
+  </apply>
+</define>
+
+<define name=two>
+  <apply name=succ>
+    <arg><ref name=one//
+  </apply>
+</define>
+
+<apply name=two>
+  <arg><fun param="">Hallo!</fun></arg>
+</apply>
+
+</body>  
+</html>  

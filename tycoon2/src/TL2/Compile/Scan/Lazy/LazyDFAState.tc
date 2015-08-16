@@ -1,0 +1,143 @@
+class LazyDFAState(Action <: Object)
+super Lazy
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ one state of the lazily constructed DFA.
+   The class takes the "Context" role in the "State" pattern 
+   to distinguish behaviour between collapsing and active states.
+   The State role is taken by LazyDFAStateState. *)
+meta LazyDFAStateClass(Action )
+
+{
+dfa :LazyDFA(Action)
+
+nfaStates :Set(NFAState)
+
+isFinal :Bool
+
+action :Action
+
+lockCount :Int
+
+transitions :MutableArray(LazyDFAState(Action))
+
+  (* indexed by character codes 
+ ### only one entry per destination state?
+         List(Pair(CharSet, LazyDFAState(Action))) *)
+
+state :LazyDFAStateState
+
+  (* all states that contain a reference to this state.
+   used for killing this state. *)
+
+observingStates :Set(LazyDFAState(Action))
+
+printOn(out :Output) :Void
+  (* *)
+{
+  out << "LazyDFAState(" << identityHash << "){"
+  transitions.keysAndElementsDo(fun(i :Int, l :LazyDFAState(Action)) {
+    if( l.isNotNil
+    then: { out << i.asChar.printString << ": " << l.identityHash << " " })
+  })
+  out << "}"
+}
+
+isCollapsing :Bool
+  (* *)
+{ state.isCollapsing(self) }
+
+transition(ch :Char) :LazyDFAState(Action)
+  (* return the LazyDFAState to be entered on input <ch>, or nil if no
+     such edge exists. *)
+{ state.transition(self, ch) }
+
+computeTransition(c :Char) :LazyDFAState(Action)
+  (* *)
+require transitions[c.asInt].isNil
+{
+  ;tycoon.stdout.write('!'),
+  ; tycoon.stdout<<"Compute "<<self.identityHash<<"--["<<c.printString<<"]-->\n", 
+  nextNfaStates ::= Set.new
+  nfaStates.do(fun(s:NFAState){
+    s.transitions.lookup(c, fun(next :NFAState) {
+      nextNfaStates.add(next)
+    }, {
+      ; 
+    })
+  })
+  dfa.close(nextNfaStates)
+  result ::= dfa.getState(nextNfaStates, self)
+  result.observingStates.add(self)
+  transitions[c.asInt] := result
+}
+
+references :Set(LazyDFAState(Action))
+  (* cache management 
+ Return a Set of all states that you reference.
+     These are the states you will receive obituaries for. *)
+{
+  ; does not work due to reader/nil problem: 
+  ; Set.fromReader(
+;       transitions.select(fun(o:Object){o.isNotNil})) 
+
+  result ::= Set.new
+  transitions.do(fun(l :LazyDFAState(Action)) {
+    if( l.isNotNil then: { result.add(l) })
+  })
+  result
+}
+
+obituary(other :LazyDFAState(Action)) :Void
+  (* other has died. remove all references. *)
+{
+  transitions.keysAndElementsDo(fun(i:Int, s :LazyDFAState(Action)) {
+    if( s == other then: { transitions[i] := nil })
+  })
+}
+
+isLocked :Bool
+  (* *)
+{ lockCount > 0 }
+
+lock :Void
+  (* *)
+{ lockCount := lockCount + 1 }
+
+unlock :Void
+  (* *)
+{ lockCount := lockCount - 1 }
+
+private
+
+_init :Void
+  (* *)
+{ super._init
+  assert({ dfa.isNotNil })
+  assert({ nfaStates.isNotNil })
+  isFinal := action.isNotNil
+  lockCount := 0
+  state := LazyDFAStateActive.instance
+  transitions := MutableArray.new(256)
+  observingStates := Set.new
+  self
+}
+
+}

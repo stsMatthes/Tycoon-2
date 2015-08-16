@@ -1,0 +1,165 @@
+class Int
+super Integer(Int)
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+Standard 32 bit signed integer values
+
+Author:  Andreas Gawecki
+Date:    01-Mar-1995
+Updates: (Date)	  (Name)	(Description)
+
+*)
+Self = Int
+meta IntClass()
+{
+_brand_Int :Void
+  (* distinguish interfaces of Int and Long *)
+{ }
+
+asInt :Int
+  (*##will become obsolete after bootstrap: *)
+{self}
+
+zero :Self
+  (* *)
+{0}
+
+one :Self
+  (* *)
+{1}
+
+ten :Self
+  (* *)
+{10}
+
+order(x :Int) :Int
+  (* *)
+{
+  self - x
+}
+
+"="(x :Object) :Bool
+  (* *)
+builtin
+
+"+"(x :Int) :Int
+  (*## implement as 32 bit signed operations: *)
+builtin
+
+"-"(x :Int) :Int
+  (* *)
+builtin
+
+"*"(x :Int) :Int
+  (* *)
+builtin
+
+"/"(x :Int) :Int
+  (* *)
+builtin
+
+"%"(x :Int) :Int
+  (* divide the receiver by the argument, answer the quotient.
+     the quotient is the largest integer less than the magnitude of the
+     algebraic quotient, with the sign of the algebraic quotient.
+     if the result cannot be represented, the behaviour is undefined,
+     otherwise self = quotient * x + remainder. *)
+builtin
+
+"<"(x :Int) :Bool
+  (* divide the receiver by the argument, answer the remainder.
+     if the result cannot be represented, the behaviour is undefined,
+     otherwise self = quotient * x + remainder.
+   *)
+builtin
+
+"<="(x :Int) :Bool
+  (* *)
+builtin
+
+">"(x :Int) :Bool
+  (* *)
+builtin
+
+">="(x :Int) :Bool
+  (* *)
+builtin
+
+"|"(x :Int) :Int
+  (* *)
+builtin
+
+"&"(x :Int) :Int
+  (* *)
+builtin
+
+"xor"(x :Int) :Int
+  (* *)
+builtin
+
+"not" :Int
+  (* *)
+builtin
+
+">>"(nBits :Int) :Int
+  (* *)
+builtin
+
+"<<"(nBits :Int) :Int
+  (* *)
+builtin
+
+asChar :Char
+  (*##return type Self does not work, check Type Checker 
+ ##implement as no-ops after bootstrap: *)
+builtin
+
+asLong :Long
+  (* *)
+{ Long.fromInt(self) }
+
+asInt32 :Int32
+  (* *)
+{ Int32.fromInt(self) }
+
+asReal :Real
+  (* *)
+{ Real.fromInt(self) }
+
+_hash :Int
+  (* not handled by tvm *)
+{ self }
+
+_setHash(hash :Int) :Int
+  (* not handled by tvm *)
+{ assert({ false }) }
+
+private
+
+shallowCopy :Self
+  (* ###??? *)
+{
+  self
+}
+
+value :Int
+  (* c slot *)
+}

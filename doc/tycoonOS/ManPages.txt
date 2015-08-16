@@ -1,0 +1,3541 @@
+=================================================================
+chown(2)                  System Calls                   chown(2)
+=================================================================
+
+NAME
+     chown, lchown, fchown - change owner and group of a file
+
+SYNOPSIS
+     #include <unistd.h>
+     #include <sys/types.h>
+
+     int chown(const char *path, uid_t owner, gid_t group);
+
+     int lchown(const char *path, uid_t owner, gid_t group);
+
+     int fchown(int fildes, uid_t owner, gid_t group);
+
+MT-LEVEL
+     chown() is Async-Signal-Safe
+
+DESCRIPTION
+     chown() sets the owner ID and group ID of the file specified
+     by  path or referenced by the open file descriptor fildes to
+     owner and group respectively.  If owner or group  is  speci-
+     fied  as -1, chown() does not change the corresponding ID of
+     the file.
+
+     The function lchown() sets the owner ID and group ID of  the
+     named  file  just  as chown() does, except in the case where
+     the named file is a symbolic link.  In this  case,  lchown()
+     changes  the  ownership  of  the  symbolic link file itself,
+     while chown() changes the ownership of the file or directory
+     to which the symbolic link refers.
+
+     If chown(), lchown(), or fchown() is invoked  by  a  process
+     other than super-user, the set-user-ID and set-group-ID bits
+     of the file mode,  S_ISUID  and  S_ISGID  respectively,  are
+     cleared (see chmod(2)).
+
+     The   operating   system   has   a   configuration   option,
+     {_POSIX_CHOWN_RESTRICTED}, to restrict ownership changes for
+     the  chown(),  lchown(),  and  fchown()   functions.    When
+     {_POSIX_CHOWN_RESTRICTED}  is  not  in effect, the effective
+     user ID of the process must match the owner of the  file  or
+     the  process  must be the super-user to change the ownership
+     of a file.  When {_POSIX_CHOWN_RESTRICTED} is in effect, the
+     chown(),  lchown(),  and fchown() functions, for users other
+     than super-user, prevent the owner of the file from changing
+     the  owner  ID  of  the  file and restrict the change of the
+     group of the file to the list of supplementary group IDs.
+
+     Upon successful completion, chown(), fchown()  and  lchown()
+     mark for update the st_ctime field of the file.
+
+RETURN VALUES
+     Upon successful  completion,  a  value  of  0  is  returned.
+     Otherwise,  a  value  of  -1 is returned and errno is set to
+     indicate the error.
+
+ERRORS
+     chown() and lchown() fail and the owner  and  group  of  the
+     named  file remain unchanged if one or more of the following
+     are true:
+
+     EACCES              Search permission is denied  on  a  com-
+                         ponent of the path prefix of path.
+
+     EFAULT              path points to an illegal address.
+
+     EINTR               A signal was caught during  the  chown()
+                         or lchown() functions.
+
+     EINVAL              group or owner is out of range.
+
+     EIO                 An I/O error occurred while reading from
+                         or writing to the file system.
+
+     ELOOP               Too many symbolic links were encountered
+                         in translating path.
+
+     EMULTIHOP           Components of path  require  hopping  to
+                         multiple remote machines and file system
+                         type does not allow it.  Too  many  sym-
+                         bolic    links   were   encountered   in
+                         translating path.
+
+     ENAMETOOLONG        The length of the path argument  exceeds
+                         {PATH_MAX}, or the length of a path com-
+                         ponent    exceeds    {NAME_MAX}    while
+                         {_POSIX_NO_TRUNC} is in effect.
+
+     ENOLINK             path points to a remote machine and  the
+                         link   to  that  machine  is  no  longer
+                         active.
+
+     ENOENT              Either a component of the path prefix or
+                         the  file  referred  to by path does not
+                         exist or is a null pathname.
+
+     ENOTDIR             A component of the path prefix  of  path
+                         is not a directory.
+
+     EPERM               The effective user ID does not match the
+                         owner  of the file or the process is not
+                         the            super-user            and
+                         {_POSIX_CHOWN_RESTRICTED} indicates that
+                         such privilege is required.
+
+     EROFS               The named file resides  on  a  read-only
+                         file system.
+
+     fchown() fails and the owner and group  of  the  named  file
+     remain unchanged if one or more of the following are true:
+
+     EBADF               fildes is not an open file descriptor.
+
+     EIO                 An I/O error occurred while reading from
+                         or writing to the file system.
+
+     EINTR               A signal was caught during execution  of
+                         the function.
+
+     ENOLINK             fildes points to a  remote  machine  and
+                         the  link  to  that machine is no longer
+                         active.
+
+     EINVAL              group or owner is out of range.
+
+     EPERM               The effective user ID does not match the
+                         owner  of the file or the process is not
+                         the            super-user            and
+                         {_POSIX_CHOWN_RESTRICTED} indicates that
+                         such privilege is required.
+
+     EROFS               The named file  referred  to  by  fildes
+                         resides on a read-only file system.
+
+SEE ALSO
+     chgrp(1), chown(1), chmod(2)
+
+
+=================================================================
+chroot(2)                 System Calls                  chroot(2)
+=================================================================
+
+NAME
+     chroot, fchroot - change root directory
+
+SYNOPSIS
+     #include <unistd.h>
+
+     int chroot(const char *path);
+
+     int fchroot(int fildes);
+
+DESCRIPTION
+     chroot() and fchroot() cause a directory to become the  root
+     directory,  the  starting  point  for path searches for path
+     names beginning with /.  The  user's  working  directory  is
+     unaffected by the chroot() and fchroot() functions.
+
+     path points to a path name naming a directory.   The  fildes
+     argument  to  fchroot()  is  the open file descriptor of the
+     directory which is to become the root.
+
+     The effective user ID of the process must be  super-user  to
+     change  the root directory.  fchroot() is further restricted
+     in that while it is always possible to change to the  system
+     root using this call, it is not guaranteed to succeed in any
+     other case, even should fildes be valid in all respects.
+
+     The ``..''  entry in the root directory  is  interpreted  to
+     mean  the  root  directory  itself.  Thus, ``..''  cannot be
+     used to access files outside the subtree rooted at the  root
+     directory.   Instead,  fchroot() can be used to set the root
+     back to a directory which was opened before the root  direc-
+     tory was changed.
+
+RETURN VALUES
+     Upon successful completion, a value of 0 is returned.   Oth-
+     erwise,  a value of -1 is returned and errno is set to indi-
+     cate the error.
+
+ERRORS
+     chroot() will  fail  and  the  root  directory  will  remain
+     unchanged if one or more of the following are true:
+
+     EACCES              Search permission is denied for  a  com-
+                         ponent of the path prefix of dirname.
+
+                         Search  permission  is  denied  for  the
+                         directory referred to by dirname.
+
+     EBADF               The descriptor is not valid.
+
+     EFAULT              path points to an illegal address.
+
+     EINVAL              fchroot()  attempted  to  change  to   a
+                         directory  which  is not the system root
+                         and external circumstances do not  allow
+                         this.
+
+     EINTR               A signal was caught during the  chroot()
+                         function.
+
+     EIO                 An I/O error occurred while reading from
+                         or writing to the file system.
+
+     ELOOP               Too many symbolic links were encountered
+                         in translating path.
+
+     EMULTIHOP           Components of path  require  hopping  to
+                         multiple remote machines and file system
+                         type does not allow it.
+
+     ENAMETOOLONG        The length of the path argument  exceeds
+                         {PATH_MAX}, or the length of a path com-
+                         ponent    exceeds    {NAME_MAX}    while
+                         {_POSIX_NO_TRUNC} is in effect.
+
+     ENOENT              The named directory does not exist or is
+                         a null pathname.
+
+     ENOLINK             path points to a remote machine and  the
+                         link   to  that  machine  is  no  longer
+                         active.
+
+     ENOTDIR             Any component of the path name is not  a
+                         directory.
+
+     EPERM               The effective user of the  calling  pro-
+                         cess is not super-user.
+
+SEE ALSO
+     chroot(1M), chdir(2)
+
+WARNINGS
+     The only use of fchroot() that is appropriate is  to  change
+     back to the system root.
+
+
+=================================================================
+directory(3C)          C Library Functions          directory(3C)
+=================================================================
+
+NAME
+     directory, opendir, readdir,  readdir_r,  telldir,  seekdir,
+     rewinddir, closedir - directory operations
+
+SYNOPSIS
+     #include <dirent.h>
+
+     DIR *opendir(const char *filename);
+
+     struct dirent *readdir(DIR *dirp);
+
+     long telldir(DIR *dirp);
+
+     void seekdir(DIR *dirp, long loc);
+
+     void rewinddir(DIR *dirp);
+
+     int closedir(DIR *dirp);
+
+     struct dirent *readdir_r(DIR *dirp, struct dirent *entry);
+
+  POSIX
+     cc  [  flag...  ]  file  ...  - D_POSIX_PTHREAD_SEMANTICS  [
+     library... ]
+
+     int  *readdir_r(DIR  *dirp,  struct  dirent  *entry,  struct
+     dirent **result);
+
+MT-LEVEL
+     See the NOTES section of this page.
+
+DESCRIPTION
+     opendir() opens the directory named by filename and  associ-
+     ates  a  directory  stream  with  it.   opendir()  returns a
+     pointer to be used to identify the directory stream in  sub-
+     sequent  operations.   The directory stream is positioned at
+     the first entry.  A null pointer  is  returned  if  filename
+     cannot  be  accessed  or is not a directory, or if it cannot
+     malloc(3C) enough memory to hold a DIR structure or a buffer
+     for the directory entries.
+
+     readdir() returns a pointer to a structure representing  the
+     directory  entry  at  the  current position in the directory
+     stream to which dirp refers,  and  positions  the  directory
+     stream  at  the next entry, except on read-only filesystems.
+     It returns a NULL pointer  upon  reaching  the  end  of  the
+     directory  stream,  or upon detecting an invalid location in
+     the directory.  readdir() shall not return directory entries
+     containing  empty  names.  It is unspecified whether entries
+     are returned for dot or dot-dot.  The  pointer  returned  by
+     readdir()  points to data that may be overwritten by another
+     call to readdir() on the same directory stream.   This  data
+     shall  not  be overwritten by another call to readdir() on a
+     different directory stream.  readdir()  may  buffer  several
+     directory entries per actual read operation; readdir() marks
+     for update the st_atime field of the directory each time the
+     directory is actually read.
+
+     readdir_r() has the equivalent  functionality  as  readdir()
+     except  that  a buffer result must be supplied by the caller
+     to store the  result.   The  size  should  be  sizeof(struct
+     dirent)  + {NAME_MAX} (that is, pathconf(_PC_NAME_MAX)) + 1.
+     _PC_NAME_MAX is defined in <unistd.h>.
+
+     The POSIX readdir_r()  function  initializes  the  structure
+     referenced  by  entry and stores a pointer to this structure
+     in result.
+
+     telldir() returns the current location associated  with  the
+     named directory stream.
+
+     seekdir() sets the position of the next readdir()  operation
+     on  the  directory  stream.  The new position reverts to the
+     position associated with the directory stream  at  the  time
+     the  telldir()  operation  that  provides loc was performed.
+     Values returned by telldir() are good only for the  lifetime
+     of  the  DIR  pointer  from  which they are derived.  If the
+     directory is closed and then reopened, the  telldir()  value
+     may  be  invalidated due to undetected directory compaction.
+     It is safe to use a  previous  telldir()  value  immediately
+     after a call to opendir() and before any calls to readdir.
+
+     rewinddir() resets  the  position  of  the  named  directory
+     stream  to  the  beginning of the directory.  It also causes
+     the directory stream to refer to the current  state  of  the
+     corresponding directory, as a call to opendir() would.
+
+     closedir() closes the named directory stream and  frees  the
+     DIR structure.
+
+RETURN VALUES
+     opendir(), readdir(), and readdir_r() return NULL on failure
+     and  set errno to indicate the error.  The POSIX readdir_r()
+     returns zero if successful, or an error number  to  indicate
+     failure.   telldir(), seekdir(), and closedir() return -1 on
+     failure and set errno to indicate the error.
+
+ERRORS
+     opendir() will fail if one or  more  of  the  following  are
+     true:
+
+     EACCES              Read permission is denied on the  speci-
+                         fied directory.
+
+     EFAULT              filename points  outside  the  allocated
+                         address space.
+
+     ELOOP               Too many symbolic links were encountered
+                         in translating filename.
+
+     ENOTDIR             A component of filename is not a  direc-
+                         tory.
+
+     EMFILE              The maximum number of  file  descriptors
+                         are currently open.
+
+     ENFILE              The system file table is full.
+
+     ENAMETOOLONG        The  length  of  the  filename  argument
+                         exceeds  {PATH_MAX},  or the length of a
+                         filename  component  exceeds  {NAME_MAX}
+                         while {_POSIX_NO_TRUNC} is in effect.
+
+     ENOENT              A component of filename does  not  exist
+                         or is a null pathname.
+
+     EACCES              A component of  filename  denies  search
+                         permission.
+
+     readdir() and readdir_r() will fail if one or  more  of  the
+     following are true:
+
+     EAGAIN              Mandatory file/record locking  was  set,
+                         O_NDELAY  or  O_NONBLOCK  was  set,  and
+                         there was a blocking record lock.
+
+     EAGAIN              Total amount of system memory  available
+                         when  reading  using  raw  I/O  is  tem-
+                         porarily insufficient.
+
+     EAGAIN              No data is waiting to be read on a  file
+                         associated   with   a   tty  device  and
+                         O_NONBLOCK was set.
+
+     EAGAIN              No message is waiting to be  read  on  a
+                         stream  and  O_NDELAY  or O_NONBLOCK was
+                         set.
+
+     EBADF               The file descriptor  determined  by  the
+                         DIR  stream  is  no  longer valid.  This
+                         results  if  the  DIR  stream  has  been
+                         closed.
+
+     EBADMSG             Message waiting to be read on  a  stream
+                         is not a data message.
+
+     EDEADLK             The read() was going to go to sleep  and
+                         cause a deadlock to occur.
+
+     EFAULT              buf points to an illegal address.
+
+     EINTR               A signal was caught during the read() or
+                         readv() function.
+
+     EINVAL              Attempted to read from a  stream  linked
+                         to a multiplexor.
+
+     EIO                 A physical I/O error  has  occurred,  or
+                         the  process  is in a background process
+                         group and is attempting to read from its
+                         controlling  terminal,  and  either  the
+                         process  is  ignoring  or  blocking  the
+                         SIGTTIN  signal  or the process group of
+                         the process is orphaned.
+
+     ENOENT              The current file pointer for the  direc-
+                         tory is not located at a valid entry.
+
+     ENOLCK              The system record lock table  was  full,
+                         so the read() or readv() could not go to
+                         sleep until the blocking record lock was
+                         removed.
+
+     ENOLINK             fildes is on a remote  machine  and  the
+                         link   to  that  machine  is  no  longer
+                         active.
+
+     ENXIO               The device associated with fildes  is  a
+                         block  special or character special file
+                         and the value of the file pointer is out
+                         of range.
+
+     telldir(), seekdir(), and closedir() return 0 on success and
+     will fail if one or more of the following are true:
+
+     EBADF               The file descriptor  determined  by  the
+                         DIR  stream  is  no  longer valid.  This
+                         results  if  the  DIR  stream  has  been
+                         closed.
+
+EXAMPLES
+     Here is a sample program that prints the names  of  all  the
+     files in the current directory:
+
+          #include <stdio.h>
+          #include <dirent.h>
+
+          main()
+          {
+               DIR *dirp;
+               struct dirent *direntp;
+
+               dirp = opendir( "." );
+               while ( (direntp = readdir( dirp )) != NULL )
+                    (void)printf( "%s\n", direntp->d_name );
+               (void)closedir( dirp );
+               return (0);
+          }
+
+SEE ALSO
+     getdents(2), dirent(4)
+
+NOTES
+     When compiling multithread programs, see Intro(3), Notes  On
+     Multithread Applications.
+
+     readdir()   is   unsafe   in    multithread    applications.
+     readdir_r()   is   safe,   and   should   be  used  instead.
+     closedir(), directory(), opendir(), rewinddir(),  seekdir(),
+     and telldir() are safe in multithread applications.
+
+     Solaris 2.4 and  earlier  releases  provided  a  readdir_r()
+     interface  as  specified  in  POSIX.1c  Draft  6.  The final
+     POSIX.1c standard changed the interface as described  above.
+     Support  for  the Draft 6 interface is provided for compati-
+     bility only and may not be  supported  in  future  releases.
+     New applications and libraries should use the POSIX standard
+     interface.
+
+     For      POSIX.1c      complaint      applications,      the
+     _POSIX_PTHREAD_SEMANTICS  and _REENTRANT flags are automati-
+     cally turned on by defining the _POSIX_C_SOURCE flag with  a
+     value >= 199506L.
+
+
+=================================================================
+exec(2)                   System Calls                    exec(2)
+=================================================================
+
+NAME
+     exec, execl, execv, execle, execve, execlp, execvp - execute
+     a file
+
+SYNOPSIS
+     #include <unistd.h>
+
+     int execl(const char *path, const char *arg0, ...,
+          const char *argn, char * /*NULL*/);
+
+     int execv(const char *path, char *const argv[]);
+
+     int execle (const char *path,char *const arg0[], ... ,
+          const char *argn, char * /*NULL*/, char *const envp[]);
+
+     int execve (const char *path, char *const argv[],
+          char *const envp[]);
+
+     int execlp (const char *file, const char *arg0, ...,
+          const char *argn, char * /*NULL*/);
+
+     int execvp (const char *file, char *const argv[]);
+
+MT-LEVEL
+     execle() and execve() are Async-Signal-Safe
+
+DESCRIPTION
+     exec() in all its forms overlays a new process image  on  an
+     old  process.   The new process image is constructed from an
+     ordinary, executable file.  This file is either  an  execut-
+     able  object  file,  or  a  file of data for an interpreter.
+     There can be no return from a successful exec() because  the
+     calling process image is overlaid by the new process image.
+
+     An interpreter file begins with a line of the form
+
+          #! pathname [arg]
+
+     where pathname is the path of the interpreter, and arg is an
+     optional  argument.  When an interpreter file is exec'd, the
+     system execs the specified interpreter.  The pathname speci-
+     fied in the interpreter file is passed as arg0 to the inter-
+     preter.  If arg was specified in the interpreter file, it is
+     passed  as arg1 to the interpreter.  The remaining arguments
+     to the interpreter are arg0 through argn of  the  originally
+     exec'd file.
+
+     When a C program is executed, it is called as follows:
+
+          int main (int argc, char *argv[], char *envp[]);
+
+     where argc is the argument count, argv is an array of  char-
+     acter  pointers  to the arguments themselves, and envp is an
+     array of character pointers to the environment strings.   As
+     indicated, argc is at least one, and the first member of the
+     array points to a string containing the name of the file.
+
+     path points to a path name that identifies the  new  process
+     file.
+
+     file points to the new process file.  If file does not  con-
+     tain  a  slash  character,  the path prefix for this file is
+     obtained by a search of the directories passed in  the  PATH
+     environment  variable  (see environ(5)).  The environment is
+     supplied typically by the shell.  If the new process file is
+     not an executable object file, execlp() and execvp() use the
+     contents of that file as standard input to the shell.
+
+     Solaris   exec() uses /usr/bin/sh (see sh(1)).
+
+     XPG4      exec() uses the XPG4-compliant shell  /usr/bin/ksh
+               (see ksh(1)).
+
+     The arguments arg0, ..., argn point to null-terminated char-
+     acter  strings.   These strings constitute the argument list
+     available to the new process image.  Conventionally at least
+     arg0 should be present.  It will become the name of the pro-
+     cess, as displayed by the ps  command.   arg0  points  to  a
+     string  that  is  the same as path (or the last component of
+     path).  The list of argument  strings  is  terminated  by  a
+     (char *)0 argument.
+
+     argv is an array of character  pointers  to  null-terminated
+     strings.   These strings constitute the argument list avail-
+     able to the new process image.   By  convention,  argv  must
+     have  at  least  one member, and it should point to a string
+     that is the same as path (or its last component).   argv  is
+     terminated by a null pointer.
+
+     envp is an array of character  pointers  to  null-terminated
+     strings.   These  strings constitute the environment for the
+     new process image.  envp is terminated by  a  null  pointer.
+     For execl(), execv(), execvp(), and execlp(), the C run-time
+     start-off routine places a pointer to the environment of the
+     calling  process in the global object extern char **environ,
+     and it is used to pass the environment of the  calling  pro-
+     cess to the new process.
+
+     File descriptors open in the calling process remain open  in
+     the  new  process, except for those whose close-on-exec flag
+     is set; (see fcntl(2)).  For  those  file  descriptors  that
+     remain open, the file pointer is unchanged.
+
+     Signals that are being caught by the calling process are set
+     to  the  default  disposition  in the new process image (see
+     signal(3C)).  Otherwise, the new process image inherits  the
+     signal dispositions of the calling process.
+
+     If the set-user-ID mode bit of the new process file  is  set
+     (see chmod(2)), exec() sets the effective user ID of the new
+     process to the owner ID of the new process file.  Similarly,
+     if the set-group-ID mode bit of the new process file is set,
+     the effective group ID of the new  process  is  set  to  the
+     group ID of the new process file.  The real user ID and real
+     group ID of the new process remain the same as those of  the
+     calling process.
+
+     If the effective user-ID is root  or  super-user,  the  set-
+     user-ID  and set-group-ID bits will be honored when the pro-
+     cess is being controlled by ptrace.
+
+     The shared memory segments attached to the  calling  process
+     will  not  be  attached  to  the new process (see shmop(2)).
+     Memory mappings in the calling process are  unmapped  before
+     the new process begins execution (see mmap(2)).
+
+     Profiling is disabled for the new process; see profil(2).
+
+     Timers created by timer_create(3R) are  deleted  before  the
+     new process begins execution.
+
+     Any outstanding asynchronous  I/O  operations  may  be  can-
+     celled.
+
+     The new process also inherits the following attributes  from
+     the calling process:
+
+          nice value (see nice(2))
+          scheduler class and priority (see priocntl(2))
+          process ID
+          parent process ID
+          process group ID
+          supplementary group IDs
+          semadj values (see semop(2))
+          session ID (see exit(2) and signal(3C))
+          trace flag (see ptrace(2) request 0)
+          time left until an alarm (see alarm(2))
+          current working directory
+          root directory
+          file mode creation mask (see umask(2))
+          resource limits (see getrlimit(2))
+          utime, stime, cutime, and cstime (see times(2))
+          file-locks (see fcntl(2) and lockf(3C))
+          controlling terminal
+          process signal mask (see sigprocmask(2))
+          pending signals (see sigpending(2))
+
+     Upon successful completion,  exec()  marks  for  update  the
+     st_atime  field  of  the file, unless the file is on a read-
+     only file system.  Should the exec()  succeed,  the  process
+     image  file  is  considered  to  have  been  open() -ed. The
+     corresponding close() is considered to occur at a time after
+     this open, but before process termination or successful com-
+     pletion of a subsequent call to exec().
+
+RETURN VALUES
+     If exec() returns to  the  calling  process,  an  error  has
+     occurred;  the  return value is -1 and errno is set to indi-
+     cate the error.
+
+ERRORS
+     exec() will fail and return to the calling process if one or
+     more of the following are true:
+
+     E2BIG               The number of bytes in the new process's
+                         argument   list   is  greater  than  the
+                         system-imposed limit of  ARG_MAX  bytes.
+                         The  argument  list  limit is sum of the
+                         size of the argument list plus the  size
+                         of   the  environment's  exported  shell
+                         variables.
+
+     EACCES              Search permission is denied for a direc-
+                         tory  listed  in  the new process file's
+                         path prefix.
+
+     EACCES              The new process file is not an  ordinary
+                         file.
+
+     EACCES              The new process file mode denies execute
+                         permission.
+
+     EAGAIN              Total amount of system memory  available
+                         when  reading  using  raw  I/O  is  tem-
+                         porarily insufficient.
+
+     EFAULT              An  argument  points   to   an   illegal
+                         address.
+
+     EINTR               A signal was caught  during  the  exec()
+                         function.
+
+     ELOOP               Too many symbolic links were encountered
+                         in translating path or file.
+
+     EMULTIHOP           Components of path  require  hopping  to
+                         multiple  remote  machines  and the file
+                         system type does not allow it.
+
+     ENAMETOOLONG        The length of the file or path  argument
+                         exceeds  {PATH_MAX},  or the length of a
+                         file   or   path    component    exceeds
+                         {NAME_MAX} while {_POSIX_NO_TRUNC} is in
+                         effect.
+
+     ENOENT              One or more components of the  new  pro-
+                         cess  path name of the file do not exist
+                         or is a null pathname.
+
+     ENOEXEC             The  exec()  is  not  an   execlp()   or
+                         execvp(),  and  the new process file has
+                         the appropriate access permission but an
+                         invalid magic number in its header.
+
+     ENOLINK             path points to a remote machine and  the
+                         link   to  that  machine  is  no  longer
+                         active.
+
+     ENOMEM              The new  process  requires  more  memory
+                         than  is allowed by the limit imposed by
+                         getrlimit(), see brk(2).  MAXMEM.
+
+     ENOTDIR             A component of the new process  path  of
+                         the file prefix is not a directory.
+
+SEE ALSO
+     ksh(1), ps(1), sh(1), alarm(2), brk(2),  chmod(2),  exit(2),
+     fcntl(2),    fork(2),    getrlimit(2),   mmap(2),   nice(2),
+     priocntl(2),  profil(2),  ptrace(2),   semop(2),   shmop(2),
+     signal(3C),    sigpending(2),    sigprocmask(2),   times(2),
+     umask(2), lockf(3C), timer_create(3R), system(3S), a.out(4),
+     environ(5), xpg4(5)
+
+WARNINGS
+     If a program is setuid to a user ID other  than  the  super-
+     user,  and  the program is executed when the real user ID is
+     super-user, then the program has some of  the  powers  of  a
+     super-user as well.
+
+
+=================================================================
+fsync(3C)              C Library Functions              fsync(3C)
+=================================================================
+
+NAME
+     fsync - synchronize a file's in-memory state  with  that  on
+     the physical medium
+
+SYNOPSIS
+     #include <unistd.h>
+
+     int fsync(int fildes);
+
+MT-LEVEL
+     Async-Signal-Safe
+
+DESCRIPTION
+     fsync() moves all modified data and attributes of  the  file
+     descriptor   fildes  to  a  storage  device.   When  fsync()
+     returns, all in-memory modified copies of buffers associated
+     with  fildes  have  been  written  to  the  physical medium.
+     fsync() is different from sync(), which schedules  disk  I/O
+     for all files but returns before the I/O completes.  fsync()
+     forces all outstanding data operations to synchronized  file
+     integrity completion (see fcntl(5) definition of O_SYNC.)
+
+     fsync() should be used by programs that require that a  file
+     be in a known state.  For example, a program that contains a
+     simple transaction facility might use fsync() to ensure that
+     all changes to a file or files caused by a given transaction
+     were recorded on a storage medium.
+
+RETURN VALUES
+     Upon successful completion, a value of 0 is returned. Other-
+     wise, a value of -1 is returned and errno is set to indicate
+     the error.
+
+ERRORS
+     fsync() fails if one or more of the following are true:
+
+     EBADF          fildes is not a valid  file  descriptor  open
+                    for writing.
+
+     EINTR          A signal was caught during execution  of  the
+                    fsync() function.
+
+     EIO            An I/O error occurred while reading  from  or
+                    writing to the file system.
+
+     ETIMEDOUT      Remote connection timed out. This occurs when
+                    the  file  is  on  an NFS file system mounted
+                    with the soft option.  See mount_nfs(1M).
+
+SEE ALSO
+     mount_nfs(1M), sync(2), fdatasync(3R), fcntl(5)
+
+NOTES
+     The way the data reach the physical medium depends  on  both
+     implementation  and hardware.  fsync() returns when the dev-
+     ice driver tells it that the write has taken place.
+
+
+=================================================================
+C Library Functions                                  getgrnam(3C)
+=================================================================
+
+NAME
+     getgrnam,  getgrnam_r,   getgrent,   getgrent_r,   getgrgid,
+     getgrgid_r, setgrent, endgrent, fgetgrent, fgetgrent_r - get
+     group entry
+
+SYNOPSIS
+     #include <grp.h>
+
+     struct group *getgrnam(const char *name);
+
+     struct group *getgrnam_r(const char *name,
+           struct group *grp,  char *buffer, int buflen);
+
+     struct group *getgrent(void);
+
+     struct group *getgrent_r(struct group *grp, char *buffer,
+           int buflen);
+
+     struct group *getgrgid(gid_t gid);
+
+     struct group *getgrgid_r(gid_t gid, struct group *grp,
+           char *buffer, int buflen);
+
+     void setgrent(void);
+
+     void endgrent(void);
+
+     struct group *fgetgrent(FILE *f);
+
+     struct group *fgetgrent_r(FILE *f, struct group *grp,
+           char *buffer, int buflen);
+
+  POSIX
+     cc  [  flag...  ]  file  ...  -D_POSIX_PTHREAD_SEMANTICS   [
+     library... ]
+
+     int getgrnam_r(const char *name, struct group *grp,
+           char *buffer, size_t bufsize,  struct group **result);
+
+     int getgrgid_r(gid_t gid, struct group *grp,
+           char *buffer, size_t bufsize,  struct group **result);
+
+DESCRIPTION
+     These functions are used to obtain entries  describing  user
+     groups.   Entries can come from any of the sources for group
+     specified    in    the    /etc/nsswitch.conf    file    (see
+     nsswitch.conf(4)).
+
+     getgrnam() searches for an entry with the group name  speci-
+     fied by the character string parameter name.
+
+     getgrgid() searches for an entry with the (numeric) group id
+     specified by gid.
+
+     The functions setgrent(),  getgrent(),  and  endgrent()  are
+     used  to  enumerate  group  entries from the database.  set-
+     grent() sets (or resets) the enumeration to the beginning of
+     the  set  of  group entries.  This function should be called
+     before the first call to getgrent().   Calls  to  getgrnam()
+     and getgrgid() leave the enumeration position in an indeter-
+     minate state. Successive calls to getgrent()  return  either
+     successive  entries  or  NULL,  indicating  the  end  of the
+     enumeration.
+
+     endgrent() may be called to indicate that the caller expects
+     to  do no further group entry retrieval operations; the sys-
+     tem may then close the group file, deallocate  resources  it
+     was  using, and so forth.  It is still allowed, but possibly
+     less efficient, for the process to call more group functions
+     after calling endgrent().
+
+     fgetgrent(), unlike the other functions above, does not  use
+     nsswitch.conf;  it  reads  and parses the next line from the
+     stream f, which is assumed to have the format of  the  group
+     file (see group(4)).
+
+  Reentrant Interfaces
+     The functions getgrnam(), getgrgid(), getgrent(), and  fget-
+     grent()  use  static  storage  that is re-used in each call,
+     making them unsafe for multithreaded applications.
+
+     The   parallel   functions    getgrnam_r(),    getgrgid_r(),
+     getgrent_r(), and fgetgrent_r() provide reentrant interfaces
+     for these operations.
+
+     Each reentrant interface performs the same operation as  its
+     non-reentrant counterpart, named by removing the ``_r'' suf-
+     fix.  The reentrant interfaces, however,  use  buffers  sup-
+     plied  by the caller to store returned results, and are safe
+     for use in both single-threaded and  multithreaded  applica-
+     tions.
+
+     Each reentrant interface takes the same  parameters  as  its
+     non-reentrant  counterpart,  as  well as the following addi-
+     tional parameters.  The parameter grp must be a pointer to a
+     struct group structure allocated by the caller.  On success-
+     ful completion, the function returns the group entry in this
+     structure.   The  parameter  buffer is a pointer to a buffer
+     supplied by the caller, used as storage space for the  group
+     data.   All of the pointers within the returned struct group
+     grp point to data stored  within  this  buffer;  see  RETURN
+     VALUES.   The  buffer  must  be large enough to hold all the
+     data associated with the group entry. The  parameter  buflen
+     (or bufsize for the POSIX versions; see standards(5)) should
+     give the size in bytes of buffer.  The POSIX versions  place
+     a pointer to the modified grp structure in the result param-
+     eter, instead of returning a pointer to this structure.
+
+     For enumeration in multithreaded applications, the  position
+     within  the enumeration is a process-wide property shared by
+     all threads.  setgrent() may  be  used  in  a  multithreaded
+     application  but  resets  the  enumeration  position for all
+     threads.   If   multiple   threads   interleave   calls   to
+     getgrent_r(), the threads will enumerate disjoint subsets of
+     the group database.  Like their non-reentrant  counterparts,
+     getgrnam_r() and getgrgid_r() leave the enumeration position
+     in an indeterminate state.
+
+RETURN VALUES
+     Group entries are represented by the struct group  structure
+     defined in <grp.h>:
+          struct group {
+               char *gr_name;     /* the name of the group */
+               char *gr_passwd;   /* the encrypted group password */
+               gid_t gr_gid;      /* the numerical group ID */
+               char **gr_mem;     /* vector of pointers to member names */
+          };
+
+     The  functions  getgrnam(),  getgrnam_r(),  getgrgid(),  and
+     getgrgid_r() each return a pointer to a struct group if they
+     successfully locate  the  requested  entry;  otherwise  they
+     return   NULL.    The   POSIX   functions  getgrnam_r()  and
+     getgrgid_r() return 0 upon success or the  error  number  in
+     case of failure.
+
+     The functions  getgrent(),  getgrent_r(),  fgetgrent(),  and
+     fgetgrent_r()  each  return  a  pointer to a struct group if
+     they successfully enumerate an entry; otherwise they  return
+     NULL, indicating the end of the enumeration.
+
+     The functions getgrnam(), getgrgid(), getgrent(), and  fget-
+     grent()  use static storage, so returned data must be copied
+     before a subsequent call to any of these  functions  if  the
+     data is to be saved.
+
+     When  the  pointer  returned  by  the  reentrant   functions
+     getgrnam_r(),  getgrgid_r(), getgrent_r(), and fgetgrent_r()
+     is non-null, it is always equal to the grp pointer that  was
+     supplied by the caller.
+
+ERRORS
+     The   reentrant   functions   getgrnam_r(),    getgrgid_r(),
+     getgrent_r(), and fgetgrent_r() return NULL and set errno to
+     ERANGE (or in the case of POSIX functions  getgrnam_r()  and
+     getgrgid_r()  return  the ERANGE error) if the length of the
+     buffer supplied by caller is not large enough to  store  the
+     result.   See  Intro(2) for the proper usage and interpreta-
+     tion of errno in multithreaded applications.
+
+FILES
+     /etc/group
+     /etc/nsswitch.conf
+
+ATTRIBUTES
+     See attributes(5) for descriptions of the  following  attri-
+     butes:
+
+     _____________________________________________________________
+    | ATTRIBUTE TYPE|               ATTRIBUTE VALUE              |
+    |_____________________________________________________________
+    | MT-Level      |  See "Reentrant Interfaces" in DESCRIPTION.|
+    |_______________|____________________________________________|
+
+SEE ALSO
+     getpwnam(3C), group(4), nsswitch.conf(4), passwd(4),  attri-
+     butes(5), standards(5)
+
+NOTES
+     When compiling multithread programs, see Intro(3), Notes  On
+     Multithread Applications.
+
+     Programs that use the interfaces described  in  this  manual
+     page  cannot  be linked statically since the implementations
+     of these functions employ dynamic  loading  and  linking  of
+     shared objects at run time.
+
+     Use   of   the   enumeration   interfaces   getgrent()   and
+     getgrent_r()  is  discouraged;  enumeration is supported for
+     the group file, NIS, and NIS+, but in general is  not  effi-
+     cient  and  may  not  be supported for all database sources.
+     The  semantics  of  enumeration  are  discussed  further  in
+     nsswitch.conf(4).
+
+     Previous releases allowed the use of ``+'' and ``-'' entries
+     in  /etc/group  to  selectively  include and exclude entries
+     from NIS. The primary usage of these entries  is  superseded
+     by  the  name service switch, so the ``+/-'' form may not be
+     supported in future releases.
+
+     If required, the ``+/-'' functionality can still be obtained
+     for NIS by specifying compat as the source for group.
+
+     If the ``+/-'' functionality is required in conjunction with
+     NIS+,  specify  both  compat  as  the  source  for group and
+     nisplus as the source for the pseudo-database  group_compat.
+     See group(4), and nsswitch.conf(4) for details.
+     Solaris 2.4 and earlier releases provided definitions of the
+     getgrnam_r()  and  getgrgid_r()  functions  as  specified in
+     POSIX.1c Draft 6.  The final POSIX.1c standard  changed  the
+     interface  for  these  functions.   Support  for the Draft 6
+     interface is provided for compatibility only and may not  be
+     supported   in   future   releases.   New  applications  and
+     libraries should use the POSIX standard interface.
+
+     For      POSIX.1c      complaint      applications,      the
+     _POSIX_PTHREAD_SEMANTICS  and _REENTRANT flags are automati-
+     cally turned on by defining the _POSIX_C_SOURCE flag with  a
+     value >= 199506L.
+
+
+=================================================================
+C Library Functions                               gethostname(3C)
+=================================================================
+
+NAME
+     gethostname, sethostname - get or set name of current host
+
+SYNOPSIS
+     int gethostname(char *name, int namelen);
+
+     int sethostname(char *name, int namelen);
+
+DESCRIPTION
+     The gethostname() function returns the  standard  host  name
+     for  the  current  processor,  as previously set by sethost-
+     name().  The namelen argument  specifies  the  size  of  the
+     array  pointed  to  by  name.   The  returned  name is null-
+     terminated unless insufficient space is provided.
+
+     The sethostname() function sets the name of the host machine
+     to  be  name,  which  has length namelen.  This call is res-
+     tricted to the super-user and is normally used only when the
+     system is bootstrapped.
+
+RETURN VALUES
+     Upon successful completion, gethostname() and  sethostname()
+     return  0.  Otherwise, they return -1 and set errno to indi-
+     cate the error.
+
+ERRORS
+     The gethostname() and sethostname() functions will fail if:
+
+     EFAULT         The name or namelen argument gave an  invalid
+                    address.
+
+     The sethostname() function will fail if:
+
+     EPERM          The caller was not the super-user.
+
+SEE ALSO
+     sysinfo(2), uname(2), gethostid(3C)
+
+NOTES
+     Host  names  are  limited  to   MAXHOSTNAMELEN   characters,
+     currently 256, defined in the <netdb.h> header.
+
+
+=================================================================
+Network Functions                               gethostbyname(3N)
+=================================================================
+
+NAME
+     gethostbyname,        gethostbyname_r,        gethostbyaddr,
+     gethostbyaddr_r,   gethostent,   gethostent_r,   sethostent,
+     endhostent - get network host entry
+
+SYNOPSIS
+     cc [ flag ... ] file ...  -lnsl [ library ... ]
+
+     #include <netdb.h>
+
+     struct hostent *gethostbyname(const char *name);
+
+     struct hostent *gethostbyname_r(const char *name,
+          struct hostent *result, char *buffer, int buflen,
+          int *h_errnop);
+
+     struct hostent *gethostbyaddr(const char *addr, int len,
+          int type);
+
+     struct hostent *gethostbyaddr_r(const char *addr,
+          int length, int type, struct hostent *result,
+          char *buffer,  int buflen, int *h_errnop);
+
+     struct hostent *gethostent(void);
+
+     struct hostent *gethostent_r(struct hostent *result,
+          char *buffer, int buflen, int *h_errnop);
+
+     int sethostent(int stayopen);
+
+     int endhostent(void);
+
+DESCRIPTION
+     These functions are used to obtain entries describing hosts.
+     An  entry  may come from any of the sources for hosts speci-
+     fied in the /etc/nsswitch.conf file (see nsswitch.conf(4)).
+
+     gethostbyname() searches for information for a host with the
+     hostname specified by the character-string parameter name.
+
+     gethostbyaddr() searches for information for a host  with  a
+     given host address.  The parameter type specifies the family
+     of the address.  This should be one of the address  families
+     defined  in  <sys/socket.h>.   The  parameter addr must be a
+     pointer to a buffer containing the address.  The address  is
+     given  in  a  form  specific to the address family.  See the
+     NOTES section below for  more  information.   Also  see  the
+     EXAMPLES  section  below on how to convert a ``.'' separated
+     Internet IP address notation into the addr  parameter.   The
+     parameter  len  specifies the length of the buffer indicated
+     by addr.
+
+     The functions sethostent(), gethostent(),  and  endhostent()
+     are used to enumerate host entries from the database.
+
+     sethostent() sets (or resets) the enumeration to the  begin-
+     ning  of  the  set of host entries.  This function should be
+     called before the first  call  to  gethostent().   Calls  to
+     gethostbyname()  and  gethostbyaddr()  leave the enumeration
+     position in an indeterminate state. If the stayopen flag  is
+     non-zero,  the  system  may keep allocated resources such as
+     open file descriptors until a  subsequent  call  to  endhos-
+     tent().
+
+     Successive calls to gethostent()  return  either  successive
+     entries or NULL, indicating the end of the enumeration.
+
+     endhostent() may be  called  to  indicate  that  the  caller
+     expects  to  do  no further host entry retrieval operations;
+     the system may then deallocate resources it was  using.   It
+     is  still allowed, but possibly less efficient, for the pro-
+     cess to call more host  retrieval  functions  after  calling
+     endhostent().
+
+  Reentrant Interfaces
+     The functions gethostbyname(), gethostbyaddr(), and  gethos-
+     tent() use static storage that is re-used in each call, mak-
+     ing these functions unsafe for use in multithreaded applica-
+     tions.
+
+     The  functions  gethostbyname_r(),  gethostbyaddr_r(),   and
+     gethostent_r() provide reentrant interfaces for these opera-
+     tions.
+
+     Each reentrant interface performs the same operation as  its
+     non-reentrant counterpart, named by removing the ``_r'' suf-
+     fix.  The reentrant interfaces, however,  use  buffers  sup-
+     plied  by the caller to store returned results, and are safe
+     for use in both single-threaded and  multithreaded  applica-
+     tions.
+
+     Each reentrant interface takes the same  parameters  as  its
+     non-reentrant  counterpart,  as  well as the following addi-
+     tional parameters.  The parameter result must be  a  pointer
+     to  a  struct hostent structure allocated by the caller.  On
+     successful completion, the function returns the  host  entry
+     in  this  structure.  The parameter buffer must be a pointer
+     to a buffer supplied by the caller.  This buffer is used  as
+     storage space for the host data.  All of the pointers within
+     the returned struct hostent  result  point  to  data  stored
+     within  this buffer (see RETURN VALUES).  The buffer must be
+     large enough to hold all of the  data  associated  with  the
+     host  entry.  The  parameter  buflen should give the size in
+     bytes of the buffer  indicated  by  buffer.   The  parameter
+     h_errnop  should  be  a  pointer  to an integer.  An integer
+     error status value is stored there on certain  error  condi-
+     tions (see ERRORS).
+
+     For enumeration in multithreaded applications, the  position
+     within  the enumeration is a process-wide property shared by
+     all threads.  sethostent() may be used  in  a  multithreaded
+     application  but  resets  the  enumeration  position for all
+     threads.   If   multiple   threads   interleave   calls   to
+     gethostent_r(),  the threads will enumerate disjoint subsets
+     of the host database.
+
+     Like their non-reentrant counterparts, gethostbyname_r() and
+     gethostbyaddr_r()  leave  the  enumeration  position  in  an
+     indeterminate state.
+
+RETURN VALUES
+     Host entries are represented by the struct hostent structure
+     defined in <netdb.h>:
+
+          struct hostent {
+               char   *h_name;         /* canonical name of host */
+               char   **h_aliases;     /* alias list */
+               int    h_addrtype;      /* host address type */
+               int    h_length;        /* length of address */
+               char   **h_addr_list;   /* list of addresses */
+          };
+
+     See the EXAMPLES section below for information about how  to
+     retrieve  a  ``.'' separated Internet IP address string from
+     the h_addr_list field of struct hostent.
+
+     The functions gethostbyname(),  gethostbyname_r(),  gethost-
+     byaddr(),  and  gethostbyaddr_r() each return a pointer to a
+     struct hostent if they  successfully  locate  the  requested
+     entry; otherwise they return NULL.
+
+     The functions gethostent() and gethostent_r() each return  a
+     pointer  to  a struct hostent if they successfully enumerate
+     an entry; otherwise they return NULL, indicating the end  of
+     the enumeration.
+
+     The functions gethostbyname(), gethostbyaddr(), and  gethos-
+     tent()  use  static storage, so returned data must be copied
+     before a subsequent call to any of these  functions  if  the
+     data is to be saved.
+
+     When  the  pointer  returned  by  the  reentrant   functions
+     gethostbyname_r(),  gethostbyaddr_r(), and gethostent_r() is
+     not NULL, it is always equal to the result pointer that  was
+     supplied by the caller.
+     The functions sethostent() and endhostent() return 0 on suc-
+     cess.
+
+ERRORS
+     The       reentrant       functions       gethostbyname_r(),
+     gethostbyaddr_r(),  and  gethostent_r() will return NULL and
+     set errno to ERANGE if the length of the buffer supplied  by
+     caller  is  not  large  enough  to  store  the  result.  See
+     intro(2) for the proper usage and interpretation of errno in
+     multithreaded applications.
+
+     On failures, the non-reentrant functions gethostbyname() and
+     gethostbyaddr() set a global integer h_errno to indicate one
+     of   these   error    codes    (defined    in    <netdb.h>):
+     HOST_NOT_FOUND,   TRY_AGAIN,   NO_RECOVERY,   NO_DATA,   and
+     NO_ADDRESS.  The reentrant functions  gethostbyname_r()  and
+     gethostbyaddr_r()  set the integer pointed to by h_errnop to
+     one of these values in case of error.
+
+EXAMPLES
+     Here is a sample  program  that  gets  the  canonical  name,
+     aliases,  and  ``.''  separated  Internet IP addresses for a
+     given ``.'' separated IP address:
+
+     #include <stdio.h>
+     #include <string.h>
+     #include <sys/types.h>
+     #include <sys/socket.h>
+     #include <netinet/in.h>
+     #include <arpa/inet.h>
+     #include <netdb.h>
+
+     main(int argc, const char **argv)
+     {
+         u_long addr;
+         struct hostent *hp;
+         char **p;
+
+         if (argc != 2) {
+             (void) printf("usage: %s IP-address\n", argv[0]);
+             exit (1);
+         }
+         if ((int)(addr = inet_addr(argv[1])) == -1) {
+             (void) printf("IP-address must be of the form a.b.c.d\n");
+             exit (2);
+         }
+
+         hp = gethostbyaddr((char *)&addr, sizeof (addr), AF_INET);
+         if (hp == NULL) {
+             (void) printf("host information for %s not found\n", argv[1]);
+             exit (3);
+         }
+         for (p = hp->h_addr_list; *p != 0; p++) {
+             struct in_addr in;
+             char **q;
+
+             (void) memcpy(&in.s_addr, *p, sizeof (in.s_addr));
+             (void) printf("%s\t%s", inet_ntoa(in), hp->h_name);
+             for (q = hp->h_aliases; *q != 0; q++)
+                 (void) printf(" %s", *q);
+             (void) putchar('\n');
+         }
+         exit (0);
+     }
+
+     Note that the above sample program is unsafe for use in mul-
+     tithreaded applications.
+
+FILES
+     /etc/hosts
+     /etc/netconfig
+     /etc/nsswitch.conf
+
+ATTRIBUTES
+     See attributes(5) for descriptions of the  following  attri-
+     butes:
+
+     _____________________________________________________________
+    | ATTRIBUTE TYPE|               ATTRIBUTE VALUE              |
+    |_____________________________________________________________
+    | MT-Level      |  See "Reentrant Interfaces" in DESCRIPTION.|
+    |_______________|____________________________________________|
+
+SEE ALSO
+     inet(3N),      netdir(3N),      hosts(4),      netconfig(4),
+     nsswitch.conf(4),  attributes(5),  fns(5),  fns_policies(5),
+     netdb(5)
+
+WARNINGS
+     The      reentrant       interfaces       gethostbyname_r(),
+     gethostbyaddr_r(),  and  gethostent_r() are included in this
+     release on an uncommitted basis only,  and  are  subject  to
+     change or removal in future minor releases.
+
+NOTES
+     Programs that use the interfaces described  in  this  manual
+     page  cannot  be linked statically since the implementations
+     of these functions employ dynamic  loading  and  linking  of
+     shared objects at run time.
+
+     In order to ensure that they all return consistent  results,
+     gethostbyname(),  gethostbyname_r(),  and netdir_getbyname()
+     are implemented in terms of the same internal library  func-
+     tion.   This  function obtains the system-wide source lookup
+     policy based on the inet family entries in netconfig(4)  and
+     the  hosts:  entry in nsswitch.conf(4).  Similarly, gethost-
+     byaddr(),  gethostbyaddr_r(),  and  netdir_getbyaddr()   are
+     implemented  in terms of the same internal library function.
+     If the inet family entries in netconfig(4) have a  ``-''  in
+     the last column for nametoaddr libraries, then the entry for
+     hosts in nsswitch.conf will be  used;  otherwise  the  name-
+     toaddr   libraries   in   that  column  will  be  used,  and
+     nsswitch.conf will not be consulted.
+
+     There is no analogue of gethostent() and  gethostent_r()  in
+     the  netdir  functions,  so  these  enumeration functions go
+     straight to the hosts entry in nsswitch.conf.  Thus enumera-
+     tion  may  return  results from a different source than that
+     used by gethostbyname(), gethostbyname_r(), gethostbyaddr(),
+     and gethostbyaddr_r().
+
+     When  gethostbyname()  or  gethostbyname_r()  are  given   a
+     slash-separated  FNS  host  name  to look up (see fns(5) and
+     fns_policies(5)), then the  host  is  looked  up  using  FNS
+     directly and nsswitch.conf(4) is not consulted.
+
+     All the functions that return a struct hostent  must  always
+     return  the  canonical name in the h_name field.  This name,
+     by definition,  is  the  well-known  and  official  hostname
+     shared  between all aliases and all addresses.  The underly-
+     ing source that satisfies the request determines the mapping
+     of  the  input  name  or  address  into the set of names and
+     addresses in hostent.  Different sources might  do  that  in
+     different  ways.   If  there is more than one alias and more
+     than one address in hostent, no pairing is  implied  between
+     them.
+
+     The system will strive to put the addresses on the same sub-
+     net as that of the caller first.
+
+     When compiling  multithreaded  applications,  see  Intro(3),
+     Notes On Multithread Applications, for information about the
+     use of the _REENTRANT flag.
+
+     Use  of  the   enumeration   interfaces   gethostent()   and
+     gethostent_r()  is  discouraged; enumeration may not be sup-
+     ported for all database sources.  The semantics of  enumera-
+     tion are discussed further in nsswitch.conf(4).
+
+     The current implementations of these functions  only  return
+     or  accept  addresses  for the Internet address family (type
+     AF_INET).
+
+     The form for an address of type AF_INET is a struct  in_addr
+     defined  in  <netinet/in.h>.   The  functions  described  in
+     inet(3N), and illustrated in the EXAMPLES section above, are
+     helpful  in  constructing and manipulating addresses in this
+     form.
+
+
+=================================================================
+C Library Functions                                  getpwnam(3C)
+=================================================================
+
+NAME
+     getpwnam,  getpwnam_r,   getpwent,   getpwent_r,   getpwuid,
+     getpwuid_r, setpwent, endpwent, fgetpwent, fgetpwent_r - get
+     password entry
+
+SYNOPSIS
+     #include <pwd.h>
+
+     struct passwd *getpwnam(const char *name);
+
+     struct passwd *getpwnam_r(const char *name,
+          struct passwd *pwd,  char *buffer, int buflen);
+
+     struct passwd *getpwent(void);
+
+     struct passwd *getpwent_r(struct passwd *pwd,
+           char *buffer,  int buflen);
+
+     struct passwd *getpwuid(uid_t uid);
+
+     struct passwd *getpwuid_r(uid_t uid, struct passwd * pwd,
+           char *buffer, int buflen);
+
+     void setpwent(void);
+
+     void endpwent(void);
+
+     struct passwd *fgetpwent(FILE *f);
+
+     struct passwd *fgetpwent_r(FILE *f, struct passwd *pwd,
+           char *buffer, int buflen);
+
+  POSIX
+     cc  [  flag...  ]  file  ...  -D_POSIX_PTHREAD_SEMANTICS   [
+     library... ]
+
+     int getpwnam_r(const char *name,struct passwd *pwd,
+           char *buffer, size_t bufsize  struct passwd **result);
+
+     int getpwuid_r(uid_t uid, struct passwd *pwd,
+           char *buffer, size_t bufsize  struct passwd **result);
+
+DESCRIPTION
+     These  functions  are  used  to  obtain  password   entries.
+     Entries  can  come from any of the sources for passwd speci-
+     fied in the /etc/nsswitch.conf file (see nsswitch.conf(4)).
+
+     The getpwnam() function searches for a password  entry  with
+     the  login  name specified by the character string parameter
+     name.
+
+     The getpwuid() function searches for a password  entry  with
+     the (numeric) user ID specified by the parameter uid.
+
+     The setpwent(), getpwent(),  and  endpwent()  functions  are
+     used  to  enumerate  password  entries  from  the  database.
+     setpwent() sets (or resets) the enumeration to the beginning
+     of  the  set  of  password entries.  This function should be
+     called before  the  first  call  to  getpwent().   Calls  to
+     getpwnam()  and getpwuid() leave the enumeration position in
+     an  indeterminate  state.  Successive  calls  to  getpwent()
+     return either successive entries or NULL, indicating the end
+     of the enumeration.
+
+     The endpwent() function may be called to indicate  that  the
+     caller  expects  to  do no further password retrieval opera-
+     tions; the system may then close the password file,  deallo-
+     cate  resources  it  was  using,  and so forth.  It is still
+     allowed, but possibly less efficient,  for  the  process  to
+     call more password functions after calling endpwent().
+
+     The fgetpwent() function, unlike the other functions  above,
+     does  not  use  nsswitch.conf;  it reads and parses the next
+     line from the stream f, which is assumed to have the  format
+     of the passwd file.  See passwd(4).
+
+  Reentrant Interfaces
+     The  functions  getpwnam(),  getpwuid(),   getpwent(),   and
+     fgetpwent() use static storage that is re-used in each call,
+     making these routines unsafe for use in multithreaded appli-
+     cations.
+
+     The   parallel   functions    getpwnam_r(),    getpwuid_r(),
+     getpwent_r(), and fgetpwent_r() provide reentrant interfaces
+     for these operations.
+
+     Each reentrant interface performs the same operation as  its
+     non-reentrant  counterpart,  named by removing the "_r" suf-
+     fix.  The reentrant interfaces, however,  use  buffers  sup-
+     plied  by the caller to store returned results, and are safe
+     for use in both single-threaded and  multithreaded  applica-
+     tions.
+
+     Each reentrant interface takes the same  parameters  as  its
+     non-reentrant  counterpart,  as  well as the following addi-
+     tional parameters.  The parameter pwd must be a pointer to a
+     struct  passwd  structure  allocated by the caller.  On suc-
+     cessful completion, the function returns the password  entry
+     in  this  structure.  The parameter buffer is a pointer to a
+     buffer supplied by the caller, used as storage space for the
+     password  data.   All  of  the  pointers within the returned
+     struct passwd pwd point to data stored within  this  buffer;
+     see  RETURN VALUES.  The buffer must be large enough to hold
+     all the data associated with the password entry.  The param-
+     eter  buflen  (or  bufsize for the POSIX versions; see stan-
+     dards(5)) should give the size  in  bytes  of  buffer.   The
+     POSIX versions place a pointer to the modified pwd structure
+     in the result parameter, instead of returning a  pointer  to
+     this structure.
+
+     For enumeration in multithreaded applications, the  position
+     within  the enumeration is a process-wide property shared by
+     all threads.  The setpwent() function may be used in a  mul-
+     tithreaded  application  but resets the enumeration position
+     for all threads.  If multiple threads  interleave  calls  to
+     getpwent_r(), the threads will enumerate disjoint subsets of
+     the password database.
+
+     Like  their  non-reentrant  counterparts,  getpwnam_r()  and
+     getpwuid_r()  leave  the enumeration position in an indeter-
+     minate state.
+
+RETURN VALUES
+     Password entries are represented by the struct passwd struc-
+     ture defined in <pwd.h>:
+          struct passwd {
+              char *pw_name;    /* user's login name */
+              char *pw_passwd;  /* no longer used */
+              uid_t pw_uid;        /* user's uid */
+              gid_t pw_gid;        /* user's gid */
+              char *pw_age;     /* not used */
+              char *pw_comment; /* not used */
+              char *pw_gecos;   /* typically user's full name */
+              char *pw_dir;     /* user's home dir */
+              char *pw_shell;   /* user's login shell */
+          };
+
+     The getpwnam(), getpwnam_r(), getpwuid(),  and  getpwuid_r()
+     functions  each  return a pointer to a struct passwd if they
+     successfully locate  the  requested  entry;  otherwise  they
+     return   NULL.    The   POSIX   functions  getpwnam_r()  and
+     getpwuid_r() return 0 upon success, or the error  number  in
+     case of failure.
+
+     The getpwent(), getpwent_r(), fgetpwent(), and fgetpwent_r()
+     functions  each  return a pointer to a struct passwd if they
+     successfully enumerate an entry; otherwise they return NULL,
+     indicating the end of the enumeration.
+
+     The  getpwnam(),  getpwuid(),  getpwent(),  and  fgetpwent()
+     functions  use  static  storage,  so  returned  data must be
+     copied before a subsequent call to any of these functions if
+     the data is to be saved.
+     When  the  pointer  returned  by  the  reentrant   functions
+     getpwnam_r(),  getpwuid_r(), getpwent_r(), and fgetpwent_r()
+     is non-null, it is always equal to the pwd pointer that  was
+     supplied by the caller.
+
+ERRORS
+     The   reentrant   functions   getpwnam_r(),    getpwuid_r(),
+     getpwent_r(),  and  fgetpwent_r()  will  return NULL and set
+     errno  to  ERANGE  (or  in  the  case  of  POSIX   functions
+     getpwnam_r()  and  getpwuid_r()  return the ERANGE error) if
+     the length of the buffer supplied by  caller  is  not  large
+     enough  to  store  the  result.  See Intro(2) for the proper
+     usage and interpretation of errno in multithreaded  applica-
+     tions.
+
+FILES
+     /etc/passwd
+     /etc/shadow
+     /etc/nsswitch.conf
+
+ATTRIBUTES
+     See attributes(5) for descriptions of the  following  attri-
+     butes:
+
+     _____________________________________________________________
+    | ATTRIBUTE TYPE|               ATTRIBUTE VALUE              |
+    |_____________________________________________________________
+    | MT-Level      |  See "Reentrant Interfaces" in DESCRIPTION.|
+    |_______________|____________________________________________|
+
+SEE ALSO
+     nispasswd(1), passwd(1),  yppasswd(1),  Intro(2),  Intro(3),
+     cuserid(3S),   getgrnam(3C),   getlogin(3C),   getspnam(3C),
+     nsswitch.conf(4), passwd(4), shadow(4), attributes(5), stan-
+     dards(5)
+
+NOTES
+     When compiling multithread programs, see Intro(3), Notes  On
+     Multithread Applications.
+
+     The pw_passwd field in the passwd structure  should  not  be
+     used  as the encrypted password for the user; use getspnam()
+     or getspnam_r() instead. See getspnam(3C).
+
+     Programs that use the interfaces described  in  this  manual
+     page  cannot be linked statically since, the implementations
+     of these functions employ dynamic  loading  and  linking  of
+     shared objects at run time.
+
+     Use   of   the   enumeration   interfaces   getpwent()   and
+     getpwent_r()  is  discouraged;  enumeration is supported for
+     the passwd file, NIS,  and  NIS+,  but  in  general  is  not
+
+SunOS 5.6           Last change: 20 Mar 1997                    4
+
+C Library Functions                                  getpwnam(3C)
+
+     efficient and may not be supported for all database sources.
+     The  semantics  of  enumeration  are  discussed  further  in
+     nsswitch.conf(4).
+
+     Previous releases allowed the use of `+' and `-' entries  in
+     /etc/passwd  to selectively include and exclude NIS entries.
+     The primary usage of these `+/-' entries  is  superseded  by
+     the  name  service switch, so the `+/-' form may not be sup-
+     ported in future releases.
+
+     If required, the `+/-' functionality can still  be  obtained
+     for NIS by specifying compat as the source for passwd.
+
+     If the `+/-' functionality is required in  conjunction  with
+     NIS+,  specify  both  compat  as  the  source for passwd and
+     nisplus as the source for the pseudo-database passwd_compat.
+     See passwd(4), shadow(4), and nsswitch.conf(4) for details.
+
+     If the `+/-'  is  used,  both  /etc/shadow  and  /etc/passwd
+     should  have  the  same  `+'  and `-' entries to ensure con-
+     sistency between the password and shadow databases.
+
+     If a password entry from any  of  the  sources  contains  an
+     empty  uid  or  gid field, that entry will be ignored by the
+     files, NIS, and NIS+ name  service  switch  backends.   This
+     will cause the user to appear unknown to the system.
+
+     If a password entry contains an empty gecos, home directory,
+     or shell field, getpwnam() and getpwnam_r() return a pointer
+     to a null string in  the  respective  field  of  the  passwd
+     structure.
+
+     If the shell field is empty, login(1) automatically  assigns
+     the default shell.  See login(1).
+
+     Solaris 2.4 and earlier releases provided definitions of the
+     getpwnam_r()  and  getpwuid_r()  functions  as  specified in
+     POSIX.1c Draft 6.  The final POSIX.1c standard  changed  the
+     interface  for  these  functions.   Support  for the Draft 6
+     interface is provided for compatibility only and may not  be
+     supported   in   future   releases.   New  applications  and
+     libraries should use the POSIX standard interface.
+
+     For      POSIX.1c      complaint      applications,      the
+     _POSIX_PTHREAD_SEMANTICS  and _REENTRANT flags are automati-
+     cally turned on by defining the _POSIX_C_SOURCE flag with  a
+     value >= 199506L.
+
+
+=================================================================
+getpid(2)                 System Calls                  getpid(2)
+=================================================================
+
+NAME
+     getpid, getpgrp, getppid, getpgid  -  get  process,  process
+     group, and parent process IDs
+
+SYNOPSIS
+     #include <sys/types.h>
+     #include <unistd.h>
+
+     pid_t getpid(void);
+
+     pid_t getpgrp(void);
+
+     pid_t getppid(void);
+
+     pid_t getpgid(pid_t pid);
+
+MT-LEVEL
+     Async-Signal-Safe
+
+DESCRIPTION
+     getpid() returns the process ID of the calling process.
+
+     getpgrp() returns the process group ID of the  calling  pro-
+     cess.
+
+     getppid() returns the parent process ID of the calling  pro-
+     cess.
+
+     getpgid() returns the process group ID of the process  whose
+     process  ID  is equal to pid, or the process group ID of the
+     calling process, if pid is equal to zero.
+
+RETURN VALUES
+     Upon successful completion, all return the process group ID.
+     On failure, getpgid() returns a value of (pid_t) -1 and sets
+     errno to indicate the error.
+
+ERRORS
+     getpgid() will fail if one or more of the following is true:
+
+     EPERM          The process whose process ID is equal to  pid
+                    is  not  in  the  same session as the calling
+                    process,  and  the  implementation  does  not
+                    allow  access to the process group ID of that
+                    process from the calling process.
+
+     ESRCH          There is no process with a process  ID  equal
+                    to pid.
+
+SEE ALSO
+     intro(2),   exec(2),   fork(2),    getsid(2),    setpgid(2),
+     setpgrp(2), signal(3C)
+
+
+=================================================================
+getuid(2)                 System Calls                  getuid(2)
+=================================================================
+
+NAME
+     getuid, geteuid, getgid, getegid - get real user,  effective
+     user, real group, and effective group IDs
+
+SYNOPSIS
+     #include <sys/types.h>
+     #include <unistd.h>
+
+     uid_t getuid(void);
+
+     uid_t geteuid(void);
+
+     gid_t getgid(void);
+
+     gid_t getegid(void);
+
+MT-LEVEL
+     Async-Signal-Safe
+
+DESCRIPTION
+     getuid() returns the real user ID of  the  calling  process.
+     The real user ID identifies the person who is logged in.
+
+     geteuid() returns the effective user ID of the calling  pro-
+     cess.   The effective user ID gives the process various per-
+     missions during execution of ``set-user-ID'' mode  processes
+     which  use  getuid  ()  to determine the real user ID of the
+     process that invoked them.
+
+     getgid() returns the real group ID of the calling process.
+
+     getegid() returns the effective group ID of the calling pro-
+     cess.
+
+SEE ALSO
+     intro(2), setuid(2)
+
+
+=================================================================
+lseek(2)                  System Calls                   lseek(2)
+=================================================================
+
+NAME
+     lseek - move read/write file pointer
+
+SYNOPSIS
+     #include <sys/types.h>
+     #include <unistd.h>
+
+     off_t lseek(int fildes, off_t offset, int whence);
+
+MT-LEVEL
+     Async-Signal-Safe
+
+DESCRIPTION
+     lseek() sets the file pointer associated with the open  file
+     descriptor specified by fildes as follows:
+
+          o  If whence is SEEK_SET, the pointer is set to  offset
+            bytes.
+
+          o  If whence is SEEK_CUR, the pointer  is  set  to  its
+            current location plus offset.
+
+          o  If whence is SEEK_END, the pointer  is  set  to  the
+            size of the file plus offset.
+
+     On success, lseek() returns the resulting pointer  location,
+     as  measured  in bytes from the beginning of the file.  Note
+     that if fildes is a remote file  descriptor  and  offset  is
+     negative,  lseek()  returns  the  file pointer even if it is
+     negative.
+
+     lseek() allows the file pointer to be set beyond the  exist-
+     ing  data  in  the  file.  If data are later written at this
+     point, subsequent reads in the gap between the previous  end
+     of  data  and  the  newly  written data will return bytes of
+     value 0 until data are written into the gap.
+
+RETURN VALUES
+     Upon successful completion, the resulting  file  pointer  is
+     returned.   Remote  file  descriptors are the only ones that
+     allow negative file pointers.  Otherwise, a value of - 1  is
+     returned and errno is set to indicate the error.
+
+ERRORS
+     lseek() fails and the file pointer remains unchanged if  one
+     or more of the following are true:
+
+     EBADF          fildes is not an open file descriptor.
+
+     EINVAL         whence  is   not   SEEK_SET,   SEEK_CUR,   or
+                    SEEK_END.
+
+     EINVAL         fildes is not a remote file  descriptor,  and
+                    the resulting file pointer would be negative.
+
+     ESPIPE         fildes is associated with a pipe or fifo.
+
+     Some devices are incapable of seeking.   The  value  of  the
+     file pointer associated with such a device is undefined.
+
+SEE ALSO
+     creat(2), dup(2), fcntl(2), open(2), read(2), write(2)
+
+NOTES
+     In multithreaded programs, using lseek() in conjunction with
+     a read() or write() on a file descriptor shared amongst more
+     than one thread is not an atomic operation.  To ensure atom-
+     icity, use pread() or pwrite().
+
+
+=================================================================
+mkdir(2)                  System Calls                   mkdir(2)
+=================================================================
+
+NAME
+     mkdir - make a directory
+
+SYNOPSIS
+     #include <sys/types.h>
+     #include <sys/stat.h>
+
+     int mkdir(const char *path, mode_t mode);
+
+MT-LEVEL
+     Async-Signal-Safe
+
+DESCRIPTION
+     mkdir() creates a new  directory  named  by  the  path  name
+     pointed  to  by path.  The mode of the new directory is ini-
+     tialized from mode (see chmod(2) for values of  mode).   The
+     protection  part  of  the  mode  argument is modified by the
+     process's file creation mask (see umask(2)).
+
+     The directory's owner ID is set to the  process's  effective
+     user  ID.   The directory's group ID is set to the process's
+     effective group ID, or if the S_ISGID  bit  is  set  in  the
+     parent  directory,  then  the  group  ID of the directory is
+     inherited from the parent.   The  S_ISGID  bit  of  the  new
+     directory is inherited from the parent directory.
+
+     If path is a symbolic link, it is not followed.
+
+     The newly created directory is empty with the  exception  of
+     entries for itself (.)  and its parent directory (..).
+
+     Upon successful completion, mkdir()  marks  for  update  the
+     st_atime,  st_ctime  and  st_mtime  fields of the directory.
+     Also, the st_ctime and st_mtime fields of the directory that
+     contains the new entry are marked for update.
+
+RETURN VALUES
+     Upon successful completion, a value of 0 is returned.   Oth-
+     erwise, a value of -1 is returned, and errno is set to indi-
+     cate the error.
+
+ERRORS
+     mkdir() fails and creates no directory if one or more of the
+     following are true:
+
+     EACCES              Either a component of  the  path  prefix
+                         denies  search  permission or write per-
+                         mission is denied on the  parent  direc-
+                         tory of the directory to be created.
+
+     EDQUOT              The directory where the new  file  entry
+                         is   being  placed  cannot  be  extended
+                         because the user's quota of disk  blocks
+                         on that file system has been exhausted.
+
+                         The  new  directory  cannot  be  created
+                         because  the user's quota of disk blocks
+                         on that file system has been exhausted.
+
+                         The user's quota of inodes on  the  file
+                         system  where  the file is being created
+                         has been exhausted.
+
+     EEXIST              The named file already exists.
+
+     EFAULT              path points to an illegal address.
+
+     EIO                 An I/O error has occurred while  access-
+                         ing the file system.
+
+     ELOOP               Too many symbolic links were encountered
+                         in translating path.
+
+     EMLINK              The  maximum  number  of  links  to  the
+                         parent directory would be exceeded.
+
+     EMULTIHOP           Components of path  require  hopping  to
+                         multiple  remote  machines  and the file
+                         system type does not allow it.
+
+     ENAMETOOLONG        The length of the path argument  exceeds
+                         {PATH_MAX}, or the length of a path com-
+                         ponent    exceeds    {NAME_MAX}    while
+                         {_POSIX_NO_TRUNC} is in effect.
+
+     ENOENT              A component of the path prefix does  not
+                         exist or is a null pathname.
+
+     ENOLINK             path points to a remote machine and  the
+                         link   to  that  machine  is  no  longer
+                         active.
+
+     ENOSPC              No free space is available on the device
+                         containing the directory.
+
+     ENOTDIR             A component of the path prefix is not  a
+                         directory.
+
+     EROFS               The path prefix resides on  a  read-only
+                         file system.
+
+SEE ALSO
+     chmod(2), mknod(2), umask(2), stat(5)
+
+
+=================================================================
+open(2)                   System Calls                    open(2)
+=================================================================
+
+NAME
+     open - open for reading or writing
+
+SYNOPSIS
+     #include <sys/types.h>
+     #include <sys/stat.h>
+     #include <fcntl.h>
+
+     int open(const char *path, int oflag,
+          /* mode_t mode */ ...);
+
+MT-LEVEL
+     Async-Signal-Safe
+
+DESCRIPTION
+     open() opens a file descriptor for the file  with  the  path
+     name  pointed  to  by  path,  and sets the file status flags
+     according to the value of  oflag.   oflag  values  are  con-
+     structed  by  OR-ing Flags from the following list (only one
+     of the first three flags below may be used):
+
+     O_RDONLY      Open for reading only.
+
+     O_WRONLY      Open for writing only.
+
+     O_RDWR        Open for reading and writing.
+
+     O_NDELAY      or O_NONBLOCK These flags  may  affect  subse-
+                   quent   reads  and  writes  (see  read(2)  and
+                   write(2)).  If both  O_NDELAY  and  O_NONBLOCK
+                   are set, O_NONBLOCK will take precedence.
+
+                   When opening a FIFO with O_RDONLY or  O_WRONLY
+                   set:
+
+                       If O_NDELAY or O_NONBLOCK is set:  An open
+                       for   reading-only   will  return  without
+                       delay;  an  open  for  writing-only   will
+                       return  an  error  if no process currently
+                       has the file open for reading.
+
+                       If O_NDELAY and O_NONBLOCK are clear:   An
+                       open  for  reading-only will block until a
+                       process opens the  file  for  writing;  an
+                       open  for  writing-only will block until a
+                       process opens the file for reading.
+
+                   When opening a file associated with a terminal
+                   line:
+
+                       If O_NDELAY or  O_NONBLOCK  is  set:   The
+                       open  will  return without waiting for the
+                       device to be ready  or  available;  subse-
+                       quent  behavior  of  the  device is device
+                       specific.
+
+                       If O_NDELAY and O_NONBLOCK are clear:  The
+                       open  will block until the device is ready
+                       or available.
+
+     O_APPEND      If set, the file pointer will be  set  to  the
+                   end of the file prior to each write.
+
+     O_DSYNC       Write I/O operations on  the  file  descriptor
+                   complete  as  defined by synchronized I/O data
+                   integrity completion.
+
+     O_RSYNC       Read I/O operations  on  the  file  descriptor
+                   complete  at  the  same  level of integrity as
+                   specified by the O_DSYNC and O_SYNC flags.  If
+                   both O_DSYNC and O_RSYNC are set in oflag, all
+                   I/O operations on the file descriptor complete
+                   as  defined by synchronized I/O data integrity
+                   completion.  If both O_SYNC  and  O_RSYNC  are
+                   set  in  oflag, all I/O operations on the file
+                   descriptor complete as defined by synchronized
+                   I/O file integrity completion.
+
+     O_SYNC        When opening a regular file, this flag affects
+                   subsequent writes.  If set, each write(2) will
+                   wait for both the file data and file status to
+                   be  physically  updated.  Write I/O operations
+                   on the file descriptor complete as defined  by
+                   synchronized I/O file integrity completion.
+
+     O_NOCTTY      If set and the file is a terminal, the  termi-
+                   nal  will  not  be  allocated  as  the calling
+                   process's controlling terminal.
+
+     O_CREAT       If the file exists, this flag has  no  effect,
+                   except  as  noted  under O_EXCL below.  Other-
+                   wise, the file is created and the owner ID  of
+                   the  file  is  set to the effective user ID of
+                   the process, the group ID of the file  is  set
+                   to  the  effective group ID of the process, or
+                   if the S_ISGID bit is set in the directory  in
+                   which  the  file  is being created, the file's
+                   group ID is set to the group ID of its  parent
+                   directory.   If  the  group ID of the new file
+                   does not match the effective group ID  or  one
+                   of  the  supplementary groups IDs, the S_ISGID
+                   bit is cleared. The access permission bits  of
+                   the  file  mode  are set to the value of mode,
+                   modified as follows (see creat(2)):
+
+                       All bits set in  the  file  mode  creation
+                       mask  of  the  process  are  cleared  (see
+                       umask(2)).
+
+                       The "save text image after execution  bit"
+                       of  the  mode  is  cleared (see chmod(2)).
+                       O_SYNC Write I/O operations  on  the  file
+                       descriptor  complete  as  defined  by syn-
+                       chronized I/O  file  integrity  completion
+                       (see fcntl(5) definition of O_SYNC .)
+
+     O_EXCL        If O_EXCL and O_CREAT  are  set,  open()  will
+                   fail  if  the  file exists.  The check for the
+                   existence of the file and the creation of  the
+                   file  if  it  does  not  exist  is atomic with
+                   respect to other  processes  executing  open()
+                   naming the same filename in the same directory
+                   with O_EXCL and O_CREAT set.
+
+     O_TRUNC       If the file exists, its length is truncated to
+                   0  and  the  mode  and  owner  are  unchanged.
+                   O_TRUNC has no effect on FIFO special files or
+                   directories.
+
+     When opening a STREAMS file, oflag may be  constructed  from
+     O_NDELAY or O_NONBLOCK OR-ed with either O_RDONLY, O_WRONLY,
+     or O_RDWR. Other flag values are not applicable  to  STREAMS
+     devices  and have no effect on them.  The values of O_NDELAY
+     and O_NONBLOCK affect the operation of STREAMS  drivers  and
+     certain  functions  (see  read(2), getmsg(2), putmsg(2), and
+     write(2)).  For drivers, the implementation of O_NDELAY  and
+     O_NONBLOCK  is  device specific.  Each STREAMS device driver
+     may treat these options differently.
+
+     When open() is invoked to  open  a  named  stream,  and  the
+     connld  module (see connld(7M)) has been pushed on the pipe,
+     open()  blocks  until  the  server  process  has  issued  an
+     I_RECVFD  ioctl  (see  streamio(7I))  to  receive  the  file
+     descriptor.
+
+     If path is a symbolic link and O_CREAT and O_EXCL  are  set,
+     the link is not followed.
+
+     The file pointer used to mark the  current  position  within
+     the file is set to the beginning of the file.
+
+     The new file descriptor is the lowest numbered file descrip-
+     tor  available  and  is set to remain open across exec func-
+     tions (see fcntl(2)).
+
+     Certain flag values can be set following open() as described
+     in fcntl(2).
+
+     If O_CREAT is set and the file  did  not  previously  exist,
+     upon  successful  completion  open()  marks  for  update the
+     st_atime, st_ctime and st_mtime fields of the file  and  the
+     st_ctime and st_mtime fields of the parent directory.
+
+     If O_TRUNC is set and the file did  previously  exist,  upon
+     successful  completion  open() marks for update the st_ctime
+     and st_mtime fields of the file.
+
+RETURN VALUES
+     Upon successful completion, the file descriptor is returned.
+     Otherwise,  a  value  of  -1 is returned and errno is set to
+     indicate the error.
+
+ERRORS
+     The named file is opened unless one or more of the following
+     are true:
+
+     EACCES              The file does not exist and  write  per-
+                         mission  is  denied by the parent direc-
+                         tory of the file to be created.
+
+                         O_TRUNC is specified and  write  permis-
+                         sion is denied
+
+                         A component of the  path  prefix  denies
+                         search permission.
+
+                         oflag permission is denied for an exist-
+                         ing file.
+
+     EAGAIN              If the file exists with enforced  record
+                         locking enabled, record locks are on the
+                         file  (see  chmod(2)),  and  O_TRUNC  is
+                         specified.
+
+     EDQUOT              The file  does  not  exist,  O_CREAT  is
+                         specified,  and  the directory where the
+                         new file entry is being placed cannot be
+                         extended  because  the  user's  quota of
+                         disk blocks on that file system has been
+                         exhausted.
+
+                         The file  does  not  exist,  O_CREAT  is
+                         specified,   and  the  user's  quota  of
+                         inodes on the file system where the file
+                         is being created has been exhausted.
+
+     EEXIST              O_CREAT and  O_EXCL  are  set,  and  the
+                         named file exists.
+
+     EFAULT              path points to an illegal address.
+
+     EINTR               A signal was caught  during  the  open()
+                         function.
+
+     EIO                 A hangup or error  occurred  during  the
+                         open of the STREAMS-based device.
+
+     EISDIR              The named file is a directory and  oflag
+                         is write or read/write.
+
+     ELOOP               Too many symbolic links were encountered
+                         in translating path.
+
+     EMFILE              The process has too many open files (see
+                         getrlimit(2)).
+
+     EMULTIHOP           Components of path  require  hopping  to
+                         multiple  remote  machines  and the file
+                         system does not allow it.
+
+     ENAMETOOLONG        The length of the path argument  exceeds
+                         {PATH_MAX}, or the length of a path com-
+                         ponent    exceeds    {NAME_MAX}    while
+                         {_POSIX_NO_TRUNC} is in effect.
+
+     ENFILE              The system file table is full.
+
+     ENOENT              O_CREAT is not set and  the  named  file
+                         does not exist.
+
+                         O_CREAT is set and a  component  of  the
+                         path  prefix  does  not  exist or is the
+                         null pathname.
+
+     ENOLINK             path points to a remote machine, and the
+                         link   to  that  machine  is  no  longer
+                         active.
+
+     ENOMEM              The system is unable to allocate a  send
+                         descriptor.
+
+     ENOSPC              O_CREAT and O_EXCL are set, and the file
+                         system is out of inodes.
+
+                         O_CREAT is set and the directory  cannot
+                         be extended.
+
+     ENOSR               Unable to allocate a stream.
+
+     ENOTDIR             A component of the path prefix is not  a
+                         directory.
+
+     ENXIO               The named file is a character special or
+                         block special file, and the device asso-
+                         ciated with this special file  does  not
+                         exist.
+
+                         O_NDELAY or O_NONBLOCK is set, the named
+                         file  is a FIFO, O_WRONLY is set, and no
+                         process has the file open for reading.
+
+                         A STREAMS module or driver open  routine
+                         failed.
+
+     EROFS               The named file resides  on  a  read-only
+                         file system and either O_WRONLY, O_RDWR,
+                         O_CREAT, or O_TRUNC is set in oflag  (if
+                         the file does not exist).
+
+SEE ALSO
+     intro(2), chmod(2),  close(2),  creat(2),  dup(2),  exec(2),
+     fcntl(2),   getmsg(2),  getrlimit(2),  lseek(2),  putmsg(2),
+     read(2), stat(2),  umask(2),  write(2),  fcntl(5),  stat(5),
+     connld(7M), streamio(7I)
+
+
+=================================================================
+read(2)                   System Calls                    read(2)
+=================================================================
+
+NAME
+     read, pread, readv - read from file
+
+SYNOPSIS
+     #include <sys/types.h>
+     #include <sys/uio.h>
+     #include <unistd.h>
+
+     ssize_t read(int fildes, void *buf, size_t nbyte);
+
+     ssize_t pread(int fildes, void *buf, size_t nbyte,
+          off_t offset);
+
+     ssize_t readv(int fildes, struct iovec *iov, int iovcnt);
+
+MT-LEVEL
+     read() is Async-Signal-Safe
+
+DESCRIPTION
+     read() attempts to read nbyte bytes from the file associated
+     with  fildes into the buffer pointed to by buf.  If nbyte is
+     zero, read() returns zero and has no other results.   fildes
+     is an open file descriptor.
+
+     On devices capable of seeking, the read() starts at a  posi-
+     tion  in  the file given by the file pointer associated with
+     fildes.  On return from read(), the file pointer  is  incre-
+     mented by the number of bytes actually read.
+
+     Devices that are incapable of seeking always read  from  the
+     current  position.   The  value of a file pointer associated
+     with such a file is undefined.
+
+     pread() performs the same action as read(), except  that  it
+     reads from a given position in the file without changing the
+     file pointer.  The first three arguments to pread() are  the
+     same as read() with the addition of a fourth argument offset
+     for the desired position inside the  file.   An  attempt  to
+     perform  a  pread()  on  a file that is incapable of seeking
+     results in an error.
+
+     readv() performs the same action as read(), but  places  the
+     input  data into the iovcnt buffers specified by the members
+     of the iov array: iov[0], iov[1], ..., iov[iovcnt-1].
+
+     The iovec structure contains the following members:
+
+          caddr_t   iov_base;
+          int       iov_len;
+
+     Each iovec entry specifies the base address and length of an
+     area  in  memory where data should be placed. readv() always
+     fills one buffer completely before proceeding to the next.
+
+     On success, read() and readv() return the  number  of  bytes
+     actually  read  and placed in the buffer; this number may be
+     less than nbyte if the file is associated with a  communica-
+     tion line (see ioctl(2) and termio(7I)), or if the number of
+     bytes left in the file is less than nbyte, or if the file is
+     a  pipe or a special file.  A value of 0 is returned when an
+     end-of-file has been reached.
+
+     read() reads data previously written to a file. If any  por-
+     tion  of  an  ordinary file prior to the end of file has not
+     been written, read() returns the number of bytes read as  0.
+     For example, the lseek routine allows the file pointer to be
+     set beyond the end of existing data in the  file.  If  addi-
+     tional  data  is  written at this point, subsequent reads in
+     the gap between the previous end of data and  newly  written
+     data  return  bytes  with a value of 0 until data is written
+     into the gap.
+
+     A read() or readv() from a STREAMS (see intro(2))  file  can
+     operate   in   three   different  modes:  byte-stream  mode,
+     message-nondiscard  mode,  and  message-discard  mode.   The
+     default  is byte-stream mode.  This can be changed using the
+     I_SRDOPT ioctl(2) request (see  streamio(7I)),  and  can  be
+     tested with the I_GRDOPT ioctl(2) request.
+
+     In byte-stream mode, read() and readv() retrieve  data  from
+     the  stream  until they have retrieved nbyte bytes, or until
+     there is no more data to  be  retrieved.   Byte-stream  mode
+     ignores message boundaries.
+
+     In  STREAMS  message-nondiscard  mode,  read()  and  readv()
+     retrieve  data  until  they  have read nbyte bytes, or until
+     they reach a message boundary.  If read()  or  readv()  does
+     not  retrieve  all the data in a message, the remaining data
+     is replaced on the stream and can be retrieved by  the  next
+     read() or readv() call.  Message-discard mode also retrieves
+     data until it has retrieved nbyte bytes,  or  it  reaches  a
+     message  boundary.  However, unread data remaining in a mes-
+     sage after the read or readv returns is  discarded,  and  is
+     not  available for a subsequent read(), readv(), or getmsg()
+     (see getmsg(2)).
+
+     When attempting to read from a regular file  with  mandatory
+     file/record locking set (see chmod(2)), and there is a write
+     lock owned by another process on the segment of the file  to
+     be read:
+
+          If O_NDELAY or O_NONBLOCK is set, read() returns -1 and
+          sets errno to EAGAIN.
+          If O_NDELAY and O_NONBLOCK  are  clear,  read()  sleeps
+          until the blocking record lock is removed.
+
+     When attempting to read from an empty pipe (or FIFO):
+
+          If no process has the pipe  open  for  writing,  read()
+          returns 0 to indicate end-of-file.
+
+          If some process has  the  pipe  open  for  writing  and
+          O_NDELAY is set, read() returns 0.
+
+          If some process has  the  pipe  open  for  writing  and
+          O_NONBLOCK  is set, read() returns -1 and sets errno to
+          EAGAIN.
+
+          If O_NDELAY and O_NONBLOCK  are  clear,  read()  blocks
+          until data is written to the pipe or the pipe is closed
+          by all processes that had opened the pipe for writing.
+
+     When attempting to read a file associated  with  a  terminal
+     that has no data currently available:
+
+          If O_NDELAY is set, read() returns 0.
+
+          If O_NONBLOCK is set, read() returns -1 and sets  errno
+          to EAGAIN.
+
+          If O_NDELAY and O_NONBLOCK  are  clear,  read()  blocks
+          until data become available.
+
+     When attempting to read a file associated with a stream that
+     is  not  a  pipe  or FIFO, or terminal, and that has no data
+     currently available:
+
+          If O_NDELAY or O_NONBLOCK is set, read() returns -1 and
+          sets errno to EAGAIN.
+
+          If O_NDELAY and O_NONBLOCK  are  clear,  read()  blocks
+          until data becomes available.
+
+     When reading from a STREAMS file, handling of zero-byte mes-
+     sages  is  determined  by the current read mode setting.  In
+     byte-stream mode, read() accepts  data  until  it  has  read
+     nbyte  bytes,  or  until  there  is no more data to read, or
+     until a zero-byte message block is encountered.  read() then
+     returns  the  number of bytes read, and places the zero-byte
+     message back on the stream  to  be  retrieved  by  the  next
+     read() or getmsg() (see getmsg(2)).  In the two other modes,
+     a zero-byte message returns a value of 0 and the message  is
+     removed  from  the stream.  When a zero-byte message is read
+     as the first message on a stream, a value of 0  is  returned
+     regardless of the read() mode.
+     A read() or readv() from a STREAMS file returns the data  in
+     the  message  at  the  front  of the stream head read queue,
+     regardless of the priority band of the message.
+
+     Normally, a read() from a STREAMS file can only process mes-
+     sages with data and without control information.  The read()
+     fails if a message containing control information is encoun-
+     tered  at  the  stream  head.   This  default  action can be
+     changed by placing the stream in either control-data mode or
+     control-discard   mode   with  the  I_SRDOPT  ioctl(2).   In
+     control-data mode, control messages are  converted  to  data
+     messages  by  read().  In control-discard mode, control mes-
+     sages are discarded by read(), but any data associated  with
+     the control messages is returned to the user.
+
+RETURN VALUES
+     On success a non-negative integer is returned indicating the
+     number  of bytes actually read.  Otherwise, a -1 is returned
+     and errno is set to indicate the error.
+
+ERRORS
+     read(), pread(), and readv() fail if one or more of the fol-
+     lowing are true:
+
+     EAGAIN         Mandatory  file/record   locking   was   set,
+                    O_NDELAY or O_NONBLOCK was set, and there was
+                    a blocking record lock.
+
+     EAGAIN         Total amount of system memory available  when
+                    reading using raw I/O is temporarily insuffi-
+                    cient.
+
+     EAGAIN         No data is waiting to be read on a file asso-
+                    ciated  with  a tty device and O_NONBLOCK was
+                    set.
+
+     EAGAIN         No message is waiting to be read on a  stream
+                    and O_NDELAY or O_NONBLOCK was set.
+
+     EBADF          fildes is not a valid  file  descriptor  open
+                    for reading.
+
+     EBADMSG        Message waiting to be read on a stream is not
+                    a data message.
+
+     EDEADLK        The read was going to go to sleep and cause a
+                    deadlock to occur.
+
+     EFAULT         buf points to an illegal address.
+
+     EINTR          A signal was caught during the read operation
+                    and no data was transferred.
+
+     EINVAL         Attempted to read from a stream linked  to  a
+                    multiplexor.
+
+     EIO            A physical I/O error  has  occurred,  or  the
+                    process  is in a background process group and
+                    is attempting to read  from  its  controlling
+                    terminal,  and either the process is ignoring
+                    or blocking the SIGTTIN signal or the process
+                    group of the process is orphaned.
+
+     EISDIR         fildes refers to a directory on a file system
+                    type that does not support read operations on
+                    directories.
+
+     ENOLCK         The system record lock table was full, so the
+                    read() or readv() could not go to sleep until
+                    the blocking record lock was removed.
+
+     ENOLINK        fildes is on a remote machine and the link to
+                    that machine is no longer active.
+
+     ENXIO          The device associated with fildes is a  block
+                    special  or  character  special  file and the
+                    value of the file pointer is out of range.
+
+     In addition, readv() may return one of the following errors:
+
+     EFAULT         iov  points  outside  the  allocated  address
+                    space.
+
+     EINVAL         iovcnt was  less  than  or  equal  to  0,  or
+                    greater  than  or  equal  to {IOV_MAX}.  (See
+                    intro(2) for a definition of {IOV_MAX}).
+
+     EINVAL         The sum of the  iov_len  values  in  the  iov
+                    array overflowed an int.
+
+     In addition, pread() fails  and  the  file  pointer  remains
+     unchanged if the following is true:
+
+     ESPIPE         fildes is associated with a pipe or fifo.
+
+     A read() from a STREAMS file also fails if an error  message
+     is  received at the stream head.  In this case, errno is set
+     to the value returned in the error  message.   If  a  hangup
+     occurs on the stream being read, read() continues to operate
+     normally  until  the  stream  head  read  queue  is   empty.
+     Thereafter, it returns 0.
+
+SEE ALSO
+     intro(2), chmod(2), creat(2), dup(2),  fcntl(2),  getmsg(2),
+     ioctl(2), open(2), pipe(2), streamio(7I), termio(7I)
+
+
+=================================================================
+realpath(3C)           C Library Functions           realpath(3C)
+=================================================================
+
+NAME
+     realpath - returns the real file name
+
+SYNOPSIS
+     #include <stdlib.h>
+     #include <sys/param.h>
+
+     char *realpath(char *file_name, char *resolved_name);
+
+MT-LEVEL
+     MT-Safe
+
+DESCRIPTION
+     realpath() resolves all links and references  to  ``.''  and
+     ``..'' in file_name and stores it in resolved_name.
+
+     It can handle both relative and absolute  path  names.   For
+     absolute  path  names  and the relative names whose resolved
+     name cannot be expressed relatively (for example, ../../rel-
+     dir),  it returns the resolved absolute name.  For the other
+     relative path names, it returns the resolved relative name.
+
+     resolved_name must be big enough (MAXPATHLEN) to contain the
+     fully resolved path name.
+
+RETURN VALUES
+     If there is no error, realpath() returns a  pointer  to  the
+     resolved_name.   Otherwise  it  returns  a  null pointer and
+     places the name of the offending file in resolved_name.  The
+     global variable errno is set to indicate the error.
+
+SEE ALSO
+     getcwd(3C), sysconf(3C)
+
+NOTES
+     realpath() operates on null-terminated strings.
+
+     One should have execute permission on all the directories in
+     the given and the resolved path.
+
+     realpath() may fail to return to the current directory if an
+     error occurs.
+
+
+=================================================================
+rmdir(2)                  System Calls                   rmdir(2)
+=================================================================
+
+NAME
+     rmdir - remove a directory
+
+SYNOPSIS
+     #include <unistd.h>
+
+     int rmdir(const char *path);
+
+MT-LEVEL
+     Async-Signal-Safe
+
+DESCRIPTION
+     rmdir() removes the directory named by the path name pointed
+     to  by  path.  The directory must not have any entries other
+     than "." and "..".
+
+     If the directory's link count becomes zero  and  no  process
+     has  the directory open, the space occupied by the directory
+     is freed and the directory is no longer accessible.  If  one
+     or more processes have the directory open when the last link
+     is removed, the  "."  and  ".."  entries,  if  present,  are
+     removed  before  rmdir()  returns  and no new entries may be
+     created in the directory, but the directory is  not  removed
+     until all references to the directory have been closed.
+
+     Upon successful completion  rmdir()  marks  for  update  the
+     st_ctime and st_mtime fields of the parent directory.
+
+RETURN VALUES
+     Upon successful completion, a value of 0 is returned.   Oth-
+     erwise,  a value of -1 is returned and errno is set to indi-
+     cate the error.
+
+ERRORS
+     The named directory is removed unless one  or  more  of  the
+     following are true:
+
+     EACCES              Search permission is denied for  a  com-
+                         ponent of the path prefix.
+
+     EACCES              Write permission is denied on the direc-
+                         tory  containing  the  directory  to  be
+                         removed.
+
+     EACCES              The parent  directory  has  the  S_ISVTX
+                         variable  set  and  is  not owned by the
+                         user; the directory is not owned by  the
+                         user  and  is  not writable by the user;
+                         the user is not a super-user.
+
+     EBUSY               The directory to be removed is the mount
+                         point for a mounted file system.
+
+     EEXIST              The  directory  contains  entries  other
+                         than those for "." and "..".
+
+     EFAULT              path points to an illegal address.
+
+     EINVAL              The  directory  to  be  removed  is  the
+                         current directory.
+
+     EINVAL              The final component of path is ``.''.
+
+     EIO                 An I/O error  occurred  while  accessing
+                         the file system.
+
+     ELOOP               Too many symbolic links were encountered
+                         in translating path.
+
+     EMULTIHOP           Components of path  require  hopping  to
+                         multiple  remote  machines  and the file
+                         system does not allow it.
+
+     ENAMETOOLONG        The length of the path argument  exceeds
+                         {PATH_MAX}, or the length of a path com-
+                         ponent    exceeds    {NAME_MAX}    while
+                         {_POSIX_NO_TRUNC} is in effect.
+
+     ENOENT              The named directory does not exist or is
+                         the null pathname.
+
+     ENOLINK             path points to a remote machine, and the
+                         connection  to that machine is no longer
+                         active.
+
+     ENOTDIR             A component of the path prefix is not  a
+                         directory.
+
+     EROFS               The directory entry  to  be  removed  is
+                         part of a read-only file system.
+
+SEE ALSO
+     mkdir(1), rm(1), mkdir(2)
+
+
+=================================================================
+sleep(3C)              C Library Functions              sleep(3C)
+=================================================================
+
+NAME
+     sleep - suspend execution for interval
+
+SYNOPSIS
+     #include <unistd.h>
+
+     unsigned sleep(unsigned seconds);
+
+MT-LEVEL
+     Safe
+
+DESCRIPTION
+     The current process is  suspended  from  execution  for  the
+     number  of  seconds  specified  by the argument.  The actual
+     suspension time may be less than that requested because  any
+     caught signal will terminate the sleep() following execution
+     of that signal's catching  routine.   Also,  the  suspension
+     time  may  be  longer  than requested by an arbitrary amount
+     because of the scheduling of other activity in  the  system.
+     The value returned by sleep() will be the ``unslept'' amount
+     (the requested time minus the time actually slept)  in  case
+     the  caller  had an alarm set to go off earlier than the end
+     of the requested sleep() time, or premature arousal  because
+     of another caught signal.
+
+     The routine is implemented by setting an  alarm  signal  and
+     pausing  until it (or some other signal) occurs.  The previ-
+     ous state of the alarm signal is saved  and  restored.   The
+     calling  program may have set up an alarm signal before cal-
+     ling sleep().  If the sleep() time exceeds  the  time  until
+     such  alarm  signal, the process sleeps only until the alarm
+     signal would have occurred.  The caller's alarm  catch  rou-
+     tine  is  executed  just before the sleep() routine returns.
+     But if the sleep() time is less  than  the  time  till  such
+     alarm,  the  prior alarm time is reset to go off at the same
+     time it would have without the intervening sleep().
+
+SEE ALSO
+     alarm(2), pause(2), signal(3C)
+
+NOTES
+     SIGALRM should not be blocked or ignored during  a  call  to
+     sleep().   Only  a  prior  call  to alarm(2) should generate
+     SIGALRM for the calling process during a call to sleep().
+
+     In a multithreaded program,  only  the  invoking  thread  is
+     suspended from execution.
+
+
+=================================================================
+stat(2)                   System Calls                    stat(2)
+=================================================================
+
+NAME
+     stat, lstat, fstat - get file status
+
+SYNOPSIS
+     #include <sys/types.h>
+     #include <sys/stat.h>
+
+     int stat(const char *path, struct stat *buf);
+
+     int lstat(const char *path, struct stat *buf);
+
+     int fstat(int fildes, struct stat *buf);
+
+MT-LEVEL
+     stat() and fstat() are Async-Signal-Safe
+
+DESCRIPTION
+     stat() obtains information about  the  file  pointed  to  by
+     path.   Read, write, or execute permission of the named file
+     is not required, but all directories listed in the path name
+     leading to the file must be searchable.
+
+     lstat() obtains file attributes similar  to  stat(),  except
+     when the named file is a symbolic link; in that case lstat()
+     returns information about the  link,  while  stat()  returns
+     information about the file the link references.
+
+     fstat() obtains information about an open file known by  the
+     file  descriptor  fildes,  obtained  from a successful open,
+     creat, dup, fcntl, or pipe function.
+
+     buf is a pointer to a stat() structure into  which  informa-
+     tion is placed concerning the file.
+
+     The contents of the structure pointed to by buf include  the
+     following members:
+
+          mode_t   st_mode;     /* File mode (see mknod(2)) */
+          ino_t    st_ino;      /* Inode number */
+          dev_t    st_dev;      /* ID of device containing */
+                                /* a directory entry for this file */
+          dev_t    st_rdev;     /* ID of device */
+                                /* This entry is defined only for */
+                                /* char special or block special files */
+          nlink_t  st_nlink;    /* Number of links */
+          uid_t    st_uid;      /* User ID of the file's owner */
+          gid_t    st_gid;      /* Group ID of the file's group */
+          off_t    st_size;     /* File size in bytes */
+          time_t   st_atime;    /* Time of last access */
+          time_t   st_mtime;    /* Time of last data modification */
+          time_t   st_ctime;    /* Time of last file status change */
+                                /* Times measured in seconds since */
+                                /* 00:00:00 UTC, Jan. 1, 1970 */
+          long     st_blksize;  /* Preferred I/O block size */
+          long     st_blocks;   /* Number of 512 byte blocks allocated*/
+
+     st_mode   The mode of the file as described in mknod(2).  In
+               addition  to  the modes described in mknod(2), the
+               mode of a file may also be S_IFLNK if the file  is
+               a  symbolic  link.  (Note that S_IFLNK may only be
+               returned by lstat().)
+
+     st_ino    This field uniquely identifies the file in a given
+               file  system.  The pair st_ino and st_dev uniquely
+               identifies regular files.
+
+     st_dev    This field uniquely  identifies  the  file  system
+               that  contains the file.  Its value may be used as
+               input to the ustat() function  to  determine  more
+               information  about  this  file  system.   No other
+               meaning is associated with this value.
+
+     st_rdev   This field should be used only  by  administrative
+               commands.   It  is valid only for block special or
+               character special files and only  has  meaning  on
+               the system where the file was configured.
+
+     st_nlink  This field should be used only  by  administrative
+               commands.
+
+     st_uid    The user ID of the file's owner.
+
+     st_gid    The group ID of the file's group.
+
+     st_size   For regular files, this is the address of the  end
+               of  the file.  For block special or character spe-
+               cial, this is not defined.  See also pipe(2).
+
+     st_atime  Time when file data was last accessed.  Changed by
+               the  following  functions:   creat,  mknod,  pipe,
+               utime, and read.
+
+     st_mtime  Time when data was last modified.  Changed by  the
+               following  functions:   creat, mknod, pipe, utime,
+               and write.
+
+     st_ctime  Time when file status was last  changed.   Changed
+               by  the following functions:  chmod, chown, creat,
+               link, mknod, pipe, unlink, utime, and write.
+
+     st_blksize
+               A hint as to the "best" unit size for  I/O  opera-
+               tions.   This  field is not defined for block spe-
+               cial or character special files.
+
+     st_blocks The total number of physical blocks  of  size  512
+               bytes  actually  allocated on disk.  This field is
+               not defined for block special or character special
+               files.
+
+RETURN VALUES
+     Upon successful completion a value of 0 is returned.  Other-
+     wise, a value of -1 is returned and errno is set to indicate
+     the error.
+
+ERRORS
+     stat() and lstat() fail if one or more of the following  are
+     true:
+
+     EACCES              Search permission is denied for  a  com-
+                         ponent of the path prefix.
+
+     EFAULT              buf  or  path  points  to   an   illegal
+                         address.
+
+     EINTR               A signal was caught during the stat() or
+                         lstat() function.
+
+     ELOOP               Too many symbolic links were encountered
+                         in translating path.
+
+     EMULTIHOP           Components of path  require  hopping  to
+                         multiple  remote  machines  and the file
+                         system does not allow it.
+
+     ENAMETOOLONG        The length of the path argument  exceeds
+                         {PATH_MAX}, or the length of a path com-
+                         ponent    exceeds    {NAME_MAX}    while
+                         {_POSIX_NO_TRUNC} is in effect.
+
+     ENOENT              The named file does not exist or is  the
+                         null pathname.
+
+     ENOLINK             path points to a remote machine and  the
+                         link   to  that  machine  is  no  longer
+                         active.
+
+     ENOTDIR             A component of the path prefix is not  a
+                         directory.
+
+     EOVERFLOW           A component is too large to store in the
+                         structure pointed to by buf.
+
+     fstat() fails if one or more of the following are true:
+
+     EBADF               fildes is not a valid open file descrip-
+                         tor.
+
+     EFAULT              buf points to an illegal address.
+
+     EINTR               A signal was caught during  the  fstat()
+                         function.
+
+     ENOLINK             fildes points to a  remote  machine  and
+                         the  link  to  that machine is no longer
+                         active.
+
+     EOVERFLOW           A component is too large to store in the
+                         structure pointed to by buf.
+
+SEE ALSO
+     chmod(2), chown(2), creat(2),  link(2),  mknod(2),  pipe(2),
+     read(2),    time(2),    unlink(2),    utime(2),    write(2),
+     fattach(3C), stat(5)
+
+
+=================================================================
+symlink(2)                System Calls                 symlink(2)
+=================================================================
+
+NAME
+     symlink - make a symbolic link to a file
+
+SYNOPSIS
+     #include <unistd.h>
+
+     int symlink(const char *name1, const char *name2);
+
+DESCRIPTION
+     symlink() creates a symbolic link name2 to the  file  name1.
+     Either name may be an arbitrary pathname, the files need not
+     be on the same file system, and name1 may be nonexistent.
+
+     The file to which the symbolic link points is used  when  an
+     open(2)  operation is performed on the link.  A stat(2) on a
+     symbolic link returns the linked-to  file,  while  an  lstat
+     returns information about the link itself.  This can lead to
+     surprising results when a symbolic link is made to a  direc-
+     tory.   To avoid confusion in programs, the readlink(2) call
+     can be used to read the contents of a symbolic link.
+
+RETURN VALUES
+     Upon successful completion symlink() returns a value  of  0;
+     otherwise, it returns -1 and places an error code in errno.
+
+ERRORS
+     The symbolic link is made unless one or more of the  follow-
+     ing are true:
+
+     EACCES              Search permission is denied for  a  com-
+                         ponent of the path prefix of name2.
+
+     EDQUOT              The directory where the  entry  for  the
+                         new symbolic link is being placed cannot
+                         be extended because the user's quota  of
+                         disk blocks on that file system has been
+                         exhausted.
+
+                         The new symbolic link cannot be  created
+                         because  the user's quota of disk blocks
+                         on that file system has been exhausted.
+
+                         The user's quota of inodes on  the  file
+                         system  where  the file is being created
+                         has been exhausted.
+
+     EEXIST              The file referred to  by  name2  already
+                         exists.
+
+     EFAULT              name1 or  name2  points  to  an  illegal
+                         address.
+
+     EIO                 An I/O error occurs while  reading  from
+                         or writing to the file system.
+
+     ELOOP               Too many symbolic links are  encountered
+                         in translating name2.
+
+     ENAMETOOLONG        The length of the name2 argument exceeds
+                         {PATH_MAX},  or  the  length  of a name2
+                         component   exceeds   {NAME_MAX}   while
+                         (_POSIX_NO_TRUNC) is in effect.
+
+     ENOENT              A component of the path prefix of  name2
+                         does not exist.
+
+     ENOSPC              The directory in which the entry for the
+                         new symbolic link is being placed cannot
+                         be extended because no space is left  on
+                         the  file  system  containing the direc-
+                         tory.
+
+                         The new symbolic link cannot be  created
+                         because  no  space  is  left on the file
+                         system which will contain the link.
+
+                         There are no free  inodes  on  the  file
+                         system   on  which  the  file  is  being
+                         created.
+
+     ENOSYS              The file system does  not  support  sym-
+                         bolic links
+
+     ENOTDIR             A component of the path prefix of  name2
+                         is not a directory.
+
+     EROFS               The file name2 would reside on  a  read-
+                         only file system.
+
+SEE ALSO
+     cp(1), link(2), open(2), readlink(2), stat(2), unlink(2)
+
+
+=================================================================
+times(2)                  System Calls                   times(2)
+=================================================================
+
+NAME
+     times - get process and child process times
+
+SYNOPSIS
+     #include <sys/times.h>
+     #include <limits.h>
+
+     clock_t times(struct tms *buffer);
+
+MT-LEVEL
+     Async-Signal-Safe
+
+DESCRIPTION
+     times() fills the tms structure pointed to  by  buffer  with
+     time-accounting  information.  The tms structure, defined in
+     <sys/times.h>, contains the following members:
+
+               clock_t    tms_utime;
+               clock_t    tms_stime;
+               clock_t    tms_cutime;
+               clock_t    tms_cstime;
+
+     This information comes from the calling process and each  of
+     its  terminated  child processes for which it has executed a
+     wait routine.  All times are reported in clock  ticks.   The
+     specific  value  for a clock tick is defined by the variable
+     CLK_TCK, found in the header <limits.h>.
+
+     tms_utime is the CPU time used while executing  instructions
+     in the user space of the calling process.
+
+     tms_stime is the CPU time used by the system  on  behalf  of
+     the calling process.
+
+     tms_cutime is the sum of the tms_utime and the tms_cutime of
+     the child processes.
+
+     tms_cstime is the sum of the tms_stime and the tms_cstime of
+     the child processes.
+
+RETURN VALUES
+     Upon successful completion, times() returns the elapsed real
+     time,  in  clock  ticks, from an arbitrary point in the past
+     (for example, system start-up time).  This  point  does  not
+     change  from  one  invocation  of  times()  to  another.  If
+     times() fails, a value of -1 is returned and errno is set to
+     indicate the error.
+
+ERRORS
+     times() fails if:
+
+     EFAULT        buffer points to an illegal address.
+
+SEE ALSO
+     time(1),  timex(1),  exec(2),  fork(2),  time(2),   wait(2),
+     waitid(2), waitpid(2)
+
+
+=================================================================
+tmpnam(3S)           Standard I/O Functions            tmpnam(3S)
+=================================================================
+
+NAME
+     tmpnam, tmpnam_r, tempnam - create a name  for  a  temporary
+     file
+
+SYNOPSIS
+     #include <stdio.h>
+
+     char *tmpnam(char *s);
+
+     char *tmpnam_r(char *s);
+
+     char *tempnam(const char *dir, const char *pfx);
+
+MT-LEVEL
+     See the NOTES section of this page.
+
+DESCRIPTION
+     These functions generate file names that can safely be  used
+     for a temporary file.
+
+     tmpnam() always generates a file name using the  path-prefix
+     defined  as P_tmpdir in the <stdio.h> header.  If s is NULL,
+     tmpnam() leaves its result in an internal  static  area  and
+     returns  a  pointer to that area.  The next call to tmpnam()
+     will destroy the contents of the area.  If s is not NULL, it
+     is  assumed  to  be  the  address  of  an  array of at least
+     L_tmpnam bytes, where L_tmpnam  is  a  constant  defined  in
+     <stdio.h>;  tmpnam()  places  its  result  in that array and
+     returns s.
+
+     tmpnam_r() has the same  functionality  as  tmpnam()  except
+     that if s is a NULL pointer, the function returns NULL.
+
+     tempnam() allows the user to control the choice of a  direc-
+     tory.   The argument dir points to the name of the directory
+     in which the file is to be  created.   If  dir  is  NULL  or
+     points  to  a  string  that is not a name for an appropriate
+     directory,  the  path-prefix  defined  as  P_tmpdir  in  the
+     <stdio.h> header is used.  If that directory is not accessi-
+     ble, /tmp will be  used  as  a  last  resort.   This  entire
+     sequence  can be up-staged by providing an environment vari-
+     able TMPDIR in the user's environment, whose  value  is  the
+     name of the desired temporary-file directory.
+
+     Many applications prefer their temporary files to have  cer-
+     tain  favorite initial letter sequences in their names.  Use
+     the pfx argument for this.  This argument  may  be  NULL  or
+     point to a string of up to five characters to be used as the
+     first few characters of the temporary-file name.
+
+     tempnam() uses malloc(3C) to get space for  the  constructed
+     file  name,  and  returns a pointer to this area.  Thus, any
+     pointer value returned from tempnam() may serve as an  argu-
+     ment  to  free(3C)  (see  malloc(3C)).   If tempnam() cannot
+     return the expected result  for  any  reason - for  example,
+     malloc(3C) failed-or none of the above mentioned attempts to
+     find an appropriate directory was successful, a NULL pointer
+     will be returned.
+
+     tempnam() fails if there is not enough space.
+
+SEE ALSO
+     creat(2),  unlink(2),   fopen(3S),   free(3C),   malloc(3C),
+     mktemp(3C), tmpfile(3S)
+
+NOTES
+     The tmpnam_r() interface is  as  proposed  in  the  POSIX.4a
+     Draft  #6 document, and is subject to change to be compliant
+     to the standard when it is accepted.
+
+     When compiling  multi-thread  applications,  the  _REENTRANT
+     flag  must be defined on the compile line.  This flag should
+     only be used in multi-thread applications.
+
+     These functions generate a different  file  name  each  time
+     they are called.
+
+     Files created using these functions and either fopen(3S)  or
+     creat(2) are temporary only in the sense that they reside in
+     a directory intended for temporary use, and their names  are
+     unique.   It is the user's responsibility to remove the file
+     when its use is ended.
+
+     If called more than TMP_MAX (defined in <stdio.h>) times  in
+     a single process, these functions start recycling previously
+     used names.
+
+     Between the time a file name is  created  and  the  file  is
+     opened,  it  is  possible for some other process to create a
+     file with the same name.  This  can  never  happen  if  that
+     other process is using these functions or mktemp(3C) and the
+     file names are chosen to render duplication by  other  means
+     unlikely.
+
+     tempnam() is safe in multi-thread applications.  tmpnam() is
+     unsafe  in  multi-thread  applications, tmpnam_r() should be
+     used instead.
+
+     On Solaris  systems,  the  default  value  for  P_tmpdir  is
+     /var/tmp.
+
+
+=================================================================
+ttyname(3C)            C Library Functions            ttyname(3C)
+=================================================================
+
+NAME
+     ttyname, ttyname_r, isatty - find name of a terminal
+
+SYNOPSIS
+     #include <stdlib.h>
+
+     char *ttyname(int fildes);
+
+     int isatty(int fildes);
+
+     char *ttyname_r(int fildes, char *name, int namelen);
+
+  POSIX
+     cc  [  flag...  ]  file  ...  - D_POSIX_PTHREAD_SEMANTICS  [
+     library... ]
+
+     int ttyname_r(int fildes, char *name, size_t namesize);
+
+MT-LEVEL
+     See the NOTES section of this page.
+
+DESCRIPTION
+     ttyname() returns a  pointer  to  a  string  containing  the
+     null-terminated  path name of the terminal device associated
+     with file descriptor fildes.
+
+     ttyname_r() has the same functionality as  ttyname()  except
+     that  the  caller  must  supply  a  buffer  name with length
+     namelen to store the result; this buffer must  be  at  least
+     _POSIX_PATH_MAX  in size (defined in <limits.h>).  The POSIX
+     version of ttyname_r() takes a namesize  parameter  of  type
+     size_t.
+
+     isatty() returns 1 if fildes is associated with  a  terminal
+     device, 0 otherwise.
+
+RETURN VALUES
+     ttyname() and ttyname_r() return a NULL  pointer  if  fildes
+     does  not describe a terminal device in directory /dev.  The
+     POSIX ttyname_r() returns zero if successful, or  the  error
+     number upon failure.
+
+ERRORS
+     ttyname_r() will fail if the following is true:
+
+     ERANGE              The size of the buffer is  smaller  than
+                         the result to be returned.
+
+FILES
+     /dev/*
+
+SEE ALSO
+     gettext(3I), setlocale(3C)
+
+NOTES
+     When compiling multithread programs, see Intro(3), Notes  On
+     Multithread Applications.
+
+     If the application is linked with   - lintl,  then  messages
+     printed from this function are in the native language speci-
+     fied by the LC_MESSAGES locale category; see setlocale(3C).
+
+     The return value points to  static  data  whose  content  is
+     overwritten by each call.
+
+     ttyname()   is   unsafe   in   multi-thread    applications.
+     ttyname_r()   is   MT-Safe,  and  should  be  used  instead.
+     isatty() is MT-Safe in multi-thread applications.
+
+     Solaris 2.4 and earlier releases provided definitions of the
+     ttyname_r() interface as specified in POSIX.1c Draft 6.  The
+     final POSIX.1c standard changed the interface  as  described
+     above.   Support  for  the Draft 6 interface is provided for
+     compatibility only  and  may  not  be  supported  in  future
+     releases.   New  applications  and  libraries should use the
+     POSIX standard interface.
+
+
+=================================================================
+write(2)                  System Calls                   write(2)
+=================================================================
+
+NAME
+     write, pwrite, writev - write on a file
+
+SYNOPSIS
+     #include <unistd.h>
+
+     ssize_t write(int fildes, const void *buf, size_t nbyte);
+
+     #include <sys/types.h>
+     #include <unistd.h>
+
+     ssize_t pwrite(int fildes, const void  *buf,  size_t  nbyte,
+     off_t offset);
+
+     #include <sys/types.h>
+     #include <sys/uio.h>
+
+     int writev(int fildes, const struct iovec *iov, int iovcnt);
+
+MT-LEVEL
+     write() is Async-Signal-Safe
+
+DESCRIPTION
+     write() attempts  to  write  nbyte  bytes  from  the  buffer
+     pointed  to  by  buf  to  the  file  descriptor specified by
+     fildes.  If nbyte is zero and the file is  a  regular  file,
+     write() returns zero and has no other results.
+
+     pwrite() performs the same action as write(), except that it
+     writes  into  a  given  position  without  changing the file
+     pointer.  The first three arguments to pwrite() are the same
+     as write() with the addition of a fourth argument offset for
+     the desired position inside the file.
+
+     writev() performs the same action as  write(),  but  gathers
+     the  output  data  from  the iovcnt buffers specified by the
+     members of the iov array:  iov[0], iov[1], ..., iov[iovcnt -
+     1].   The  iovcnt buffer is valid if greater than 0 and less
+     than or equal to {IOV_MAX}.  (See intro(2) for a  definition
+     of {IOV_MAX}).
+
+     The iovec structure contains the following members:
+
+          caddr_t   iov_base;
+          int       iov_len;
+
+     Each iovec entry specifies the base address and length of an
+     area  in memory from which data should be written.  writev()
+     always writes all data from an area before proceeding to the
+     next.
+
+     On devices capable of seeking, the actual  writing  of  data
+     starts  at  the  position  in the file indicated by the file
+     pointer.  On return from write(), the file pointer is incre-
+     mented  by the number of bytes actually written.  On a regu-
+     lar file, if the incremented file pointer  is  greater  than
+     the length of the file, the length of the file is set to the
+     new file pointer.
+
+     On devices incapable of seeking, writing always takes  place
+     starting  at  the  current  position.   The  value of a file
+     pointer associated with such a device is undefined.
+
+     If the O_APPEND flag of the file status flags  is  set,  the
+     file  pointer  is  set  to the end of the file prior to each
+     write().  The system guarantees  that  no  intervening  file
+     modification  operation will occur between changing the file
+     offset and the write operation.
+
+     For regular files, if the O_SYNC flag  of  the  file  status
+     flags  is  set,  write() does not return until both the file
+     data and file status have  been  physically  updated.   This
+     function  is  for  special  applications  that require extra
+     reliability at the cost of performance.  For  block  special
+     files,  if  O_SYNC is set, write() does not return until the
+     data has been physically updated.
+
+     A  write()  to  a  regular  file  is  blocked  if  mandatory
+     file/record  locking  is  set (see chmod(2)), and there is a
+     record lock owned by another process on the segment  of  the
+     file to be written:
+
+          o  If O_NDELAY or O_NONBLOCK is set, write() returns -1
+            and sets errno to EAGAIN.
+
+          o  If O_NDELAY and O_NONBLOCK are clear, write() sleeps
+            until  all  blocking locks are removed or the write()
+            is terminated by a signal.
+
+     If a write() requests that more bytes be written than  there
+     is  room for-for example, if the write would exceed the pro-
+     cess file size limit (see getrlimit(2) and  ulimit(2)),  the
+     system file size limit, or the free space on the device-only
+     as many bytes as there is room for  will  be  written.   For
+     example,  suppose there is space for 20 bytes more in a file
+     before reaching a limit.  A write() of 512-bytes returns 20.
+     The  next  write()  of  a  non-zero  number of bytes gives a
+     failure return (except as noted for pipes and FIFO below).
+
+     Write requests to a pipe or FIFO are handled the same  as  a
+     regular file with the following exceptions:
+
+          o  There is no file  offset  associated  with  a  pipe,
+            hence  each  write  request appends to the end of the
+            pipe.
+
+          o  Write requests  of  {PIPE_BUF}  bytes  or  less  are
+            guaranteed not to be interleaved with data from other
+            processes doing writes on the same pipe.   Writes  of
+            greater  than  {PIPE_BUF}  bytes may have data inter-
+            leaved, on arbitrary boundaries, with writes by other
+            processes,  whether or not the O_NONBLOCK or O_NDELAY
+            flags are set.
+
+          o  If  O_NONBLOCK  and  O_NDELAY  are  clear,  a  write
+            request may cause the process to block, but on normal
+            completion it returns nbyte.
+
+          o  If O_NONBLOCK and O_NDELAY are set, write() does not
+            block   the   process.   If  a  write()  request  for
+            {PIPE_BUF} or fewer bytes succeeds completely write()
+            returns  nbyte.   Otherwise, if O_NONBLOCK is set, it
+            returns -1 and sets errno to EAGAIN or if O_NDELAY is
+            set, it returns 0. A write() request for greater than
+            {PIPE_BUF} bytes transfers what it  can  and  returns
+            the  number  of bytes written or it transfers no data
+            and, if O_NONBLOCK is set, returns -1 with errno  set
+            to  EAGAIN  or  if  O_NDELAY  is  set,  it returns 0.
+            Finally, if a  request  is  greater  than  {PIPE_BUF}
+            bytes and all data previously written to the pipe has
+            been read,  write()  transfers  at  least  {PIPE_BUF}
+            bytes.
+
+     When attempting to write to a file descriptor (other than  a
+     pipe,  FIFO, or stream) that supports nonblocking writes and
+     cannot accept the data immediately:
+
+          o  If O_NONBLOCK and O_NDELAY are clear, write() blocks
+            until the data can be accepted.
+
+          o  If O_NONBLOCK or O_NDELAY is set, write()  does  not
+            block  the  process.   If  some  data  can be written
+            without blocking the process, write() writes what  it
+            can  and returns the number of bytes written.  Other-
+            wise, if O_NONBLOCK is set, it returns - 1  and  sets
+            errno to EAGAIN or if O_NDELAY is set, it returns 0.
+
+     For STREAMS  files  (see  intro(2)  and  streamio(7I)),  the
+     operation  of  write()  is  determined  by the values of the
+     minimum and maximum nbyte range ("packet size") accepted  by
+     the  stream.   These  values  are  contained  in the topmost
+     stream module, and can not be set or tested from user level.
+     If nbyte falls within the packet size range, nbyte bytes are
+     written.  If nbyte does not fall within the  range  and  the
+     minimum packet size value is zero, write() breaks the buffer
+     into maximum packet size segments prior to sending the  data
+     downstream (the last segment may be smaller than the maximum
+     packet size).  If nbyte does not fall within the  range  and
+     the  minimum value is non-zero, write() fails and sets errno
+     to ERANGE.  Writing a zero-length buffer (nbyte is zero)  to
+     a  STREAMS  device  sends  a  zero  length message with zero
+     returned.  However, writing a zero-length buffer to  a  pipe
+     or  FIFO  sends  no  message and zero is returned.  The user
+     program may issue the  I_SWROPT  ioctl(2)  to  enable  zero-
+     length  messages  to  be  sent  across the pipe or FIFO (see
+     streamio(7I)).
+
+     When writing to a stream, data messages are created  with  a
+     priority band of zero.  When writing to a stream that is not
+     a pipe or FIFO:
+
+          o  If O_NDELAY and O_NONBLOCK  are  not  set,  and  the
+            stream  cannot accept data (the stream write queue is
+            full  due  to  internal  flow  control   conditions),
+            write() blocks until data can be accepted.
+
+          o  If O_NDELAY or O_NONBLOCK is set and the stream can-
+            not accept data, write() returns -1 and sets errno to
+            EAGAIN.
+
+          o  If O_NDELAY or O_NONBLOCK is set  and  part  of  the
+            buffer  has  already  been  written  when a condition
+            occurs in which the stream cannot  accept  additional
+            data,  write()  terminates  and returns the number of
+            bytes written.
+
+RETURN VALUES
+     On success, write() returns the  number  of  bytes  actually
+     written.   Otherwise,  it returns -1 and sets errno to indi-
+     cate the error.
+
+ERRORS
+     write(), pwrite(), and writev() fail and  the  file  pointer
+     remains unchanged if one or more of the following are true:
+
+     EAGAIN         Mandatory   file/record   locking   is   set,
+                    O_NDELAY or O_NONBLOCK is set, and there is a
+                    blocking record lock.
+
+                    Total amount of system memory available  when
+                    reading using raw I/O is temporarily insuffi-
+                    cient.
+                    An attempt is made to write to a stream  that
+                    can  not  accept  data  with  the O_NDELAY or
+                    O_NONBLOCK flag set.
+
+                    If a write to a pipe or  FIFO  of  {PIPE_BUF}
+                    bytes  or  less  is  requested  and less than
+                    nbytes of free space is available.
+
+     EBADF          fildes is not a valid  file  descriptor  open
+                    for writing.
+
+     EDEADLK        The write was going to go to sleep and  cause
+                    a deadlock situation to occur.
+
+     EDQUOT         The user's quota of disk blocks on  the  file
+                    system   containing   the   file   has   been
+                    exhausted.
+
+     EFAULT         buf points to an illegal address.
+
+     EFBIG          An attempt is  made  to  write  a  file  that
+                    exceeds  the process's file size limit or the
+                    maximum  file  size  (see  getrlimit(2)   and
+                    ulimit(2)).
+
+     EINTR          A signal was caught during the  write  opera-
+                    tion and no data was transferred.
+
+     EINVAL         An attempt is  made  to  write  to  a  stream
+                    linked below a multiplexor.
+
+     EIO            The process  is  in  the  background  and  is
+                    attempting to write to its controlling termi-
+                    nal whose TOSTOP flag is set;  the process is
+                    neither  ignoring  nor  blocking SIGTTOU sig-
+                    nals, and the process group of the process is
+                    orphaned.
+
+     ENOLCK         Enforced  record  locking  was  enabled   and
+                    {LOCK_MAX}  regions are already locked in the
+                    system.
+
+                    The system record lock table was full, so the
+                    write  could not go to sleep until the block-
+                    ing record lock was removed.
+
+     ENOLINK        fildes is on a remote machine and the link to
+                    that machine is no longer active.
+
+     ENOSPC         During a write to an ordinary file, there  is
+                    no free space left on the device.
+
+     ENOSR          An attempt is made to write to a stream  with
+                    insufficient  STREAMS memory resources avail-
+                    able in the system.
+
+     ENXIO          A hangup occurred on the stream being written
+                    to.
+
+     EPIPE and SIGPIPE signal
+
+                    An attempt is made to write to a pipe that is
+                    not  open for reading by any process (or to a
+                    file descriptor created by socket(3N),  using
+                    type  SOCK_STREAM that is no longer connected
+                    to a  peer  endpoint).   Note:  an  attempted
+                    write of this kind also causes you to receive
+                    a SIGPIPE signal from the kernel.  If  you've
+                    not  made  a  special  provision  to catch or
+                    ignore this signal, then your process dies.
+
+     EPIPE          An attempt is made to write to a FIFO that is
+                    not open for reading by any process.
+
+                    An attempt is made to write to  a  pipe  that
+                    has only one end open.
+
+     ERANGE         An attempt is made to write to a stream  with
+                    nbyte  outside  specified minimum and maximum
+                    write range, and the minimum  value  is  non-
+                    zero.
+
+     In addition,  writev()  may  return  one  of  the  following
+     errors:
+
+     EINVAL         iovcnt was  less  than  or  equal  to  0,  or
+                    greater than {IOV_MAX}.
+
+                    One of the iov_len values in  the  iov  array
+                    was negative.
+
+                    The sum of the  iov_len  values  in  the  iov
+                    array overflowed an int.
+
+     In addition, pwrite() fails and  the  file  pointer  remains
+     unchanged if the following is true:
+
+     ESPIPE         fildes is associated with a pipe or fifo.
+
+     A write() to a STREAMS file can fail if an error message has
+     been  received  at  the stream head.  In this case, errno is
+     set to the value included in the error message.
+     Upon successful completion write()  and  writev()  mark  for
+     update the st_ctime and st_mtime fields of the file.
+
+SEE ALSO
+     Intro(2),    chmod(2),    creat(2),    dup(2),     fcntl(2),
+     getrlimit(2),    ioctl(2),   lseek(2),   open(2),   pipe(2),
+     ulimit(2), socket(3N), streamio(7I)
+

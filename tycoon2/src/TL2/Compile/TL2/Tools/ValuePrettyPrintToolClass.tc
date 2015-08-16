@@ -1,0 +1,13 @@
+class ValuePrettyPrintToolClass
+super ConcreteClass(ValuePrettyPrintTool)
+meta MetaClass
+{
+new(out :Printer, printType :Fun(:TL2Type):Void) :ValuePrettyPrintTool
+{
+  instance ::= _new
+  instance._out := out
+  instance._printType := printType
+  instance._init
+  instance
+}
+}

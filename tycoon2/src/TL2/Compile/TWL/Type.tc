@@ -1,0 +1,138 @@
+class Type
+  super Value
+  metaclass AbstractClass
+
+public methods
+
+  (*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ for the TVM *)
+  charCode :Char         deferred
+  resultCharCode :Char   deferred
+
+  (* restrict result type to Type *)
+  scope(env :Scoper) :Type
+    deferred
+
+  subst(subst :Subst) :Type
+    deferred
+
+  (* visitor support
+     calls the appropriate method in visitor
+  *)
+  visitor(T <: Void) :FunTypeVisitor(T) deferred
+  visit(T <: Void, visitor :TypeVisitor(T)) :T deferred
+
+  
+  (* is the receiver a well-formed type ? *)
+  checkType(subst :Subst) deferred
+
+  (* is it legal to apply the receiver to args ? *)
+  (* also checks self and args *)
+  checkApplication(args :List(Type), subst :Subst)
+    deferred
+
+  (* unroll the type (with/without args) to either
+     - a method suite
+     - an oper type
+     and call 'cont' with the result.
+
+     parameter 'exact' determines whether an upper bound as result is ok.
+
+     "ensure" : t.expose(subst, exact, fun(t1 :Type, s1 :Subst) {
+                    t1.expose(s1, exact, fun(t2 :Type, s2 :Subst) {
+		       (t1 == t2) & (s1 == s2)
+		    })
+		})
+
+		resp t.apply(args, subst, argsSubst, exact, fun(t1 :Type, s1 :Subst) ...
+		
+      i.e. exposition is always as complete as possible	
+  *)
+  expose(T <: Void, subst :Subst, exact :Bool, cont :Fun2(Type, Subst, T)) :T deferred
+  apply(T <: Void, args :List(Type), subst :Subst, argsSubst :Subst, exact :Bool, cont :Fun2(Type, Subst, T)) :T deferred
+
+  (* partially apply the substitution
+     needed to keep the SubTypeDB small and to enable cache hits
+  *)
+  reduce(T <: Void, subst :Subst, cont :Fun2(Type, Subst, T)) :T deferred
+  
+  (* method lookup/iteration.
+     withPrivate determines whether the private method dictionaries
+     are consulted, too.
+     It also possible to provide a Self-type that
+     all Self types found during lookup are substituted to.
+  *)
+
+  lookup(T <: Void,
+	 selector :Symbol,
+	 subst :Subst,
+	 withPrivate :Bool,
+	 cont :Fun2(Method, Subst, T)) :T                  deferred
+
+
+
+  lookupWithSelf(T <: Void,
+	 selector :Symbol,
+	 subst :Subst,
+	 withPrivate :Bool,
+	 selfType :Type,
+	 selfTypeSubst :Subst,
+	 cont :Fun2(Method, Subst, T)) :T		   deferred
+
+  methodsDo(subst :Subst,
+	    withPrivate :Bool,
+	    callback :Fun2(Method, Subst, Void))           deferred
+
+  methodsWithSelfDo(subst :Subst,
+		    withPrivate :Bool,
+		    selfType :Type,
+		    selfTypeSubst :Subst,
+	            callback :Fun2(Method, Subst, Void))   deferred
+  
+
+  (* check whether the receiver is a subtype of big *)
+  checkSubType(big :Type, subst :Subst, bigSubst :Subst) deferred
+
+
+  (* these perform the actual subtype tests; now both types are known
+     performed via Visitor-style double dispatch.
+  *)
+
+
+  (* ## do we need all these ??? *)
+  checkSubObjectType(big :ObjectType, subst :Subst, bigSubst :Subst) deferred
+  checkSubClassInstanceType(big :ClassInstanceType, subst :Subst, bigSubst :Subst) deferred
+
+  (*
+     checkSubVoidType  (big :VoidType,   subst :Subst, bigSubst :Subst) deferred
+  *)
+
+  
+  checkSubNilType   (big :NilType,    subst :Subst, bigSubst :Subst) deferred
+
+  checkSubApplyType (big :ApplyType,  subst :Subst, bigSubst :Subst) deferred
+  checkSubIdeType   (big :IdeType,    subst :Subst, bigSubst :Subst) deferred
+  checkSubUnifyType (big :UnifyType,  subst :Subst, bigSubst :Subst) deferred
+  checkSubOperType  (big :OperType,   subst :Subst, bigSubst :Subst) deferred
+  checkSubMethodType(big :MethodType, subst :Subst, bigSubst :Subst) deferred
+  checkSubSubstType  (big :SubstType, subst :Subst, bigSubst :Subst) deferred
+  
+;

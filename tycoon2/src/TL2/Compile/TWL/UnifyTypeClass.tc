@@ -1,0 +1,7 @@
+class UnifyTypeClass
+super SimpleConcreteClass(UnifyType)
+metaclass MetaClass
+
+public methods
+
+;

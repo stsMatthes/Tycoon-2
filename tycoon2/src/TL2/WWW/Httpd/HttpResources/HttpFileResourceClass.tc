@@ -1,0 +1,23 @@
+class HttpFileResourceClass
+
+super ConcreteClass(HttpFileResource)
+
+metaclass MetaClass
+
+public methods
+
+new(file :File) :HttpFileResource
+{
+  let instance = _new,
+  instance._init,
+  instance._file := file,
+  instance  
+}
+
+new2(file :File, contentType :MediaType) :HttpFileResource
+{
+  let instance = new(file),
+  instance.contentType := contentType,
+  instance  
+}
+;

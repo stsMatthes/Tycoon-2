@@ -1,0 +1,16 @@
+class AtTraceReceive
+super AtTraceIncomingEvent
+meta AtTraceReceiveClass
+{
+
+value :Object
+
+case(T<:Void, :Fun(:AtTraceEnter):T, ifReceive :Fun(:AtTraceReceive):T) :T
+{ ifReceive[self] }
+
+printOn(out :Output) :Void
+{
+  out<<"Receive{a "<<receiver."class".name<<"}"
+}
+
+}

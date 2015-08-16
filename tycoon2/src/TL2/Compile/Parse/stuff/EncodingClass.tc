@@ -1,0 +1,14 @@
+class EncodingClass(E <: Numbered)
+
+super AbstractSequenceClass(E, Encoding(E))
+
+metaclass MetaClass
+
+private methods
+
+_new1(size :Int) :Encoding(E)
+  {
+  __new(size * 4)
+  }
+
+;

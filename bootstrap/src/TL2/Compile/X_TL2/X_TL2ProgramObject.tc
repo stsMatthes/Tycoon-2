@@ -1,0 +1,63 @@
+class X_TL2ProgramObject
+super X_TL2Scopable(X_TL2ProgramObject), X_TL2
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+*)
+meta AbstractClass
+{
+pos :SourcePos
+
+prettyPrint(out:Printer) :Void
+  (* *)
+deferred
+
+isSimple :Bool
+  (* for pretty printing: *)
+{
+    children.all(fun(v :X_TL2ProgramObject) {
+      v.isLeaf
+    })
+  }
+
+isLeaf :Bool
+  (* *)
+{
+    children.read.isNil   ; children.isEmpty 
+  }
+
+children :Reader(X_TL2ProgramObject)
+  (* subexpressions. *)
+deferred
+
+printOn(out:Output) :Void
+  (* *)
+{
+  out ::= Printer.new(out)
+  prettyPrint(out)
+}
+
+printIdeOn(ide :X_TL2Ide, out :Output) :Void
+  (* *)
+{
+  ; ide.printOn(out) 
+  out << if( ide.name.isNil then: { "?" } else: { ide.name })
+}
+
+}

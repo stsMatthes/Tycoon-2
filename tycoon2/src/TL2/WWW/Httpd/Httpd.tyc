@@ -1,0 +1,56 @@
+class Httpd metaclass AbstractClass;
+DO load "../TWL/WWW/Httpd/HttpResources/HttpResources.tyc";
+
+class HttpdAccessLog metaclass AbstractClass;
+DO load "../TWL/WWW/Httpd/HttpdAccessLogClass.tc";
+DO load "../TWL/WWW/Httpd/HttpdAccessLog.tc";
+
+class HttpdErrorLog metaclass AbstractClass;
+DO load "../TWL/WWW/Httpd/HttpdErrorLogClass.tc";
+DO load "../TWL/WWW/Httpd/HttpdErrorLog.tc";
+
+class HttpdError metaclass AbstractClass;
+DO load "../TWL/WWW/Httpd/HttpdErrorClass.tc";
+DO load "../TWL/WWW/Httpd/HttpdError.tc";
+
+DO load "../TWL/WWW/Httpd/HttpdProperties.tc";
+
+DO load "../TWL/WWW/Httpd/HttpdClass.tc";
+DO load "../TWL/WWW/Httpd/Httpd.tc";
+
+DO check;
+
+(*
+
+
+tycoon.debug := true;
+
+define tyhttpd :Httpd;
+tyhttpd := Httpd.new;
+tyhttpd.home := tycoon.hoxHome + "/tyhttpd/tyhttpd-test";
+tyhttpd.configure;
+tyhttpd.saveConfiguration;
+tyhttpd.port;
+tyhttpd.host;
+tyhttpd.bind;
+
+tyhttpd.root.lookupDirectory(EmptyList.new)["stop"] := HttpShutdownResource.new(tyhttpd);
+tyhttpd.serve;
+
+(*
+let authRoot = HttpAuthenticatedResource.new,
+authRoot.resource := root,
+
+let realm = BasicProtectionRealm.new("HoxIntern"),
+realm.acl["mernst"] := "hackenklacken",
+authRoot.realm := realm,
+tyhttpd.root := HttpDebugResource.new(authRoot);
+*)
+
+
+List.fromContainer(tycoon.allOpenResources).do(fun(r :Resource) {
+  r.clazz == StreamSocket || {r.clazz == ServerSocket} ? {
+    r.close
+ }});
+*)
+

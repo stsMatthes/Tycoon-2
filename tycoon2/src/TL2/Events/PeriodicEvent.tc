@@ -1,0 +1,453 @@
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ 
+Author:  Gerd Bremer
+Date:    09-Oct-1997
+Updates: (Date)	  (Name)	(Description)
+*)
+
+class PeriodicEvent
+super Events, Event
+metaclass PeriodicEventClass
+
+public methods
+
+minutes :List(Int)
+  { _minutes }
+  
+hours :List(Int)
+  { _hours }
+  
+dayOfMonth :List(Int)
+  { _dayOfMonth }
+  
+month :List(Int)
+  { _month }
+  
+weekday :List(Int)
+  { _weekday }
+
+
+nextEventDate(date :Date) :Date
+
+  require date.isNotNil
+(* return date of next event *)
+(* ------------------------------------------------------------ *)
+  { _nextEventDate(date) }
+  
+
+nextEventDates(date :Date, n :Int) :List(Date)
+
+  require date.isNotNil &
+    n.isNotNil
+(* return list of n event dates in timed order *)
+(* ------------------------------------------------------------ *)
+  {
+    let var l = List.new,
+    let var nextdate = nextEventDate(date),
+    for(1, n, fun(i :Int)
+      {
+        l := List.append(:Date, :Date, l, List.with1(nextdate)),
+	nextdate := nextEventDate(nextdate)
+      }),
+    l
+  }
+  
+
+remove(eventQueue :PriorityQueue(Event)) :Void
+
+  require eventQueue.isNotNil &
+    eventQueue.removeFirst == self
+(* remove this event from 'eventQueue', add this event with
+   next event date to 'eventQueue' *)
+(* ------------------------------------------------------------ *)
+  {
+    eventQueue.removeFirst,
+    _time := _nextEventDate(Date.fromTime(_time)).asTime,
+    eventQueue.add(self)
+  }
+  
+
+removeTotal(eventQueue :PriorityQueue(Event)) :Void
+
+  require eventQueue.isNotNil &
+    eventQueue.removeFirst == self
+(* remove this event from 'eventQueue' *)
+(* ------------------------------------------------------------ *)
+  { eventQueue.removeFirst }
+  
+
+printOn(out :Output) :Void
+
+  require out.isNotNil
+(* ------------------------------------------------------------ *)
+  {
+    let var result = GapString.new0,
+    result.addAll("\n  minutes: "),
+    _formatPeriodicField(result, _minutes, 60),    
+    result.addAll("\n  hours: "),
+    _formatPeriodicField(result, _hours, 24),    
+    result.addAll("\n  day-of-month: "),
+    _formatPeriodicField(result, _dayOfMonth, 31),    
+    result.addAll("\n  month: "),
+    _formatPeriodicField(result, _month, 12),    
+    result.addAll("\n  weekday: "),
+    _formatPeriodicField(result, _weekday, 7),
+    result.add('\n'),
+    out << "a periodic event at:" << Date.fromTime(_time) << result.asString
+  }
+
+  
+private
+
+_minutes :List(Int),
+_hours :List(Int),
+_dayOfMonth :List(Int),
+_month :List(Int),
+_weekday :List(Int),
+_minutesIncorrect :Bool,
+_hoursIncorrect :Bool,
+_dayIncorrect :Bool,
+_monthIncorrect :Bool,
+_monthTable :GapArray(Int),
+_weekdaySizeWeight :Real,
+_dayOfMonthSizeWeight :Real
+
+
+methods
+
+_init :Self
+(* ------------------------------------------------------------ *)  
+  {
+    super._init,
+    _monthTable := GapArray.new1(13),
+    _monthTable[1] := 31,
+    _monthTable[3] := 31,
+    _monthTable[4] := 30,
+    _monthTable[5] := 31,
+    _monthTable[6] := 30,
+    _monthTable[7] := 31,
+    _monthTable[8] := 31,
+    _monthTable[9] := 30,
+    _monthTable[10] := 31,
+    _monthTable[11] := 30,
+    _monthTable[12] := 31,
+    _weekdaySizeWeight := 0.25 / _weekday.size.asReal,
+    _dayOfMonthSizeWeight := 1.asReal/_dayOfMonth.size.asReal,
+    _time := _nextEventDate(Date.now).asTime,
+    self
+  }
+
+
+_validate(date :Date) :Void
+
+  require date.isNotNil
+(* check if date is correct according to minutes list,
+   hours lists, ...*)
+(* ------------------------------------------------------------ *)
+  {
+    let var error = false,
+    !_month.includes(date.month) ?
+      {
+	error := true,
+	_monthIncorrect := true
+      } :
+      { _monthIncorrect := false },
+    error | !_dayOfMonth.includes(date.day) | !_weekday.includes(date.weekDay) ?
+      {
+	error := true,
+	_dayIncorrect := true
+      } :
+      { _dayIncorrect := false },
+    error | !_hours.includes(date.hour) ?
+      {
+	error := true,
+	_hoursIncorrect := true
+      } :
+      { _hoursIncorrect := false },
+    error | !_minutes.includes(date.minute) ?
+      {
+	error := true,
+	_minutesIncorrect := true
+      } :
+      { _minutesIncorrect := false }
+  }
+
+  
+_formatRange(result :GapString, first :Int, last :Int) :Void
+
+  require result.isNotNil &
+    first.isNotNil &
+      last.isNotNil
+(* add integer value or integer range value to result *)      
+(* ------------------------------------------------------------ *)
+  { last != first ?
+      {
+	result.addAll(first.printString),
+	result.add('-'),
+	result.addAll(last.printString)
+      } :
+      { result.addAll(first.printString) }
+  }
+
+  
+_formatPeriodicField(result :GapString, list :List(Int), max :Int) :Void
+
+  require result.isNotNil &
+    list.isNotNil &
+      max.isNotNil
+(* generate formated output of 'list' and insert it into 'result' *)   
+(* ------------------------------------------------------------ *)
+  {
+    list.size == max ?
+      { result.add('*') } :
+      {
+        let var first :Int = nil,
+	let var last :Int = nil,
+        list.do(fun(i :Int) :Void
+	  { first.isNil ?
+	      {
+	        first := i,
+		last := i
+	      } :
+	      { last = i - 1 ?
+	          { last := i } :
+		  {
+                    _formatRange(result, first, last),
+		    result.add(','),
+		    first := i,
+	            last := i
+		  }
+	      }
+	  }),
+	_formatRange(result, first, last)
+      }
+  }
+
+
+_nextPeriodicInt(list :List(Int), basis :Int) :Int
+
+  require list.isNotNil &
+    basis.isNotNil
+(* get next list element from 'list' which is greater than 'basis',
+   if no such element exits take smallest one from 'list' *)   
+(* ------------------------------------------------------------ *)    
+  {
+    let var minLess :Int = nil,
+    let var minGreater :Int = nil,
+    list.do(fun(i :Int)
+      { minLess.isNil && { i <= basis } ?
+          { minLess := i } :
+	  { minGreater.isNil && { i > basis } ?
+	      { minGreater := i } :
+	      { nil }
+	  }            
+      }),
+    minGreater.isNil ?
+      { minLess } :
+      { minGreater }
+  }
+
+
+_nextWeekdayDate(date :Date) :Date
+
+  require date.isNotNil
+(* return next weekday according to 'date' and '_weekday' list *) 
+(* ------------------------------------------------------------ *)    
+  {
+    let new = Date.new,
+    new.offset := -3600, (* what a mess date *)
+    new.second := date.second,
+    new.minute := date.minute,
+    new.hour := date.hour,
+    let nextWeekday = _nextPeriodicInt(_weekday, date.weekDay),
+    let var delta = (nextWeekday + 7 - date.weekDay) % 7,
+    delta == 0 ? { delta := 7 },
+    new.day := date.day + delta,
+    new.month := date.month,
+    new.year := date.year,
+    new.normalize,
+
+    (* check for valid month *)
+    let newMonth = new.month,
+    !_month.includes(newMonth) ?
+      {
+        let nextMonth = _nextPeriodicInt(_month, newMonth),
+        new.day := 0,
+	new.month := nextMonth,
+	new.year := (nextMonth < newMonth ?
+	  { new.year + 1 } :
+	  { new.year }),
+	new.normalize,
+	_nextWeekdayDate(new)
+      } :
+      { new }
+  }
+
+
+_febDays(year :Int) :Int
+
+  require year.isNotNil
+(* ------------------------------------------------------------ *)
+  { Date.isLeap(year) ? { 29 } : { 28 }}
+
+  
+_nextValidDayOfMonth(date :Date) :Date
+
+  require date.isNotNil
+(* return date with day equal to 'date.day', next valid month
+   and next valid year (leap year) if neccessary *)
+(* ------------------------------------------------------------ *)
+  {
+    let day = date.day,
+    let var year = date.year,
+    let var oldMonth = date.month,
+    let var nextMonth = _nextPeriodicInt(_month, oldMonth),
+    nextMonth <= oldMonth ? { year := year + 1 },
+    while({
+            _monthTable[2] := _febDays(year),	
+            _monthTable[nextMonth] < day
+	  },
+      {
+        oldMonth := nextMonth,
+        nextMonth := _nextPeriodicInt(_month, oldMonth),
+	nextMonth <= oldMonth ? { year := year + 1 }
+      }),
+    date.month := nextMonth,
+    date.year := year,
+    date.normalize,
+    date
+  }
+
+  
+_nextDayOfMonthDate(date :Date) :Date
+
+  require date.isNotNil
+(* return next day of Month according to 'date' and '_dayOfMonth' list *) 
+(* ------------------------------------------------------------ *)    
+  {
+    let new = Date.new,
+    new.offset := -3600,  (* what a mess date *)
+    new.second := date.second,
+    new.minute := date.minute,
+    new.hour := date.hour,
+    new.month := date.month,  
+    let nextDayOfMonth = _nextPeriodicInt(_dayOfMonth, date.day),
+    new.day := nextDayOfMonth,
+    new.year := date.year,
+    new.normalize,
+    nextDayOfMonth > date.day &&
+        {
+	  _monthTable[2] := _febDays(new.year),
+	  _monthTable[date.month] >= nextDayOfMonth
+	}  &&
+	  { _month.includes(new.month) } ?
+      { new } :
+      { _nextValidDayOfMonth(new) }
+  }
+
+
+_nextDayOfMonthOrWeekdayDate(date :Date) :Date
+
+  require date.isNotNil
+(* return next day of month or next weekday, according as
+   which comes first *)
+(* ------------------------------------------------------------ *)       
+  {
+    let nextDayOfMonthDate = _nextDayOfMonthDate(date),
+    let nextWeekdayDate = _nextWeekdayDate(date),
+    nextDayOfMonthDate.asTime < nextWeekdayDate.asTime ?
+      { nextDayOfMonthDate } :
+      { nextWeekdayDate }
+  }
+
+			  
+_nextDayOfMonthAndWeekdayDate(date :Date) :Date
+
+  require date.isNotNil
+(* return next day of month which is also a valid weekday,
+   use heuristic to look for next weekday or day of month first *)
+(* ------------------------------------------------------------ *)
+  {
+     _dayOfMonthSizeWeight > _weekdaySizeWeight ?
+      {
+	let var nextDayOfMonthDate = _nextDayOfMonthDate(date),
+	while({ !_weekday.includes(nextDayOfMonthDate.weekDay) },
+	  { nextDayOfMonthDate := _nextDayOfMonthDate(nextDayOfMonthDate) }),
+	nextDayOfMonthDate
+      } :
+      {
+	let var nextWeekdayDate = _nextWeekdayDate(date),
+	while({ !_dayOfMonth.includes(nextWeekdayDate.day) },
+	  { nextWeekdayDate := _nextWeekdayDate(nextWeekdayDate) }),
+	nextWeekdayDate
+      }
+  }
+
+_nextEventDate(date :Date) :Date
+
+  require date.isNotNil
+(* return date of next event *)
+(* ------------------------------------------------------------ *)
+  {
+    (* copy 'date' *)
+    let t = date.asTime,
+    let date = Date.fromTime(t),
+
+    date.second := 0,
+    date.normalize,
+    _validate(date),
+(* tycoon.stdout << "overflow: minutes: ", *)
+    let var overflow = false,
+    let nextMinute = _nextPeriodicInt(_minutes, date.minute),
+    overflow := (nextMinute <= date.minute) | _hoursIncorrect,
+    !overflow ?
+      {
+(* tycoon.stdout << "false\n", *)
+	date.minute := nextMinute,
+	date.normalize,
+	date
+      } :
+      {
+(* tycoon.stdout << "true, hours: ", *)
+	(* change hour, reset minutes *)
+	date.minute := _nextPeriodicInt(_minutes, 59),
+	date.normalize,	    
+	let nextHour = _nextPeriodicInt(_hours, date.hour),
+	overflow := (nextHour <= date.hour) | _dayIncorrect,
+	!overflow ?
+	  {
+(* tycoon.stdout << "false\n", *)
+	    date.hour := nextHour,
+	    date.normalize,
+	    date
+	  } :
+	  {
+(* tycoon.stdout << "true, days: ", *)
+	    (* change day, reset hours *)
+	    date.hour := _nextPeriodicInt(_hours, 23),
+	    date.normalize,
+	    (* _nextDayOfMonthOrWeekdayDate(date) *)
+	    _nextDayOfMonthAndWeekdayDate(date)
+	  }
+      }
+  }
+  
+;

@@ -1,0 +1,116 @@
+class MasterSlaves
+super Benchmark
+metaclass MasterSlavesClass
+
+private
+_m :Int,
+_s :Int,
+_wpm :Int,
+_debug :Bool
+
+methods
+
+_setup :Void
+{
+}
+
+_run :Void
+{
+  _go(_m, _s, _wpm, _debug)
+}
+
+_go(m :Int, s:Int, wpm :Int, debug :Bool) :Void
+{
+  let masters = MutableArray.new(m),
+  let mri = MutableArray.new(m),
+  let slaves = MutableArray.new(s),
+  let queue = WorkQueue.new,
+  (*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ start masters *)
+  for(0, m-1, fun(i :Int) {
+    let ma = Master.new2(queue, wpm),
+    mri[i] := ma,
+    masters[i] := ma.run
+  }),
+  debug ? {tycoon.stdout << "masters started\n"},
+  (* start slaves *)
+  for(0, s-1, fun(i :Int) {
+    let sl = Slave.new1(queue),
+    slaves[i] := sl.run 
+  }),
+  debug ? {tycoon.stdout << "slaves started\n"},
+  (* join masters *)
+  for(0, m-1, fun(i :Int) {
+    masters[i].join
+  }),
+  debug ? {tycoon.stdout << "masters joined\n"},
+  (* stop queue *)
+  queue.setFinished,
+  debug ? {tycoon.stdout << "queue state reset\n"},
+  (* join slaves *)
+  for(0, s-1, fun(i :Int) {
+    slaves[i].join
+  }),
+  debug ? {tycoon.stdout << "slaves joined\n"},
+  (* output result *)
+  debug
+  ? { for(0, m-1, fun(i :Int) {
+        mri[i].workList.do(fun(w :WorkItem(Int)) {
+          tycoon.stdout << w.result << " "
+        })
+      })
+    },
+  nil
+}
+;
+
+(*
+define ms :Object;
+ms := MasterSlaves.new4(1, 1, 1, true);
+ms.start(1);
+
+ms := MasterSlaves.new4(1, 1, 10, true);
+ms.start(1);
+
+ms := MasterSlaves.new4(1, 1, 100, true);
+ms.start(1);
+
+ms := MasterSlaves.new4(1, 1, 1000, true);
+ms.start(1);
+
+ms := MasterSlaves.new4(1, 2, 100, true);
+ms.start(1);
+
+ms := MasterSlaves.new4(2, 1, 100, true);
+ms.start(1);
+
+ms := MasterSlaves.new4(3, 4, 10, true);
+ms.start(1);
+
+ms := MasterSlaves.new4(1, 1, 1000, false);
+ms.start(1);
+
+ms := MasterSlaves.new4(1, 2, 100, false);
+ms.start(1);
+
+ms := MasterSlaves.new4(1, 2, 10, true);
+ms.start(1);
+*)

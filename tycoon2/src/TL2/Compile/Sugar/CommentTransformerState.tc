@@ -1,0 +1,16 @@
+class CommentTransformerState
+super Sugar
+metaclass CommentTransformerStateClass
+public
+
+out :Output,
+nesting :Int
+
+private methods
+
+_init :Void
+{ super._init,
+  nesting := 0,
+  self
+}
+;

@@ -1,0 +1,166 @@
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+	Mime-Message
+
+	Ingo Richtsmeier
+
+	23-Jul-97
+
+	Copyright 1997, Higher-Order GmbH, Hamburg
+	
+*)
+
+class MimeMessage
+
+super Mime
+
+public
+
+(* These need to be set and read
+   depending on whether you generate a request
+   or parse one *)
+   
+headers :MimeHeaderDictionary(MimeHeaderValue),
+body :Input
+
+methods
+
+parser :MimeMessageParser(Self) { MimeMessageParser.new }
+
+header(name :String) :MimeHeaderValue
+{
+  headers[name]
+}
+
+(* type inference at its best *)
+headerValue(name :String, T <:Object) :T
+{
+  header(name).valueAs(:T)
+}
+
+setHeader(name :String, value :MimeHeaderValue)
+{
+  headers[name] := value
+}
+
+setHeaderValue(name :String, T <: Object, clazz :MimeHeaderValueImplClass(T), value :T)
+{
+  value == nil ? {
+    headers.removeKey(name)
+  } : {
+    setHeader(name, clazz.withValue(value))
+  }
+}
+
+hasHeader(name :String) :Bool
+{
+  headers.includesKey(name)
+}
+
+(* Mime 1.0 Body-Part Headers *)
+
+contentTypeString :String { "Content-Type" }
+hasContentType :Bool { hasHeader(contentTypeString) }
+contentType :MediaType { headerValue(contentTypeString, :MediaType) }
+"contentType:="(ct :MediaType) { setHeaderValue(contentTypeString, MediaTypeHeader, ct) }
+
+contentTransferEncodingString :String { "Content-Transfer-Encoding" }
+hasContentTransferEncoding :Bool { hasHeader(contentTransferEncodingString) }
+contentTransferEncoding :String { headerValue(contentTransferEncodingString) }
+"contentTransferEncoding:="(code :String)
+  {setHeaderValue(contentTransferEncodingString, MimeToken, code)}
+
+mimeVersionString :String { "MIME-Version" }  
+hasMimeVersion :Bool { hasHeader(mimeVersionString) }
+mimeVersion :String { headerValue(mimeVersionString) }
+"mimeVersion:="(mv :String) { setHeaderValue(mimeVersionString, MimeString, mv) }
+
+contentIDString :String { "Content-Id" }
+hasContentID :Bool { hasHeader(contentIDString) }
+contentID :String { headerValue(contentIDString) }
+"contentID:="(cid :String) {setHeaderValue(contentIDString, MimeString, cid) }
+
+contentDescriptionString :String { "Content-Description" }
+hasContentDescription :Bool { hasHeader(contentDescriptionString) }
+contentDescription :String { headerValue(contentDescriptionString) }
+"contentDescription:="(cDescription :String) {setHeaderValue(contentDescriptionString, MimeString, cDescription) }
+
+(***********************
+  writing a Mime message
+***********************)
+emit(out :Output)
+  (* emit the headers and the body of the message, if any,
+     and close the body input stream (even if an exception
+     occurs while writing to the output stream).
+  *)
+{
+  protect({
+    emitHeaders(out),
+    emitBody(out)
+  }, fun(){
+    body.isNotNil ? {
+      body.close
+    }
+  })
+}
+
+private
+
+methods
+
+_init2(h :MimeHeaderDictionary(MimeHeaderValue), b :Input) :Self
+{
+  headers := h,
+  body := b,
+
+  super._init,
+
+  self
+}
+
+_init :Void
+{
+  _init2(MimeHeaderDictionary.new, nil)
+}
+
+
+emitHeaders(out :Output)
+{
+  headers.keysAndElementsDo(fun(name :String, value :MimeHeaderValue) {
+    out << name << ": " << value.string << "\r\n"
+  }),
+  out << "\r\n"  
+}
+
+emitBody(out :Output)
+  (* emit the body of the message, if any  *)
+{
+  body.isNotNil ? {
+    let buf = MutableString.new(1024),
+    let var n :Int = 0,
+    while({(n := body.readBuffer(buf, 0, buf.size)) > 0}, {
+      out.writeBuffer(buf,0,n)
+    })
+  }
+}
+
+
+;

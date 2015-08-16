@@ -1,0 +1,106 @@
+class X_TL2ScannerState
+super X_TL2
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ user state for the X_TL2 scanner *)
+meta X_TL2ScannerStateClass
+{
+scanner :X_TL2Scanner
+
+nesting :Int
+
+  (* comment nesting level *)
+
+errorLog :ErrorLog
+
+position :SourcePos
+  (* *)
+{
+  SourcePos.new(where, line, column)
+}
+
+"position:="(pos :SourcePos) :Void
+  (* *)
+{
+  where := pos.where
+  line := pos.line
+  tokenPos ::= if( scanner.isNotNil then:{ scanner.tokenPos }else:{ 0 })
+  lastNewline := tokenPos - pos.column
+}
+
+identify(ident :ValueTerminal(Positioned(String))) :Token(Object)
+  (* return the current token as an identifier or keyword *)
+{
+  token ::= scanner.token
+  keywords.lookup(token,
+    fun(kw :ValueTerminal(SourcePos)) :Token(Object) {
+      kw.token(position)
+    },
+    { token ::=   ; ### bootstrap hack 
+        if( token = "X_TL2Class" then: { "Class" }
+	else: { if( token = "X_TL2MetaClass" then: { "MetaClass" }
+	  else: { if( token = "X_TL2Root" then: { "Root" }
+	    else: { token })})})
+      ident.token(Positioned.new(position, token))
+    }
+  )
+}
+
+newline :Void
+  (* counting line numbers 
+ the client must call <newline> whenever [s]he meets a '\n' in the source *)
+{
+  line := line + 1
+  lastNewline := scanner.readPos
+}
+
+column :Int
+  (* 
+line :Int
+{ _line }
+*)
+{
+  scanner.tokenPos - lastNewline
+}
+
+error(ch :Char) :Void
+  (* *)
+{
+  errorLog.error(position,
+    if( ch.isNil
+    then: { "Unexpected end of input" }
+    else: { "Unexpected character: "+ch.printString+" ("+ch.asInt.printString+")" }))
+  errorLog.raiseError
+}
+
+private
+
+where :String
+
+line :Int
+
+lastNewline :Int
+
+  (* byte position of last newline encountered 
+ shared by all X_TL2 scanners *)
+
+keywords :Dictionary(String, ValueTerminal(SourcePos))
+
+}

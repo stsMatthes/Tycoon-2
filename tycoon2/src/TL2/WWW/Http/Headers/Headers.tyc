@@ -1,0 +1,39 @@
+class HttpAccept metaclass MetaClass;
+DO load "../TWL/WWW/Http/Headers/HttpAcceptClass.tc";
+DO load "../TWL/WWW/Http/Headers/HttpAccept.tc";
+
+DO load "../TWL/WWW/Http/Headers/AcceptHeader.tc";
+DO load "../TWL/WWW/Http/Headers/AcceptListHeader.tc";
+
+class HttpCookieClass metaclass MetaClass;
+DO load "../TWL/WWW/Http/Headers/HttpCookie.tc";
+DO load "../TWL/WWW/Http/Headers/HttpCookieClass.tc";
+
+class HttpSetCookieClass metaclass MetaClass;
+DO load "../TWL/WWW/Http/Headers/HttpSetCookie.tc";
+DO load "../TWL/WWW/Http/Headers/HttpSetCookieClass.tc";
+
+DO load "../TWL/WWW/Http/Headers/HttpCookiesHeader.tc";
+DO load "../TWL/WWW/Http/Headers/HttpSetCookiesHeader.tc";
+
+class WWWAuthenticateClass metaclass MetaClass;
+DO load "../TWL/WWW/Http/Headers/WWWAuthenticate.tc";
+DO load "../TWL/WWW/Http/Headers/WWWAuthenticateClass.tc";
+
+DO load "../TWL/WWW/Http/Headers/WWWAuthenticateHeader.tc";
+
+class HttpCredentialsClass metaclass MetaClass;
+DO load "../TWL/WWW/Http/Headers/HttpCredentials.tc";
+DO load "../TWL/WWW/Http/Headers/HttpCredentialsClass.tc";
+
+DO load "../TWL/WWW/Http/Headers/HttpCredentialsHeader.tc";
+
+class HttpProductClass metaclass MetaClass;
+DO load "../TWL/WWW/Http/Headers/HttpProduct.tc";
+DO load "../TWL/WWW/Http/Headers/HttpProductClass.tc";
+
+DO load "../TWL/WWW/Http/Headers/HttpProductListHeader.tc";
+
+DO load "../TWL/WWW/Http/Headers/HttpExpiresHeader.tc";
+
+

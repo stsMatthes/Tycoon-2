@@ -1,0 +1,47 @@
+(* BackEnd.tyc: classes making up the back end.
+
+   actually, a lot of the back end is spread through the AST classes in
+   the genCodeXXX-methods.  BackEnd is definitely not self-contained, neither
+   is TWL. *)
+
+class BackEnd
+super Compile
+metaclass AbstractClass
+;
+
+class ArgumentVar metaclass AbstractClass;
+class Bindings metaclass AbstractClass;
+class ByteCodeReader metaclass AbstractClass;
+class GlobalVar metaclass AbstractClass;
+class ImplementationRestriction metaclass AbstractClass;
+class LabelRef metaclass AbstractClass;
+class LocalVar metaclass AbstractClass;
+class MMLabel metaclass AbstractClass;
+class MethodManager metaclass AbstractClass;
+
+
+DO load "../TWL/Compile/TWL/BackEnd/ArgumentVarClass.tc";
+DO load "../TWL/Compile/TWL/BackEnd/ArgumentVar.tc";
+DO load "../TWL/Compile/TWL/BackEnd/BindingsClass.tc";
+DO load "../TWL/Compile/TWL/BackEnd/Bindings.tc";
+DO load "../TWL/Compile/TWL/BackEnd/ByteCodeReaderClass.tc";
+DO load "../TWL/Compile/TWL/BackEnd/ByteCodeReader.tc";
+DO load "../TWL/Compile/TWL/BackEnd/ByteCodeWriter.tc";
+DO load "../TWL/Compile/TWL/BackEnd/CompiledCodeWriterClass.tc";
+DO load "../TWL/Compile/TWL/BackEnd/CompiledCodeWriter.tc";
+DO load "../TWL/Compile/TWL/BackEnd/Disassembler.tc";
+DO load "../TWL/Compile/TWL/BackEnd/ExceptionHandler.tc";
+DO load "../TWL/Compile/TWL/BackEnd/GlobalVarClass.tc";
+DO load "../TWL/Compile/TWL/BackEnd/GlobalVar.tc";
+DO load "../TWL/Compile/TWL/BackEnd/ImplementationRestrictionClass.tc";
+DO load "../TWL/Compile/TWL/BackEnd/ImplementationRestriction.tc";
+DO load "../TWL/Compile/TWL/BackEnd/Label.tc";
+DO load "../TWL/Compile/TWL/BackEnd/LabelRefClass.tc";
+DO load "../TWL/Compile/TWL/BackEnd/LabelRef.tc";
+DO load "../TWL/Compile/TWL/BackEnd/LocalVarClass.tc";
+DO load "../TWL/Compile/TWL/BackEnd/LocalVar.tc";
+DO load "../TWL/Compile/TWL/BackEnd/MMLabel.tc";
+DO load "../TWL/Compile/TWL/BackEnd/MethodManagerClass.tc";
+DO load "../TWL/Compile/TWL/BackEnd/MethodManager.tc";
+DO load "../TWL/Compile/TWL/BackEnd/NopByteCodeWriter.tc";
+DO load "../TWL/Compile/TWL/BackEnd/Variable.tc";

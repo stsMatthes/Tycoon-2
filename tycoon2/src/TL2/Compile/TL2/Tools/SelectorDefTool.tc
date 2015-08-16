@@ -1,0 +1,265 @@
+class SelectorDefTool
+super Tools
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+*)
+meta SimpleConcreteClass(SelectorDefTool)
+{
+methodName :Symbol
+
+arity :Int
+
+  (* may be nil *)
+
+inPackage :String
+
+  (* prefix of relative class path, may be nil *)
+
+occurrences :GapArray(TL2Method)
+
+selectorDefinitions :Dictionary(TL2Selector, Dictionary(TL2Method, ListSet(TL2ClassPublic)))
+
+nbDefStat :Void
+  (* for each selector, the number of different implementations used
+     (ignoring super sends) *)
+{
+  nbImplementations ::= Dictionary(:TL2Selector, :Int).new
+  selectorDefinitions.keysAndElementsDo(fun(sel :TL2Selector, d :KeyedContainer(TL2Method, Object)) {
+    nbImplementations[sel] := d.size
+  })
+  printFrequencies(nbImplementations)
+}
+
+computeSelectorDefinitions :Void
+  (* for each selector, all implementations, and for each implementation,
+     the classes using it (ignoring super sends) *)
+{
+  table ::= Dictionary(:TL2Selector,:Dictionary(TL2Method,ListSet(TL2ClassPublic))).new
+  progress ::= ProgressIndicator.new("Counting classes understanding selectors...", tl.classManager.classTable.size)
+  tl.classManager.classTable.do(fun(c:TL2ClassPublic) {
+    progress.click
+    understoodDo(c, fun(selector :TL2Selector, method :TL2Method) {
+      table
+        .memoize(selector, { Dictionary.new })
+	.memoize(method, { ListSet.new })
+	.addNew(c)
+    })
+  })
+  progress.finish
+  selectorDefinitions := table
+  nil
+}
+
+findDeferred :Void
+  (* *)
+{
+  progress ::= ProgressIndicator.new("Looking for deferred methods in concrete classes...", tl.classManager.classTable.size)
+  tl.classManager.classTable.do(fun(c:TL2ClassPublic) {
+    progress.click
+    if( !isAbstract(c) then: {
+      v ::= TL2FunMethodVisitor.new
+	.ifDeferred(fun(m:TL2DeferredMethod){
+	  tycoon.stdout << c.name << "::" << m.selector << '\n'
+	})
+	.otherwise(fun(:Object){ nil })
+      understoodDo1(c, fun( :TL2Selector, m :TL2Method) {
+	m.acceptMethodVisitor(v)
+      })
+    })
+  })
+  progress.finish
+}
+
+isAbstract(c :TL2ClassPublic) :Bool
+{
+  c."metaclass".name = "AbstractClass"
+  || c."metaclass".superclasses.some(fun(s:TL2ClassPublic) {
+       s.name = "AbstractClass"
+     })
+}
+
+understoodDo(c :TL2ClassPublic, f :Fun(:TL2Selector, :TL2Method):Void) :Void
+  (* *)
+{
+  shouldCount ::= TL2FunMethodVisitor.new
+    .ifDeferred(fun(:Object){ false })
+    .otherwise(fun(:Object){ true })
+  understoodDo1(c, fun(sel :TL2Selector, m :TL2Method) {
+    if( m.acceptMethodVisitor(shouldCount)
+      then: { f[sel, m] })
+  })
+}
+
+understoodDo1(c :TL2ClassPublic, f :Fun(:TL2Selector, :TL2Method):Void) :Void
+  (* *)
+{
+  seen ::= Set.new1(100)
+  poolDict ::= tl.pool.poolMethods
+  c.methodDictionaries.do(fun(md :TL2MethodDictionaryPublic) {
+    if( md !== poolDict then: {
+      md.do(fun(m :TL2Method) {
+        selector ::= TL2Selector.new1(m.selector, m.arity, m.sorts)
+	if( !seen.includes(selector)
+	then: { seen.add(selector)
+	        f[selector, m] })
+      })
+    })
+  })
+}
+
+printSelectorDefinitionsOn(out :Output) :Void
+  (* *)
+{
+  printer ::= Printer.new(out)
+  v ::=
+    TL2FunMethodVisitor.new
+      .ifCompiled(fun(m :TL2CompiledMethod) {
+        printer << " ["<<m.compiledIn.name<<']'
+      }).otherwise(fun(:TL2Method){
+      })
+  selectorDefinitions.keysAndElementsDo(fun(selector :TL2Selector, d :Dictionary(TL2Method, ListSet(TL2ClassPublic))) {
+    indentTo(printer, 0)
+    printer << selector
+    indentTo(printer, 30)
+    printer << "IMPLEMENTATIONS: " << d.size
+    totalUses ::= 0
+    printer.withAbsIndent(30, {
+      d.keysAndElementsDo(fun(method :TL2Method, classes :ListSet(TL2ClassPublic)) {
+	indentTo(printer, 30)
+	printer << method.methodType
+	method.acceptMethodVisitor(v)
+	printer.nl
+	indentTo(printer, 60)
+	printer << "USES: " << classes.size << " ("
+	totalUses := totalUses + classes.size
+	classes.doBetween(fun(c:TL2ClassPublic) {
+	  c :TL2Class := _typeCast(c)
+	  printer << c.id
+	}, {
+	  printer << ", "
+	})
+	printer << ")"
+      })
+    })
+    indentTo(printer, 30)
+    printer << "TOTAL USES: " << totalUses
+  })
+}
+
+indentTo(printer :Printer, col :Int) :Void
+  (* *)
+{
+  if( printer.column >= col
+  then: { printer.nl })
+  printer.indent(col)
+}
+
+printFrequencies(T <: Object, frequencies :Dictionary(T, Int)) :Void
+  (* *)
+{
+  ; sorted output of frequency table 
+  nbDefs ::= GapArray(:Pair(T,Int)).new(frequencies.size)
+  frequencies.keysAndElementsDo(fun(k:T, f :Int) {
+    nbDefs.addLast(Pair.new(k, f))
+  })
+  nbDefs.quicksort(fun(p1:Pair(T,Int), p2 :Pair(T,Int)) {
+    p2.second - p1.second
+  })
+  printer ::= Printer.new(tycoon.stdout)
+  ones ::= 0
+  n ::= 0
+  nbDefs.do(fun(p:Pair(T, Int)) {
+    if( p.second = 1
+    then: { ones := ones + 1 }
+    else: { n.printOn(printer)
+	n := n + 1
+        printer.indent(5)
+        p.first.printOn(printer)
+	printer.indent(30)
+	p.second.printOn(printer)
+	printer.nl })
+  })
+  printer << "And "<<ones<<" entries with a one, for a total of "<<nbDefs.size<<" selectors\n"
+}
+
+printClassNames :Void
+  (* *)
+{
+  foundClassNames.do(fun(s:String){ tycoon.stdout.writeln(s) })
+}
+
+printPositions :Void
+  (* *)
+{
+  foundPositions.do(fun(s:SourcePos){ tycoon.stdout.writeln(s.printString) })
+}
+
+foundClassNames :Set(String)
+  (* *)
+{
+  occurrences.map(fun(m :TL2Method){ m.pos.where }).as(Set)
+}
+
+foundPositions :Array(SourcePos)
+  (* *)
+{
+  positions ::=
+    occurrences.map(fun(m :TL2Method){ m.pos }).as(MutableArray(:SourcePos))
+  positions.quicksort(fun(p1 :SourcePos, p2 :SourcePos) {
+    p1.order(p2)
+  })
+  positions
+}
+
+searchAllClasses :Void
+  (* *)
+{
+  occurrences.clear
+  inPackage ::= inPackage
+  tl.classManager.classTable.do(fun(c:TL2ClassPublic) {
+    path ::= c.pos.where
+    if( inPackage.isNil ||  path.startsWith(inPackage) 
+    then: { searchClass(c) })
+  })
+}
+
+searchClass(c :TL2ClassPublic) :Void
+  (* *)
+{
+  c.methodDictionary.do(fun(m :TL2Method) {
+    if( m.selector == methodName
+    && ( arity.isNil ||  m.arity = arity  )
+    then: { occurrences.addLast(m) })
+  })
+}
+
+tl :TL2TL
+{ tycoon.tl }
+
+private
+
+_init :Void
+  (* *)
+{
+  super._init
+  occurrences := GapArray.new0
+}
+
+}

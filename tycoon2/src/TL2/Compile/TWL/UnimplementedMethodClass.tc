@@ -1,0 +1,10 @@
+class UnimplementedMethodClass
+super CStructClass(UnimplementedMethod)
+metaclass MetaClass
+public methods
+new :UnimplementedMethod
+{
+  let instance = _new,
+  instance._init
+}
+;

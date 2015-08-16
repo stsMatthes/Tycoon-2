@@ -1,0 +1,165 @@
+class StmlGeneric
+super StmlComponent
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ generic "literal" Sgml markup (HTML) *)
+meta StmlGenericClass
+{
+endPosition :SgmlPos
+
+element :StmlElement
+
+attributes :Dictionary(String, String)
+
+components :Array(StmlComponent)
+
+type :StmlType
+  (* ??? *)
+{ StmlStringType.new(position) }
+
+computeTypeInSequence( bindings :StmlBindings,
+		       errorLog :ErrorLog,
+		       computeRest :Fun(:StmlBindings):StmlType) :StmlType
+  (* compute your type, possibly extending the bindings
+      for the rest of the sequence *)
+{ 
+  componentT ::=
+    computeComponentTypes(bindings, errorLog, components.reader,
+      fun(bindings :StmlBindings) :StmlType {
+	restT ::= computeRest[bindings]
+	tagT ::= StmlStringType.new(endPosition)  ; closing tag 
+	t ::= tagT.before(restT)
+	t.emitWrong(errorLog)
+	t
+      })
+  tagT ::= StmlStringType.new(position)  ; opening tag 
+  t ::= tagT.before(componentT)
+  t.emitWrong(errorLog)
+  t
+  ; in other words: componentT must be String 
+}
+
+printOn(out :Output) :Void
+{
+  printOnGenerator(SgmlGenerator.new(out))
+}
+
+printOnGenerator(out :SgmlGenerator) :Void
+  (* *)
+{
+  doPrintOn(out, fun(attrVal :String) {
+    out.attrValue(attrVal)
+  }, fun(o:StmlComponent) {
+    o.printOnGenerator(out)
+  })
+}
+
+compileAsString(out :StmlASTOutput) :Void
+  (* *)
+{
+  doPrintOn(out.sgmlGenerator, fun(attrVal :String){
+    if( attrVal.size > 1
+    && ( attrVal[0] = '`'
+         &&  attrVal[attrVal.size-1] = '`'  )
+    then: { source ::=
+          StmlTycoonSource.new(position, String.fromSubSequence(attrVal, 1, attrVal.size-2))
+        out.outAttrValue(source.compileToValue(out.context)) }
+    else: { out.sgmlGenerator.attrValue(attrVal) })
+  }, fun(o:StmlComponent) {
+    o.compileAsString(out)
+  })
+}
+
+compileAsValue(  :StmlASTWriter ) :Void
+  (*out*)
+{ ; this expression has string type, so putting it in a value context should
+;     create a type error.  If we get here, we can be sure that context is "string" 
+  assert({ false }) }
+
+private
+
+doPrintOn( out :SgmlGenerator,
+	   printAttributeValue :Fun(:String):Void,
+	   printComponent :Fun(:StmlComponent):Void) :Void
+  (* very similar to SgmlComposite, but we have additional parameters *)
+{
+  printStartTag(out, printAttributeValue)
+  if( element.contentType == SgmlContentType.cdata then: {
+    out.nl
+    components.do(fun(c:StmlComponent){
+      assert({ c.isLeaf })
+      l ::= c.asLeaf
+      out.writeString(l.data)  ; no entity filtering 
+    })
+  } else: {
+    if( !components.isEmpty then: {
+      if( element.contentType == SgmlContentType.element
+       then: { out.nl
+	   components.do(fun(o:StmlComponent){
+	     printComponent[o]
+	     out.nl
+	   })
+	 }
+       else: { components.do( printComponent )
+	 })
+    })
+  })
+  if( element.contentType !== SgmlContentType.empty then: {
+    out.endTag(element.name)
+  })
+}
+
+printStartTag(out :SgmlGenerator, printAttributeValue :Fun(:String):Void) :Void
+  (* *)
+{
+  ; cannot reuse SgmlGenerator::startElement here 
+
+  out.beginStartTag(element.name)
+  attributes.keysAndElementsDo(fun(attribute :String, value :String) {
+    if( value.isNotNil then: {
+      out.write(' ')
+      out.writeString(attribute)
+      out.write('=')
+      printAttributeValue[value]
+    })
+  })
+  out.endStartTag
+}
+
+computeComponentTypes( bindings :StmlBindings,
+		       errorLog :ErrorLog,
+		       r :Reader(StmlComponent),
+		       computeRest :Fun(:StmlBindings):StmlType) :StmlType
+  (* BOO! BOO! copy & paste from StmlSequence 
+ prolog style loop over the components *)
+{ component ::= r.read
+  if( component.isNil then: {
+    computeRest[bindings]
+  } else: {
+    component.computeTypeInSequence(
+      bindings,
+      errorLog,
+      fun(bindings1 :StmlBindings) {
+	computeComponentTypes(bindings1, errorLog, r, computeRest)
+      })
+  })
+}
+
+}

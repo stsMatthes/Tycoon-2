@@ -1,0 +1,10 @@
+class BindingsClass
+super ConcreteClass(Bindings)
+metaclass MetaClass
+public methods
+new :Bindings
+{
+  let instance = _new,
+  instance._init
+}
+;

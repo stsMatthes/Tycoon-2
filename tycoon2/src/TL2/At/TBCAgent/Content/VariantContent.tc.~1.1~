@@ -1,0 +1,105 @@
+(* VariantContent.tc
+
+   Tycoon Business Conversation (TBC) for Tycoon 2
+   -----------------------------------------------
+   Variant Contents. At a given time, only one of the possible variants 
+   (which are Contents by itself) is instantiated. By default, the 
+   new()-method instantiates the first of the given variants.
+   Switching between variants is done by selectVariant, which selects
+   another variant by name. The currently active variant can be retrieved by
+   selectedVariantName and selectedVariant.
+
+   09.08.97 hw : created
+   
+*)
+
+
+class VariantContent
+
+super Content
+metaclass VariantContentClass
+
+
+public methods
+
+  variant() :VariantContent
+  {
+    self
+  }
+
+  visit(v :ContentVisitor) :Void
+  {
+    v.variantContent(self)
+    (*### oder  _selectedVariantContent.visit(self)  ?? nicht wirklich. *)
+  }
+
+  selectedVariantName() :String
+    (* Returns the name of the selected variant *)
+  {
+    _selectedVariantName
+  }
+  
+  selectedVariant() :Content
+    (* returns the currently selected variants contents *)
+  {
+    _selectedVariantContent
+  }
+  
+  selectVariant(name :String) :Void
+    (* selects another variant by name. if name is not a valid variant,
+       an exception of type KeyNotFoundError is thrown *)
+  {
+    let myVarSpec = _typeCast(spec, :VariantContentSpec),
+    (myVarSpec.includesKey(name)) 
+      ? {
+          _selectedVariantName    := name, 
+          _selectedVariantContent := myVarSpec[name].instance()
+        }
+      : {KeyNotFoundError.new(spec,name).raise} 
+  }
+  
+  (* 
+   * a test, wether the current variant of a content x matches an expected 
+   * ContentSpec, can easily be done by
+   *   x.selectedVariant.spec.matches(aSpec)
+   * Or, even simpler, by comparing names.
+   *)
+  
+  (*---- pseudo-array get/set-methods ----*)
+  
+  "[]"(name :String) :Content
+  (* access current variant by name. if current variant is not "name", an 
+     exception is raised, otherwise, the variant is returned. *)
+  {
+    (_selectedVariantName.stringEqual(name))
+      ? {_selectedVariantContent}
+      : {KeyNotFoundError.new(spec,name).raise}
+  }
+  
+  "[]:="(name :String, content :Content) :Void
+  (* set a new variant. exception is raised, if name is not an valid 
+     variant orif contents spec doesnt match names spec.
+     in the latter case, an CoerceError-Execption is thrown *)
+  {
+    let myVarSpec = _typeCast(spec, :VariantContentSpec),
+    (myVarSpec.includesKey(name)) 
+      ? {
+          (myVarSpec[name].matches(content.spec))
+            ? {
+                _selectedVariantName    := name,     
+	        _selectedVariantContent := myVarSpec[name].instance()
+	      }
+            : {SpecError.new(content, spec).raise}
+        }
+      : {KeyNotFoundError.new(spec,name).raise}   
+  }
+
+
+
+private
+
+  _selectedVariantName :String,
+ 
+  _selectedVariantContent :Content 
+   
+;

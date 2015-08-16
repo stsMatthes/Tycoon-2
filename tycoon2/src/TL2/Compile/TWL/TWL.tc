@@ -1,0 +1,4 @@
+class TWL
+super Compile
+metaclass AbstractClass
+;

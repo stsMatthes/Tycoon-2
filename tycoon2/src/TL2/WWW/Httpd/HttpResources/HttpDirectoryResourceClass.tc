@@ -1,0 +1,17 @@
+class HttpDirectoryResourceClass
+
+super ConcreteClass(HttpDirectoryResource)
+
+metaclass MetaClass
+
+public methods
+
+new(dir :Directory) :HttpDirectoryResource
+{
+  let instance = _new,
+  instance._init,
+  instance._dir := dir,
+  instance  
+}
+
+;

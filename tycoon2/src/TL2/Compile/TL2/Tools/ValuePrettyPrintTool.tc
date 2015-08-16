@@ -1,0 +1,202 @@
+class ValuePrettyPrintTool
+super SignaturePrintMixin, TL2ValueVisitor(Void)
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ a pretty-printer for values *)
+meta ValuePrettyPrintToolClass
+{
+visitLiteral(v :TL2LiteralValue) :Void
+  (* *)
+{ v.value.printOn(out) }
+
+visitSend(v :TL2SendValue) :Void
+  (* *)
+{
+  printReceiver(v)
+  printAnySend(v)
+}
+
+visitSuperSend(v :TL2SuperSendValue) :Void
+  (* *)
+{ out << "super."
+  printAnySend(v)
+}
+
+visitAssign(v :TL2AssignValue) :Void
+  (* *)
+{ out << v.lhs.name << " := "
+  if( v.rhs.isSimple then: {
+    v.rhs.accept(self)
+  } else: {
+    out.withRelIndent(2, {
+      out.nl
+      v.rhs.accept(self)
+    })
+  })
+}
+
+visitIde(v :TL2IdeValue) :Void
+  (* *)
+{ out << v.ide.name }
+
+visitTakeFrom(v :TL2TakeFromValue) :Void
+  (* *)
+{ out << v.ide.name << '@' }
+
+visitFun(v :TL2CompiledFun) :Void
+  (* *)
+{
+  domain ::= v.domain
+  range ::= v.range
+  if( domain.isEmpty && range.isNil then: {
+    ; no fun 
+  } else: {
+    out << "fun("
+    simpleDomain ::= printDomain(v.methodType)
+    out.write(')')
+    if( range.isNotNil then: {
+      if( range.isLeaf then: {
+	out.write(':')
+	printType(range)
+      } else: {
+	simpleDomain := false
+	out.withRelIndent(2, {
+	  out.nl
+	  out.write(':')
+	  printType(range)
+	})
+      })
+    })
+    if( simpleDomain then: { out.space } else: { out.nl })
+  })
+  out.withRelIndent(2, {
+    out.writeAll("{\n")
+    v.body.accept(self)
+  })
+  out.writeAll("\n}")
+}
+
+
+visitLet(v :TL2LetValue) :Void
+  (* *)
+{
+  ide ::= v.ide
+  value ::= v.value
+
+  out << ide.name << if(ide.component then: {" @:"} else: {" :"})
+  if( ide.type.isNotNil then: {
+    printType(ide.type)
+    out << " "
+  })
+  out << ":="
+  if( value.isSimple then: {
+    out.space
+    value.accept(self)
+  } else: {
+    out.withRelIndent(2, {
+      out.nl
+      value.accept(self)
+    })
+  })
+  out.nl
+  v.body.accept(self)
+}
+
+visitBlock(v :TL2BlockValue) :Void
+  (* *)
+{
+  ;; ### may have to print parens!
+  if( v.values.isEmpty then: {
+    out << ";; empty\n"
+  } else: {
+    v.values.doBetween(fun(v1:TL2Value) {
+      v1.accept(self)
+    }, {
+      out.nl
+    })
+  })
+}
+
+out :Printer
+{ _out }
+
+private
+
+_out :Printer
+
+printAnySend(v :TL2SendValue) :Void
+  (* print a send or super send *)
+{
+  printSelector(v.selector)
+  if( !v.args.isEmpty then: {
+    ; all arguments up to the first non-leaf arg are
+;       printed on the same line.  
+    out << '('
+    out.withRelIndent(2, {
+      complex ::= false
+      v.plainArgs.doBetween(fun(arg :TL2Argument) {
+        arg.argumentCase(
+	  fun(v :TL2Value) {
+	    v.accept(self)
+	  },
+	  fun(t :TL2Type) {
+	    out << ':'
+	    printType(t)
+	  })
+	complex := complex || !arg.isLeaf 
+      }, {
+        out << if( complex then: {",\n"} else: {", "})
+      })
+      if( v.hasKeywords then: {
+        if( v.hasPlain then: { out.nl })
+	v.keywordArgs.doBetween(fun(p :Pair(Symbol, TL2Value)) {
+	  out << p.first << ": "
+	  p.second.accept(self)
+	}, {
+	  out.nl
+	})
+      })
+      out << ')'
+    })
+  })
+}
+
+printReceiver(v :TL2SendValue) :Void
+  (* *)
+{
+  if( v.receiver.isLeaf || v.receiver.isSend  then: {
+    v.receiver.accept(self)
+  } else: {
+    ; for cases like "(1 + 1).isNil" 
+    out << '('
+    v.receiver.accept(self)
+    out << ')'
+  })
+  out << '.'
+}
+
+printType(t :TL2Type) :Void
+{ _printType[t] }
+
+_printType :Fun(t :TL2Type) :Void
+  (* parameterization without subclassing *)
+
+}
+

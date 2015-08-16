@@ -1,0 +1,35 @@
+class CCharHolder
+
+super CValueHolder(Char)
+
+metaclass SimpleConcreteClass(CCharHolder)
+
+public methods
+
+valueClass():Class { Char }
+
+value():Char
+{ handle.isNotNil ? {tycoon.rts.tymem_peekChar(handle,0)}
+                  : {let i:Char = nil} }
+
+charValue():Char { value() }
+
+"value:="(v:Char):Char
+{ handle.isNotNil ? {tycoon.rts.tymem_pokeChar(handle,0,v),
+                     tycoon.rts.tymem_peekChar(handle,0)}
+		  : {nil} }
+
+setCharValue(v:Char):Char { value:=v }
+
+private methods
+
+_init:Self
+{
+  super._init,
+  super._allocate(1),
+  tycoon.rts.tymem_pokeChar(handle,0,' '),
+  self
+}
+
+;
+

@@ -1,0 +1,53 @@
+class SystemTracer
+super Object
+metaclass AbstractClass;
+
+class Tracer metaclass AbstractClass;
+class StructDescriptor metaclass AbstractClass;
+
+DO load "../TWL/SystemTracer/TspDescriptor.tc";
+DO load "../TWL/SystemTracer/AbstractArrayDescriptor.tc";
+DO load "../TWL/SystemTracer/ArrayDescriptor.tc";
+DO load "../TWL/SystemTracer/ByteArrayDescriptor.tc";
+DO load "../TWL/SystemTracer/IntArrayDescriptor.tc";
+DO load "../TWL/SystemTracer/LongArrayDescriptor.tc";
+DO load "../TWL/SystemTracer/ShortArrayDescriptor.tc";
+DO load "../TWL/SystemTracer/StackDescriptor.tc";
+DO load "../TWL/SystemTracer/StructDescriptorClass.tc";
+DO load "../TWL/SystemTracer/StructDescriptor.tc";
+DO load "../TWL/SystemTracer/ThreadDescriptor.tc";
+DO load "../TWL/SystemTracer/WeakRefDescriptor.tc";
+DO load "../TWL/SystemTracer/MemBlock.tc";
+DO load "../TWL/SystemTracer/Tracer.tc";
+
+DO load "../TWL/SystemTracer/ClassDescriptor.tc";
+
+WeakRefDescriptor.init;
+ArrayDescriptor.init;
+ByteArrayDescriptor.init;
+ShortArrayDescriptor.init;
+IntArrayDescriptor.init;
+LongArrayDescriptor.init;
+StackDescriptor.init;
+ThreadDescriptor.init;
+
+ClassDescriptor.init;
+
+(*;
+define t :Tracer;
+t := Tracer.new;
+t.trace(Array(:Object).with4(true,'x',4,"hallo"), tycoon.stdout);
+t.trace(List.with3(1,2,3), tycoon.stdout);
+t.trace(tycoon.tl.root.charTable, tycoon.stdout);
+*)
+
+
+(*
+;
+storeDescriptors["Class"] := ClassDescriptor.instance;
+
+define t :Tracer;
+t := Tracer.new;
+t.traceToFile(tycoon.tl.root, "dump");
+
+*)

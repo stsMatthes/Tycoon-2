@@ -1,0 +1,259 @@
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+     File: UnifyType.tc
+    Purpose: type unification variables introduced during type checking
+     Author: Andreas Gawecki (TL), Axel Wienberg, Matthias Ernst (completely rewramped)
+*)
+
+(* ## Unification variables travel self-consistently through time and space
+      and don''t care for substitutions around them
+
+   I''m using a range-delimiting algorithm here: a unification variable has a lower and an upper bound,
+   meaning Lower <: U? <: Upper with initials Nil <: U? <: Void.
+
+   Subtype tests versus ``normal'' types make the range smaller which is only possible
+   if lowerBound <: newLowerBound <: upperBound resp.
+      lowerBound <: newUpperBound <: upperBound.
+
+   If this condition cannot be held, we must either fail
+
+   (* ## disabled
+     or move to the utmost end of the type-lattice, e.g:
+     String <: U? <: Void
+
+     and Int <:! U?
+
+     => Void <: U? <: Void     ( Object <: U <: Void ? )
+   *)
+     
+   One could try to compute a common sub-, resp. supertype but this is too complex, I think.
+   The most annoying case, the if-construct will get better, if one branch is subtype of another:
+
+   crash ? { Exception.raise } : { "Hallo" }
+
+   Nil <: U? <: Void,
+   => Nil <: U?    => no change
+   => String <: U? => Lower := String,   String <: U? <: Void
+
+   method lookup on UniVars makes them equal to their lower-bound.
+
+   let i = 3,	    ( i : ( Int <: U? <: Void ) )
+   i + 4	    ( => Int <: U? <: Int )
+   
+   Subtyping of unification variables tries to move the small type as far to its lower end as possible,
+   adjusting the big one to its upper limit if necessary. 
+   
+   
+*)
+
+class UnifyType 
+(* Unification variables (in subtrees of values only) *)
+  super TypeImpl
+  metaclass UnifyTypeClass
+
+public methods
+
+  lowerBoundType :Type   { _lowerBoundType  }
+  lowerBoundSubst :Subst { _lowerBoundSubst }
+
+  upperBoundType :Type   { _upperBoundType  }
+  upperBoundSubst :Subst { _upperBoundSubst }
+
+
+  (* substs aren''t interesting for a UnifyType *)
+  reduce(T <: Void, subst :Subst, cont :Fun2(Type, Subst, T)) :T { cont[self, EmptySubst.instance] }
+  
+  
+  visit(T <: Void, visitor :TypeVisitor(T)) :T
+  {
+    visitor.visitUnifyType(self)
+  }
+
+  prettyPrint(o :Printer) {
+    o<<"U?["<<identityHash<<"](",
+    printBound(lowerBoundType, o),
+    o<<", ",
+    printBound(upperBoundType, o),
+    o<<")"
+  }
+
+  setLowerBound(t :Type, s :Subst)
+  {
+    trace(t.pos, "Unifying with "+t.printString, {
+      areSubTypes(t, lowerBoundType, s, upperBoundSubst) ? { (* do nothing *) } : {
+	tycoon.tl.typeChecker.saveUnivar(self),
+
+	areSubTypes(lowerBoundType, t, lowerBoundSubst, s) ? {
+	  _lowerBoundType := t,
+	  _lowerBoundSubst := s
+	} : {
+	  areSubTypes(t, upperBoundType, s, upperBoundSubst) ? {
+	    _lowerBoundType  := _upperBoundType,
+	    _lowerBoundSubst := _upperBoundSubst
+	  } : {
+	    raiseError
+	  }
+	},
+
+	(* bounds modified --- sanity check *)
+	areSubTypes(lowerBoundType, upperBoundType, lowerBoundSubst, upperBoundSubst) ? { } : {
+	  raiseError
+	}
+      }
+    })
+  }
+
+  setUpperBound(t :Type, s :Subst)
+  {
+    trace(t.pos, "Unifying with "+t.printString, {
+      areSubTypes(upperBoundType, t, upperBoundSubst, s) ? { (* do nothing *) } : {
+	tycoon.tl.typeChecker.saveUnivar(self),
+
+	areSubTypes(t, upperBoundType, s, upperBoundSubst) ? {
+	  _upperBoundType := t,
+	  _upperBoundSubst := s
+	} : {
+	  areSubTypes(lowerBoundType, t, lowerBoundSubst, s) ? {
+	    _upperBoundType  := _lowerBoundType,
+	    _upperBoundSubst := _lowerBoundSubst
+	  } : {
+	    raiseError
+	  }
+	},
+
+	(* bounds modified --- sanity check *)
+	areSubTypes(lowerBoundType, upperBoundType, lowerBoundSubst, upperBoundSubst) ? { } : {
+	  raiseError
+	}
+      }
+    })
+  }
+
+
+  resetTo(lt :Type, ls :Subst, ut :Type, us :Subst)
+  {
+    _lowerBoundType := lt,
+    _lowerBoundSubst := ls,
+    _upperBoundType  := ut,
+    _upperBoundSubst := us
+  }
+  
+  (* U? <: T, see above *)
+  instantiateSub(big :Type, bigSubst :Subst) {
+(*    typeChecker.writeln("Instantiating U?["+identityHash.printString+"]("+
+      lowerBoundType.printString+lowerBoundSubst.printString+", "+
+      upperBoundType.printString+upperBoundSubst.printString+") <: "+big.printString+bigSubst.printString), *)
+      
+    setUpperBound(big, bigSubst)
+  }
+
+  (* T <: U?, see above, this is called by the default implementation in TypeImpl::checkSubUnifyType *)
+  instantiateSuper(small :Type, smallSubst :Subst) {
+(*    typeChecker.writeln("Instantiating U?["+identityHash.printString+"]("+
+      lowerBoundType.printString+lowerBoundSubst.printString+", "+
+      upperBoundType.printString+upperBoundSubst.printString+") >: "+small.printString+smallSubst.printString), *)
+      
+    setLowerBound(small, smallSubst)
+  }
+
+  checkSubNilType   (big :NilType,    subst :Subst, bigSubst :Subst) { instantiateSub(big, bigSubst) }
+  checkSubObjectType(big :ObjectType, subst :Subst, bigSubst :Subst) { instantiateSub(big, bigSubst) }
+  checkSubApplyType (big :ApplyType,  subst :Subst, bigSubst :Subst) { instantiateSub(big, bigSubst) }
+
+  checkSubOperType  (big :OperType,   subst :Subst, bigSubst :Subst) { instantiateSub(big, bigSubst) }
+  checkSubSubstType (big :SubstType,  subst :Subst, bigSubst :Subst) { instantiateSub(big, bigSubst) }
+  checkSubIdeType   (big :IdeType,    subst :Subst, bigSubst :Subst) { instantiateSub(big, bigSubst) }
+
+  checkSubUnifyType (big :UnifyType,  subst :Subst, bigSubst :Subst) {
+    (* ## so easy ? *)
+    big.setLowerBound(lowerBoundType, lowerBoundSubst),
+    big.lowerBoundType.visitor.
+      ifNilType(fun(:NilType) {
+        (* if Nil <: big <: T, we take the other way *)
+	setUpperBound(big.upperBoundType, big.upperBoundSubst),
+	big.setLowerBound(upperBoundType, upperBoundSubst)
+      }).otherwise(fun(:Type) {
+        setUpperBound(big.lowerBoundType, big.lowerBoundSubst)
+      }).
+    visitType(big.lowerBoundType)
+  }
+
+  
+private
+
+  _lowerBoundType :Type, 
+  _lowerBoundSubst :Subst,
+
+  _upperBoundType :Type,
+  _upperBoundSubst :Subst
+
+
+methods
+
+  areSubTypes(small :Type, big :Type, ssubst :Subst, bsubst :Subst) :Bool
+  {
+    try({
+      small.checkSubType(big, ssubst, bsubst),
+      true
+    }, fun(e :Exception) {
+      e."class" == TypeCheckTypeError ? { false } : { e.raise }
+    })
+  }
+
+  (* the bounds have been changed, so assure that still lower <: upper *)
+  checkModified
+  {
+    lowerBoundType.checkSubType(upperBoundType, lowerBoundSubst, upperBoundSubst)
+  }
+
+  doExpose(T <: Void, subst :Subst, exact :Bool, cont :Fun2(Type, Subst, T)) :T
+  {
+    (* now we must decide for one type, of course, we decide for the lower bound *)
+    setUpperBound(lowerBoundType, lowerBoundSubst),
+    lowerBoundType.expose(lowerBoundSubst, exact, cont)
+  }
+
+  printBound(t :Type, out :Printer)
+  {
+    let cl = t."class",
+    cl == IdeType || {cl == NilType} || {cl == VoidType}
+    ? { t.prettyPrint(out) }
+    : { cl == ApplyType
+        ? { let a :ApplyType = _typeCast(t),
+	    a.oper.prettyPrint(out),
+	    out<<"(...)" }
+	: { out<<"a "<<cl.name } }
+  }
+    
+  _init :Self
+  {
+    _lowerBoundType := NilType.instance,
+    _lowerBoundSubst := EmptySubst.instance,
+
+    _upperBoundType  := VoidType.instance,
+    _upperBoundSubst := EmptySubst.instance,
+
+    self
+  }
+
+    
+;
+
+

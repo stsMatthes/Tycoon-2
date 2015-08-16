@@ -1,0 +1,64 @@
+class StackClass(E <: Object)
+super DynSequenceGeneratorMixin(E, Stack(E)), ConcreteClass(Stack(E))
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+*)
+meta MetaClass
+{
+new :Stack(E)
+  (* *)
+{
+  _new2(0,0)
+}
+
+new1(initialCapacity :Int) :Stack(E)
+  (* <initialCapacity> elements can be inserted into the returned stack before
+   the internal buffer has to grow *)
+{
+  _new2(initialCapacity, 0)
+}
+
+fromReader(reader :Reader(E)) :Stack(E)
+  (* result will contain exactly the elements delivered by reader,
+     with the element delivered earlier at the lower index. *)
+{
+  ;; addLast is rather slow
+  instance ::= fromReverseReader(reader)
+  instance.reverse
+  instance
+}
+
+private
+
+_new2(initialCapacity :Int, initialSize :Int) :Stack(E)
+  (* create a new instance with initial capacity <initialCapacity> and
+     initial size <initialSize>. *)
+  require initialCapacity >= initialSize && initialSize >= 0
+  ensure result.size = initialSize
+{
+  assert({ initialCapacity >= initialSize && initialSize >= 0 })
+  instance ::= _new
+  instance._elements := MutableArray.new(initialCapacity)
+  instance._elementStart := initialCapacity - initialSize
+  instance._init
+  instance
+}
+
+}

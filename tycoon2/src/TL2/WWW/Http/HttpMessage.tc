@@ -1,0 +1,116 @@
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+	Http-Message
+
+	changed 23-Jul-97 -> super now MimeMessage
+*)
+
+class HttpMessage
+super MimeMessage
+
+public
+methods
+
+parser :MimeMessageParser(Self) { HttpMessageParser.new }
+
+
+(* HTTP/1.1 'General headers' *)
+
+hasCacheControl :Bool { hasHeader("cache-control") }
+cacheControl :String { headerValue("cache-control") }
+"cacheControl:="(cc :String) { setHeaderValue("cache-control", MimeString, cc) }
+
+hasConnection :Bool { hasHeader("connection") }
+connection :List(String) { headerValue("connection") }
+"connection:="(c :List(String)) { setHeaderValue("connection", StringListHeader, c) }
+
+hasDate :Bool { hasHeader("date") }
+date :Date { headerValue("date") }
+"date:="(d :Date) { setHeaderValue("date", MimeDate, d) }
+
+hasExpires :Bool { hasHeader("date") }
+expires :Date { headerValue("expires") }
+"expires:="(d :Date) { setHeaderValue("expires", MimeDate, d) }
+
+hasForwarded :Bool { hasHeader("forwarded" ) }
+forwarded :List(String) { headerValue("forwarded") }
+"forwarded:="(f :List(String)) { setHeaderValue("forwarded", StringListHeader, f) }
+
+hasKeepAlive :Bool { hasHeader("keep-alive") }
+keepAlive :List(String) { headerValue("keep-alive") }
+"keepAlive:="(ka :List(String)) { setHeaderValue("keep-alive", StringListHeader, ka) }
+
+hasPragma :Bool { hasHeader("pragma") }
+pragma :List(String) { headerValue("pragma") }
+"pragma:="(p :List(String)) { setHeaderValue("pragma", StringListHeader, p) }
+
+hasUpgrade :Bool { hasHeader("upgrade") }
+upgrade :List(String) { headerValue("upgrade") }
+"upgrade:="(u :List(String)) { setHeaderValue("update", StringListHeader, u) }
+
+hasContentEncoding :Bool { hasHeader("content-encoding") }
+contentEncoding :String { headerValue("content-encoding") }
+"contentEncoding:="(e :String) { setHeaderValue("content-encoding", MimeToken, e) }
+
+hasTransferEncoding :Bool { hasHeader("transfer-encoding") }
+transferEncoding :String { headerValue("transfer-encoding") }
+"transferEncoding:="(e :String) { setHeaderValue("transfer-encoding", MimeToken, e) }
+
+
+encodeBody
+{
+  hasContentEncoding ? { body := Encoder.encode(contentEncoding, body) },
+  hasTransferEncoding ? { body := Encoder.encode(transferEncoding, body) }
+}
+
+decodeBody
+{
+  hasTransferEncoding ? { body := Encoder.decode(transferEncoding, body) },
+  hasContentEncoding ? { body := Encoder.decode(contentEncoding, body) }
+}
+
+copy :Self
+{
+  let c = shallowCopy,
+  (* ## typechecker *)
+  headers := _typeCast(headers.copy),
+  body    := _typeCast(body.copy),
+
+  c
+}
+
+noCache
+  (* add a header indicating that caching MUST NOT occur *)
+{
+  let nocache = "nocache",
+  hasPragma
+    ? { pragma := List.cons(nocache, pragma) }
+    : { pragma := List.with1(nocache) },
+  cacheControl := nocache,
+  (* expire now: *)
+  headers["expires"] := HttpExpiresHeader.fromString("now")
+}
+
+private
+methods
+
+
+;

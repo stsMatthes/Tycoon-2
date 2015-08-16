@@ -1,0 +1,14 @@
+class StmlJumpExceptionClass
+super ConcreteClass(StmlJumpException)
+meta MetaClass
+{
+
+new(request :HttpRequest) :StmlJumpException
+{
+  instance ::= _new
+  instance.request := request
+  instance._init
+  instance
+}
+
+}

@@ -1,0 +1,28 @@
+class RichardsClass(Instance <: Richards)
+super ConcreteClass(Instance)
+metaclass MetaClass
+   
+
+public methods
+
+new() :Instance
+{
+  let obj = _new,
+  obj.nTasks := 6,
+  obj.layOut := 20,
+  obj.idler := 0,
+  obj.worker := 1,
+  obj.handlerA := 2,
+  obj.handlerB := 3,
+  obj.deviceA := 4,
+  obj.deviceB := 5,
+  obj.devicePacket := 0,
+  obj.workPacket := 1,
+  obj.taskList := List.new,
+  obj.currentTaskList := List.new,
+  obj.taskTable := MutableArray.new(6),
+  TaskControlBlock.benchmark := obj,
+  obj
+}  
+
+;

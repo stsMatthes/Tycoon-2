@@ -1,0 +1,64 @@
+class BiGraph(T <: Object)
+super AbstractGraph(T, BiNode(T))
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ implementation of AbstractGraph that stores predecessors as well as
+   successors *)
+meta BiGraphClass(T)
+{
+addEdge(from :BiNode(T), to :BiNode(T)) :Void
+  (* *)
+{
+  from.successors.add(to)
+  to.predecessors.add(from)
+}
+
+removeEdge(from :BiNode(T), to :BiNode(T)) :Void
+  (* *)
+{
+  from.successors.remove(to)
+  to.predecessors.remove(from)
+}
+
+successors(n :BiNode(T)) :Collection(BiNode(T))
+  (* *)
+{ n.successors }
+
+predecessors(n :BiNode(T)) :Collection(BiNode(T))
+  (* *)
+{ n.predecessors }
+
+indegree(n :BiNode(T)) :Int
+  (* *)
+{ n.predecessors.size
+}
+
+outdegree(n :BiNode(T)) :Int
+  (* *)
+{ n.successors.size
+}
+
+private
+
+_newNode(value :T) :BiNode(T)
+  (* *)
+{ BiNode.new(value) }
+
+}

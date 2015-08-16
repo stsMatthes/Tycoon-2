@@ -1,0 +1,231 @@
+class X_BEByteCodeReader
+super X_BEBackEnd
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ a X_BEByteCodeWriter can be interpreted as a Visitor.
+   Here, <w> visits the byte code instruction at <pos>.
+   <pos> is advanced to point behind the decoded instruction. 
+ On the other hand, X_BEByteCodeReader is a reader for
+   byte code instructions (where one byte code instruction corresponds
+   to one message to <w>). *)
+meta X_BEByteCodeReaderClass
+{
+do(code :ByteArray, w :X_BEByteCodeWriter) :Void
+  (* *)
+{
+  _code := code
+  initLabels(w)   ; fetch labels from w.newLabel and remember byte positions 
+  doPass(w)	   ; the real thing 
+}
+
+jump(l :X_BELabel) :Void
+  (* *)
+{ pos := labels.locate(l) }
+
+next :Void
+  (* *)
+{
+  labels.lookup(pos, fun(l:X_BELabel) {
+    if( !l.isDefined then: { out.defineLabel(l) })
+  }, { })
+  op ::= fetch
+  actions[op][]
+}
+
+atEnd :Bool
+  (* *)
+{ pos = _code.size }
+
+private
+
+vmInterface :X_TL2VMInterface
+
+root :X_TL2Root
+
+actions :MutableArray(Fun():Void)
+
+labels :Dictionary(Int, X_BELabel)
+
+_code :ByteArray
+
+pos :Int
+
+out :X_BEByteCodeWriter
+
+realOut :X_BEByteCodeWriter
+
+setOptional(s :Symbol, action :Fun():Void) :Void
+  (* *)
+{ if( vmInterface.opcodes.includesKey(s) then: {
+    setAction(s,action)
+  })
+}
+
+setAction(s :Symbol, action :Fun():Void) :Void
+  (* *)
+{ actions[vmInterface.opcodes[s].n] := action }
+
+_init :Void
+  (* *)
+{
+  actions := MutableArray.new(256)
+  setAction(#send, {
+    selectorId ::= fetch16
+    selector ::= root.selectorTable[selectorId]
+    out.send( selector )
+  })
+  sendSpecial ::= {
+    selectorId ::= fetch16
+    selector ::= root.selectorTable[selectorId]
+    out.sendSpecial( selector )
+  }
+  setOptional(#sendAdd, sendSpecial)
+  setOptional(#sendSub, sendSpecial)
+  setOptional(#sendLessOrEqual, sendSpecial)
+  setOptional(#sendEqual, sendSpecial)
+  setOptional(#sendNotEqual, sendSpecial)
+  setOptional(#sendFun0Apply, sendSpecial)
+  setOptional(#sendFun1Apply, sendSpecial)
+  setOptional(#sendIsNil, sendSpecial)
+  setOptional(#sendIsNotNil, sendSpecial)
+  setAction(#sendSuper, {
+    selectorId ::= fetch16
+    selector ::= root.selectorTable[selectorId]
+    out.sendSuper( selector )
+  })
+  setOptional(#sendTail, {
+    selectorId ::= fetch16
+    selector ::= root.selectorTable[selectorId]
+    out.sendTail( selector )
+  })
+
+  setAction(#literal8,	{ out.loadLiteral(fetch) })
+  setAction(#literal16, { out.loadLiteral(fetch16) })
+  setAction(#char,	{ out.loadChar(fetch.asChar) })
+  setAction(#byte,	{ out.loadByte(fetchSigned) })
+  setAction(#short,	{ out.loadShort(fetchSigned16) })
+  setAction(#nil,	{ out.loadSpecial(nil) })
+  vmInterface.specialLiterals.keysAndElementsDo(
+    fun(o:Object, op :Symbol) {
+      setAction(op,	{ out.loadSpecial(o) })
+    })
+
+  setAction(#arg,	{ out.loadArgument(fetch) })
+  setAction(#local,	{ out.loadLocal(fetch) })
+  setAction(#storeLocal,{ out.storeLocal(fetch) })
+  setAction(#global,	{ out.loadGlobal(fetch) })
+
+  setAction(#cellNew,	{ out.cellNew })
+  setAction(#cellLoad,  { out.cellLoad })
+  setAction(#cellStore, { out.cellStore })
+  setAction(#drop,	{ out.drop(fetch) })
+  setAction(#pop,	{ out.pop })
+  setAction(#adjust, 	{ out.adjust(fetch) })
+  setAction(#closure, 	{ out.closure(fetch) })
+  setAction(#makeArray,	{ out.makeArray(fetch) })
+  setAction(#sync, 	{ out.sync })
+  setAction(#return, 	{ out.return })
+  setAction(#ifTrue8, 	{ out.ifTrue(label(pos-1, fetchSigned)) })
+  setAction(#ifTrue16,  { out.ifTrue(label(pos-1, fetchSigned16)) })
+  setAction(#ifFalse8,	{ out.ifFalse(label(pos-1, fetchSigned)) })
+  setAction(#ifFalse16, { out.ifFalse(label(pos-1, fetchSigned16)) })
+  setAction(#jump8,	{ out.jump(label(pos-1, fetchSigned)) })
+  setAction(#jump16,	{ out.jump(label(pos-1, fetchSigned16)) })
+
+  setAction(#referenceArgument, { out.referenceArgument(fetch) })
+  setAction(#takeFromArgument,  { out.takeFromArgument(fetch) })
+  setAction(#referenceLocal,    { out.referenceLocal(fetch) })
+  setAction(#takeFromLocal,     { out.takeFromLocal(fetch) })
+  setAction(#moveToLocal,       { out.moveToLocal(fetch) })
+  setAction(#componentCellNew,  { out.componentCellNew })
+  setAction(#cellReference,     { out.cellReference })
+  setAction(#takeFromCell,      { out.takeFromCell })
+  setAction(#moveToCell,        { out.moveToCell })
+  setAction(#componentPop,      { out.componentPop })
+  setAction(#componentAdjust,   { out.componentAdjust })
+
+  ; short forms 
+  vmInterface.shortSends.keysAndElementsDo(fun(i:Int, op :Symbol) {
+    setOptional(op, {
+      selectorId ::= fetch16
+      selector ::= root.selectorTable[selectorId]
+      assert({ selector.arity = i })
+      out.sendShort( selector )
+    })
+  })
+  self
+}
+
+initLabels(writer :X_BEByteCodeWriter) :Void
+  (* *)
+{
+  realOut := writer
+  labels := Dictionary.new
+  doPass(X_BENopByteCodeWriter.new)  ; side effect in _label 
+  realOut := nil
+}
+
+doPass(w :X_BEByteCodeWriter) :Void
+  (* *)
+{
+  out := w
+  pos := 0
+  while({!atEnd} do:{
+    next
+  })
+}
+
+label(byteCodePosition :Int, offset :Int) :X_BELabel
+  (* *)
+{
+  dest ::= byteCodePosition + offset
+  labels.memoize(dest, {
+    realOut.newLabel
+  })
+}
+
+fetch :Int
+  (* *)
+{
+  f ::= _code[pos]
+  pos := pos + 1
+  f
+}
+
+fetchSigned :Int
+  (* *)
+{ f ::= fetch
+  if( f <= 127 then: { f } else: { f - 256 })
+}
+
+fetch16 :Int
+  (* *)
+{ lo ::= fetch
+  hi ::= fetch
+  hi."<<"(8) + lo
+}
+
+fetchSigned16 :Int
+  (* *)
+{ f ::= fetch16
+  if( f <= 32767 then: { f } else: { f - 65536 })
+}
+
+}

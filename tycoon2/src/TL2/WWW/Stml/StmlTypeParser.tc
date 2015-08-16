@@ -1,0 +1,208 @@
+class StmlTypeParser
+super Stml
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+*)
+meta SingletonClass(StmlTypeParser)
+{
+parseType(input :Input, startPos :SourcePos, errorLog :ErrorLog) :StmlType
+  (* parse <input> as an Stml type expression.
+     Type ::= 'String'
+	    | TycoonType
+	    | 'Fun' '(' Parameters ')' ':' Type ;
+     Parameters ::= [* empty *]
+		  | Parameter
+		  | Parameter ',' Parameters
+     Parameter  ::= identifier   [* defaults to :String *]
+	          | identifier ':' Type
+	 	  | ':' Type     [* anonymous *]
+	 	  ;
+     TycoonType ::= identifier ;
+   whitespace is allowed between tokens.
+   The source positions for the resulting StmlType tree are counted starting
+   from <startPos>. Errors are issued on <errorLog>.
+ *)
+{
+  parseIt(typeParser, "Stml type expression", input, startPos, errorLog)
+}
+
+parseParams(input :Input, startPos :SourcePos, errorLog :ErrorLog) :List(Pair(String, StmlType))
+  (* *)
+{
+  parseIt(paramParser, "Stml parameter list", input, startPos, errorLog)
+}
+
+parseIt(T <: Object, parser :AbstractParser(T), contextMsg :String,
+        input :Input, startPos :SourcePos, errorLog :ErrorLog) :T
+  (* *)
+{
+  scanner ::=
+    UserScanner.new(scannerTables, input, SourcePosTracker.new(startPos))
+  scanner.userState.scanner := scanner  ; backward reference for source positions 
+
+  scanner.errorHandler :=
+    fun(ch:Char){
+      errorLog.error(scanner.userState.position, 
+	if( ch.isNotNil
+	then: { "unexpected char in "+contextMsg+": "+ch.printString+" ("+ch.asInt.printString+")" }
+	else: { "unexpected end of "+contextMsg }))
+    }
+
+  parser.parse(scanner,
+    fun(offendingToken :Token(Object)) {
+      errorLog.error(scanner.userState.position,
+		"Parse error in "+contextMsg+" on token "
+		+offendingToken.printString)
+      nil
+    })
+}
+
+hackScannerTables :UserScannerTables(Token(Object), Nil)
+  (* *)
+{ scannerTables }
+
+private
+
+scannerTables :UserScannerTables(Token(Object), SourcePosTracker)
+
+typeParser :AbstractParser(StmlType)
+
+paramParser :AbstractParser(List(Pair(String,StmlType)))
+
+terminals :Dictionary(String, ValueTerminal(SourcePos))
+
+identT :ValueTerminal(Positioned(String))
+
+_init :Void
+  (* *)
+{ super._init
+  createTerminals
+  buildParsers
+  buildScannerTables
+  self
+}
+
+createTerminals :Void
+  (* *)
+{
+  terminals := Dictionary.new
+  identT := ValueTerminal.new("ident")
+}
+
+t(name :String) :ValueTerminal(SourcePos)
+  (* *)
+{
+  terminals.memoize(name, { ValueTerminal.new(name) })
+}
+
+buildScannerTables :Void
+  (* *)
+{
+  sb ::= ScannerBuilder(:Token(Object), :SourcePosTracker).new
+
+  sb.addToken("[ \t\f]+", fun(s:Scanner(Token(Object))){
+    s.read
+  })
+  sb.addToken("\n", fun(s:UserScanner(Token(Object), SourcePosTracker)) {
+    s.userState.newline
+    s.read
+  })
+
+  ; symbols and predefined identifiers 
+  terminals.keysAndElementsDo(fun(name :String, terminal :ValueTerminal(SourcePos)) {
+    sb.addToken(quoteRE(name), fun(s:UserScanner(Token(Object), SourcePosTracker)) {
+      terminal.token(s.userState.position)
+    })
+  })
+
+  digit ::= "[0-9]"
+  alpha ::= "[a-zA-Z_]"
+  sb.addToken(alpha+"("+digit+"|"+alpha+")*", fun(s:UserScanner(Token(Object),SourcePosTracker)){
+    identT.token(Positioned.new(s.userState.position, s.token))
+  })
+
+  scannerTables := sb.generate
+}
+
+quoteRE(s :String) :String
+  (* ### what a hack! *)
+{
+  qs ::= MutableString.new(s.size * 2)
+  for(0 to: s.size-1 do: fun(i :Int) {
+    qs[2*i] := '\\'
+    qs[2*i+1] := s[i]
+  })
+  qs
+}
+
+buildParsers :Void
+  (* *)
+{
+  type ::= MutableNonterminal(:StmlType).new("type")
+  optParams ::= MutableNonterminal(:List(Pair(String,StmlType))).new("optParams")
+  params ::= MutableNonterminal(:List(Pair(String,StmlType))).new("params")
+  param ::= MutableNonterminal(:Pair(String,StmlType)).new("param")
+  
+  type.addRule1( t("String"),
+		 fun(p:SourcePos) { StmlStringType.new(p) })
+  type.addRule1( identT,
+		 fun(s:Positioned(String)) {
+		   StmlTycoonType.new(s.pos, s.value)
+		 })
+  type.addRule6( t("Fun"), t("("), optParams, t(")"), t(":"), type,
+		 fun(p:SourcePos, :Void, domain :List(Pair(String,StmlType)),
+				  :Void, :Void,
+				  range :StmlType) {
+                    StmlFunType.new(p, domain, range)
+		  })
+
+  optParams.addRule0(  fun() { EmptyList.instance })
+  optParams.addRule1( params, fun(lp :List(Pair(String,StmlType))){ lp })
+
+  params.addRule1( param,
+		  fun(p :Pair(String,StmlType)) { List.with1(p) })
+  params.addRule3( param, t(","), params,
+		  fun(p :Pair(String,StmlType), :Void, lp :List(Pair(String,StmlType))) {
+		    List.cons(p, lp)
+		  })
+
+  param.addRule1( identT,
+		  fun(s :Positioned(String)) {
+		    Pair.new(s.value, StmlStringType.new(s.pos))
+		  })
+  param.addRule3( identT, t(":"), type,
+		  fun(s :Positioned(String), :Void, type :StmlType) {
+		    Pair.new(s.value, type)
+		  })
+  param.addRule2( t(":"), type,
+		  fun(:Void, type :StmlType) {
+		    Pair.new(nil, type)
+		  })
+  
+  parserBuilder ::= ParserGen(:ReentrantCompactParser).new(CompactParserBuilder.new)
+
+  gram ::= Grammar.new(type)
+  typeParser := parserBuilder.generate(gram)
+
+  gram ::= Grammar.new(optParams)
+  paramParser := parserBuilder.generate(gram)
+}
+
+}

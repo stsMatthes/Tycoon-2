@@ -1,0 +1,33 @@
+class SugarValue
+super SugarSequenceElement, Sugar
+metaclass SugarValueClass
+public
+
+priority :Int,
+writeMeOn :Fun1(Output, Void)
+
+methods
+
+sequenceElementCase(T <: Void,
+            :Fun1(SugarBinding, T),
+  ifValue   :Fun1(SugarValue, T)) :T
+{ ifValue[self] }
+
+isAtomic :Bool
+{ priority = SugarValue.atomicPriority }
+
+asFun :SugarFunValue
+{ nil }
+
+writeOn(out :Output)
+{
+  writeMeOn[out]
+}
+
+asString :String
+{
+  let out = StringBuilderOutput.new,
+  out << self,
+  out.contents
+}
+;

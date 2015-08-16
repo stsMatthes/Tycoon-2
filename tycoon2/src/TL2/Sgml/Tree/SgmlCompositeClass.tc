@@ -1,0 +1,29 @@
+class SgmlCompositeClass
+super ConcreteClass(SgmlComposite)
+metaclass MetaClass
+public methods
+new( startPosition      :SgmlPos,
+       endPosition      :SgmlPos,
+       element          :SgmlElement,
+       attributes       :Dictionary(String, String),
+       components       :Array(SgmlComponent)) :SgmlComposite
+{
+  let instance = _new,
+  instance.startPosition := startPosition,
+  instance.endPosition := endPosition,
+  instance.element := element,
+  instance.attributes := attributes,
+  instance.components := components,
+  instance._init
+}
+
+tycoonGeneratorMetaTag( startPos :SgmlPos) :SgmlComposite
+{
+  let attributes = Dictionary(:String, :String).new1(2),
+  attributes["content"] := "TYCOON www.higher-order.de",
+  attributes["name"] := "GENERATOR",
+  new(startPos, startPos, SgmlElement.new("META", SgmlContentType.empty, Dictionary.new),
+    attributes, Array(:SgmlComponent).with0)
+}
+
+;

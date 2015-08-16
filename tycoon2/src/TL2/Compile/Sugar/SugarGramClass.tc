@@ -1,0 +1,13 @@
+class SugarGramClass
+super ConcreteClass(SugarGram)
+metaclass MetaClass
+public methods
+
+new(terminals :SugarTerminals) :SugarGram
+{
+  let instance = _new,
+  instance.terminals := terminals,
+  instance._init,
+  instance
+}
+;

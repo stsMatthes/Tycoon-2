@@ -1,0 +1,20 @@
+class X_CroAbstractArrayDescriptor
+super X_CroTspDescriptor
+meta AbstractClass
+{
+
+objectSize(o :Object) :Int
+{ o.__basicSize * _tracer.sizeof(elementFmt) }
+
+elementFmt :Char
+  deferred
+
+dumpInstance(o :Object) :Void
+{
+  _tracer ::= _tracer
+  for(0 to: o.__basicSize-1 do: fun(i:Int){
+    _tracer.dumpC(o.__basicAt(i), elementFmt)
+  })
+}
+}
+

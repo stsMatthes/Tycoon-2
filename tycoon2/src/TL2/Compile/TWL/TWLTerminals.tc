@@ -1,0 +1,93 @@
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ File: TWLTerminals.tc
+ Author: Axel Wienberg
+   Date: ??-Jun-1996
+Purport: a singleton storing all terminal symbols, decoupling the parser from
+	 the scanner.
+	 The symbols are entered and read by TWLGram and read by 
+	 TWLScannerBuilder.
+*)
+
+class TWLTerminals
+super TWL
+metaclass SimpleConcreteClass(TWLTerminals)
+public
+
+ident :ValueTerminal(Positioned(String)),
+string :ValueTerminal(Positioned(String)),
+int :ValueTerminal(Positioned(Int)),
+char :ValueTerminal(Positioned(Char)),
+real :ValueTerminal(Positioned(Real)),
+
+symbols :Dictionary(String, ValueTerminal(SourcePos)),
+keywords :Dictionary(String, ValueTerminal(SourcePos))
+
+methods
+
+(* return the Terminal representing keyword <name>.
+   <name> must match idRegExp.
+   Multiple calls with the same <name> argument return the same 
+   SimpleTerminal object.
+ *)
+keyword(name :String) :ValueTerminal(SourcePos)
+{
+  keywords.lookup(name,
+    fun(s :ValueTerminal(SourcePos)) {
+      s
+    },
+    { let s = ValueTerminal.new(name),
+      keywords[name] := s,
+      s
+    }
+  )
+}
+
+(* return the Terminal representing the simple Symbol <name>.
+   <name> may not match any other regexp (esp. idRegExp!)
+   Multiple calls with the same <name> return the same SimpleTerminal object.
+ *)
+symbol(name :String) :ValueTerminal(SourcePos)
+{
+  symbols.lookup(name,
+    fun(term :ValueTerminal(SourcePos)) {
+      term
+    },
+    { let term = ValueTerminal.new(name),
+      symbols[name] := term,
+      term
+    }
+  )
+}
+
+private methods
+
+_init :Self
+{ super._init,
+  ident := ValueTerminal.new("ident"),
+  string := ValueTerminal.new("string"),
+  char := ValueTerminal.new("char"),
+  int := ValueTerminal.new("int"),
+  real := ValueTerminal.new("real"),
+  symbols := Dictionary.new,
+  keywords := Dictionary.new,
+  self
+}
+;

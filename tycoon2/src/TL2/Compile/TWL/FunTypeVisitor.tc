@@ -1,0 +1,121 @@
+class FunTypeVisitor(T <: Void)
+  super TypeVisitor(T)
+  metaclass SimpleConcreteClass(FunTypeVisitor(T))
+
+public methods
+
+  visitApplyType          (t :ApplyType)  :T
+    { _ifApplyType.isNil ? { super.visitApplyType(t) } : { _ifApplyType[t] } }
+
+  visitCPLType            (t :CPLType)    :T
+    { _ifCPLType.isNil ? { super.visitCPLType(t) } : { _ifCPLType[t] } }
+
+  visitClassInstanceType  (t :ClassInstanceType) :T
+    { _ifClassInstanceType.isNil ? { super.visitClassInstanceType(t) } : { _ifClassInstanceType[t] } }
+
+  visitIdeType            (t :IdeType)    :T
+    { _ifIdeType.isNil ? { super.visitIdeType(t) } : { _ifIdeType[t] } }
+
+  visitMethodType         (t :MethodType) :T
+    { _ifMethodType.isNil ? { super.visitMethodType(t) } : { _ifMethodType[t] } }
+
+  visitNilType            (t :NilType)    :T
+    { _ifNilType.isNil ? { super.visitNilType(t) } : { _ifNilType[t] } }
+
+  visitObjectType         (t :ObjectType) :T
+    { _ifObjectType.isNil ? { super.visitObjectType(t) } : { _ifObjectType[t] } }
+
+  visitOperType           (t :OperType)   :T
+    {_ifOperType.isNil ? { super.visitOperType(t) } : { _ifOperType[t] } }
+
+  visitSubstType          (t :SubstType)  :T
+    { _ifSubstType.isNil ? { super.visitSubstType(t) } : { _ifSubstType[t] } }
+
+  visitUnifyType          (t :UnifyType)  :T
+    { _ifUnifyType.isNil ? { super.visitUnifyType(t) } : { _ifUnifyType[t] } }
+
+  visitVoidType           (t :VoidType)   :T
+    { _ifVoidType.isNil ? { super.visitVoidType(t) } : { _ifVoidType[t] } }
+
+  visitDefault            (t :Type)       :T
+    { _otherwise.isNil ? { super.visitDefault(t) } : { _otherwise[t] } }
+    
+
+
+  ifApplyType(action :Fun1(ApplyType, T)) :Self {
+    _ifApplyType := action,
+    self
+  }
+ 
+  ifCPLType(action :Fun1(CPLType, T)) :Self {
+    _ifCPLType := action,
+    self
+  }
+ 
+  ifClassInstanceType(action :Fun1(ClassInstanceType, T)) :Self {
+    _ifClassInstanceType := action,
+    self
+  }
+ 
+  ifIdeType(action :Fun1(IdeType, T)) :Self {
+    _ifIdeType := action,
+    self
+  }
+ 
+  ifMethodType(action :Fun1(MethodType, T)) :Self {
+    _ifMethodType := action,
+    self
+  }
+ 
+  ifNilType(action :Fun1(NilType, T)) :Self {
+    _ifNilType := action,
+    self
+  }
+ 
+  ifObjectType(action :Fun1(ObjectType, T)) :Self {
+    _ifObjectType := action,
+    self
+  }
+ 
+  ifOperType(action :Fun1(OperType, T)) :Self {
+    _ifOperType := action,
+    self
+  }
+ 
+  ifSubstType(action :Fun1(SubstType, T)) :Self {
+    _ifSubstType := action,
+    self
+  }
+ 
+  ifUnifyType(action :Fun1(UnifyType, T)) :Self {
+    _ifUnifyType := action,
+    self
+  }
+ 
+  ifVoidType(action :Fun1(VoidType, T)) :Self {
+    _ifVoidType := action,
+    self
+  }
+
+  otherwise(action :Fun1(Type, T)) :Self {
+    _otherwise := action,
+    self
+  }
+ 
+
+private
+
+  _ifApplyType  :Fun1(ApplyType, T),
+  _ifCPLType    :Fun1(CPLType, T),
+  _ifClassInstanceType  :Fun1(ClassInstanceType, T),
+  _ifIdeType    :Fun1(IdeType, T),
+  _ifMethodType :Fun1(MethodType, T),
+  _ifNilType    :Fun1(NilType, T),
+  _ifObjectType :Fun1(ObjectType, T),
+  _ifOperType   :Fun1(OperType, T),
+  _ifSubstType  :Fun1(SubstType, T),
+  _ifUnifyType  :Fun1(UnifyType, T),
+  _ifVoidType   :Fun1(VoidType, T),
+  _otherwise    :Fun1(Type, T)
+
+;

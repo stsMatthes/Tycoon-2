@@ -1,0 +1,54 @@
+(* execute these commands in a fresh store, just after
+    tycoon2 -bootstrap dump
+*)
+
+(* make the paths in the class loader relative again
+   (expect lots of "moved" messages) *)
+
+tycoon.tl.loader.registerDirectory("Standard");
+tycoon.tl.loader.registerDirectory("Standard/Containers");
+tycoon.tl.loader.registerFile("Util/Util.tc");
+tycoon.tl.loader.registerFile("Util/StandardDateParser.tc");
+tycoon.tl.loader.registerFile("Util/MD5.tc");
+tycoon.tl.loader.registerFile("Util/MD5Class.tc");
+tycoon.tl.loader.registerDirectory("Util/Graphs");
+tycoon.tl.loader.registerDirectory("Util/Graphs/Simple");
+tycoon.tl.loader.registerDirectory("Compile");
+tycoon.tl.loader.registerDirectory("Compile/Scan");
+tycoon.tl.loader.registerDirectory("Compile/Scan/Eager");
+tycoon.tl.loader.registerDirectory("Compile/Parse");
+tycoon.tl.loader.registerDirectory("Compile/Parse/Compact");
+tycoon.tl.loader.registerDirectory("Compile/TL2");
+tycoon.tl.loader.registerDirectory("Compile/TL2/Old");
+tycoon.tl.loader.registerDirectory("Compile/TL2/New");
+tycoon.tl.loader.registerDirectory("Compile/TL2/BackEnd");
+tycoon.tl.loader.unregisterClass("TL2Root");
+tycoon.tl.loader.unregisterClass("TL2Class");
+tycoon.tl.loader.unregisterClass("TL2MetaClass");
+tycoon.tl.loader.registerClassFile("Class", "Compile/TL2/TL2Class.tc");
+tycoon.tl.loader.registerClassFile("MetaClass", "Compile/TL2/TL2MetaClass.tc");
+tycoon.tl.loader.registerClassFile("Root", "Compile/TL2/TL2Root.tc");
+
+tycoon.tl.loader.update;
+
+(* type check everything *)
+
+tycoon.tl.typeChecker.ignore(ThreadClass);
+tycoon.tl.typeChecker.ignore(WeakRefClass);
+
+tycoon.tl.typeChecker.maxDepth := tycoon.tl.typeChecker.maxDepth.max(75000);
+
+tycoon.tl.typeChecker.check;
+tycoon.tl.typeChecker.finalize;
+
+tycoon.commit(
+      (* ifCommitted *) {
+           tycoon.stdout.writeln("System saved."),
+	   tycoon.ansiC.exit(0)
+	},
+      (* ifRolledBack *) {
+	   tycoon.stdout.writeln("System rolled back.")
+        },
+      (* ifRestarted *) {
+	   tycoon.stdout.writeln("System re-started.")
+        });

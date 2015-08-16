@@ -1,0 +1,12 @@
+class SgmlContentType
+super Sgml
+public
+name :String
+methods
+_brand_SgmlContentType { }
+
+printOn(out :Output)
+{
+  out.writeString(name)
+}
+;

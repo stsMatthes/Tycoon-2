@@ -1,0 +1,102 @@
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+    Sieve.new.test(200000);
+*)
+class Sieve
+super Object
+metaclass SimpleConcreteClass(Sieve)
+public
+
+sieb :BitSet(Int),
+max :Int,
+intSetGenerator :BitSetGenerator(Int)
+
+methods
+
+test(max:Int)
+{
+  let t =
+    Timer.new(tycoon.cpuClock).time({
+      calculate(max)
+    }),
+  tycoon.stdout
+   << "Time:  " << t     << "\n",
+  nil
+}
+
+(* compute all primes <= max *)
+calculate(max :Int)
+{
+  self.max := max,
+  let max = (max-1)/2,
+  let sieb = intSetGenerator.new1(max),
+  for(1,max,fun(i:Int){
+    sieb.add(i)
+  }),
+  self.sieb := sieb,
+  for(1, max.sqrt.asInt, fun(i :Int){
+    (* !sieb.includes(i) => 2*i+1 is no prime *)
+    sieb.includes(i)
+    ? { let p = i+i+1,
+        let var j = i+p,
+        while({ j <= max }, {
+	  sieb.remove(j),
+	  j := j + p
+	}) }
+  })
+}
+
+isPrime(i :Int)
+{ i > max
+  ? { let result:Bool = nil }
+  : { i%2 = 1 && { sieb.includes(i/2) }
+      || { i = 2 } }
+}
+
+printOn(out :Output)
+{
+  out.writeString("Sieve{"),
+  max.isNil
+  ? { out.writeString("not computed") }
+  : { out << "2 ",
+      sieb.do(fun(i:Int){
+	out << i+i+1 << " "
+      }) },
+  out.write('}')
+}
+
+private methods
+
+_init :Self
+{
+  intSetGenerator := BitSetGenerator.new(
+    fun(o :Object) {
+      o."class" == Int
+      ? { let i :Int = _typeCast(o),
+          i >= 0 ? { i } : { nil } }
+      : { nil }
+    },
+    fun(i :Int) {
+      i
+    }),
+  self
+}
+;

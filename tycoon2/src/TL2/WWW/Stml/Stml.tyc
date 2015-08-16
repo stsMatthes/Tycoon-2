@@ -1,0 +1,184 @@
+class SimpleStmlApplication metaclass AbstractClass;
+class SimpleTypingMixin metaclass AbstractClass;
+class SourcePosTracker metaclass AbstractClass;
+class Stml metaclass AbstractClass;
+class StmlASTOutput metaclass AbstractClass;
+class StmlASTWriter metaclass AbstractClass;
+class StmlAdaptorElement metaclass AbstractClass;
+class StmlApplication metaclass AbstractClass;
+class StmlApply metaclass AbstractClass;
+class StmlArg metaclass AbstractClass;
+class StmlAssign metaclass AbstractClass;
+class StmlBindings metaclass AbstractClass;
+class StmlBottomType metaclass AbstractClass;
+class StmlCompiler metaclass AbstractClass;
+class StmlComponent metaclass AbstractClass;
+class StmlComponentBuilder metaclass AbstractClass;
+class StmlDefine metaclass AbstractClass;
+class StmlElement metaclass AbstractClass;
+class StmlElse metaclass AbstractClass;
+class StmlElseIf metaclass AbstractClass;
+class StmlFun metaclass AbstractClass;
+class StmlFunType metaclass AbstractClass;
+class StmlGeneric metaclass AbstractClass;
+class StmlGenericElement metaclass AbstractClass;
+class StmlIf metaclass AbstractClass;
+class StmlInclude metaclass AbstractClass;
+class StmlLeaf metaclass AbstractClass;
+class StmlProcessor metaclass AbstractClass;
+class StmlRef metaclass AbstractClass;
+class StmlResource metaclass AbstractClass;
+class StmlScriptElement metaclass AbstractClass;
+class StmlSend metaclass AbstractClass;
+class StmlSequence metaclass AbstractClass;
+class StmlSimpleTypeClass metaclass AbstractClass;
+class StmlStml metaclass AbstractClass;
+class StmlStringType metaclass AbstractClass;
+class StmlTopType metaclass AbstractClass;
+class StmlTreeBuilder metaclass AbstractClass;
+class StmlTycoon metaclass AbstractClass;
+class StmlTycoonSource metaclass AbstractClass;
+class StmlType metaclass AbstractClass;
+class StmlTypeParser metaclass AbstractClass;
+class StmlTypeVariable metaclass AbstractClass;
+class StmlWhiteStringType metaclass AbstractClass;
+class StmlWrongType metaclass AbstractClass;
+
+DO load "../TWL/WWW/Stml/Stml.tc";
+
+DO load "../TWL/WWW/Stml/StructurePrintingMixin.tc";
+
+(* Stml tree *)
+DO load "../TWL/WWW/Stml/SimpleTypingMixin.tc";
+DO load "../TWL/WWW/Stml/StmlSimpleTypeClass.tc";
+DO load "../TWL/WWW/Stml/StmlComponent.tc";
+DO load "../TWL/WWW/Stml/StmlComponentBuilder.tc";
+DO load "../TWL/WWW/Stml/StmlElement.tc";
+DO load "../TWL/WWW/Stml/StmlAdaptorElementClass.tc";
+DO load "../TWL/WWW/Stml/StmlAdaptorElement.tc";
+DO load "../TWL/WWW/Stml/StmlApplyClass.tc";
+DO load "../TWL/WWW/Stml/StmlApply.tc";
+DO load "../TWL/WWW/Stml/StmlArgClass.tc";
+DO load "../TWL/WWW/Stml/StmlArg.tc";
+DO load "../TWL/WWW/Stml/StmlAssignClass.tc";
+DO load "../TWL/WWW/Stml/StmlAssign.tc";
+DO load "../TWL/WWW/Stml/StmlBindings.tc";
+DO load "../TWL/WWW/Stml/StmlElseClass.tc";
+DO load "../TWL/WWW/Stml/StmlElse.tc";
+DO load "../TWL/WWW/Stml/StmlElseIfClass.tc";
+DO load "../TWL/WWW/Stml/StmlElseIf.tc";
+DO load "../TWL/WWW/Stml/StmlFunClass.tc";
+DO load "../TWL/WWW/Stml/StmlFun.tc";
+DO load "../TWL/WWW/Stml/StmlGenericClass.tc";
+DO load "../TWL/WWW/Stml/StmlGeneric.tc";
+DO load "../TWL/WWW/Stml/StmlGenericElementClass.tc";
+DO load "../TWL/WWW/Stml/StmlGenericElement.tc";
+DO load "../TWL/WWW/Stml/StmlIfClass.tc";
+DO load "../TWL/WWW/Stml/StmlIf.tc";
+DO load "../TWL/WWW/Stml/StmlIncludeClass.tc";
+DO load "../TWL/WWW/Stml/StmlInclude.tc";
+DO load "../TWL/WWW/Stml/StmlLeafClass.tc";
+DO load "../TWL/WWW/Stml/StmlLeaf.tc";
+DO load "../TWL/WWW/Stml/StmlDefineClass.tc";
+DO load "../TWL/WWW/Stml/StmlDefine.tc";
+DO load "../TWL/WWW/Stml/StmlRefClass.tc";
+DO load "../TWL/WWW/Stml/StmlRef.tc";
+DO load "../TWL/WWW/Stml/StmlScriptElement.tc";
+DO load "../TWL/WWW/Stml/StmlSendClass.tc";
+DO load "../TWL/WWW/Stml/StmlSend.tc";
+DO load "../TWL/WWW/Stml/StmlSequenceClass.tc";
+DO load "../TWL/WWW/Stml/StmlSequence.tc";
+DO load "../TWL/WWW/Stml/StmlStmlClass.tc";
+DO load "../TWL/WWW/Stml/StmlStml.tc";
+DO load "../TWL/WWW/Stml/StmlTycoonClass.tc";
+DO load "../TWL/WWW/Stml/StmlTycoon.tc";
+DO load "../TWL/WWW/Stml/StmlTycoonSourceClass.tc";
+DO load "../TWL/WWW/Stml/StmlTycoonSource.tc";
+DO load "../TWL/WWW/Stml/StmlWrongTypeClass.tc";
+DO load "../TWL/WWW/Stml/StmlWrongType.tc";
+
+DO load "../TWL/WWW/Stml/StmlTreeBuilder.tc";
+
+(* types *)
+
+DO load "../TWL/WWW/Stml/StmlType.tc";
+DO load "../TWL/WWW/Stml/StmlTopType.tc";
+DO load "../TWL/WWW/Stml/StmlBottomType.tc";
+DO load "../TWL/WWW/Stml/StmlFunTypeClass.tc";
+DO load "../TWL/WWW/Stml/StmlFunType.tc";
+DO load "../TWL/WWW/Stml/StmlStringType.tc";
+DO load "../TWL/WWW/Stml/StmlTypeVariable.tc";
+DO load "../TWL/WWW/Stml/StmlWhiteStringType.tc";
+
+(* other *)
+
+DO load "../TWL/WWW/Stml/SourcePosTrackerClass.tc";
+DO load "../TWL/WWW/Stml/SourcePosTracker.tc";
+DO load "../TWL/WWW/Stml/StmlTypeParser.tc";
+DO load "../TWL/WWW/Stml/StmlApplication.tc";
+DO load "../TWL/WWW/Stml/SimpleStmlApplication.tc";
+DO load "../TWL/WWW/Stml/StmlASTWriterClass.tc";
+DO load "../TWL/WWW/Stml/StmlASTWriter.tc";
+DO load "../TWL/WWW/Stml/StmlASTOutputClass.tc";
+DO load "../TWL/WWW/Stml/StmlASTOutput.tc";
+DO load "../TWL/WWW/Stml/StmlProcessorClass.tc";
+DO load "../TWL/WWW/Stml/StmlProcessor.tc";
+DO load "../TWL/WWW/Stml/StmlCompilerClass.tc";
+DO load "../TWL/WWW/Stml/StmlCompiler.tc";
+DO load "../TWL/WWW/Stml/StmlResourceClass.tc";
+DO load "../TWL/WWW/Stml/StmlResource.tc";
+DO load "../TWL/WWW/Stml/HtmlFormProcessor.tc";
+
+
+DO load "../TWL/WWW/Stml/Init.tyc";
+
+(*;
+define tb :StmlTreeBuilder;
+define sgml_dir :String;
+define sgmlsParser :SgmlsParser;
+
+tb := StmlTreeBuilder.new;
+sgml_dir := tycoon.ansiC.getenv("SGML_DIR");
+sgmlsParser := SgmlsParser.new;
+sgmlsParser.additionalFiles := Array.with2(sgml_dir + "/html.decl", sgml_dir + "/doctype-stml");
+sgmlsParser.verbose := true;
+tb := StmlTreeBuilder.new, sgmlsParser.parse("../TWL/WWW/Stml/examples/tbo.tbo", tb);
+
+tb.tree;
+tb.tree.isStml;
+tb.tree.asStml.computeAllTypes;
+tb.tree.asStml.compileAll, true;
+tb.tree.asStml.compileAll;
+
+tb := StmlTreeBuilder.new, sgmlsParser.parse("../TWL/WWW/Stml/examples/numbers.tbo", tb);
+tb.tree.computeAllTypes;
+tb.tree.compileAll;
+
+DO load "../TWL/WWW/Stml/SimpleStmlApplication.tc";
+
+define sa :SimpleStmlApplication;
+sa := SimpleStmlApplication.new;
+define spro :Fun0(StmlProcessor(SimpleStmlApplication));
+let t = Timer.new(tycoon.cpuClock),
+t.start,
+spro := sa.compiler.compile(tycoon.hoxHome+"/src/TL2/WWW/Stml/examples/stml.stml", nil, ErrorLog.new),
+t.stop,
+t;
+spro.emitFun;
+spro := sa.compiler.compile(tycoon.hoxHome+"/src/TL2/WWW/Stml/examples/numbers.stml", nil, ErrorLog.new);
+let s = spro[],
+s.out := tycoon.stdout,
+s.process;
+*)
+
+(*;
+define stmlApplication :SimpleStmlApplication;
+stmlApplication := SimpleStmlApplication.new;
+HttpResourceFactory.instance.generators["stml"] :=
+  fun(file:File) {
+    StmlResource.new(stmlApplication, file)
+  };
+*)
+
+
+

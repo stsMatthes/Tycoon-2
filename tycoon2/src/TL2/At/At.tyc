@@ -1,0 +1,53 @@
+tycoon.tl.loader.registerDirectory("At");
+tycoon.tl.loader.update;
+
+(*;
+
+define aa :AtArray(String);
+define s :String;
+s := "hallo";
+
+aa := ref(AtArray."new@"(2));
+s.superComponent;  (* nil *)
+aa[0] := self."fetch@"(s);
+s.superComponent; (* == aa *)
+MutableArray.new(2000000), nil;
+s.superComponent; (* == aa *)
+aa := nil;
+s.superComponent; (* vermutlich immernoch == aa *)
+MutableArray.new(2000000), nil;  (* GC, tvm debug info: component becomes orphan *)
+s.superComponent; (* nil *)
+
+aa := ref(AtArray."new@"(2));
+aa.perform(TL2Selector.new(Symbol.new("[]:="), Array.with2(false, true)), Array.with2(0, s));
+aa; (* Array{"hallo", nil} *)
+s.superComponent == aa; (* true *)
+aa.perform(TL2Selector.new(Symbol.new("[]:="), Array.with2(false, true)), Array.with2(1, s));
+    (* Exception: Fetch bound component: "hallo" *)
+aa;  (* unchanged *)
+aa[1] := aa."[]@"(0);
+aa;
+s.superComponent;
+ref(aa."[]@"(1));
+aa;
+s.superComponent;
+
+foo(nil."fetch@"(s), 1/0); (* exception: DivisionByZero *)
+s.superComponent; (* nil *)
+foo(nil."fetch@"(s), nil."fetch@"(s)); (* exception: FetchBoundComponent *)
+s.superComponent; (* nil *)
+
+try({
+  yourself(nil."fetch@"(s), s.superComponent)
+}, fun(e:WrongSignature){
+  e.arguments
+});  (* Array{"hallo", a Thread} *)
+s.superComponent; (* nil *)
+
+define ad :AtDictionary(Int, String);
+ad := ref(AtDictionary."new@");
+ad[0] := nil."fetch@"("null".copy);
+ad[1] := nil."fetch@"("eins".copy);
+ad[2] := nil."fetch@"("zwei".copy);
+
+*)

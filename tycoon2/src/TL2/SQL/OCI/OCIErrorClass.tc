@@ -1,0 +1,24 @@
+class OCIErrorClass
+
+super ConcreteClass(OCIError)
+
+metaclass MetaClass
+
+public methods
+
+new(lda:Int32, dataArea:Int32):OCIError
+{
+  let i=_new(),
+  i.errorCode:=tycoon.rts.tymem_peekShort(dataArea,12),
+  i.errorMessage := oci.errorDictionary.includesKey(i.errorCode)
+                    ? {oci.errorDictionary[i.errorCode]}
+		    : {let buf = CStringHolder.new(1000),
+                       oci.oerhms(lda,i.errorCode,buf.handle,1000),
+                       let message = buf.value,
+                       buf.close,
+		       message
+		      },
+  i
+}
+;
+

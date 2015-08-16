@@ -1,0 +1,7 @@
+class SgmlComment
+super SgmlLeaf
+public methods
+
+printOnGenerator(out :SgmlGenerator)
+{ out << "<!" << data << ">" }
+;

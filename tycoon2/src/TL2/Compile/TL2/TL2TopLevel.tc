@@ -1,0 +1,244 @@
+class TL2TopLevel
+super TL2
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+*)
+meta TL2TopLevelClass
+{
+printByteCode :Bool
+
+printTycoonSource :Bool
+
+typeCheck :Bool
+
+errorLog :ErrorLog
+
+  (* used system components *)
+
+syntax :AbstractTL2Syntax
+
+compiler :TL2Compiler
+
+classManager :TL2ClassManager
+
+pool :TL2Pool
+
+loader :TL2ClassLoader
+
+file(path :String) :Void
+  (* *)
+{
+  searchPath ::= tycoon.ansiC.getenv("TL2_PATH")
+  if( searchPath.isNil then: { searchPath := tycoon.os.fs.currentPath })
+  resolvedPath ::= tycoon.os.fs.search(searchPath, path)
+  if( resolvedPath.isNotNil
+  then: { f ::= verboseOpen(resolvedPath)
+      if( f.isNotNil
+      then: { tycoon.stdout.writeln("[Parsing "+path+"]")
+	  compile(path, f, true, false) }) }
+  else: { errorLog.error(SourcePos.new(path,0,0), "Not found in "+searchPath) })
+}
+
+string(str :String) :Void
+  (* *)
+{
+  compile("<string>", StringInput.new(str), false, false)
+}
+
+stdin :Void
+  (* *)
+{
+  compile("<stdin>", tycoon.stdin, false, true)
+}
+
+private
+
+compile(where :String, input :Input, closeWhenFinished :Bool, interactive :Bool) :Void
+  (* *)
+{
+  errorLog.reset
+  s ::= syntax.scan(where, input, errorLog)
+
+  protect({
+    parseLoop(s, interactive)
+  }, {
+    if( closeWhenFinished then: { input.close })
+  })
+}
+
+parseLoop(s :AbstractTL2Scanner, interactive :Bool) :Void
+  (* *)
+{
+  if( interactive
+  then: { tycoon.stdout.writeAll("|> ") })
+  u ::= syntax.parse(s, errorLog)
+  if( u.isNotNil
+  then: { u.accept(TL2FunParseUnitVisitor.new
+        .ifClass(fun(pu :TL2PUClass) {
+	  visitClass(pu.builder)
+	})
+	.ifDefine(fun(pu :TL2PUDefine) {
+	  visitDefine(pu.vars)
+	})
+	.ifDo(fun(pu :TL2PUDo) {
+	  visitDo(pu.pos, pu.command, pu.args)
+	})
+	.ifBindings(fun(pu :TL2PUBindings) {
+	  visitBindings(pu.b)
+	})
+      )
+      if( errorLog.hasErrors then: { tycoon.stdout << "There were errors.\n" })
+      errorLog.reset
+      parseLoop(s, interactive) })
+}
+
+visitClass(builder :TL2ClassBuilder) :Void
+  (* *)
+{ builder.build(compiler, classManager, errorLog) }
+
+visitDefine(definitions :List(TL2Ide)) :Void
+  (* *)
+{
+  definitions.do(fun(i:TL2Ide) {
+    if( i.isValueIde
+    then: { env ::=
+          TL2Scoper.new( classManager.get("Nil").typeIde,  ; ## ?? 
+		      errorLog,
+		      classManager.typeManager)
+
+	i.type := i.type.scope(env) ; scope(i) doesn''t do the job 
+	if( !errorLog.hasErrors
+	then: { pool.defineVariable(i.asValueIde) }) }
+     else: { errorLog.error(i.pos, "pool variable must be value, not type: "+i.name) })
+  })
+}
+
+visitBindings(bindings :TL2BlockValue) :Void
+  (* *)
+{
+  inClass ::= classManager.get("Nil")
+  selfTypeSig ::= inClass.selfTypeSig
+  selfSig ::= TL2ValueIde.new(selfTypeSig.pos, "self", false, selfTypeSig.type)
+  environment ::= Dictionary(:TL2ValueIde,:Object).new
+  environment[selfSig] := nil
+
+  ; evalute "fun(){ ...bindings... }", giving a closure (Fun0).
+;     The user code is not executed until the closure is applied. 
+
+  thunkExpression ::=
+    TL2CompiledFun.new(
+      bindings.pos,
+      #"[]",	     ; selector
+      EmptyList.new, ; domain 
+      nil,           ; range 
+      bindings)      ; body 
+  thunk ::=
+    compiler.evalChecked(environment, inClass, thunkExpression, errorLog, typeCheck)
+
+  if( !errorLog.hasErrors then: {
+    if( printTycoonSource
+    then: { bindings.print tycoon.stdout.nl })
+    if( printByteCode
+    then: { thunkExpression.disassembleOn(
+	  Printer.new(tycoon.stdout),
+	  BEByteCodeReader.new(compiler.vmInterface, classManager.root))
+	tycoon.stdout.nl })
+
+    if( classManager.root.active then: {
+      try({
+        assert({ thunk."class" == Fun0 })
+	thunk ::= _typeCast(thunk, :Fun():Object)
+	result ::= thunk[]
+	result.print
+	tycoon.stdout.nl
+      } else: fun(e:Exception){
+	tycoon.stdout.writeAll("Exception: ")
+	e.print
+	tycoon.stdout.nl
+      })
+    })
+  })
+}
+
+visitDo(pos :SourcePos, command :String, args :List(String)) :Void
+  (* *)
+{
+  doCommands.lookup(command,
+    fun(f :Fun(:SourcePos, :List(String)):Void) {
+      f[pos, args]
+    },
+    { errorLog.warning(pos, "ignored unknown DO command: "
+			    +command)
+    })
+}
+
+doCommands :Dictionary(String, Fun(:SourcePos, :List(String)):Void)
+  (* *)
+{
+  commands ::= Dictionary.new
+  commands["load"] :=
+    fun(pos :SourcePos, args :List(String)) {
+      if( args.size = 1
+      then: { arg ::= args[0]
+	  tycoon.stdout.writeln("[Including "+arg+"]")
+	  file(arg) }
+      else: { errorLog.error(pos, "DO load: expected one argument, found "
+			      +args.size.printString) })
+    }
+  commands["exit"] :=
+    fun( :SourcePos,  :List(String)) {
+      tycoon.ansiC.exit(0)
+    }
+  commands["make"] :=
+    fun( :SourcePos, :List(String)) {
+      loader.update
+    }
+  commands["help"] :=
+    fun( :SourcePos, :List(String)) {
+      tycoon.stdout.writeln("Known DO commands:")
+      commands.keys.do(fun(s:String) {
+        tycoon.stdout.writeln(s)
+      })
+    }
+  commands
+}
+
+verboseOpen(path :String) :File
+  (* *)
+{
+  try({ File.openRead(path) } else:
+      fun(e:Exception) {
+	errorLog.error(SourcePos.new(path,0,0), "Could not open file: "+e.printString)
+	nil
+      })
+}
+
+_init :Void
+  (* *)
+{ super._init
+  errorLog := ErrorLog.new
+  verbose ::= !classManager.root.active
+  printTycoonSource := verbose
+  printByteCode := verbose
+  typeCheck := false
+  self
+}
+
+}

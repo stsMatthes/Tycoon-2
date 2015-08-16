@@ -1,0 +1,23 @@
+class Slave
+super Object
+metaclass SlaveClass
+
+public methods
+
+run :Thread(Void)
+{
+  Thread.new({
+    let loop = true,
+    while({loop}, {
+      let w = _workQueue.getWork,
+      w == nil
+      ? { loop := false }
+      : { w.eval }
+    })
+  })
+
+}
+
+private
+
+_workQueue :WorkQueue(WorkItem(Int))

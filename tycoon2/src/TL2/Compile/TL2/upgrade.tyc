@@ -1,0 +1,13 @@
+SubtypeRelation.init;
+
+tycoon.tl.typeManager._typeChecker := nil;
+DO load "Compile/TL2/TL2TypeChecker.tc";
+tycoon.tl.typeManager._typeChecker := TL2TypeChecker.new;
+
+DO load "Compile/TL2/TL2Pool.tc";
+DO load "Compile/TL2/TL2ClassManager.tc";
+DO load "Compile/TL2/TL2TypeManager.tc";
+
+tycoon.tl.typeManager := TL2TypeManager.new;
+
+DO make;

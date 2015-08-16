@@ -1,0 +1,14 @@
+class OrValueClass
+super ConcreteClass(OrValue)
+metaclass MetaClass
+public methods
+new(cond1 :Value, cond2 :Value) :OrValue
+{
+  let instance = _new,
+  instance.pos := cond1.pos,
+  instance.condition := cond1,
+  instance.trueBranch := LiteralValue.new1(nil, true),
+  instance.falseBranch := cond2,
+  instance._init
+}
+;

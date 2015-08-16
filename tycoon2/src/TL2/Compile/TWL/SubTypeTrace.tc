@@ -1,0 +1,29 @@
+class SubTypeTrace
+  super TypeCheckTrace
+
+public methods
+
+  small :Type { _small }
+  big   :Type { _big }
+  
+  msg :String {
+    "While checking: "+small.printString+" <: "+big.printString
+  }
+
+  shouldPrint :Bool { true }
+
+private
+
+  _small :Type,
+  _big   :Type
+
+methods
+
+  _initTypes(small :Type, big :Type)
+  {
+    _small := small,
+    _big   := big,
+    super._init1(List.with2(_small.pos, _big.pos))
+  }
+
+;

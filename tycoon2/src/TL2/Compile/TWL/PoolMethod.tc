@@ -1,0 +1,11 @@
+class PoolMethod
+super Method
+metaclass AbstractClass
+public
+cell :Cell(Object)
+private methods
+_init :Self
+{ isPrivate := false,
+  self
+}
+;

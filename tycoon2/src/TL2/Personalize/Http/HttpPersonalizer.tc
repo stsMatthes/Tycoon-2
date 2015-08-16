@@ -1,0 +1,109 @@
+class HttpPersonalizer(Client <:PersonalizeHttpClient,
+  Application <:PersonalizeApplication(Client))
+
+super PersonalizeHttp, HttpResourceDecorator
+
+public
+
+application :Application
+
+methods
+
+pathLookup(request :HttpRequest, arcs :List(String)) :HttpResource
+{
+  let resource = resource.pathLookup(request, arcs),
+  resource.isNil ? { resource } : {
+    let client = client(request),
+    client.isNil
+      ? { clientNotFound(request, resource) }
+      : { PersonalizeHttpResponseFilter.new(resource, client) }
+  }
+}
+
+
+clientNotFound(request :HttpRequest, resource :HttpResource) :HttpResource
+  (*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ a client has not been found in the database.
+     take appropriate action.
+     default is to ask the application to create a new client object,
+     which is stored into the database.
+     
+     A more sophisticated Personalizer might respond
+     by asking the client agent to identify himself,
+     and re-run the given request on the found resource with the
+     new client object.
+     
+     This behaviour may be implemented by storing the given request
+     (and resource) within a newly created client object which, as a first step,
+     interviews the client agent.     
+   *)     
+{
+  let client = application.newClient,
+  PersonalizeHttpResponseFilter.new(resource, client)
+}
+
+client(request :HttpRequest) :Client
+  (* inpsect the request, detect the client id, and ask the application
+     for the corresponding client..
+     answer nil if no client id can be found
+   *)
+{
+   let var id :String = nil,
+   let var client :Client = nil,
+   
+   (* cookie? *)
+   request.hasCookies ? {
+      let cookie = request.cookies.detect(fun(cookie :HttpCookie) {
+        cookie.name = HttpPersonalizer.COOKIE_NAME
+      }),
+      cookie.isNotNil ? {
+        id := cookie.value,
+	client := application.client(id)
+      }
+    },
+   
+    id.isNil ? {
+      (* urlencoded? ##implement*)
+      
+      id.isNotNil ? {
+        client := application.client(id),
+	client.noCookiesPlease
+      }
+    },
+    
+   client
+}
+
+private
+
+methods
+
+_init :Self
+{
+  super._init,
+  self
+}
+
+;
+
+
+
+

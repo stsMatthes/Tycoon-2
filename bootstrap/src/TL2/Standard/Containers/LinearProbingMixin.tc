@@ -1,0 +1,170 @@
+class LinearProbingMixin(K <: Object, E <:Object)
+super CountedMixin(E), Container(E)
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+Generic linear probing hashtable code
+
+Author:  Andreas Gawecki
+Date:    13-Feb-1996 
+Updates: (Date)	  (Name)	(Description)
+*)
+meta AbstractClass
+{
+
+do(statement :Fun(:E):Void) :Void
+  (* Perform statement for each e in the receiver. 
+ more efficient re-implementation 
+ ### does not perform <statement> for nil elements *)
+{
+  for(0 to:_elements.size-1 do:fun(i :Int) {
+    e ::= _elements[i]
+    if( e.isNotNil then: { statement[e] })
+    })
+  }
+
+reader :Reader(E)
+  (* *)
+{
+  i ::= (-1)
+  n ::= _elements.size
+  FunReader.new(fun(){
+    e :E := nil
+    while({(i := i + 1) < n && (e := _elements[i]).isNil} do:
+      {})
+    e})
+  }
+
+all(p :Fun(:E):Bool) :Bool
+  (* answer true if p(e) holds for all elements in the receiver 
+ more efficient re-implementation 
+ ### does not test nil elements *)
+{
+  i ::= 0
+  result ::= true
+  n ::= _elements.size
+  while({result && i < n} do: {
+     e ::= _elements[i]
+     if( e.isNotNil then: { result := p[e] })
+     i := i + 1
+     })
+  result
+}
+
+some(p :Fun(:E):Bool) :Bool
+  (* answer true if p[e] holds for some element in the receiver 
+ more efficient re-implementation 
+ ### does not test nil elements *)
+{
+  i ::= 0
+  result ::= false
+  n ::= _elements.size
+  while({!result && i < n} do: {
+     e ::= _elements[i]
+     if( e.isNotNil then: { result := p[e] })
+     i := i + 1
+     })
+  result
+}
+
+private
+
+_keys :Sequence(K)
+  (* note that _keys and _elements may be the same (e.g. in Set) *)
+deferred
+
+_elements :Sequence(E)
+  (* *)
+deferred
+
+_keyEqual(k1 :K, k2 :K) :Bool
+  (* default implementation uses object equality *)
+{
+  k1 = k2
+}
+
+_keyHash(k :K) :Int
+  (* default implementation uses equality hash
+     corresponds to _keyEqual *)
+{
+  k.equalityHash
+}
+
+_findIndex(k :K) :Int
+  (* *)
+{
+  n ::= _keys.size-1 ; n must a power of 2 ##assertion?
+  i ::= _keyHash(k) & n
+  while({k2 ::= _keys[i]
+	 k2.isNotNil && !_keyEqual(k, k2)} do: {
+    i := (i+1) & n
+    })
+  i  
+  }
+
+_adjustSize :Void
+  (*
+_findIndex1(k :K, n :Int, i :Int) :Int
+  {
+  let i = i & n,
+  _keys[i].isNil || { _keyEqual(k, _keys[i]) }
+    ? { i }
+    : { _findIndex1(k,n,i+1) }
+  }
+*)
+{
+  if( 10 * _elementCount > 7 * (_elements.size-1)
+    then: {_grow})
+  }
+
+_grow :Void
+  (* *)
+deferred
+
+_fixCollisions(i :Int) :Void
+  (* *)
+{
+  n ::= _keys.size-1
+  _fixCollisions1(i, n)
+  }
+
+_fixCollisions1(i :Int, n :Int) :Void
+  (* *)
+{
+  i ::= (i+1) & n
+  k ::= _keys[i]
+  if( k.isNotNil then: {
+    ii ::= _findIndex(k)
+    if( ii != i then: {
+      _moveTo(i, ii)
+    })
+    _fixCollisions1(i,n)
+  })
+}
+
+_moveTo(i :Int, ii :Int) :Void
+  require _keys[ii].isNil
+       && _elements[ii].isNil
+  ensure _keys[ii] == old _keys[i]
+      && _elements[ii] == old _elements[i]
+      && _keys[i].isNil
+      && _elements[i].isNil
+  deferred
+}

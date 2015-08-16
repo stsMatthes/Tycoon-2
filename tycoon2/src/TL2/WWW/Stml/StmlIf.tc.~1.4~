@@ -1,0 +1,52 @@
+class StmlIf
+super SimpleTypingMixin, StmlComponent
+metaclass StmlIfClass
+public
+
+condition :StmlTycoonSource,
+then :StmlSequence,
+else :StmlSequence
+
+methods
+
+computeType(bindings :StmlBindings, errorLog :ErrorLog) :StmlType
+{
+  let thenT = then.computeSequenceType(bindings, errorLog, false),
+  let elseT =
+    else.isNotNil
+    ? { else.computeSequenceType(bindings, errorLog, false) }
+    : { StmlBottomType.new(position) },
+  thenT.commonSuperType(elseT)
+}
+
+compileAsString( out :StmlASTOutput )
+{
+  let trueBranch = then.compileInStringContext(out.errorLog),
+  let falseBranch =
+    else.isNotNil
+    ? { else.compileInStringContext(out.errorLog) }
+    : { BlockValue.new },
+
+  makeIf(out, trueBranch, falseBranch)
+}
+
+compileAsValue( out :StmlASTWriter )
+{ 
+  let trueBranch = then.compileInValueContext(out.errorLog),
+  let falseBranch =
+    else.isNotNil
+    ? { else.compileInValueContext(out.errorLog) }
+    : { BlockValue.new },
+
+  makeIf(out, trueBranch, falseBranch)
+}
+
+makeIf(out :StmlASTWriter, trueBranch :Value, falseBranch :Value)
+{
+  out.tycoonExpression(
+    IfValue.new1(position,
+      condition.compileToValue(out.errorLog),
+      trueBranch,
+      falseBranch))
+}
+;

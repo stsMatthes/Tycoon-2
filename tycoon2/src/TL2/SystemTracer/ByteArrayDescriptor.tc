@@ -1,0 +1,25 @@
+class ByteArrayDescriptor
+super AbstractArrayDescriptor
+metaclass SingletonClass(ByteArrayDescriptor)
+public methods
+
+layout :Int
+{ layoutByteArray }
+
+elementFmt :Char
+{ 'C' }
+
+allocate(o :Object, tl2Class :TL2Class, tracer :Tracer) :Int
+  require o."class".name = tl2Class.name
+{
+  o."class" == Symbol
+  ? { let found = tracer.root.symbolTable.find(o),
+      found.isNil
+      ? { tycoon.stdout << "Uninterned symbol: " << o << '\n',
+          assert found.isNotNil }
+      : { found !== o
+	  ? { tycoon.stdout << "Duplicate symbol: " << o << '\n',
+	      assert found == o } } },
+  super.allocate(o,tl2Class,tracer)
+}
+;

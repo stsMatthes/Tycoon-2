@@ -1,0 +1,25 @@
+Syntax:                                                                         
+  fixcrlf ç-r|+rŸ ç-t|+tŸ ç-z|+zŸ ç-d|+dŸ ç-f|+fŸ ç-qŸ file...                  
+                                                                                
+Description:                                                                    
+  +r - Adds carriage control characters before every line feed                  
+  -r - Removes all carriage control characters                                  
+  +t - Converts spaces to tabs where it will conserve space                     
+  -t - Converts tabs to spaces                                                  
+  +z - Ensures that there is a trailing EOF (control Z) character.              
+  -z - Removes trailing EOF (control Z) characters.                             
+  -d - Preserves file changed date.                                             
+  +d - Updates file changed date.                                               
+  -f - no force (i.e., convert only writable files)                             
+  +f - Force (i.e., convert readonly files too)                                 
+  -q - Quiet (e.g., no warnings on file not found)                              
+                                                                                
+Defaults:                                                                       
+  OS/2: +r -t +z -d -f                                                          
+  AIX:  -r +t -z -d -f                                                          
+                                                                                
+Notes:                                                                          
+  - wildcards are supported in file names                                       
+  - do not run on binary files!                                                 
+  - carriage returns which do not preceed line feeds are discarded.             
+  - trailing blanks are removed from lines.                                     

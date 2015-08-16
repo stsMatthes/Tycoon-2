@@ -1,0 +1,163 @@
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+Author:  Gerd Bremer
+Date:    30-Sep-1997
+Updates: (Date)	  (Name)	(Description)
+
+*)
+
+class SmtpMessageClass
+
+super ConcreteClass(SmtpMessage)
+
+metaclass MetaClass
+
+public methods
+
+new :SmtpMessage
+
+(* message without headers *)  
+(* ------------------------------------------------------------ *)  
+  { new2(MimeHeaderDictionary.new, nil) }
+
+  
+new2(headers :MimeHeaderDictionary(MimeHeaderValue),
+     body    :Input) :SmtpMessage
+     
+  require headers.isNotNil
+(* ------------------------------------------------------------ *)  
+  { _new._init2(headers, body) }
+
+
+newMultipartMixed(headers :MimeHeaderDictionary(MimeHeaderValue),
+	          bodyParts :List(MimeMessage),
+	          boundary :String) :SmtpMessage
+	     
+  require headers.isNotNil &
+        bodyParts.isNotNil &
+	    boundary.isNotNil
+(* ------------------------------------------------------------ *)
+  {    
+    let body = multipartBodyFromList(boundary, bodyParts),
+    let new = new2(headers, body),
+    new.contentType := MediaType.withBoundary(MediaType.MULTIPART_MIXED, boundary),
+    new
+  }
+
+  
+newGifImage(path :String) :SmtpMessage
+
+  require path.isNotNil
+(* create MIME message out of gif image,
+   set relevant headers
+*)  
+(* ------------------------------------------------------------ *)
+  {
+    let file = File.new(path),
+    file.exists ? 
+      {
+        let instance = new,
+	(* setting the right headers and body *)
+	instance.mimeVersion := "1.0",
+	instance.contentType := MediaType.IMAGE_GIF,
+        instance.contentTransferEncoding := MimeMessage.codeBase64,
+	instance.body := Base64Encoder.new(file.openRead),
+	
+(* ## old	
+	let in = BufferedInput.new(file.openRead, 512),	
+	let var length = 54,
+	let var line = in.readString(length),
+	let var contentPart = "", (* ## what a mess *)
+	while({ line.size > 0 },
+	  {
+	    (* ## is there a more elegant solution ? *)
+	    let contentLine = String.fromReader(Base64Encoder.new(StringInput.new(line)).reader),
+	    contentPart := contentPart + contentLine,
+	    line := in.readString(length)
+	  }),
+	instance.body := StringInput.new(contentPart),
+	in.close,
+*)	
+	instance
+      } :
+      { nil (* ## error *) }
+  }
+
+
+newHtmlText(html :String) :SmtpMessage
+
+  require html.isNotNil
+(* ------------------------------------------------------------ *)  
+  {
+    let instance = new,
+    instance.mimeVersion := "1.0",
+    instance.contentType := MediaType.TEXT_HTML,
+    instance.contentTransferEncoding := MimeMessage.code7Bit,
+    (* #### Kodierung fehlt *)
+    instance.body := StringInput.new(html),
+    instance
+  }
+
+
+init :Void
+(* ------------------------------------------------------------ *)    
+  {
+    MimeHeaderRegistry.instance.registerHeader("From", MimeString),
+    MimeHeaderRegistry.instance.registerHeader("To", MimeString),
+    MimeHeaderRegistry.instance.registerHeader("Subject", MimeString),
+    MimeHeaderRegistry.instance.registerHeader("Message-Id", MimeString),
+    MimeHeaderRegistry.instance.registerHeader("Cc", MimeString),
+    MimeHeaderRegistry.instance.registerHeader("Bcc", MimeString)
+  }
+
+  
+multipartBodyFromList(boundary :String, bodyParts :List(MimeMessage)) :Input
+
+  require boundary.isNotNil &
+    bodyParts.isNotNil
+(* built multipart message body from list of body parts *)
+(* ------------------------------------------------------------ *)    
+  {
+    let result = GapString.new0,
+    boundary.isNotNil ?
+      {
+        bodyParts.do(fun(bodyPart :MimeMessage)
+	  {
+	    result.addAll("\r\n--"),
+	    result.addAll(boundary),
+	    result.addAll("\r\n"),
+	    let out = StringBuilderOutput.new,
+	    bodyPart.emit(out),
+	    result.addAll(out.contents),
+	    result.addAll("\r\n")
+	  }),
+	!bodyParts.isEmpty ?
+	  {
+	    result.addAll("\r\n--"),
+	    result.addAll(boundary),
+	    result.addAll("--\r\n")
+	  },
+	StringInput.new(result.asString)
+      } :
+      { nil (* ## internal error *) }    
+  }
+  
+;

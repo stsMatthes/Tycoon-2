@@ -1,0 +1,38 @@
+class HttpSetCookie
+super Http
+
+public methods
+
+name :String   { _name }
+value :String  { _value }
+expires :Date  { _expires }
+domain :String { _domain }
+path :String   { _path }
+secure :Bool   { _secure }
+
+private
+
+_name :String,
+_value :String,
+_expires :Date,
+_domain :String,
+_path :String,
+_secure :Bool
+
+methods
+
+_init6(n :String, v :String, e :Date,
+       d :String, p :String, s :Bool)
+{
+  _name := n,
+  _value := v,
+  _expires := e,
+  _domain := d,
+  _path := p,
+  _secure := s
+}
+
+;
+
+
+

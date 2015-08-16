@@ -1,0 +1,121 @@
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be
+ * useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. http://www.sts.tu-harburg.de
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ *)
+(*
+  Test-Script fuer die Net Umgebung
+*)
+
+tycoon.tl.loader.registerDirectory("Net");
+tycoon.tl.loader.update;
+tycoon.tl.typeChecker.check;
+
+;;
+;; IP-Adressen
+;;
+
+;; Konstruktoren
+IPAddress.byName("");
+IPAddress.byName("localhost");
+IPAddress.byName("Camelot");
+IPAddress.byName("sun01");
+IPAddress.byName("sun01.sts.tu-harburg.de");
+
+IPAddress.localHostName;
+IPAddress.localHost;
+
+IPAddress.fromString("0.0.0.0");
+IPAddress.fromString("127.0.0.1");
+IPAddress.fromString("255.255.255.255");
+IPAddress.fromString("256.0.0.1");
+
+;; Funktionen über IP-Adressen
+{
+  let e = IPAddress.byName("localhost"),
+  let f = e,
+  f.printOn(tycoon.stdout)
+}[];
+
+{
+  let e = IPAddress.byName("localhost"),
+  e.equalityHash
+}[];
+
+
+;;
+;; Sockets
+;;
+
+;; Server-Socket erzeugen (test)
+{
+  let s = ServerSocket.new(IPAddress.localHost, 0, 5),
+  s.open,
+  s.printOn(tycoon.stdout),
+  s.close
+}[];
+
+;; Zweimal den selben port (Fehler?)
+{
+  let s1 = ServerSocket.new(IPAddress.localHost, 1024, 5),
+  s1.open,
+  s1.printOn(tycoon.stdout),
+  let s2 = ServerSocket.new(IPAddress.localHost, 1024, 5),
+  s2.open,
+  s2.printOn(tycoon.stdout),
+  s1.close,
+  s2.close
+}[];
+
+;; Client / Server connect
+{
+  let s1 = ServerSocket.new(IPAddress.localHost, 0, 5),
+  s1.open,
+  s1.printOn(tycoon.stdout),
+  let s2 = s1.accept,
+  s2.close,
+  s1.close
+}[];
+{
+  let r = StreamSocket.new(IPAddress.localHost, 1028),
+  r.printOn(tycoon.stdout),
+  r.close
+}[];
+
+;; Client / Server mit I/O
+{
+  let s1  = ServerSocket.new(IPAddress.localHost, 0, 5),
+  let msg = MutableString.new(120),
+
+  s1.open,
+  s1.printOn(tycoon.stdout),
+  let s2 = s1.accept,
+
+  s2.readBuffer(msg, 0, 120),
+  tycoon.stdout << "Client says: " + msg,
+
+  s2.close,
+  s1.close
+}[];
+{
+  let r   = StreamSocket.new(IPAddress.localHost, 1030),
+  let msg = "Hello Server",
+  r.printOn(tycoon.stdout),
+  r.writeBuffer(msg, 0, msg.size),
+  r.close
+}[];

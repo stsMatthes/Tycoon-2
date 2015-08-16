@@ -1,0 +1,13 @@
+class SgmlCommentClass
+super ConcreteClass(SgmlComment)
+metaclass MetaClass
+public methods
+
+new(position :SgmlPos, data :String) :SgmlComment
+{
+  let instance = _new,
+  instance.position := position,
+  instance.data := data,
+  instance._init
+}
+;

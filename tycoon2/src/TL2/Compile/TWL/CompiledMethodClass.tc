@@ -1,0 +1,11 @@
+class CompiledMethodClass
+super CStructClass(CompiledMethod)
+metaclass MetaClass
+public methods
+new(body :Value) :CompiledMethod
+{
+  let instance = _new,
+  instance.body := body,
+  instance
+}
+;

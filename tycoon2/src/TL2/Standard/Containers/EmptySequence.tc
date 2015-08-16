@@ -1,0 +1,129 @@
+class EmptySequence
+super MutableSequence(Nil)
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+Generic empty sequences
+	 
+Author:  Andreas Gawecki
+Date:    14-Feb-1996
+Updates: (Date)	  (Name)	(Description)
+*)
+meta AbstractClass
+{
+isEmpty :Bool
+  (* *)
+{
+  true
+  }
+
+size :Int
+  (* *)
+{
+  0
+  }
+
+includes(v :Object) :Bool
+  (* *)
+{
+  false
+  }
+
+includesKey(k :Int) :Bool
+  (* *)
+{
+  false
+  }
+
+do(statement :Fun(:Nil):Void) :Void
+  (* *)
+{
+}
+
+
+all(p :Fun(:Nil):Bool) :Bool
+{ true }
+
+some(p :Fun(:Nil):Bool) :Bool
+{ false }
+
+reader :Reader(Nil)
+  (* *)
+{
+  EmptyReader.new
+}
+
+remove(e :Object) :Nil
+  (* Destruktive element removal *)
+{
+  nil
+}
+
+without(e :Object) :Self
+  (* Functional removal *)
+{
+  self
+  }
+
+reverse :Self
+  (* *)
+{
+  self
+  }
+
+replace(n :Int, at :Int, with :Object, startingAt :Int) :Void
+  (* *)
+{ assert({ n = 0 & at = 0 }) }
+
+fill(n :Int, at :Int, with :Object) :Void
+  (* *)
+{ assert({ n = 0 & at = 0 }) }
+
+cursor :Nil
+  (*##introduce empty cursor? *)
+{ nil }
+
+"[]:="(k :Int, e :Object) :Nil
+  (* *)
+{
+  _raiseKeyNotFoundError(k)
+  }
+
+memoize(k :Int, ifAbsent :Fun():Object) :Nil
+  (* *)
+{
+  _raiseKeyNotFoundError(k)
+  }
+
+"[]"(k :Int) :Nil
+  (* *)
+{
+  _raiseKeyNotFoundError(k)
+  }
+
+private
+
+_locate(e :Object, startingAt :Int, before :Int) :Int
+  (* *)
+{
+  nil
+}
+
+}

@@ -1,0 +1,245 @@
+class SgmlsParser
+super Sgml
+metaclass SimpleConcreteClass(SgmlsParser)
+public
+
+verbose :Bool
+
+methods
+
+parse(additionalFiles :Sequence(String), inputPath :String, output :SgmlOutput)
+  (*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ parse all <additionalFiles> followed by <inputPath>,
+     writing structured output to SgmlOutput.
+     Reentrant (except for "verbose" switch). *)
+{
+  (* create temp file names for Sgmls output and errors *)
+  let sgmlsOutPath = tycoon.os.fs.tmpnam,
+  let errPath = tycoon.os.fs.tmpnam,
+
+  (* build command line *)
+  let cmd = StringBuilderOutput.new,
+  cmd << "hoxnsgmls",
+  output.interestedInPosition
+  ? { cmd << " -l" },
+  output.interestedInComments
+  ? { cmd << " -n" },
+  additionalFiles.do(fun(s :String) {
+    cmd<<' '<< s
+  }),
+  cmd<<' '<<inputPath<<" >"<<sgmlsOutPath<<" 2>"<<errPath,
+  let command = cmd.contents,
+
+  (* call it *)
+  verbose ? { tycoon.stdout << "[SgmlsParser: "<<command<<"]\n" },
+  try({
+    tycoon.os.exec(command)
+    (* ignore result *)
+  }, fun((*e*):Exception) {
+    (* ignore exception, check errFile *)
+  }),
+
+  let errFile = File.new(errPath),
+  let errText =
+    errFile.exists
+    ? { errFile.openRead,
+	let errTextSize = errFile.size.asInt,
+	let errText = MutableString.new(errTextSize),
+	errFile.readBuffer(errText, 0, errText.size),
+	errFile.close,
+	errFile.remove,
+	let errText :String = errText }
+    : { "Could not start nsgmls" },
+
+  let sgmlsOutFile = File.new(sgmlsOutPath),
+  errText.isEmpty ? {
+    verbose ? { tycoon.stdout << "[SgmlsParser: parsing output]\n" },
+    sgmlsOutFile.openRead,   (* exception is OK here *)
+    let var exception :Exception = nil,
+    try({
+      parseHoxSgmlsOutput(sgmlsOutFile, output)
+    }, fun(e:Exception) {
+      (* patch sourceFile information here so we do not have to
+         pass it around *)
+      e."class" = SgmlsParserError
+      ? { let e = _typeCast(e, :SgmlsParserError),
+	  e.sourceFile.isNil
+	  ? { e.sourceFile := inputPath } },
+      exception := e
+    }),
+    sgmlsOutFile.close,
+    sgmlsOutFile.remove,
+    exception.isNotNil
+    ? { exception.raise }
+  } : {
+    sgmlsOutFile.exists ? { sgmlsOutFile.remove },
+    verbose ? { tycoon.stdout << "[SgmlsParser: there were errors]\n" },
+    SgmlsParserError.new(inputPath, errText).raise
+  }
+}
+
+private
+
+contentTypes :Array(SgmlContentType)
+
+methods
+
+(*
+    '-'  character data
+    '('  element name
+	    { name, value }  (specified or 'current' attribute)
+	    ""
+    ')'  element name
+    'C'
+    'L'  line number, [filename]
+*)
+parseHoxSgmlsOutput(input :File, out :SgmlOutput)
+{
+  parseDTD(input, out),
+  let var dataCode :Char = nil,
+  while({ dataCode := input.read,
+	  dataCode.isNotNil && { dataCode != 'C' } }, {
+    dataCode = '('
+    ? { let id = parseString(input),
+        let attributes = Dictionary.new,
+        let var attributeName :String = nil,
+	while({ attributeName := parseString(input),
+		!attributeName.isEmpty },{
+	  let attributeValue = parseString(input),
+	  attributes[attributeName] := attributeValue
+	}),
+	out.startElement(id, attributes) }
+    : { dataCode = ')'
+    ? { let id = parseString(input),
+        out.endElement(id) }
+    : { dataCode = '-'
+    ? { let data = parseString(input),
+        out.writeString(data) }
+    : { dataCode = 'L'
+    ? { let lineNumber = parseNumber(input),
+        let path = parseString(input),
+	!path.isEmpty ? { out.path := path },
+	out.lineNumber := lineNumber }
+    : { dataCode = '#'
+    ? { let data = parseString(input),
+        out.comment(data) }
+    : { corruptSgmlsOutput(input, "bad dataCode "+String.with1(dataCode)) }}}}}
+  }),
+  dataCode != 'C'
+  ? { SgmlsParserError.new(nil, "non-conforming document").raise }
+}
+
+(*
+    element name, content type
+      { attribute name, default value }
+      ""
+    ""
+*)
+parseDTD(input :File, out :SgmlOutput)
+{
+  let var id :String = nil,
+  while({ id := parseString(input),
+	  !id.isEmpty },{
+    let contentType :SgmlContentType = parseContentType(input),
+    let defaultAttributeValues = Dictionary.new,
+    let var attributeName :String = nil,
+    while({ attributeName := parseString(input),
+	    !attributeName.isEmpty },{
+      let attributeValue = parseString(input),
+      defaultAttributeValues[attributeName] := attributeValue
+    }),
+    out.defineElement(id, contentType, defaultAttributeValues)
+  })
+}
+
+(*
+    0 = empty 
+    1 = cdata 
+    2 = rcdata 
+    3 = mixed 
+    4 = element 
+*)
+parseContentType(input :File) :SgmlContentType
+{
+  let i = parseNumber(input),
+  contentTypes.includesKey(i)
+  ? { contentTypes[i] }
+  : { corruptSgmlsOutput(input, "bad content type number: " + i.printString) }
+}
+
+parseString(input :File) :String
+{
+  let n = parseNumber(input),
+  let s = input.readString(n),
+  s.size = n
+  ? { s }
+  : { corruptSgmlsOutput(input,
+         "eof in string (trying to read "
+	 +n.printString
+	 +", got "
+	 +s.size.printString
+	 +")") }
+}
+
+parseNumber(input :File) :Int
+{
+  (* loop unrolled once for speed *)
+  let c = input.read,
+  c.isNotNil
+  ? { let var i = c.asInt,
+      i < 128
+      ? { i }
+      : { let var accu = 0,
+	  while({ i >= 128 }, {
+	    accu := ((accu-1) << 7) + i,
+	    let c = input.read,
+	    i := c.isNotNil ? { c.asInt } : { -1 }
+	  }),
+	  i >= 0
+	  ? { (accu << 7) + i }
+	  : { corruptSgmlsOutput(input, "eof in number") } } }
+  : { corruptSgmlsOutput(input, "eof in number") }
+}
+
+corruptSgmlsOutput(input :File, kind :String) :Nil
+{
+  SgmlsParserError.new(nil,
+     "hoxnsgml output file corrupted at offset "
+     +input.position.printString
+     +": "
+     +kind).raise
+}
+
+_init :Void
+{ super._init,
+
+  contentTypes := Array.with5(
+    SgmlContentType.empty,
+    SgmlContentType.cdata,
+    SgmlContentType.rcdata,
+    SgmlContentType.mixed,
+    SgmlContentType.element),
+
+  verbose := false,
+  self
+}
+;
+

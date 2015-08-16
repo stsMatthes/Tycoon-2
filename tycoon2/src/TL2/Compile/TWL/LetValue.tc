@@ -1,0 +1,133 @@
+class LetValue
+super Value
+metaclass LetValueClass
+public
+
+ide :ValueIde,
+value :Value,
+body :Value
+
+methods
+
+isLet :Bool		{ true }
+asLet :LetValue		{ self }
+
+prettyPrint(out :Printer)
+{
+  out.writeString("let "),
+  ide.printOn(out),
+  out.writeString(" = "),
+  value.isSimple
+   ? { value.prettyPrint(out) }
+   : { out.withRelIndent(2, {
+         out.nl,
+	 value.prettyPrint(out)
+       }) },
+  out.writeln(","),
+  body.prettyPrint(out)
+}
+
+isSimple :Bool
+{ false }
+
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ ## ?? *)
+children :Reader(Value)
+{
+  Reader.with2(value, body)
+}
+
+scope(env :Scoper) :LetValue
+{
+  value := env.scope(value),
+  env.withScopedSignature(ide, {
+    body := env.scope(body)
+  }),
+  self
+}
+
+(* we rely on the backEnd collating adjacent pops and adjacent adjusts. *)
+
+genCode(backEnd :MethodManager)
+{
+  value.genCode(backEnd),
+  backEnd.withLocal(ide, {
+    body.genCode(backEnd)
+  }),
+  backEnd.adjust(1)
+}
+
+genCodeIgnore(backEnd :MethodManager)
+{
+  value.genCode(backEnd),
+  backEnd.withLocal(ide, {
+    body.genCodeIgnore(backEnd)
+  }),
+  backEnd.pop
+}
+
+genCodeReturn(backEnd :MethodManager)
+{
+  value.genCode(backEnd),
+  backEnd.withLocal(ide, {
+    body.genCodeReturn(backEnd)
+  })
+}
+
+(* no genCodeBranch *)
+
+
+  doCheck(T <: Void, cont :Fun2(Type, Subst, T)) :T
+  {
+    (* if there is no declared type, we assign the type of the assigned value. *)
+
+    (* remove all UnifyTypes *)
+    ide.type.isNotNil ? {
+      ide.type.visitor.ifUnifyType(fun(:UnifyType) :Void { ide.type := nil }).otherwise(fun(:Type) {}).visitType(ide.type)
+    },
+
+    let declaredType = ide.type,
+
+    protect({
+      value.check(fun(t :Type, s :Subst) {
+	ide.type.isNil ? {
+	  ide.type := SubstType.new(t, s)
+	} : {
+	  ide.type.checkType(EmptySubst.instance),
+	  
+	  setError(pos, "Value in let binding is not of a subtype of the declared type", {
+	    t.checkSubType(ide.type, s, EmptySubst.instance)
+	  }),
+	  
+	  nil
+	}
+      }),
+
+      body.check(cont)
+    }, {
+      ide.type := declaredType
+    })
+  }
+
+
+;
+
+

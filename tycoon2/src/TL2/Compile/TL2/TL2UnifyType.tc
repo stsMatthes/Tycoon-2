@@ -1,0 +1,290 @@
+class TL2UnifyType
+super TL2TypeImpl
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+     File: TL2UnifyType.tc
+    Purpose: type unification variables introduced during type checking
+     Author: Andreas Gawecki (TL2TL), Axel Wienberg, Matthias Ernst (completely rewramped)
+
+ ## Unification variables travel self-consistently through time and space
+      and don''t care for substitutions around them
+
+   I''m using a range-delimiting algorithm here: a unification variable has a lower and an upper bound,
+   meaning Lower <: U? <: Upper with initials Nil <: U? <: Void.
+
+   Subtype tests versus ``normal'' types make the range smaller which is only possible
+   if lowerBound <: newLowerBound <: upperBound resp.
+      lowerBound <: newUpperBound <: upperBound.
+
+   If this condition cannot be held, we must either fail
+
+   [* ## disabled
+     or move to the utmost end of the type-lattice, e.g:
+     String <: U? <: Void
+
+     and Int <:! U?
+
+     => Void <: U? <: Void     ( Object <: U <: Void ? )
+   *]
+     
+   One could try to compute a common sub-, resp. supertype but this is too complex, I think.
+   The most annoying case, the if-construct will get better, if one branch is subtype of another:
+
+   crash ? { Exception.raise } : { "Hallo" }
+
+   Nil <: U? <: Void,
+   => Nil <: U?    => no change
+   => String <: U? => Lower := String,   String <: U? <: Void
+
+   method lookup on UniVars makes them equal to their lower-bound.
+
+   let i = 3,	    ( i : ( Int <: U? <: Void ) )
+   i + 4	    ( => Int <: U? <: Int )
+   
+   Subtyping of unification variables tries to move the small type as far to its lower end as possible,
+   adjusting the big one to its upper limit if necessary. 
+   
+   
+
+ Unification variables (in subtrees of values only) *)
+meta TL2UnifyTypeClass
+{
+lowerBoundType :TL2Type
+  (* *)
+{ _lowerBoundType  }
+
+lowerBoundSubst :TL2Subst
+  (* *)
+{ _lowerBoundSubst }
+
+upperBoundType :TL2Type
+  (* *)
+{ _upperBoundType  }
+
+upperBoundSubst :TL2Subst
+  (* *)
+{ _upperBoundSubst }
+
+reduce(T <: Void, subst :TL2Subst, cont :Fun(:TL2Type, :TL2Subst):T) :T
+  (* substs aren''t interesting for a TL2UnifyType *)
+{ cont[self, TL2EmptySubst.instance] }
+
+accept(T <: Void, visitor :TL2TypeVisitor(T)) :T
+  (* *)
+{
+    visitor.visitUnifyType(self)
+  }
+
+prettyPrint(o :Printer) :Void
+  (* *)
+{
+    o<<"U?["<<identityHash<<"]("
+    printBound(lowerBoundType, o)
+    o<<", "
+    printBound(upperBoundType, o)
+    o<<")"
+  }
+
+setLowerBound(t :TL2Type, s :TL2Subst) :Void
+  (* *)
+{
+    trace(t.pos, "Unifying with "+t.printString, {
+      if( areSubTypes(t, lowerBoundType, s, upperBoundSubst) then: { ; do nothing 
+} else: {
+	typeChecker.saveUnivar(self)
+
+	if( areSubTypes(lowerBoundType, t, lowerBoundSubst, s) then: {
+	  _lowerBoundType := t
+	  _lowerBoundSubst := s
+	} else: {
+	  if( areSubTypes(t, upperBoundType, s, upperBoundSubst) then: {
+	    _lowerBoundType  := _upperBoundType
+	    _lowerBoundSubst := _upperBoundSubst
+	  } else: {
+	    raiseError
+	  })
+	})
+
+	; bounds modified --- sanity check 
+	if( areSubTypes(lowerBoundType, upperBoundType, lowerBoundSubst, upperBoundSubst) then: { } else: {
+	  raiseError
+	})
+      })
+    })
+  }
+
+setUpperBound(t :TL2Type, s :TL2Subst) :Void
+  (* *)
+{
+    trace(t.pos, "Unifying with "+t.printString, {
+      if( areSubTypes(upperBoundType, t, upperBoundSubst, s) then: { ; do nothing 
+} else: {
+	typeChecker.saveUnivar(self)
+
+	if( areSubTypes(t, upperBoundType, s, upperBoundSubst) then: {
+	  _upperBoundType := t
+	  _upperBoundSubst := s
+	} else: {
+	  if( areSubTypes(lowerBoundType, t, lowerBoundSubst, s) then: {
+	    _upperBoundType  := _lowerBoundType
+	    _upperBoundSubst := _lowerBoundSubst
+	  } else: {
+	    raiseError
+	  })
+	})
+
+	; bounds modified --- sanity check 
+	if( areSubTypes(lowerBoundType, upperBoundType, lowerBoundSubst, upperBoundSubst) then: { } else: {
+	  raiseError
+	})
+      })
+    })
+  }
+
+resetTo(lt :TL2Type, ls :TL2Subst, ut :TL2Type, us :TL2Subst) :Void
+  (* *)
+{
+    _lowerBoundType := lt
+    _lowerBoundSubst := ls
+    _upperBoundType  := ut
+    _upperBoundSubst := us
+  }
+
+instantiateSub(big :TL2Type, bigSubst :TL2Subst) :Void
+  (* U? <: T, see above *)
+{
+;    typeChecker.writeln("Instantiating U?["+identityHash.printString+"]("+
+;      lowerBoundType.printString+lowerBoundSubst.printString+", "+
+;      upperBoundType.printString+upperBoundSubst.printString+") <: "+big.printString+bigSubst.printString), 
+      
+    setUpperBound(big, bigSubst)
+  }
+
+instantiateSuper(small :TL2Type, smallSubst :TL2Subst) :Void
+  (* T <: U?, see above, this is called by the default implementation in TL2TypeImpl::checkSubUnifyType *)
+{
+;    typeChecker.writeln("Instantiating U?["+identityHash.printString+"]("+
+;      lowerBoundType.printString+lowerBoundSubst.printString+", "+
+;      upperBoundType.printString+upperBoundSubst.printString+") >: "+small.printString+smallSubst.printString), 
+      
+    setLowerBound(small, smallSubst)
+  }
+
+checkSubNilType   (big :TL2NilType,    subst :TL2Subst, bigSubst :TL2Subst) :Void
+  (* *)
+{ instantiateSub(big, bigSubst) }
+
+checkSubObjectType(big :TL2ObjectType, subst :TL2Subst, bigSubst :TL2Subst) :Void
+  (* *)
+{ instantiateSub(big, bigSubst) }
+
+checkSubApplyType (big :TL2ApplyType,  subst :TL2Subst, bigSubst :TL2Subst) :Void
+  (* *)
+{ instantiateSub(big, bigSubst) }
+
+checkSubOperType  (big :TL2OperType,   subst :TL2Subst, bigSubst :TL2Subst) :Void
+  (* *)
+{ instantiateSub(big, bigSubst) }
+
+checkSubSubstType (big :TL2SubstType,  subst :TL2Subst, bigSubst :TL2Subst) :Void
+  (* *)
+{ instantiateSub(big, bigSubst) }
+
+checkSubIdeType   (big :TL2IdeType,    subst :TL2Subst, bigSubst :TL2Subst) :Void
+  (* *)
+{ instantiateSub(big, bigSubst) }
+
+checkSubUnifyType (big :TL2UnifyType,  subst :TL2Subst, bigSubst :TL2Subst) :Void
+  (* *)
+{
+    ; ## so easy ? 
+    big.setLowerBound(lowerBoundType, lowerBoundSubst)
+    big.lowerBoundType.visitor.
+      ifNilType(fun(:TL2NilType) {
+        ; if Nil <: big <: T, we take the other way 
+	setUpperBound(big.upperBoundType, big.upperBoundSubst)
+	big.setLowerBound(upperBoundType, upperBoundSubst)
+      }).otherwise(fun(:TL2Type) {
+        setUpperBound(big.lowerBoundType, big.lowerBoundSubst)
+      }).
+    visitType(big.lowerBoundType)
+  }
+
+private
+
+_lowerBoundType :TL2Type
+
+_lowerBoundSubst :TL2Subst
+
+_upperBoundType :TL2Type
+
+_upperBoundSubst :TL2Subst
+
+areSubTypes(small :TL2Type, big :TL2Type, ssubst :TL2Subst, bsubst :TL2Subst) :Bool
+  (* *)
+{
+    try({
+      small.checkSubType(big, ssubst, bsubst)
+      true
+    } else: fun(e :Exception) {
+      if( e."class" == TL2TypeCheckTypeError then: { false } else: { e.raise })
+    })
+  }
+
+checkModified :Void
+  (* the bounds have been changed, so assure that still lower <: upper *)
+{
+    lowerBoundType.checkSubType(upperBoundType, lowerBoundSubst, upperBoundSubst)
+  }
+
+doExpose(T <: Void, subst :TL2Subst, exact :Bool, cont :Fun(:TL2Type, :TL2Subst):T) :T
+  (* *)
+{
+    ; now we must decide for one type, of course, we decide for the lower bound 
+    setUpperBound(lowerBoundType, lowerBoundSubst)
+    lowerBoundType.expose(lowerBoundSubst, exact, cont)
+  }
+
+printBound(t :TL2Type, out :Printer) :Void
+  (* *)
+{
+    cl ::= t."class"
+    if( cl == TL2IdeType || cl == TL2NilType || cl == TL2VoidType
+    then: { t.prettyPrint(out) }
+    else: { if( cl == TL2ApplyType
+        then: { a :TL2ApplyType := _typeCast(t)
+	    a.oper.prettyPrint(out)
+	    out<<"(...)" }
+	else: { out<<"a "<<cl.name }) })
+  }
+
+_init :Void
+  (* *)
+{
+    _lowerBoundType := TL2NilType.instance
+    _lowerBoundSubst := TL2EmptySubst.instance
+
+    _upperBoundType  := TL2VoidType.instance
+    _upperBoundSubst := TL2EmptySubst.instance
+
+    self
+  }
+
+}

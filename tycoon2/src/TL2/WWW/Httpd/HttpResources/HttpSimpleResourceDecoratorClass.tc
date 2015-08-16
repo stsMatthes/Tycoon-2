@@ -1,0 +1,17 @@
+class HttpSimpleResourceDecoratorClass(Instance <:HttpResourceDecorator)
+
+super ConcreteClass(Instance)
+
+metaclass MetaClass
+
+public methods
+
+new(resource :HttpResource) :Instance
+{
+  let instance = _new,
+  instance._init,
+  instance.resource := resource,
+  instance
+}
+
+;

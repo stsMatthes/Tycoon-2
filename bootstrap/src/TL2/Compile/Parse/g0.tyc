@@ -1,0 +1,125 @@
+(* Aufbau einer Beispiel-Grammatik *)
+
+(*
+  [S ::= E $;]
+
+  E ::= Prefix '(' E ')'
+      | 'v' Tail
+      ;
+
+  Prefix ::= 'f'
+	   |
+	   ;
+
+  Tail ::= '+' E
+         |
+         ;
+
+*)
+define eG :MutableNonterminal(Int);
+define prefixG :MutableNonterminal(Object);
+define tailG :MutableNonterminal(Object);
+
+eG := MutableNonterminal.new("E");
+prefixG := MutableNonterminal.new("Prefix");
+tailG := MutableNonterminal.new("Tail");
+
+define t :Dictionary(String, SimpleTerminal);
+t := Dictionary.new;
+t["("] := SimpleTerminal.new("(");
+t[")"] := SimpleTerminal.new(")");
+t["v"] := SimpleTerminal.new("v");
+t["f"] := SimpleTerminal.new("f");
+t["+"] := SimpleTerminal.new("+");
+
+eG.addRule4(
+	prefixG, t["("], eG, t[")"],
+	fun(:Object,:Object,:Int,:Object){0});
+eG.addRule2(
+	t["v"], tailG,
+	fun(:Object,:Object){1});
+
+prefixG.addRule1(
+	t["f"],
+	fun(:Object){nil});
+prefixG.addRule0(
+	{nil});
+
+tailG.addRule2(
+	t["+"], eG,
+	fun(:Object, :Int){nil});
+tailG.addRule0(
+	{nil});
+
+(* eG.printRulesOn(tycoon.stdout); *)
+
+define g :Grammar(Int);
+
+(*
+g := Grammar.new(eG);  (* erhaengt den Typchecker *)
+*)
+g := Grammar(:Int).new(eG);
+
+(*
+define first :FirstSetMap;
+first := FirstSetMap.new(g);
+*)
+
+(*
+define lr0m :LR0ItemFA;
+lr0m := LR0ItemFA.new(g);
+*)
+
+(*
+define lalr :LALRItemFA;
+lalr := LALRItemFA.new(g);
+*)
+
+define builder :NaiveParserBuilder;
+builder := NaiveParserBuilder.new;
+
+define parserGen :ParserGen(NaiveParser);
+parserGen := ParserGen(:NaiveParser).new(alg);
+
+define p :NaiveParser(Int);
+p := parserGen.generate(g);
+
+define testInput :List(Token(Object));
+
+(* f(v+(v)) *)
+testInput := 
+  List.fromReader(
+    List.new8("f", "(", "v", "+", "(", "v", ")", ")")
+      .reader.map(fun(s :String){t[s].token}));
+
+p.parse(testInput.reader);
+
+(*
+S5			f
+	R2		Prefix
+S3			Prefix (
+S6			Prefix ( v
+S10			Prefix ( v +
+	R3		Prefix ( v + Prefix
+S3			Prefix ( v + Prefix (
+S6			Prefix ( v + Prefix ( v
+	R6		Prefix ( v + Prefix ( v Tail
+	R4		Prefix ( v + Prefix ( E
+S8			Prefix ( v + Prefix ( E )
+	R1		Prefix ( v + E
+	R5		Prefix ( v Tail
+	R4		Prefix ( E
+S8			Prefix ( E )
+	R1		E
+A
+*)
+
+define badInput :List(Token(Object));
+badInput := 
+  List.fromReader(
+    List.new8("f", "(", "v", "+", ")", "v", ")", ")")
+      .reader.map(fun(s :String){t[s].token}));
+
+(*;
+ p.parse(badInput.reader);
+ *)

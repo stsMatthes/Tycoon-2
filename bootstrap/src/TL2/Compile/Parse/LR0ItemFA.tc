@@ -1,0 +1,151 @@
+class LR0ItemFA
+super AbstractFA(SymbolO, LR0State), Parse
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+*)
+meta LR0ItemFAClass
+{
+private
+
+gram :Grammar(Object)
+
+progress :ProgressIndicator
+
+_core2state :Dictionary(ListSet(Item), LR0State)
+
+  (* A State is on the agenda iff its transitions have yet to be computed *)
+
+_agenda :Queue(LR0State)
+
+addNonterminal( result :Set(Item), 
+		nonterminals :Set(NonterminalO), 
+		nt :NonterminalO) :Void
+  (* ### HACKING for speed *)
+{
+  if( !nonterminals.includes(nt) then: {		; not visited yet 
+    nonterminals.add(nt)			; avoid infinite recursion 
+    nt.rules.do(fun(r :RuleO) {
+      result.add(Item.new(r,0))
+      if( r.rhs.size != 0 then: {
+        sym ::= r.rhs[0]
+	sym.case(
+	  fun(t :TerminalO) { ; boring 
+	  },
+	  fun(nt :NonterminalO) :Void {
+	    addNonterminal(result, nonterminals, nt)
+	  }
+	)
+      })
+    })
+  })
+}
+
+computeClosure(core :ListSet(Item)) :Set(Item)
+  (* *)
+{
+  nonterminals ::= Set(:NonterminalO).new
+  result ::= Set(:Item).new1(core.size)
+  result.addAll(core)
+  core.do(fun(i :Item) {
+    sym ::= i.symAtDot
+    if( sym.isNotNil then: {				; not at the end 
+      sym.case(
+        fun(t :TerminalO) { ; boring 
+	},
+	fun(nt :NonterminalO) :Void {
+	  addNonterminal(result, nonterminals, nt)
+	}
+      )
+    })
+  })
+  result
+}
+
+_newState :LR0State
+  (* *)
+{
+  LR0State.new
+}
+
+coreToState(core :ListSet(Item)) :LR0State
+  (* returns a unique state whose item set is the closure of <core>.
+   If a new state is created, it is inserted in _states.
+   The transitions will be filled in later. *)
+{
+  _core2state.memoize(core, {
+    st ::= newState
+    st.items := computeClosure(core)
+    _agenda.addLast(st)
+    st
+  })      
+}
+
+collectShiftCores(state :LR0State) 
+		 :Dictionary(SymbolO,ListSet(Item))
+  (* for each possible symbol, collect the cores of the States reachable
+   by shifting *)
+{
+  result ::= Dictionary(:SymbolO,:ListSet(Item)).new
+  state.items.do(fun(i :Item) {
+    sym ::= i.symAtDot
+    if( sym.isNotNil then: {
+      core ::= result.memoize(sym, { ListSet.with0 })
+      core.addNew(i.shifted)
+    })
+  })
+  result
+}
+
+_init :Void
+  (* *)
+{
+  sizeGuess ::= 2*gram.rules.size
+  super._init
+  _core2state := Dictionary.new1(sizeGuess)
+  _agenda := Queue.new
+
+  progress := ProgressIndicator.new(
+    "Computing LR0 states", sizeGuess)
+
+  assert({ gram.startSymbol.rules.size == 1 })
+  startRule ::= gram.startSymbol.rules[0]
+  states.remove(start)  ; ## was put there by super._init 
+  start := coreToState(ListSet.with1(Item.new(startRule, 0)))
+
+  ; coreToState produces, we consume 
+  while({!_agenda.isEmpty} do: {
+    st ::= _agenda.removeFirst
+    shiftCores ::= collectShiftCores(st)
+    ; find/create destination states 
+    assert({ st.transitions.isEmpty })
+    shiftCores.keysAndElementsDo(
+      fun(sym :SymbolO, core :ListSet(Item)) {
+        st.addTransition(sym, coreToState(core))
+      }
+    )
+    progress.click
+  })
+  progress.finish
+
+  _agenda := nil
+  self
+}
+
+}

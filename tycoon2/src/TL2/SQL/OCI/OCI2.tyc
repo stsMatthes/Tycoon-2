@@ -1,0 +1,23 @@
+(* File   : OCI2.tyc
+   Author : Michael Skusa
+   Date   : 12-Sep-1996
+   Purpose: Declarations of TWL ODBC-classes
+*)
+
+tycoon.tl.loader.registerFile("SQL/OCI/OCI.tc");
+tycoon.tl.loader.update;
+define oci:OCI;
+oci:=OCI.new;
+oci.open;
+tycoon.tl.loader.registerFile("SQL/OCI/OCIError.tc");
+tycoon.tl.loader.registerFile("SQL/OCI/OCIErrorClass.tc");
+tycoon.tl.loader.registerFile("SQL/OCI/OCICursorMetaData.tc");
+tycoon.tl.loader.registerFile("SQL/OCI/OCICursor.tc");
+tycoon.tl.loader.registerFile("SQL/OCI/OCIStatement.tc");
+tycoon.tl.loader.registerFile("SQL/OCI/OCIConnection.tc");
+tycoon.tl.loader.registerFile("SQL/OCI/OCIDriver.tc");
+
+tycoon.tl.loader.update;
+
+OCIDriver.init;
+SQLDriverManager.instance.registerDriver(OCIDriver.instance);

@@ -1,0 +1,43 @@
+class CStringHolder
+
+super CValueHolder(String)
+
+metaclass CStringHolderClass
+
+public methods
+
+valueClass():Class { String }
+
+value():String
+{ handle.isNotNil ? {tycoon.rts.tymem_peekString(handle,0)}
+                  : {let s:String = nil} }
+
+stringValue():String { value() }
+
+"value:="(s:String):String
+{
+  handle.isNotNil ?
+  {
+    s.size <= _length ? {tycoon.rts.tymem_pokeString(handle,0,s),
+                         tycoon.rts.tymem_peekString(handle,0)}
+                      : {KeyNotFoundError.new(s,_length+1).raise}
+  }
+  : {nil}
+}
+
+setStringValue(v:String):String { value:=v }
+
+private
+
+_length:Int
+
+methods
+
+_allocate(length:Int)
+{
+  super._init,
+  super._allocate(length+1),
+  tycoon.rts.tymem_pokeString(handle,0,"")
+}
+
+;

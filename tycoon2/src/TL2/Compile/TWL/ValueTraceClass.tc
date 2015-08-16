@@ -1,0 +1,14 @@
+class ValueTraceClass
+  super ConcreteClass(ValueTrace)
+  metaclass MetaClass
+
+public methods
+
+  new(value :Value) :ValueTrace
+  {
+    let instance = _new,
+    instance._initValue(value),
+    instance
+  }
+
+;

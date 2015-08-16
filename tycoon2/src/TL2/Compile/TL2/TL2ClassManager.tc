@@ -1,0 +1,534 @@
+class TL2ClassManager
+super TL2
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ The classManager manages the system''s class graph.
+ 
+ invariant
+    [* unique key (primary index) on aClass.name *]
+     classTable.keys.all(fun(s:String) {
+       classTable[s].name = s
+     })
+   & classTable.all(fun(c:TL2Class) {
+       c.typeIde == signatures[c.name]
+     })
+   & [* cpl computed correctly *]   [* ### order *]
+     classTable.all(fun(c:TL2Class) {
+       directSuperClasses(c).all(fun(c1 :TL2Class) {
+	 superclasses(c).includesAll(superclasses(c1))
+       })
+     })
+   & [* graph is acyclic *]
+     classTable.all(fun(c:TL2Class) {
+       !superclasses(c).includes(c)
+     })
+   & [* all classes are scoped correctly *] 
+     true  [* not expressible *]
+
+ state *)
+meta TL2ClassManagerClass
+{
+set(state :TL2ClassState, errorLog :ErrorLog) :Void
+  (* *)
+{
+  ; get metaclass 
+  meta_ ::= self."metaclass"(state)
+  metaC ::=
+    if( root.active
+    then: {	if( meta_."class" !== MetaClass  ; ### allow subclasses? 
+	then: { errorLog.error(state.metaClassDeclaration.pos,
+		"not a metaclass: "+state.metaClassDeclaration.printString)
+	    errorLog.raiseError })
+	_typeCast(meta_, :TL2MetaClass) }
+    else: { TL2Class })
+
+  clazz ::=
+    _classTable.lookup(state.name, fun(clazz :TL2Class) {
+      backup ::= clazz.copy
+      try({
+        setClassState(clazz, state, errorLog)
+        errorLog.raiseError
+      } else: fun(e:Exception) {
+	 tycoon.stdout.writeln("TL2ClassManager: Rolling back ("+e.printString+")")
+	 setClassState(clazz, backup, errorLog)
+	 tycoon.stdout.writeln("TL2ClassManager: Rolled back")
+	 e.raise
+      })
+      if( meta_ != self."metaclass"(backup)
+      then: { ; metaclass changed => new class object 
+	  tycoon.stdout.writeln(
+		     "New class object for "+clazz.name
+		     +": old metaclass "+backup.metaClassDeclaration.printString
+		     +", new "+state.metaClassDeclaration.printString)
+	  newClass ::= metaC.new(state, self)
+	  replaceClass(clazz, newClass)
+	  newClass }
+      else: { clazz })
+    }, {
+      ; didn''t exist => create new 
+      newClass ::= metaC.new(state, self)
+      doInheritanceChanged(newClass)
+      _classTable[state.name] := newClass
+      root.registerClass(newClass)
+      newClass
+    })
+
+  clazz.typeIde.pos := clazz.pos
+  pool.defineClass(clazz)
+  observers.do(fun(o :TL2ClassManagerObserver) {
+    o.classChanged(self, clazz)
+  })
+}
+
+declareStructClass(name :String, format :String) :Void
+{
+  if( root.storeDescriptors.includesKey(name) then: {
+    tycoon.stdout << "cannot declare struct format for class "<<name<<"\n"
+		  << "existing store descriptor: "<<root.storeDescriptors[name]<<"\n"
+  } else: {
+    root.storeDescriptors[name] := TL2StructDescriptor.new(format)
+  })
+}
+
+observers :DynSequence(TL2ClassManagerObserver)
+  (* observers for classChanged *)
+{ _observers }
+
+get(name :String) :TL2ClassPublic
+  (* *)
+{ _get(name) }
+
+classTable :KeyedContainer(String, TL2ClassPublic)
+  (* *)
+{ _classTable }
+
+finalize :Void
+  (* *)
+{ classTable.do(fun(c:TL2ClassPublic) {
+    c.finalize
+  })
+}
+
+superclasses(clazz :TL2ClassPublic) :Reader(TL2ClassPublic)
+  (* *)
+require classTable.includes(clazz)
+{ clazzImpl ::= _classTable[clazz.name]
+  assert({ clazzImpl = clazz })
+  _superclasses(clazzImpl)
+}
+
+subclasses(clazz :TL2ClassPublic) :Reader(TL2ClassPublic)
+  (* *)
+require classTable.includes(clazz)
+{ clazzImpl ::= _classTable[clazz.name]
+  assert({ clazzImpl = clazz })
+  _subclasses(clazzImpl)
+}
+
+"metaclass"(clazz :TL2ClassState) :TL2ClassPublic
+  (*
+{ get(clazz.metaClassDeclaration.className) }
+*)
+{
+  metaClassName ::= clazz.metaClassDeclaration.className
+  if( root.active
+  then: { get(metaClassName) }
+  else: { ; ### bootstrap hack 
+      classTable.lookup(metaClassName,
+	fun(c:TL2ClassPublic){ c },
+	{ ; This method should only be called if metaClassDeclaration was scoped correctly,
+;	     which implies that the metaclass is known to the TL2TypeManager, and thus to the
+;	     TL2ClassManager.
+;	     So an exception here means we''re in the hacky pre-bootstrap state, and can safely
+;	     return nil. 
+	  nil }) })
+}
+
+directSuperClasses(c :TL2ClassState) :List(TL2ClassPublic)
+  (* *)
+{ _directSuperClasses(c) }
+
+checkConsistency :Void
+  (* *)
+{
+  assert({
+     classTable.keys.all(fun(s:String) {
+       classTable[s].name = s
+     }) })
+  assert({ ; cpl computed correctly 
+; ### order 
+     classTable.all(fun(c:TL2ClassPublic) {
+       directSuperClasses(c).all(fun(c1 :TL2ClassPublic) {
+	 List.fromReader(superclasses(c)).includesAll(superclasses(c1))
+       })
+     }) })
+   assert({ ; graph is acyclic 
+     classTable.all(fun(c:TL2ClassPublic) {
+       !superclasses(c).includes(c)
+     }) })
+}
+
+recomputeAllCPLs :Void
+  (* only necessary to clean up inconsistencys *)
+{
+  dirty ::= Set.fromContainer(_classTable)
+  visited ::= Set.new1(dirty.size)
+
+  ; recompute CPLs in depth first order,
+;     where "a deeper than b" means "a superclass of b" 
+  dirty.do(fun(c :TL2Class) {
+    recurDirtyCPL(c, dirty, visited)
+  })
+}
+
+root :TL2Root
+  (* *)
+{ _root }
+
+pool :TL2Pool
+  (* *)
+{ _pool }
+
+typeManager :TL2TypeManager
+  (* for access from Class Class *)
+{ _typeManager }
+
+globalIdeChanged( :String) :Void
+  (* a pool variable has changed 
+name*)
+{ ; ...drastic measures... 
+  root.flushAll
+}
+
+private
+
+_classTable :Dictionary(String, TL2Class)
+
+_root :TL2Root
+
+_pool :TL2Pool
+
+_typeManager :TL2TypeManager
+
+_observers :DynSequence(TL2ClassManagerObserver)
+
+_get(name :String) :TL2Class
+  (* *)
+{
+  ; classTable[name] 
+  _classTable.lookup(name,
+    fun(c:TL2Class) { c },
+    { name.print
+      assert({ false }) nil })
+}
+
+_directSuperClasses(c :TL2ClassState) :List(TL2Class)
+  (* *)
+{
+  List.fromReader(c.supers.map(fun(t :TL2CPLType){ _get(t.className) }))
+}
+
+_subclasses(clazz :TL2Class) :Reader(TL2Class)
+  (* *)
+{
+  _classTable.select(fun(subc :TL2Class) {
+    _superclasses(subc).includes(clazz)
+  })
+}
+
+_superclasses(clazz :TL2Class) :Reader(TL2Class)
+  (* *)
+{
+  clazz.cpl.tail.reader
+}
+
+replaceClass(clazz :TL2Class, newClass :TL2Class) :Void
+  (* replace all object references to <clazz> with
+   references to <newClass> (including method dicts) *)
+{
+  assert({ clazz.name = newClass.name })
+  newClass.id := clazz.id
+  newClass.cpl := List.with1(newClass) ;; avoid error in _subclasses
+  _classTable[newClass.name] := newClass
+  doInheritanceChanged1(newClass, clazz)
+  root.classTable[newClass.id] := newClass
+}
+
+setClassState(clazz :TL2Class, newState :TL2ClassState, errorLog :ErrorLog) :Void
+  (* *)
+{
+  inheritanceIsChanged ::=
+    ! directSuperClasses(newState).listEqual( directSuperClasses(clazz) )
+
+  if( inheritanceIsChanged then: {
+    ; check for cyclic inheritance 
+    _directSuperClasses(newState).do(fun(c :TL2Class) {
+      if( c.cpl.includes(clazz)
+       then: { errorLog.error(newState.pos, "cyclic inheritance")
+	   errorLog.error(c.pos, "other class: "+c.name) })
+    })
+  })
+
+  if( !errorLog.hasErrors then: {
+    clazz.setState(newState)
+    if( inheritanceIsChanged then: {
+      doInheritanceChanged(clazz)
+    } else: {
+      doLayoutChanged(clazz)
+    })
+  })
+}
+
+doLayoutChanged(clazz :TL2Class) :Void
+  (* only layout has changed *)
+{
+  computeLayout(clazz)
+  _subclasses(clazz).do(fun(c :TL2Class) {
+    tycoon.stdout.writeln("recomputing layout in class "+c.name)
+    computeLayout(c)
+  })
+}
+
+doInheritanceChanged(clazz :TL2Class) :Void
+  (* ### optional parameters *)
+{ doInheritanceChanged1(clazz, clazz) }
+
+doInheritanceChanged1(clazz :TL2Class, oldClass :TL2Class) :Void
+  (* *)
+{
+  dirty ::= Set.fromReader(_subclasses(oldClass))
+  visited ::= Set.new1(dirty.size)
+
+  computeCPL(clazz)
+  computeLayout(clazz)
+  ; recompute CPLs in depth first order,
+;     where "a deeper than b" means "a superclass of b" 
+  dirty.do(fun(c :TL2Class) {
+    recurDirtyCPL(c, dirty, visited)
+  })
+}
+
+recurDirtyCPL(c :TL2Class, dirty :Set(TL2Class), visited :Set(TL2Class)) :Void
+  (* ensure <c> and all superclasses of <c> that were dirty have been visited. 
+ note: we may not modify <dirty> because an iteration is in progress *)
+require dirty.includes(c)
+{
+  if( !visited.includes(c)
+  then: { _directSuperClasses(c).do(fun(c1 :TL2Class) {
+        if( dirty.includes(c1) 
+        then: { recurDirtyCPL(c1, dirty, visited) })
+      })
+      tycoon.stdout.writeln("recomputing cpl & layout in class "+c.name)
+      computeCPL(c)
+      computeLayout(c)
+      visited.addNew(c) })
+}
+
+computeCPL(c :TL2Class) :Void
+{
+  ;; the implementation follows
+  ;;  "A Monotonic Superclass Linearization for Dylan"
+  ;; OOPSLA 96
+
+  cDirectSuperClasses ::= _directSuperClasses(c)
+  c.cpl :=
+    mergeLists( List.with1(c),
+		MutableArray.concat(
+		  Array.fromContainerWithMap(
+		    cDirectSuperClasses,
+		    fun(c:TL2Class) { c.cpl }),
+		  Array.with1(cDirectSuperClasses)))
+}
+
+mergeLists(reversedPartialResult :List(TL2Class),
+           remainingInputs :MutableArray(List(TL2Class))) :List(TL2Class)
+{
+  if( remainingInputs.all(fun(l:List(TL2Class)){ l.isEmpty }) then: {
+    List.reverse(reversedPartialResult)
+  } else: {
+    listWithNext ::=
+      remainingInputs.detect(fun(l :List(TL2Class)) {
+        !l.isEmpty
+	&& (candidate ::= l.head
+	    remainingInputs.all(fun(l :List(TL2Class)) {
+	      l.isEmpty || !l.tail.includes(candidate)
+	    }) )
+      })
+    if( listWithNext.isNotNil then: {
+      next ::= listWithNext.head
+      remainingInputs.keysAndElementsDo(fun(i:Int, l :List(TL2Class)) {
+        if( !l.isEmpty && l.head == next then: {
+	  remainingInputs[i] := l.tail
+	})
+      })
+      mergeLists( List.cons(next, reversedPartialResult),
+		  remainingInputs)
+    } else: {
+      TL2InconsistentPrecedenceGraph.new(reversedPartialResult, remainingInputs).raise
+    })
+  })
+}
+
+precedenceGraph(N <: AbstractNode(TL2Class),
+		  G <: AbstractGraph(TL2Class, N),
+		  factory :AbstractGraphFactory(TL2Class, N, G),
+		  c :TL2Class) :G
+  (* *)
+{
+  ; build class precedence graph 
+  classToNode ::= Dictionary(:TL2Class,:N).new
+  graph ::= factory.new
+  n ::= graph.newNode(c)
+  classToNode[c] := n
+  agenda ::= Queue.with1(n)
+  while({!agenda.isEmpty} do: {
+    n ::= agenda.removeFirst
+    c ::= n.value
+    ; for "c super c1,c2" insert precedences c < c1 < c2 
+    prev :N := n
+    _directSuperClasses(c).do(fun(c1 :TL2Class) {
+      n1 ::=
+        classToNode.memoize(c1, {
+	  n1 ::= graph.newNode(c1)
+	  agenda.addLast(n1)
+	  n1
+	})
+      graph.addEdge(prev, n1)
+      prev := n1
+    })
+  })
+  graph
+}
+
+verifyCPL(c :TL2Class) :Bool
+  (* *)
+{
+  graph ::= precedenceGraph(Graph, c)
+  ok ::=
+    try({
+      graph.topologicalSort  ; ignore result, just checking 
+      true
+    } else: fun(e:Exception) {
+      if( e."class" = CyclicGraphError
+      then: { e :CyclicGraphError(TL2Class) := _typeCast(e)
+          tycoon.stdout << "Cyclic inheritance:\n" << e.loop << "\n"
+	  false }
+      else: { e.raise })
+    })
+  if( ok then: {
+    cpl ::= c.cpl
+    graph.nodes.do(fun(n:Node(TL2Class)) {
+      nPos ::= cpl.locate(n.value)
+      if( nPos.isNil then: { tycoon.stdout << "Missing superclass " << n.value <<"\n" ok := false })
+      n.successors.do(fun(n1:Node(TL2Class)) {
+	n1Pos ::= cpl.locate(n1.value)
+	if( n1Pos.isNotNil &&  n1Pos <= nPos 
+	then: { tycoon.stdout << "Precedence violated: " << n.value << " < " << n1.value << "\n"
+	    ok := false})
+      })
+    })
+  })
+  if( !ok then: {
+    tycoon.stdout << "In class "<<c.name<<".  Precedence graph:\n"<<graph
+		  << "Actual CPL: " << c.cpl << "\n\n"  })
+  ok
+}
+
+computeLayout(clazz :TL2Class) :Void
+(* compute slotMap, instanceSize and methodDictionaries,
+   depending on the class precedence list *)
+{
+  ; from toolClasses.inheritanceChanged 
+
+  newSlotMap ::= GapArray.new0
+  allocateSlot ::= fun(sl :TL2Slot) {
+    pos ::= newSlotMap.locate(sl)   ; ### slow? 
+    if( pos.isNotNil then: { pos } else: {
+      pos ::= newSlotMap.size
+      newSlotMap.add(sl)
+      pos
+    })
+  }
+
+  dicts :List(TL2MethodDictionaryPublic) := EmptyList.new
+  addDict ::= 
+    fun(md :TL2MethodDictionaryPublic) {
+      dicts := List.cons(md, dicts)
+    }
+  addDict[pool.poolMethods]
+
+  isStruct ::= clazz.storeDescriptor.isStruct
+
+  ; inherited slots and methods, slots possibly at different offset 
+  clazz.cpl.reverseReader.do(fun(c :TL2Class) {
+    ; ### share method dictionaries if same offsets? 
+    dic ::= c.makeSlotMethods(allocateSlot, isStruct)
+    if( dic.isNotNil then: {
+      addDict[dic]
+    })
+    addDict[c.methodDictionary]
+  })
+
+  d :TL2TspDescriptor := clazz.storeDescriptor
+  if( d.isStruct then: {
+    if( newSlotMap.size != d.format.size then: {
+      tycoon.stdout << "error: Number of slots does not match store format: "
+		    << newSlotMap.size << " slots, expected format `"+d.format+"\'\n"
+    } else: {
+      d.format.keysAndElementsDo(fun(i :Int, storeFormat :Char) {
+	checkSlotFormat(newSlotMap[i], storeFormat)
+      })
+    })
+  })
+
+  ; update the runtime-relevant portion of class object
+  ; as atomic as possible.  Also flushes the cache.
+  clazz.setBehaviour(dicts, newSlotMap.as(Array), newSlotMap.size)
+}
+
+checkSlotFormat(slot :TL2Slot, storeFormat :Char) :Void
+{
+  slotFormat ::= slot.type.charCode
+  if( slotFormat.isNil then: { slotFormat := 'O' })
+  expectedStoreFormats ::=
+    if( "BCIL".includes(slotFormat) then: { "cCsSiIlLwo" }
+     else: { if( slotFormat = 'R' then: { "fdo" }
+       else: { if( slotFormat = 'O' then: { "o" } else: { "" }) }) })
+  if( !expectedStoreFormats.includes(storeFormat) then: {
+    tycoon.stdout << "error: Mismatch between slot type and store format: store format `"
+		  << storeFormat << "\', slot format `" << slotFormat << "\' for slot `" << slot.name<<"\'\n"
+  })
+}
+
+_init :Void
+  (* *)
+{
+  super._init
+  _classTable := Dictionary.new
+  _observers := GapArray.new0
+  root.classes.do(fun(c :TL2Class) {
+    _classTable[c.name] := c
+    c.classManager := self
+  })
+  pool.observers.add(self)
+  self
+}
+
+}

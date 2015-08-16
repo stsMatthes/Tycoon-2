@@ -1,0 +1,11 @@
+class IdleTaskRecClass(Instance <: IdleTaskRec)
+super ConcreteClass(Instance)
+metaclass MetaClass
+
+public methods
+
+new :Instance
+{
+  _new.init
+}
+;

@@ -1,0 +1,12 @@
+class WorkItemClass(T <: Object)
+super ConcreteClass(WorkItem(T))
+metaclass MetaClass
+
+public methods
+
+new1(f :Fun0(T)) :WorkItem(T)
+{
+  let w = _new,
+  w._process := f,
+  w
+}

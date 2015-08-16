@@ -1,0 +1,12 @@
+class TypeManagerClass
+super ConcreteClass(TypeManager)
+metaclass MetaClass
+public methods
+
+new(root :Root) :TypeManager
+{
+  let instance = _new,
+  instance._root := root,
+  instance._init
+}
+;

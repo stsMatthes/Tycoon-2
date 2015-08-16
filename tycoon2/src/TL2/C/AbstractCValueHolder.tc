@@ -1,0 +1,70 @@
+class AbstractCValueHolder(P<:Object,N<:Object)
+
+super Object
+
+metaclass AbstractClass
+
+public
+
+handle :Int32
+
+methods
+
+value :P deferred
+
+"value:="(:N):P deferred
+
+valueClass:Class deferred
+
+intValue:Int {_raiseCoerceError2(value)}
+
+shortValue:Int {intValue}
+
+charValue:Char {_raiseCoerceError2(value)}
+
+stringValue:String {_raiseCoerceError2(value)}
+
+rawStringValue:MutableString {_raiseCoerceError2(value)}
+
+realValue:Real {_raiseCoerceError2(value)}
+
+setIntValue(v:Int):Int {_raiseCoerceError2(v)}
+
+setShortValue(v:Int):Int {_raiseCoerceError2(v)}
+
+setCharValue(v:Char):Char {_raiseCoerceError2(v)}
+
+setStringValue(v:String):String {_raiseCoerceError2(v)}
+
+setRawStringValue(v:MutableString):MutableString {_raiseCoerceError2(v)}
+
+setFileValue(v:File):File {_raiseCoerceError2(v)}
+
+setRealValue(v:Real):Real {_raiseCoerceError2(v)}
+
+close
+{
+  handle.isNotNil ?
+  {
+    tycoon.ansiC.free(handle),
+    handle:=nil
+  }
+}
+
+private methods
+
+_allocate(size:Int)
+{
+  handle:=tycoon.ansiC.malloc(size)
+}
+
+_raiseCoerceError2(v:Object) :Nil
+{
+  _raiseCoerceError(v,valueClass)
+}
+
+;
+
+
+
+

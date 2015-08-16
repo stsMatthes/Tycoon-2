@@ -1,0 +1,120 @@
+class ByteCodeWriter
+super BackEnd
+metaclass AbstractClass
+public methods
+
+newLabel :Label
+  deferred
+
+defineLabel(l :Label)
+  deferred
+
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ emitting *)
+
+send(selectorId :Int, nbArgs :Int)  (* nbArgs implicit in selectorId *)
+  deferred
+
+sendSpecial(selectorId :Int, nbArgs :Int)  (* nbArgs implicit in selectorId *)
+  deferred
+
+sendTail(selectorId :Int, nbArgs :Int)  (* nbArgs implicit in selectorId *)
+  deferred
+
+sendSuper(selectorId :Int, nbArgs :Int)  (* nbArgs implicit in selectorId *)
+  deferred
+
+
+loadLiteral(literalIdx :Int)
+  deferred
+
+(* special literals *)
+loadChar(c :Char)
+  deferred
+loadByte(b :Int)
+  require -128 <= b & b < 128
+  deferred
+loadShort(s :Int)
+  require -32768 <= b & b < 32767
+  deferred
+
+canLoadSpecial(o :Object) :Bool
+  deferred
+  
+loadSpecial(o :Object)
+  require canLoadSpecial(o)
+  deferred
+
+  
+loadArgument(argIdx :Int)
+  (* self == nb_args, last argument is 1 *)
+  deferred
+
+loadLocal(localIdx :Int)
+  (* 0 <= n < current stack size *)
+  deferred
+
+storeLocal(localIdx :Int)
+  (* 0 <= n < current stack size *)
+  deferred
+
+loadGlobal(globalIdx :Int)
+  deferred
+
+cellNew
+  deferred
+
+cellStore
+  deferred
+
+cellLoad
+  deferred
+  
+(* n times pop *)
+drop(n :Int)
+  deferred
+
+pop
+  deferred
+
+(* let x = pop, drop(n), push(x) *)
+adjust(n :Int)
+  deferred
+  
+closure(nb_globals :Int)
+  deferred
+
+sync
+  deferred
+
+return
+  deferred
+
+ifTrue(dest :Label)
+  deferred
+
+ifFalse(dest :Label)
+  deferred
+
+jump(dest :Label)
+  deferred
+
+;

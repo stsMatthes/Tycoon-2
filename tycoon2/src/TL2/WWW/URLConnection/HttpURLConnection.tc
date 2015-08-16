@@ -1,0 +1,180 @@
+class HttpURLConnection
+super URLConnection
+metaclass AbstractURLConnectionClass(HttpURLConnection)
+public
+  authorization :HttpCredentials
+  
+methods
+openRead :Input
+{
+  let hostAddress = ipAddressFromHost,
+
+  let port = url.port.isNil ? {
+    80
+  } : {
+    url.port
+  },
+
+  (*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ remove scheme, host, port and fragment *)
+  let shortURL = URL.new8(nil, nil, nil, url.isAbsolute, url.segments, url.parameters, url.query, nil),
+
+  let request = HttpRequest.new6(
+		    "GET",
+		    shortURL.asString,
+		    1,
+		    1,
+		    MimeHeaderDictionary.new,
+		    nil
+		),
+  authorization.isNotNil ? {
+    request.authorization := authorization
+  },
+
+  let connection = StreamSocket.new2(hostAddress, port),
+
+  try({
+    let in = connection.bufferedInput,
+    let out = connection.bufferedOutput,
+
+    request.emit(out),
+    out.flush,
+
+    let response :HttpResponse = HttpResponse.new,
+    response.parser.parse(in, response),
+
+    response.statusCode != HttpResponse.OK ? fun() :Input {
+      URLError.new(url.asString + ": " + response.status).raise
+    } : {
+      response.body
+    }
+  }, fun(e :Exception) {
+    connection.close,
+    e.raise
+  })
+}
+
+writeTo(content :String)
+{
+  let hostAddress = ipAddressFromHost,
+  
+  let port = url.port.isNil ? {
+    80
+  } : {
+    url.port
+  },
+
+  (* remove host, port and fragment *)
+  let shortURL = URL.new8(nil, nil, nil, url.isAbsolute, url.segments, url.parameters, url.query, nil),
+
+  let request = HttpRequest.new6(
+		    "PUT",
+		    shortURL.asString,
+		    1,
+		    1,
+		    MimeHeaderDictionary.new,
+		    nil
+		),
+  authorization.isNotNil ? {
+    request.authorization := authorization
+  },
+
+  request.contentLength := content.size,
+  request.body          := StringInput.new(content),
+
+  let connection = StreamSocket.new2(hostAddress, port),
+
+  try({
+    let in = connection.bufferedInput,
+    let out = connection.bufferedOutput,
+
+    request.emit(out),
+    request.emit(tycoon.stdout),
+
+    out.flush,
+
+    let response :HttpResponse = HttpResponse.new,
+    response.parser.parse(in, response),
+
+    response.statusCode != HttpResponse.OK && {
+    response.statusCode != HttpResponse.CREATED && {
+    response.statusCode != HttpResponse.NO_CONTENT }} ? {
+      URLError.new(url.asString + ": " + response.status).raise
+    },
+    connection.close
+  }, fun(e :Exception) {
+    connection.close,
+    e.raise
+  })
+}
+
+delete
+{
+  let hostAddress = ipAddressFromHost,
+
+  let port = url.port.isNil ? {
+    80
+  } : {
+    url.port
+  },
+
+  (* remove host, port and fragment *)
+  let shortURL = URL.new8(nil, nil, nil, url.isAbsolute, url.segments, url.parameters, url.query, nil),
+
+  let request = HttpRequest.new6(
+		    "DELETE",
+		    shortURL.asString,
+		    1,
+		    1,
+		    MimeHeaderDictionary.new,
+		    nil
+		),
+  authorization.isNotNil ? {
+    request.authorization := authorization
+  },
+
+  let connection = StreamSocket.new2(hostAddress, port),
+
+  try({
+    let in = connection.bufferedInput,
+    let out = connection.bufferedOutput,
+
+    request.emit(out),
+    out.flush,
+
+    let response :HttpResponse = HttpResponse.new,
+    response.parser.parse(in, response),
+
+    response.statusCode != HttpResponse.OK ? {
+      URLError.new(url.asString + ": " + response.status).raise
+    }
+  }, fun(e :Exception) {
+    connection.close,
+    e.raise
+  })
+}
+
+basicAuthorization(user :String, password :String)
+{
+  authorization := HttpCredentials.basic(user, password)
+}
+
+;

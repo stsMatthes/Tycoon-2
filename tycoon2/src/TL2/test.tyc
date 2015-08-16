@@ -1,0 +1,133 @@
+DO load "tool0/tool.syntax";
+
+DO set sendPrintMessage false;
+DO set lowlevelPrintResult true;
+
+(* Forwarding definitions for TooL kernel classes.
+   To be executed before any kernel classes are
+   loaded into an empty system. *)
+   
+(* must be the first one: *)
+class Class metaclass Class;
+
+class AbstractClass metaclass Class;
+
+class Object metaclass AbstractClass;
+class ConcreteClass metaclass AbstractClass;
+class MetaClass metaclass AbstractClass;
+
+(* Load forward declarations: *)
+DO load "../TWL/forward.tyc";
+
+(* Load TooL Kernel classes: *)
+
+(*
+DO set generateTargetCode false;
+*)
+
+DO load "../TWL/Object.tc";
+DO load "../TWL/Class.tc";
+DO load "../TWL/AbstractClass.tc";
+DO load "../TWL/ConcreteClass.tc";
+DO load "../TWL/MetaClass.tc";
+DO load "../TWL/OddballClass.tc";
+DO load "../TWL/Nil.tc";
+
+DO load "../TWL/Collection.tc";
+DO load "../TWL/Stream.tc";
+DO load "../TWL/ReadStream.tc";
+DO load "../TWL/WriteStream.tc";
+DO load "../TWL/Seekable.tc";
+DO load "../TWL/Cursor.tc";
+
+DO load "../TWL/Fun.tc";
+DO load "../TWL/Fun0.tc";
+DO load "../TWL/Fun1.tc";
+DO load "../TWL/Fun2.tc";
+DO load "../TWL/Fun3.tc";
+DO load "../TWL/Bool.tc";
+DO load "../TWL/True.tc";
+DO load "../TWL/False.tc";
+
+class VarClass metaclass MetaClass;
+DO load "../TWL/Var.tc";
+DO load "../TWL/VarClass.tc";
+
+DO load "../TWL/Ordered.tc";
+DO load "../TWL/Number.tc";
+DO load "../TWL/Integer.tc";
+DO load "../TWL/UnsignedInteger.tc";
+DO load "../TWL/Int64.tc";
+DO load "../TWL/Long.tc";
+DO load "../TWL/UnsignedLong.tc";
+DO load "../TWL/Int32.tc";
+DO load "../TWL/UnsignedInt32.tc";
+DO load "../TWL/UnsignedInt.tc";
+DO load "../TWL/Int16.tc";
+DO load "../TWL/Short.tc";
+DO load "../TWL/UnsignedShort.tc";
+DO load "../TWL/Int8.tc";
+DO load "../TWL/Byte.tc";
+DO load "../TWL/Char.tc";
+DO load "../TWL/Real.tc";
+
+class IntClass metaclass MetaClass;
+DO load "../TWL/Int.tc";
+DO load "../TWL/IntClass.tc";
+
+class DoubleClass metaclass DoubleClass;
+DO load "../TWL/Double.tc";
+DO load "../TWL/DoubleClass.tc";
+
+class FloatClass metaclass FloatClass;
+DO load "../TWL/Float.tc";
+DO load "../TWL/FloatClass.tc";
+
+class FunReadStreamClass metaclass AbstractClass;
+DO load "../TWL/FunReadStream.tc";
+DO load "../TWL/FunReadStreamClass.tc";
+
+class FunCursorClass metaclass AbstractClass;
+DO load "../TWL/FunCursor.tc";
+DO load "../TWL/FunCursorClass.tc";
+
+DO load "../TWL/Exception.tc";
+
+class AssertErrorClass metaclass MetaClass;
+DO load "../TWL/AssertError.tc";
+DO load "../TWL/AssertErrorClass.tc";
+
+class MethodNotImplementedErrorClass metaclass MetaClass;
+DO load "../TWL/MethodNotImplementedError.tc";
+DO load "../TWL/MethodNotImplementedErrorClass.tc";
+
+class DoesNotUnderstandErrorClass metaclass MetaClass;
+DO load "../TWL/DoesNotUnderstandError.tc";
+DO load "../TWL/DoesNotUnderstandErrorClass.tc";
+
+class CoerceErrorClass metaclass MetaClass;
+DO load "../TWL/CoerceError.tc";
+DO load "../TWL/CoerceErrorClass.tc";
+
+class IndexOutOfBoundsErrorClass metaclass MetaClass;
+DO load "../TWL/IndexOutOfBoundsError.tc";
+DO load "../TWL/IndexOutOfBoundsErrorClass.tc";
+
+class ArithmeticErrorClass metaclass MetaClass;
+DO load "../TWL/ArithmeticError.tc";
+
+DO load "../TWL/Container.tc";
+DO load "../TWL/KeyedContainer.tc";
+DO load "../TWL/MutableKeyedContainer.tc";
+DO load "../TWL/Sequence.tc";
+DO load "../TWL/MutableSequence.tc";
+DO load "../TWL/MutableSequenceClassMixin.tc";
+
+class ArrayClass metaclass MetaClass;
+DO load "../TWL/Array.tc";
+DO load "../TWL/ArrayClass.tc";
+
+class MutableArrayClass metaclass MetaClass;
+DO load "../TWL/MutableArray.tc";
+DO load "../TWL/MutableArrayClass.tc";
+

@@ -1,0 +1,82 @@
+class StmlFun
+super SimpleTypingMixin, StmlComponent
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+*)
+meta StmlFunClass
+{
+parameters :String
+
+domain :List(Pair(String,StmlType))
+
+body :StmlSequence
+
+computeType(bindings :StmlBindings, errorLog :ErrorLog) :StmlType
+  (* *)
+{ domain := parseParameters(errorLog)
+  useDomain ::= if( domain.isNotNil then: { domain } else: { EmptyList.new })
+  bindings.withBindings(useDomain, fun(bindings1 :StmlBindings){
+    body.computeSequenceType(bindings1, errorLog, true)
+  })
+  if( domain.isNil
+  then: { t :StmlType := StmlWrongType.new(position, "malformed param attribute",nil,nil,nil,nil) }
+  else: { StmlFunType.new(position, domain, body.type) })
+}
+
+compileAsString(  :StmlASTOutput ) :Void
+  (* *)
+{ ; this expression has function type, so putting it in a string context should
+;     create a type error.  If we get here, we can be sure that context is "asValue" 
+  assert({ false }) }
+
+compileAsValue( out :StmlASTWriter ) :Void
+  (* *)
+{
+  assert({ domain.isNotNil })
+  tycoonDomain ::=
+    List.fromReader(
+      domain.map(fun(p:Pair(String,StmlType)) {
+	name ::= p.first
+	type ::= p.second
+	TL2ValueIde.new(type.position, name, false, type.asTycoonType)
+      }))
+  tycoonBody ::=
+    if( body.type.isStringContext
+    then: { body.compileInStringContext(out.context) }
+    else: { body.compileInValueContext(out.context) })
+  out.tycoonExpression(
+    TL2CompiledFun.new(position, #"[]", tycoonDomain, nil, tycoonBody))
+}
+
+private
+
+parseParameters(errorLog :ErrorLog) :List(Pair(String,StmlType))
+  (* *)
+{ if( parameters.isNotNil then: {
+    StmlTypeParser.instance.parseParams(
+      StringInput.new(parameters),
+      position,
+      errorLog)
+  } else: {
+    EmptyList.new
+  })
+}
+
+}

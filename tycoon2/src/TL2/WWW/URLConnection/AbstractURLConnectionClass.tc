@@ -1,0 +1,16 @@
+class AbstractURLConnectionClass(Connection <:URLConnection)
+super ConcreteClass(Connection)
+metaclass MetaClass
+public methods
+new1(url :URL) :Connection
+{
+  _new._init1(url)
+}
+
+new3(url :URL, user :String, password :String) :Connection
+{
+  _new._init3(url, user, password)
+}
+
+;
+

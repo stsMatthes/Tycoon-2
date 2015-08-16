@@ -1,0 +1,4 @@
+class PersonalizeStml
+super Personalize
+metaclass AbstractClass
+;

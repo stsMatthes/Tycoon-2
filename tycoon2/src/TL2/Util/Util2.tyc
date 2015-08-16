@@ -1,0 +1,10 @@
+(*
+DO load "../TWL/Util/Util2.tyc";
+*)
+
+tycoon.tl.loader.registerDirectory("Util");
+
+tycoon.tl.loader.update;
+
+DO load "Util/Init.tyc";
+

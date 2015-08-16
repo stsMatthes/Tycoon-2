@@ -1,0 +1,232 @@
+class ApplyType
+  super TypeImpl
+  metaclass ApplyTypeClass
+
+public methods
+
+  oper :Type       { _oper }
+  args :List(Type) { _args }
+
+  visit(T <: Void, visitor :TypeVisitor(T)) :T  { visitor.visitApplyType(self) }
+
+  reduce(T <: Void, s :Subst, cont: Fun2(Type, Subst, T)) :T
+  {
+    oper.reduce(s, fun(oper :Type, os :Subst) {
+      let args = List.fromReader(args.map(fun(arg :Type) {
+	arg.reduce(s, fun(arg :Type, as :Subst) {
+	  as == EmptySubst.instance ? {
+	    arg
+	  } : {
+	    SubstType.new(arg, as)
+	  }
+	})
+      })),
+
+      cont[ApplyType.new(
+	os == EmptySubst.instance ? {
+	  oper
+	} : {
+	  SubstType.new(oper, os)
+	},
+
+	args
+      ), EmptySubst.instance]
+    })
+  }
+  
+  
+  (*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ inherit
+     checkSubNilType
+     checkSubIdeType
+     checkSubUnifyType
+     checkSubMethodType
+  *)
+
+  checkSubObjectType(big :ObjectType, subst :Subst, bigSubst :Subst)
+  {
+    expose(subst, false, fun(exposed :Type, subst :Subst) {
+      exposed.checkSubType(big, subst, bigSubst)
+    })
+  }
+
+  checkSubApplyType (big :ApplyType,  subst :Subst, bigSubst :Subst)
+  {
+    (* first chance:
+       O <: O'', A <: A'', A'' <: A
+       -------------------------
+          O(A) <: O''(A'')
+
+       Use first chance, if:
+       - argument lists are equally long
+       - small is not a Fun (could also check for big)
+    *)
+
+    let firstChance =
+      args.size == big.args.size ? {
+	let isFun = oper.visitor.
+	  ifIdeType(fun(oper :IdeType) {
+	    oper.ide.name.startsWith("Fun")
+	  }).
+	  otherwise(fun(:Type) { false }).
+	  visitType(oper),
+
+	!isFun
+      } : {
+        false
+      },
+
+    firstChance ? {
+      try({
+	oper.checkSubType(big.oper, subst, bigSubst),
+	checkEqualArgLists(args, big.args, subst, bigSubst)
+      }, fun(e :Exception) {
+	e."class" == TypeCheckTypeError ? {
+	  expose(subst, false, fun(t :Type, subst :Subst) {
+	    t.checkSubType(big, subst, bigSubst)
+	  })
+	} : {
+	  e.raise
+	}
+      })
+    } : {
+      expose(subst, false, fun(t :Type, subst :Subst) {
+	t.checkSubType(big, subst, bigSubst)
+      })
+    }
+  }
+
+  checkSubOperType  (big :OperType,   subst :Subst, bigSubst :Subst)
+  {
+    (* A type application is never an oper in TL-2 and so can't be subtype of an Oper *)
+    raiseSubTypeError(self, big)
+  }
+  
+
+  
+
+
+  (* ########################################### *)
+
+
+  prettyPrint(out :Printer)
+  {
+    oper.prettyPrint(out),
+    out.write('('),
+  (*  isSimple ? { *)
+      args.doBetween(fun(t :Type) {
+	t.prettyPrint(out)
+      }, {
+	out.writeAll(", ")
+      })
+  (*  } : {
+      out.withRelIndent(2, {
+	out.nl,
+	args.doBetween(fun(t :Type) {
+	  t.prettyPrint(out)
+	}, {
+	  out.writeAll(",\n")
+	})
+      })
+    } *) ,
+    out.write(')')
+  }
+
+  children :Reader(Value)
+  {
+    List.cons(oper, args).reader
+  }
+
+  scope(env :Scoper) :ApplyType
+  {
+    _oper := env.scope(oper),
+    _args := env.scopeList(:Type, args),
+    self
+  }
+
+  substArgs(subst :Subst, args :List(Type)) :List(Type)
+  {
+    args.isEmpty ? {
+      args
+    } : {
+      let newHead = args.head.subst(subst),
+      let newTail = substArgs(subst, args.tail),
+      newHead == args.head && {newTail == args.tail} ? {
+	args
+      } : {
+	List.cons(newHead, newTail)
+      }
+    }
+  }
+
+  subst(subst :Subst) :ApplyType
+  {
+    let newOper = oper.subst(subst),
+    let newArgs = substArgs(subst, args),
+    newOper == oper && {newArgs == args} ? fun():ApplyType {
+      self
+    } : {
+      ApplyType.new(oper, args)
+    }
+  }
+
+private
+  _oper :Type,
+  _args :List(Type)
+
+methods
+
+
+  doCheckType(subst :Subst)
+  {
+    oper.checkType(subst),
+    args.do(fun(t :Type) { t.checkType(subst) }),
+    oper.checkApplication(args, subst)
+  }
+
+  doExpose(T <: Void, subst :Subst, exact :Bool, cont :Fun2(Type, Subst, T)) :T
+  {
+    oper.apply(args, subst, subst, exact, cont)
+  }
+
+  
+  checkEqualArgLists(args1 :List(Type), args2 :List(Type), s1 :Subst, s2 :Subst)
+    require args1.size == args2.size
+  {
+    let var args1 = args1,
+    let var args2 = args2,
+    
+    while({
+      !args1.isEmpty
+    }, {
+      let t1 = args1.head,
+      let t2 = args2.head,
+
+      t1.checkSubType(t2, s1, s2),
+      t2.checkSubType(t1, s2, s1),
+
+      args1 := args1.tail,
+      args2 := args2.tail
+    })
+  }
+
+;
+

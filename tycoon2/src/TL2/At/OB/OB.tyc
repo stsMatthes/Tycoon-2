@@ -1,0 +1,7 @@
+tycoon.tl.loader.registerDirectory("At/OB");
+tycoon.tl.loader.update;
+tycoon.tl.typeChecker.check;
+tycoon.tl.typeChecker.finalize;
+
+DO load "At/OB/Init.tyc";
+

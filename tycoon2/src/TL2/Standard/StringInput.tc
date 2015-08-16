@@ -1,0 +1,42 @@
+class StringInput
+super BufferInput
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ StringInput
+   Purpose: input from a string
+   Author:  Axel Wienberg
+   Date:    25-Jan-1997
+   UpDate:  08-Apr-1997 Axel Wienberg:  uses BufferInput
+*)
+meta StringInputClass
+{
+private
+
+_buffer :String
+
+_bufferSize :Int
+
+_moreBuffer(n :Int) :Bool
+  (* Try to get <n> more characters of input.
+     Return false at eof. *)
+require _position = _bufferSize
+{ false }
+
+}

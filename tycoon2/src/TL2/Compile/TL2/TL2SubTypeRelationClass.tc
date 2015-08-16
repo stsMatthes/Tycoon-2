@@ -1,0 +1,168 @@
+class TL2SubTypeRelationClass
+super ConcreteClass(TL2SubTypeRelation)
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+*)
+meta MetaClass
+{
+new(small :TL2Type, big :TL2Type, smallSubst :TL2Subst, bigSubst :TL2Subst) :TL2SubTypeRelation
+  (* *)
+{
+    instance ::= _new
+    instance._init4(small, big, smallSubst, bigSubst)
+    instance
+  }
+
+init :Void
+  (* *)
+{
+    initStoreTypeVisitor
+    initTypeHashVisitor
+    initEqualTypesVisitor
+  }
+
+storeType(t :TL2Type) :Bool
+  (* for TL2SubTypeRelation *)
+{
+    storeTypeVisitor.visitType(t)
+  }
+
+equalTypes(t1 :TL2Type, t2 :TL2Type) :Bool
+  (* *)
+{
+    equalTypesVisitor.visitType(t1)[t2]
+  }
+
+equalSubsts(s1 :TL2Subst, s2 :TL2Subst) :Bool
+  (* *)
+{
+    s1 == s2
+  }
+
+typeHash(t :TL2Type) :Int
+  (* *)
+{
+    typeHashVisitor.visitType(t)
+  }
+
+private
+
+typeHashVisitor :TL2TypeVisitor(Int)
+
+storeTypeVisitor :TL2TypeVisitor(Bool)
+
+equalTypesVisitor :TL2TypeVisitor(Fun(:TL2Type):Bool)
+
+equalTypeLists(l1 :List(TL2Type), l2 :List(TL2Type)) :Bool
+  (* *)
+{
+    if( l1.isEmpty then: {
+      if( l2.isEmpty then: {
+        true
+      } else: {
+        false
+      })
+    } else: {
+      if( l2.isEmpty then: {
+        false
+      } else: {
+        equalTypes(l1.head, l2.head) &&  equalTypeLists(l1.tail, l2.tail) 
+      })
+    })
+  }
+
+initTypeHashVisitor :Void
+  (* *)
+{
+    ; initialize visitors 
+    
+    typeHashVisitor := TL2FunTypeVisitor.new.
+      ifIdeType(fun(t :TL2IdeType) {
+	t.ide.identityHash
+      }).
+      ifApplyType(fun(t :TL2ApplyType) {
+	typeHash(t.oper).xor(t.args.inject(0, fun(i: Int, t :TL2Type) { (i<<1).xor(typeHash(t)) }))
+      }).
+      ifVoidType(fun(t :TL2VoidType) {
+	t.identityHash
+      }).
+      ifNilType(fun(t :TL2NilType) {
+	t.identityHash
+      }).
+      ifUnifyType(fun(t :TL2UnifyType) {
+	t.identityHash
+      })
+  }
+
+initStoreTypeVisitor :Void
+  (* *)
+{     
+    storeTypeVisitor := TL2FunTypeVisitor.new.
+      ifIdeType(fun(:TL2IdeType) { true }).
+      ifApplyType(fun(t :TL2ApplyType) {
+	storeType(t.oper) && 
+	  t.args.all(fun(t :TL2Type) { storeType(t) })
+	
+      }).
+      ifNilType(fun(:TL2NilType) { true }).
+      ifVoidType(fun(:TL2VoidType) { true }).
+      ifUnifyType(fun(:TL2UnifyType) { true }).
+      otherwise(fun(:TL2Type) { false })
+  }
+
+initEqualTypesVisitor :Void
+  (* *)
+{
+    equalTypesVisitor := TL2FunTypeVisitor.new.
+      ifIdeType(fun(t1 :TL2IdeType) {
+	fun(t2 :TL2Type) {
+	  t2.visitor.ifIdeType(fun(t2 :TL2IdeType) {
+	    t1.ide == t2.ide
+	  }).otherwise(fun(:TL2Type) { false }).
+	  visitType(t2)
+	}
+      }).
+      ifApplyType(fun(t1 :TL2ApplyType) {
+	fun(t2 :TL2Type) {
+	  t2.visitor.ifApplyType(fun(t2 :TL2ApplyType) {
+	    equalTypes(t1.oper, t2.oper) && 
+	    equalTypeLists(t1.args, t2.args) 
+	  }).otherwise(fun(:TL2Type) { false }).
+	  visitType(t2)
+	}
+      }).
+      ifNilType(fun(t1 :TL2NilType) {
+	fun(t2 :TL2Type) {
+	  t1 == t2
+	}
+      }).
+      ifVoidType(fun(t1 :TL2VoidType) {
+	fun(t2 :TL2Type) {
+	  t1 == t2
+	}
+      }).
+      ifUnifyType(fun(t1 :TL2UnifyType) {
+	fun(t2 :TL2Type) {
+	  t1 == t2
+	}
+      })
+  }
+
+}

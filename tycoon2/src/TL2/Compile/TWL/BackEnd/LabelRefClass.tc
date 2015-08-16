@@ -1,0 +1,14 @@
+class LabelRefClass
+super ConcreteClass(LabelRef)
+metaclass MetaClass
+public methods
+new(label :Label, position :Int, shortOp :Int, longOp :Int) :LabelRef
+{
+  let instance = _new,
+  instance.label := label,
+  instance.position := position,
+  instance.shortOp := shortOp,
+  instance.longOp := longOp,
+  instance._init
+}
+;

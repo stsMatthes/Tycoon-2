@@ -1,0 +1,32 @@
+(* File   : Net.tyc
+   Author : Andreas Gawecki
+   Date   : 05-Dec-1996
+   Purpose: Declarations of networking classes
+*)
+
+DO load "../TWL/Net/Net.tc";
+
+class UnknownHostError metaclass MetaClass;
+DO load "../TWL/Net/UnknownHostErrorClass.tc";
+DO load "../TWL/Net/UnknownHostError.tc";
+
+class IPAddress metaclass MetaClass;
+DO load "../TWL/Net/IPAddressClass.tc";
+DO load "../TWL/Net/IPAddress.tc";
+
+DO load "../TWL/Net/Socket.tc";
+
+class StreamSocket metaclass MetaClass;
+DO load "../TWL/Net/StreamSocketClass.tc";
+DO load "../TWL/Net/StreamSocket.tc";
+
+class ServerSocket metaclass MetaClass;
+DO load "../TWL/Net/ServerSocketClass.tc";
+DO load "../TWL/Net/ServerSocket.tc";
+
+class DatagramSocket metaclass MetaClass;
+DO load "../TWL/Net/DatagramSocketClass.tc";
+DO load "../TWL/Net/DatagramSocket.tc";
+
+
+

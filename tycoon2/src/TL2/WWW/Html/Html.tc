@@ -1,0 +1,5 @@
+class Html
+super WWW
+metaclass AbstractClass
+;
+	

@@ -1,0 +1,26 @@
+class TypeTrace
+  super TypeCheckTrace
+
+public methods
+
+  type :Type { _type }
+  msg  :String
+  {
+    "While checking type :"+type.printString
+  }
+
+  shouldPrint :Bool { true }
+
+private
+
+  _type :Type
+
+methods
+
+  _initType(type :Type)
+  {
+    _type := type,
+    super._init1(List.with1(type.pos))
+  }
+
+;

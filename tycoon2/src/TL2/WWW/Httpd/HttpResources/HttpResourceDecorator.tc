@@ -1,0 +1,96 @@
+class HttpResourceDecorator
+
+super HttpResource
+
+metaclass AbstractClass
+
+public
+
+resource :HttpResource
+
+methods
+
+install :Self
+  (*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ wrap yourself around resource and update the parent resource, if any,
+     to refer to the receiver rather than to the given resource.
+     answer the receiver.
+  *)
+{
+  resource.parent.isNotNil ? {
+    resource.parent.replace(resource, self)
+  },
+  self
+}
+
+uninstall :HttpResource
+  (* unwrap yourself from the child resource and update the parent resource, if any,
+     to refer to the child resource rather than to the receiver.
+     answer the child resource.
+  *)
+{
+  parent.isNotNil ? {
+    parent.replace(self, resource)
+  },
+  resource
+}
+
+
+contentLength :Int { resource.contentLength }
+lastModified :Long { resource.lastModified }
+validate :Void { resource.validate }
+
+reindex
+{
+  resource.reindex
+}
+
+pathLookup(request :HttpRequest, arcs :List(String)) :HttpResource
+{
+  resource.pathLookup(request, arcs)
+}
+
+lookupDirectory(arcs :List(String)) :HttpDirectoryResource
+{
+  resource.lookupDirectory(arcs)
+}
+
+preProcess(request :HttpRequest) :Void
+{
+  resource.preProcess(request)
+}
+  
+postProcess(request :HttpRequest, response :HttpResponse) :HttpResponse
+{
+  resource.postProcess(request, response)
+}
+  
+head(request :HttpRequest) :HttpResponse      { resource.head(request) }
+get(request :HttpRequest) :HttpResponse	      { resource.get(request) }
+put(request :HttpRequest) :HttpResponse	      { resource.put(request) }
+post(request :HttpRequest) :HttpResponse      { resource.post(request) }
+options(request :HttpRequest) :HttpResponse   { resource.options(request) }
+delete(request :HttpRequest) :HttpResponse    { resource.delete(request) }
+link(request :HttpRequest) :HttpResponse      { resource.link(request) }
+unlink(request :HttpRequest) :HttpResponse    { resource.unlink(request) }
+extended(request :HttpRequest) :HttpResponse  { resource.extended(request) }
+
+;

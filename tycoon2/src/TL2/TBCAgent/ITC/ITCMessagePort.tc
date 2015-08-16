@@ -1,0 +1,79 @@
+class ITCMessagePort(T <: Object)
+super Object
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ ITCMessagePort.tc
+
+   Tycoon Business Conversations (TBC) for Tycoon 2
+   ------------------------------------------------
+   A message port for typed messages which can be safely accessed by threads.
+   This class must be parametrized by the type of the messages.
+   The messages are held in a fifo-queue.
+
+   30.08.97 hw : created
+*)
+meta SimpleConcreteClass(ITCMessagePort(T))
+{
+
+get :T
+  (*
+   * Get the next message from the queue. If none exists, the thread
+   * blocks and waits until the next message is sent to the port.
+   *)
+{
+  _mx.lock
+  while({_messages.isEmpty} do: {
+    _arrival.wait(_mx)
+  })
+  t ::= _messages.removeFirst
+  _mx.unlock
+  t
+}
+
+put(msg :T) :Void
+  (*
+   * Deliver a message at this port. A waiting thread will be resumed
+   * and 'get' will return the message.
+   *)
+{
+  _mx.lock
+  _messages.addLast(msg)
+  _mx.unlock
+  _arrival.signal
+}
+
+private
+
+_mx :Mutex
+
+_arrival :Condition
+
+_messages :Queue(T)
+
+_init :Void
+  (* *)
+{
+  super._init
+  _mx       := Mutex.new
+  _arrival  := Condition.new
+  _messages := Queue.new
+}
+
+}

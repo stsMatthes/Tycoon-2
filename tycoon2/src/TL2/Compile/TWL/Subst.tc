@@ -1,0 +1,17 @@
+class Subst
+super TWL
+metaclass AbstractClass
+
+public methods
+
+isEmpty :Bool { false }
+
+subst(T <:Void,
+      ide :Ide,
+      ifNotFound :Fun0(T),
+      cont :Fun2(Type, Subst, T)) :T
+  deferred
+
+
+  
+;

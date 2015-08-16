@@ -1,0 +1,12 @@
+class TypePrettyPrintToolClass
+super ConcreteClass(TypePrettyPrintTool)
+meta MetaClass
+{
+new(out :Printer) :TypePrettyPrintTool
+{
+  instance ::= _new
+  instance._out := out
+  instance._init
+  instance
+}
+}

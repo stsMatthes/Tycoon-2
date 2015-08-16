@@ -1,0 +1,4 @@
+class SystemTracer
+super Object
+metaclass AbstractClass
+;

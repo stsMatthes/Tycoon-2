@@ -1,0 +1,27 @@
+class ValueIdeClass
+super ConcreteClass(ValueIde)
+metaclass MetaClass
+public methods
+newSig(name :Positioned(String), p :SourcePos, type :Type) :ValueIde
+{
+  name.isNil ? {
+    new1(p, nil, type)
+  } : {
+    new1(name.pos, name.value, type)
+  }
+}
+
+newRef(ps :Positioned(String)) :ValueIde
+{
+  new1(ps.pos, ps.value, nil)
+}
+
+new1(pos :SourcePos, name :String, type :Type) :ValueIde
+{
+  let instance = _new,
+  instance.pos := pos,
+  instance.name := name,
+  instance.type := type,
+  instance._init
+}
+;

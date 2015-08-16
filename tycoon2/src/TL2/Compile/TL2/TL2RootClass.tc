@@ -1,0 +1,76 @@
+class TL2RootClass
+super CStructClass(TL2Root)
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+*)
+meta MetaClass
+{
+new(storeDescriptorsPath :String) :TL2Root
+  (* *)
+{
+  instance ::= _new
+  instance.storeDescriptors := parseStoreDescriptors(storeDescriptorsPath)
+  instance._init
+  instance
+}
+
+parseStoreDescriptors(path :String) :Dictionary(String, TL2TspDescriptor)
+  (* *)
+{
+  d ::= Dictionary.new
+  nameToDescriptor ::= Dictionary(:String, :TL2TspDescriptor).new
+  nameToDescriptor["WeakRef"] := TL2WeakRefDescriptor.instance
+  nameToDescriptor["Array"] := TL2ArrayDescriptor.instance
+  nameToDescriptor["ByteArray"] := TL2ByteArrayDescriptor.instance
+  nameToDescriptor["ShortArray"] := TL2ShortArrayDescriptor.instance
+  nameToDescriptor["IntArray"] := TL2IntArrayDescriptor.instance
+  nameToDescriptor["LongArray"] := TL2LongArrayDescriptor.instance
+  nameToDescriptor["Thread"] := TL2ThreadDescriptor.instance
+  nameToDescriptor["Stack"] := TL2StackDescriptor.instance
+
+  parseTabs(path, fun(a :Array(String)) {
+    className ::= a[0]
+    layout ::= a[1]
+    descriptor ::=
+      nameToDescriptor.lookup(layout,
+        fun(t :TL2TspDescriptor) { t },
+	{ if( layout = "Struct"
+          then: { TL2StructDescriptor.new(a[2]) }
+	  else: { tycoon.stdout
+	         << "Unknown store layout name `"<<layout<<"\' for class "<<className<<'\n'
+	      assert({ false })
+	      nil })})
+    d[className] := descriptor
+  })
+  d
+}
+
+parseTabs(path :String, fu :Fun(:Array(String)):Void) :Void
+  (* *)
+{
+  f ::= File.openRead(path).bufferedInput
+  line :String := nil
+  while({ line := f.readln line.isNotNil } do: {
+    fu[Array.fromReader(Tokenizer.new(line.reader, "\t"))]
+  })
+  f.close
+}
+
+}

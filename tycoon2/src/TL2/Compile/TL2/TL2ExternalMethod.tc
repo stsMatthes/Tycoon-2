@@ -1,0 +1,94 @@
+class TL2ExternalMethod
+super TL2Method
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+*)
+meta TL2ExternalMethodClass
+{
+language :String
+
+entryPoint :String
+
+tycoonArgs :String
+
+cArgs :String
+
+blocking :Bool
+
+externalFun :Int
+
+acceptMethodVisitor(T <: Void, visitor :TL2MethodVisitor(T)) :T
+  (* *)
+{ visitor.visitExternal(self) }
+
+compileMethod(selfSig :TL2ValueIde, compiler :TL2Compiler) :Void
+  (* *)
+{ super.compileMethod(selfSig, compiler)
+  tycoonArgs :=
+    String.fromReader(domain.sfw(
+      fun(i :TL2Ide){ i.asValueIde.type.charCode },
+      fun(i :TL2Ide){ i.isValueIde }))
+    + String.with1(range.resultCharCode)
+  fakeCArgs
+  self
+}
+
+fakeCArgs :Void
+  (* *)
+{
+  ; assume default translation 
+  from ::= "BCILROSMV"
+  to   ::= "iCiwdozzv"
+  cArgs :=
+    String.fromReader(
+      tycoonArgs.map(
+        fun(c :Char){ to[from.locate(c)] }))
+}
+
+prettyPrint(out :Printer) :Void
+  (* *)
+{
+  super.prettyPrint(out)
+  out.withRelIndent(2, {
+    out.nl
+    out.writeAll("extern ")
+    language.printOn(out)
+    out.write(' ')
+    entryPoint.printOn(out)
+  })
+}
+
+"selector:="(sym :Symbol) :Symbol
+  (* *)
+{
+  if( entryPoint.isEmpty then: { entryPoint := sym })
+  super."selector:="(sym)
+}
+
+private
+
+_init :Void
+  (* *)
+{ super._init
+  blocking := false
+  self
+}
+
+}

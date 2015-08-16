@@ -1,0 +1,15 @@
+class HttpdErrorLogClass
+super ConcreteClass(HttpdErrorLog)
+metaclass MetaClass
+
+public methods
+
+new(out :Output): HttpdErrorLog
+{
+  let result = _new,
+  result._init,
+  result._out := out,
+  result
+}
+;
+

@@ -1,0 +1,15 @@
+class CompiledFunClass
+super CStructClass(CompiledFun)
+metaclass MetaClass
+public methods
+new(pos :SourcePos, domain :List(Ide), range :Type, body :Value) :CompiledFun
+{
+  let instance = _new,
+  instance.pos := pos,
+  instance.selector := Symbol.new("[]"),
+  instance.methodType := MethodType.new1(pos, instance.selector, domain, range),
+  instance.isPrivate := false,
+  instance.body := body,
+  instance
+}
+;

@@ -1,0 +1,116 @@
+class InstrumentingVisitor
+super AtTrace, TL2ModRecValueVisitor
+meta InstrumentingVisitorClass
+{
+instrumentor :Instrumentor
+
+className :Symbol
+
+errorLog :ErrorLog
+
+visitSend(v :TL2SendValue) :TL2Value
+  (*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ *)
+{
+  v ::= _typeCast(super.visitSend(v), :TL2SendValue)
+  sel ::= TL2Selector.new(v.selector, argSorts(v.args))
+  if( !isSelfRef(v.receiver)
+      && instrumentor.shouldInstrumentSelector(sel) then: {
+    ts ::= TL2SendValue.new(v.pos,
+	     TL2LiteralValue.new(v.pos, traceDB),
+	     #tracedSend,
+	     List.with4(
+	       TL2IdeValue.new(TL2ValueIde.newRef(v.pos, "self")),
+	       v.receiver,
+	       TL2LiteralValue.new(v.pos, sel),
+	       TL2ArrayValue.new(v.pos,
+		 v.args.sfw(fun(a :TL2Argument) {
+		   a.argumentCase(:TL2Value,
+		     fun(av :TL2Value) {
+		       if(av.isComponent then: {
+			 TL2SendValue.new(av.pos,
+			   TL2IdeValue.new(TL2ValueIde.newRef(av.pos, "self")),
+			   #ref,
+			   List.with1(av))
+		       } else: {
+			 av
+		       })
+		     },
+		     fun(t :TL2Type) {
+		       assert({ t.isValue })
+		       nil
+		     })
+		   },
+		 fun(a :TL2Argument) {
+		   a.isValue
+		 }).as(List))))
+    if( v.isComponent then: {
+      ts := 
+	TL2SendValue.new(v.pos,
+	  TL2IdeValue.new(TL2ValueIde.newRef(v.pos, "self")),
+	  #"fetch@",
+	  List.with1(ts))
+    })
+    ts
+  } else: {
+    v
+  })
+}
+
+visitFun(v :TL2CompiledFun) :TL2Value
+  (* *)
+{
+  ;; ### should not instrument funs that will be optimized away
+  instrumentor.instrumentCompiledMethod(className, v, errorLog)
+  v
+}
+
+
+isSelfRef(v :TL2Value) :Bool
+{
+  TL2FunValueVisitor(:Bool).new(v)
+    .ifIde(fun(iv :TL2IdeValue) {
+      iv.ide.name = "self"
+     })
+    .otherwise(fun(:TL2Value) {
+      false
+     }).visit
+}
+
+argSorts(args :List(TL2Argument)) :List(Bool)
+{
+  if( args.isEmpty then: {
+    EmptyList.instance
+  } else: {
+    args.head.argumentCase(
+      fun(v :TL2Value) {
+        List.cons(v.isComponent, argSorts(args.tail))
+      },
+      fun( :TL2Type) {
+        argSorts(args.tail)
+      })
+  })
+}
+
+traceDB :AtTraceDB
+{ AtTraceDB.instance }
+
+}

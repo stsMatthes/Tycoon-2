@@ -1,0 +1,20 @@
+(*
+DO load "TBCAgent/makeTBC.tyc";
+*)
+
+tycoon.tl.loader.registerDirectory("TBCAgent/Agent");
+tycoon.tl.loader.registerDirectory("TBCAgent/Content");
+tycoon.tl.loader.registerDirectory("TBCAgent/ContentSpec");
+tycoon.tl.loader.registerDirectory("TBCAgent/Cv");
+tycoon.tl.loader.registerDirectory("TBCAgent/CvSpec");
+tycoon.tl.loader.registerDirectory("TBCAgent/Error");
+tycoon.tl.loader.registerDirectory("TBCAgent/ITC");
+tycoon.tl.loader.registerDirectory("TBCAgent/Misc");
+tycoon.tl.loader.registerDirectory("TBCAgent/Msg");
+tycoon.tl.loader.registerDirectory("TBCAgent/Test");
+
+tycoon.tl.loader.update;
+
+tycoon.tl.typeChecker.check;
+
+(* tycoon.saveSystem; *)

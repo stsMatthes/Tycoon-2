@@ -1,0 +1,15 @@
+class InstrumentingVisitorClass
+super ConcreteClass(InstrumentingVisitor)
+meta MetaClass
+{
+
+new(instrumentor :Instrumentor, className :Symbol, errorLog :ErrorLog) :InstrumentingVisitor
+{
+  instance ::= _new
+  instance.instrumentor := instrumentor
+  instance.className := className
+  instance.errorLog := errorLog
+  instance._init
+  instance
+}
+}

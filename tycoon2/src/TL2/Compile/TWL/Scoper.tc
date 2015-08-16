@@ -1,0 +1,191 @@
+class Scoper
+super TWL, KeyedContainer(String, Ide)
+metaclass ScoperClass
+public 
+
+currentClassSig :TypeIde,
+errorLog :ErrorLog,
+typeManager :TypeManager,
+
+freeIdes :Set(Ide),
+warnUnused :Bool
+
+methods
+
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ enter a new lexical block.
+   Extend the environment with <signature>, call <thunk>, and remove
+   the <signature> again.
+   returns the ides referenced inside <thunk>, without <signature>. *)
+withSignature(T <: Void, signature :Ide, thunk :Fun0(Void))
+{
+  let name = signature.name,
+  name.isNotNil ? {
+    env.lookup(name, fun(old :Ide) {
+      env[name] := signature,
+      let result = thunk[],
+      env[name] := old,
+      result
+    }, {
+      env[name] := signature,
+      let result = thunk[],
+      env.removeKey(name),
+      result
+    }),
+    let savedNbFree = freeIdes.size,  (* to check if <signature> was used *)
+    freeIdes.remove(signature),
+    warnUnused && { freeIdes.size == savedNbFree } ? {
+      errorLog.warning(signature.pos, "unused identifier "+signature.name)
+    }
+  } : {
+    thunk[]
+  }
+}
+
+collectFreeIdes(thunk :Fun0(Void)) :Set(Ide)
+{
+  let savedFreeIdes = freeIdes,
+  freeIdes := Set.with0,
+  thunk[],
+  let newFreeIdes = freeIdes,
+  freeIdes := savedFreeIdes,
+  freeIdes.addAll(newFreeIdes),
+  newFreeIdes
+}
+
+(* ### deprecated? *)
+withSignatures(T <: Void, signatures :List(Ide), thunk :Fun0(T)) :T
+{
+  let var unbound :List(String) = EmptyList.new,
+  let var bound :List(Ide) = EmptyList.new,
+  signatures.do(fun(i :Ide){
+    i.name.isNotNil ? {
+      env.lookup(i.name, fun(old :Ide) :Void {
+	bound := List.cons(old, bound)
+      }, {
+	unbound := List.cons(i.name, unbound)
+      }),
+      env[i.name] := i
+    }
+  }),
+  let result = thunk[],
+  unbound.do(fun(name :String) {
+    env.removeKey(name)
+  }),
+  bound.do(fun(i :Ide) {
+    env[i.name] := i
+  }),
+  result
+}
+
+(* current definition of <name>, or nil. *)
+"[]"(name :String) :Ide
+{
+  env.lookup(name, fun(ide :Ide) {
+    freeIdes.add(ide),
+    ide
+  }, {
+    nil
+  })
+}
+
+selfSig :ValueIde
+{
+  let selfSig = self["self"],
+  selfSig.isNotNil
+  ? { selfSig.asValueIde }
+  : { nil }
+}
+
+scopeList( T <: TWLProgramObject,
+	   l :List(Scopable(T))) :List(T)
+{
+  List.fromReader(l.map(fun(x :Scopable(T)){ x.scope(self) }))
+}
+
+scope( T <: TWLProgramObject,
+       x :Scopable(T)) :T
+{
+  (* tycoon.stdout.writeString("[ "),x.print, tycoon.stdout.nl, *)
+  let result = x.scope(self),
+  (* tycoon.stdout.writeString("] "),result.print, tycoon.stdout.nl, *)
+  result
+}
+
+withScopedSignature(T <: Void, signature :Ide, thunk :Fun0(Void))
+{
+  (* bind first, scope second - deals with F-bounded subtype polymorhpism *)
+  withSignature(signature, {
+    signature.type.isNotNil ? {	    (* for let bindings *)
+      signature.type := scope(signature.type)
+    },
+    thunk[]
+  })
+}
+
+withScopedSignatures(T <: Void, signatures :List(Ide), thunk :Fun0(Void))
+{
+  signatures.isEmpty ? {
+    thunk[]
+  } : {
+    withScopedSignature(signatures.head, {
+      withScopedSignatures(signatures.tail, thunk)
+    })
+  }
+}
+
+
+(* for a bit of bonus functionality, play Decorator for Dictionary <env> *)
+
+locate(e :Object) :String
+{ env.locate(e) }
+
+keys :Reader(String)
+{ env.keys }
+
+size :Int
+{ env.size }
+
+reader :Reader(Ide)
+{ env.reader }
+
+printOn(out :Output)
+{ env.printOn(out) }
+
+private
+
+env :Dictionary(String, Ide)
+
+methods
+
+_set(k :String, e :Ide) :Ide
+{
+  env[k] := e
+}
+
+_init :Self
+{ super._init,
+  env := Dictionary.new,
+  freeIdes := Set.new,
+  warnUnused := false,
+  self
+}
+;

@@ -1,0 +1,219 @@
+class DbgTracer
+super Debug
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+*)
+meta SingletonClass(DbgTracer)
+{
+
+trace(T <: Void, fn :Fun():T) :T
+{
+  flags ::=
+    Thread.TRACE_SEND | Thread.TRACE_RETURN | Thread.TRACE_EXCEPTION
+    | Thread.TRACE_INHERIT | Thread.TRACE_NONCOMPONENT
+
+  t ::= Thread.new({
+    Thread.this.name := "Opfer"
+    result :T := nil
+    protect({
+      Thread.this.traceFlags := flags
+      result := fn[]
+    }, {
+      Thread.this.traceFlags := 0
+    })
+    result
+  })
+  t.join
+}
+
+startTracer :Void
+{
+  _stopTracing := false
+  tracer := Thread.new({
+    tycoon.stdout << "Tracing started"
+    traceLoop
+  })
+}
+
+stopTracer :Void
+{
+  _stopTracing := true
+}
+
+traceLoop :Void
+{
+  if(!_stopTracing then: {
+    t ::= tycoon.tl.root.debugger.readStoppedThread
+    eventCode ::= t.debugEvent
+    event :DbgEvent := nil
+    if( eventCode = Thread.TRACE_SEND then: {
+      sendEvent ::= DbgSendEvent.new
+      selector ::= t.inspectSendSelector
+      sendEvent.replyTo := t.inspectReturnReceiver
+      sendEvent.replyToComponent := tracedSuperComponent(sendEvent.replyTo)
+      sendEvent.selector := selector
+      sendEvent.receiver := t.inspectStack(selector.arity)
+      args ::= MutableArray(:Object).new(selector.arity)
+      for(0 to: selector.arity-1 do: fun(i:Int) {
+	arg ::= t.inspectStack(selector.arity-1-i)
+        args[i] := arg
+      })
+      if(selector.sorts != 0 then: {
+        ;; make a deep copy of all component arguments,
+	;; and remember the original OIDs
+        mapping ::= IdDictionary.new
+	mapping[args] := args
+	selector.sortsSequence.keysAndElementsDo(fun(i:Int,c:Bool){
+	  if(c then: { args[i].__deepHollowCopy(mapping) })
+	})
+	orgOid @::= IdDictionary.new1(mapping.size)@
+	mapping.keysAndElementsDo(fun(org:Object, cc:Object){
+	  cc.__copyFrom(org, mapping)
+	  orgOid[cc] := org
+	})
+        sendEvent.orgOid := orgOid@
+      })
+      args.setImmutable
+      sendEvent.args := args
+      event := sendEvent
+    } else: {
+      if( eventCode = Thread.TRACE_RETURN then: {
+	returnEvent ::= DbgReturnEvent.new
+	result ::= t.inspectStack(0)
+	returnEvent.receiver := t.inspectReturnReceiver
+	returnEvent.isComponent := t.inspectReturnComponent
+	if( returnEvent.isComponent && result.isNotNil then: {
+	  ;; make a deep copy of the component result,
+	  ;; and remember the original OIDs
+	  mapping ::= IdDictionary.new
+	  result.__deepHollowCopy(mapping)
+	  orgOid @::= IdDictionary.new1(mapping.size)@
+	  mapping.keysAndElementsDo(fun(org:Object, cc:Object){
+	    cc.__copyFrom(org, mapping)
+	    orgOid[cc] := org
+	  })
+	  result := mapping[result]
+	  returnEvent.orgOid := orgOid@
+	})
+	returnEvent.result := result
+	event := returnEvent
+      } else: {
+        if( eventCode = Thread.TRACE_EXCEPTION then: {
+	  exceptionEvent ::= DbgExceptionEvent.new
+	  exceptionEvent.exception := _typeCast(t.inspectStack(0), :Exception)
+	  exceptionEvent.receiver := t.inspectReturnReceiver
+	  event := exceptionEvent
+	} else: {
+	  tycoon.stdout << "###Tracer: unknown event ("<<eventCode<<")"
+	})
+      })
+    })
+    if( event.isNotNil then: {
+      event.thread := t
+      event.sender := t.inspectActiveObject
+      event.sendingComponent := tracedSuperComponent(event.sender)
+      event.receivingComponent := tracedSuperComponent(event.receiver)
+      _msgPort.put(event)
+    })
+    t.resume
+    traceLoop
+  } else: {
+    tycoon.stdout << "\nTracing stopped.\n"
+  })
+}
+
+_stopTracing :Bool
+
+tracer :Thread(Void)
+
+;; ----------
+
+msgPort :DbgMessagePort(DbgEvent)
+{ _msgPort }
+
+;; ----------
+
+startPrinter :Void
+{
+  _stopPrinting := false
+  printer := Thread.new({
+    tycoon.stdout << "Printing started"
+    printLoop
+  })
+}
+
+stopPrinter :Void
+{
+  _stopPrinting := true
+}
+
+printLoop :Void
+{
+  if(!_stopPrinting then: {
+    event ::= _msgPort.get
+    out ::= StringBuilderOutput.new1(80)
+    out << "\nTrace: Thread="
+    event.thread.name.printOn(out)
+    out << " sender="
+    printBrief(event.sender, out)
+    out << " event: "
+    event.printOn(out)
+    ;; out << "\n"
+    tycoon.stdout << out.contents
+    printLoop
+  } else: {
+    tycoon.stdout << "Printing stopped\n"
+  })
+}
+
+_stopPrinting :Bool
+
+printer :Thread(Void)
+
+private
+
+tracedSuperComponent(o :Object) :Object
+{
+  if(o."class".superclasses.includes(Function) then: {
+    if(o.isTracedComponent then: {
+      o
+    } else: {
+      tracedSuperComponent(o.__basicAt(1))
+    })
+  } else: {
+    o ::= o  ;; make mutable
+    while({o.isNotNil && !o.isTracedComponent} do: {
+      o := o.superComponent
+    })
+    o
+  })
+}
+
+_msgPort :DbgMessagePort(DbgEvent)
+
+_init :Void
+{
+  super._init
+  _msgPort := DbgMessagePort.new
+}
+
+}
+

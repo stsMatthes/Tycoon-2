@@ -1,0 +1,137 @@
+class PosixFS
+super StandardFS
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ Unix/Posix filesystems
+
+   Author: Matthias Ernst
+   Date:   14.11.96
+*)
+meta SimpleConcreteClass(PosixFS)
+{
+pathSeparator: Char
+  (* *)
+{ ':' }
+
+pathArcSeparator: Char
+  (* *)
+{ '/' }
+
+pathExtender: Char
+  (* *)
+{ '.' }
+
+maxPathLen: Int
+  (* *)
+{ 1024 }
+
+maxArcLen: Int
+  (* MAXPATHLEN from sys/param.h *)
+{ 256 }
+
+currentPath: String
+  (* MAXNAMELEN from sys/param.h *)
+{ "." }
+
+parentPath: String
+  (* *)
+{ ".." }
+
+realPath(p: String): String
+  (* *)
+{
+  buffer ::= MutableString.new(maxPathLen+1)
+  if( tycoon.tycoonOS.directory_realpath(p, buffer, buffer.size) != 0 then: fun():String {
+    IOError.new(p, tycoon.tycoonOS).raise
+  } else: {
+    buffer.subString(0, buffer.locate('\000'))
+  })
+}
+
+canonicalizePath(path: String): String
+  (* *)
+{
+  ; truncates arcs to maxArcLen, as most Posices do
+  ; removes inner currentPath's
+  ; removes inner empty arcs
+  ;  
+
+  arcs ::= decomposeRaw(path)
+  index ::= 1
+  while({index < arcs.size} do: {
+    if( arcs[index] = "" ||  arcs[index] = currentPath  then: {
+      arcs.removeKey(index)
+      nil
+    } else: {
+      if( arcs[index].size > maxArcLen then: {
+        arcs[index] := arcs[index].subString( 0, maxArcLen)
+      })
+
+      index := index + 1
+      nil
+    })
+  })
+
+  if( arcs[0] == nil then: { arcs.removeFirst })
+  composePath(arcs)
+}
+
+chown(path :String, owner :Int, group :Int) :Void
+  (* *)
+{
+  pOwner ::= tycoon.tycoonOS.security_fromUnixID(owner)
+  pGroup ::= tycoon.tycoonOS.security_fromUnixID(group)
+  res ::= tycoon.tycoonOS.security_chown(path, pOwner, pGroup)
+  tycoon.ansiC.free(pOwner)
+  tycoon.ansiC.free(pGroup)
+  if( res != 0 then:  {
+    IOError.new(path, tycoon.tycoonOS).raise
+  })
+}
+
+private
+
+findRoot(path: String): Int
+  (* *)
+{
+  if( path.size > 0 &&  path[0] == pathArcSeparator  then: { 1 } else: { 0 })
+}
+
+isValidArc(arc: String): Bool
+  (* *)
+{
+  arc.size <= maxArcLen && 
+    arc.all(fun(char: Char) { isLegalArcChar(char) })
+  
+}
+
+isLegalArcChar(c: Char): Bool
+  (* *)
+{
+  c.asInt >= 1 &&  c.asInt <= 127  &&  c != pathArcSeparator 
+}
+
+isValidRoot(root: String): Bool
+  (* *)
+{
+  root = pathArcSeparatorString
+}
+
+}

@@ -1,0 +1,317 @@
+class IntSet
+super AbstractSet(Int)
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+*)
+meta IntSetClass
+{
+bits :Array(Int)
+  (* for "friends" *)
+{ _bits }
+
+includes(o :Object) :Bool
+  (* *)
+{
+  wordSize ::= 32
+  o."class" == Int && (
+    i ::= _typeCast(o, :Int)
+    word ::= i / wordSize
+    bits ::= _bits
+    word < bits.size && (
+      pos ::= i % wordSize
+      (bits[word] & (1 << pos)) != 0
+    )
+  )
+}
+
+clear :Void
+  (* *)
+ensure isEmpty
+{
+  _bits.fill(_bits.size, 0, 0)
+}
+
+remove(o :Object) :Int
+  (* *)
+ensure !includes(e)
+{
+  wordSize ::= 32
+  if( o."class" == Int then: {
+    i ::= _typeCast(o, :Int)
+    word ::= i / wordSize
+    _bits ::= _bits
+    if( word < _bits.size then: {
+      pos ::= i % wordSize
+      bw ::= _bits[word]
+      mask ::= (1 << pos)
+      if( (bw & mask) != 0 then: {
+        _bits[word] := bw & mask.not
+        if( _size.isNotNil then: { _size := _size - 1 })
+	i
+      } else: { nil })
+    } else: { nil })
+  } else: { nil })
+}
+
+add(o :Object) :Void
+  (* ### IntSet only allows integer elements to be added. *)
+  ensure includes(o)
+{
+  wordSize ::= 32
+  assert({ o."class" == Int })
+  i ::= _typeCast(o, :Int)
+  word ::= i / wordSize
+  needWords(word+1)
+  pos ::= i % wordSize
+  _bits ::= _bits
+  _bits[word] := _bits[word] | (1 << pos)
+  _size := nil
+}
+
+addNew(o :Object) :Void
+  (* ### IntSet only allows integer elements to be added. *)
+  require !includes(o)
+  ensure includes(o) & size = old size + 1
+{ add(o) }
+
+addAll(aCollection :Collection(Int)) :Void
+  (* Destructive union
+     ### IntSet only allows integer elements to be added. *)
+{
+  ifIntSet(aCollection,
+    fun(b :IntSet) :Void {
+      needWords(b.bits.size)
+      _bits ::= _bits
+      bBits ::= b.bits
+      for(0 to: bits.size-1 do: fun(i :Int) {
+	_bits[i] := _bits[i] | bBits[i]
+      })
+      _size := nil
+    },
+    {
+      super.addAll(aCollection)
+    }
+  )
+}
+
+removeAll(aCollection :Collection(Object)) :Void
+  (* *)
+{
+  ifIntSet(aCollection,
+    fun(b :IntSet) :Void {
+      _bits ::= _bits
+      bBits ::= b.bits
+      commonSize ::= bBits.size.min(_bits.size)
+      for(0 to: commonSize do: fun(i :Int) {
+	_bits[i] := _bits[i] & bBits[i].not
+      })
+      _size := nil
+    },
+    {
+      super.removeAll(aCollection)
+    }
+  )
+}
+
+includesAll(aCollection :Collection(Object)) :Bool
+  (* *)
+{
+  ifIntSet(aCollection,
+    fun(b :IntSet) {
+      commonSize ::= b.bits.size.min(bits.size)
+      bits ::= bits
+      bBits ::= b.bits
+      intervalAll(0, commonSize-1, fun(i :Int) {
+        bBitsI ::= bBits[i]
+	(bits[i] & bBitsI) = bBitsI
+      })
+      && ( bits.size > bBits.size
+	   ||  intervalAll(commonSize, bBits.size-1, fun(i:Int) {
+	          bBits[i] = 0
+		})  )
+    },
+    {
+      super.includesAll(aCollection)
+    }
+  )
+}
+
+includesSome(aCollection :Collection(Object)) :Bool
+  (* *)
+{
+  ifIntSet(aCollection,
+    fun(b :IntSet) {
+      bits ::= bits
+      bBits ::= b.bits
+      commonSize ::= bBits.size.min(bits.size)
+      intervalSome(0, commonSize-1, fun(i :Int) { 
+	(bits[i] & bBits[i]) != 0
+      })
+    },
+    {
+      super.includesSome(aCollection)
+    }
+  )
+}
+
+equalityHash :Int
+  (* *)
+{
+  bits.inject(0, fun(accu :Int, w :Int) { accu + w })
+}
+
+"="(x :Object) :Bool
+  (* *)
+{
+  self == x || 
+    ifIntSet(x,
+      fun(b :IntSet) {
+        bits ::= bits
+        bBits ::= b.bits
+	commonSize ::= bBits.size.min(bits.size)
+	intervalAll(0, commonSize-1, fun(i :Int) { 
+	  bits[i] = bBits[i]
+	})
+	&&  if( bBits.size > bits.size
+	     then: { intervalAll(commonSize, bBits.size-1, fun(i:Int) {
+		   bBits[i] = 0
+		 }) }
+	     else: { intervalAll(commonSize, bits.size-1, fun(i:Int) {
+		   bits[i] = 0
+		 }) }) 
+      },
+      { super."="(x) }
+    )
+  
+}
+
+reader :Reader(Int)
+  (* warning: If the set is modified while a reader is active, newly inserted elements
+   may not show up in the reader. *)
+{
+  wordSize ::= 32
+  lastBitPos ::= wordSize-1
+  word ::= (-1)
+  pos ::= lastBitPos
+  FunReader.new({
+    bits ::= bits
+    until({word >= bits.size ||
+            (bits[word] & (1 << pos)) != 0 },{
+      if( pos = lastBitPos then: {
+        pos := 0
+	word := word + 1
+      } else: {
+	pos := pos + 1
+      })
+    })
+    if( word < bits.size then: {
+      word * wordSize + pos
+    } else: {
+      nil
+    })
+  })
+}
+
+size :Int
+  (* *)
+{
+  if( _size.isNil then: {
+    computeSize
+  })
+  _size
+}
+
+copy :Self
+  (* *)
+{ c ::= shallowCopy
+  _bits := _bits.copy
+  c
+}
+
+private
+
+_size :Int
+
+_bits :IntArray
+
+ifIntSet(x :Object, T <: Void, ifSame :Fun(:IntSet):T, else :Fun():T) :T
+  (* *)
+{
+  if( x."class" == IntSet then: {
+    ifSame[_typeCast(x, :IntSet)]
+  } else: {
+    else[]
+  })
+}
+
+computeSize :Void
+  (* *)
+{
+  wordSize ::= 32
+  lastBitPos ::= wordSize-1
+  highBit ::= 1 << lastBitPos
+  _size ::= 0
+  bits ::= bits
+  for(0 to:bits.size-1 do:fun(word :Int) {
+    w ::= bits[word]
+    while({w != 0} do:{
+      if( (w & highBit) != 0 then: {
+	_size := _size + 1
+      })
+      w := w << 1
+    })
+  })
+  self._size := _size
+}
+
+needWords(n :Int) :Void
+  (* *)
+ensure _bits.size >= n
+{
+  s ::= _bits.size
+  if( s < n
+  then: { newSize ::= n.max((s*3+1)/2)
+      newBits ::= IntArray.new(newSize)
+      newBits.replace(s, 0, _bits, 0)
+      ; newBits.fill(newSize-s, s, 0), 
+      _bits := newBits })
+}
+
+intervalAll(from :Int, to :Int, pred :Fun(:Int):Bool) :Bool
+  (* *)
+{
+  i ::= from
+  while({ i <= to &&  pred[i] } do: {
+    i := i + 1
+  })
+  i > to
+}
+
+intervalSome(from :Int, to :Int, pred :Fun(:Int):Bool) :Bool
+  (* *)
+{
+  i ::= from
+  while({ i <= to &&  !pred[i] } do: {
+    i := i + 1
+  })
+  i <= to
+}
+
+}

@@ -1,0 +1,9 @@
+class StringListHeader
+super ListHeader(String)
+metaclass MimeHeaderValueImplClass(List(String))
+
+private methods
+
+elementClass :MimeHeaderValueImplClass(String) { MimeString }
+
+;

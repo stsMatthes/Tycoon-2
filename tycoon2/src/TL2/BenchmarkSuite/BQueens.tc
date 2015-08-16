@@ -1,0 +1,60 @@
+class BQueens
+super Benchmark
+metaclass SimpleConcreteClass(BQueens)
+
+private
+
+_a :MutableArray(Bool),
+_b :MutableArray(Bool),
+_c :MutableArray(Bool),
+_x :MutableArray(Int)
+
+methods
+
+_tryPut(i :Int, a :Array(Bool), b :Array(Bool), c :Array(Bool),
+        x :Array(Int)) :Bool
+{
+  let j = 0,
+  let q = false,
+  while({!q && {j != 8}}, {
+    j := j + 1,
+    q := false,
+    b[j] && {a[i + j] && {c[i - j + 7]}}
+      ? { x[i] := j,
+          b[j] := false,
+          a[i + j] := false,
+          c[i - j + 7] := false,
+	      i < 8 && {!_tryPut(i + 1, a, b, c, x)}
+	        ? { b[j] := true,
+		        a[i + j] := true,
+		        c[i - j + 7] := true
+		      }
+		    : { q := true }
+        }
+  }),
+  q
+}
+
+_setup() :Void
+{
+  for(0, _a.size - 1, fun(i :Int){_a[i] := true}),
+  for(0, _b.size - 1, fun(i :Int){_b[i] := true}),
+  for(0, _c.size - 1, fun(i :Int){_c[i] := true}),
+  for(0, _x.size - 1, fun(i :Int){_x[i] := 0})
+}
+
+_run() :Void
+{
+  _tryPut(1, _b, _a, _c, _x)  ? { "\nSolution found\n".print }
+                              : { "\nNo Solution\n".print }
+}
+
+_init() :Self
+{
+  _a := MutableArray.new(9),
+  _b := MutableArray.new(17),
+  _c := MutableArray.new(15),
+  _x := MutableArray.new(9),
+  self
+}
+;

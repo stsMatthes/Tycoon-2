@@ -1,0 +1,172 @@
+#
+# Jamfile 1.0  98/05/03  Andre Willomat
+#
+# Build Tycoon Machine
+#
+
+SubDir HOX_HOME src tm ;
+
+SubDirHdrs $(HOX_HOME)/src/tycoonOS ;
+
+
+#
+# Define all sources in a variable, header-file dependencies
+# will be detected automaticly
+#
+SRCS = rtdll.c rtstatic.c tmccall.c   tyc.c tm.c
+       tvm.c   tmthread.c tmprofile.c tsp.c ;
+
+
+#
+# Target names
+#
+makeDirName TYCOON2  : $(HOX_BIN) tycoon2 ;
+makeDirName OPCODES  : $(HOX_BIN) opcodes  ;
+makeDirName BUILTINS : $(HOX_BIN) builtins ;
+makeDirName CLASSIDS : $(HOX_BIN) classids ;
+
+
+#
+# Built TMDEBUG Test-Version or compile it into the tm lib
+#
+if $(TMDEBUG_TEST) = ON {
+
+  NOTFILE  $(TYCOON2) $(LIBPREFIX)tm2 $(LIBPREFIX)tos ;
+  ALWAYS   tmdebug$(SUFOBJ) ;
+
+  Main tmdebug : tmdebug.c ;
+
+  LinkLibraries tmdebug : $(LIBPREFIX)tm2
+                          $(LIBPREFIX)tos ;
+
+} else {
+  SRCS += tmdebug.c ;
+}
+
+
+#
+# Build dynamic library tm2:
+#  - Members are all sources in $(SRCS)
+#  - External references are found in library tos
+#  - .def file needed under NT, ignored on other systems
+#
+LibMember tm2 : $(SRCS) ;
+BuildLib tm2 : tos : libtm2.def ;
+
+
+#
+# Build Tycoon2 executable:
+# - Set up filename in variable $(TYCOON2)
+# - Use sources tycoon.c and rtstatic.c
+# - Link libraries tm2 and rts
+#
+Main $(TYCOON2) : tycoon.c rtstatic.c ;
+LinkLibraries $(TYCOON2) : $(LIBPREFIX)tm2
+                           $(LIBPREFIX)tos ;
+
+
+#
+# Build all files for a new bootstrap
+#
+
+makeDirName TABDIR       : $(HOX_HOME) src tm ;
+
+makeDirName OPCODES_TAB   : opcodes.tab ;
+makeDirName BUILTINS_TAB  : builtins.tab ;
+makeDirName STOREDESC_TAB : storeDescriptors.tab ;
+makeDirName CLASSIDS_TYC  : classids.tyc ;
+
+#
+# Rule for building a tab file:
+# - make location at $(TABDIR)
+# - depends from corresponding .h and .exe (generator)
+# - two actions, one special action for storeDescripors.tab
+#
+rule BuildTabFile {
+
+   Main $(>) : $(>:B).c ;
+
+   MakeLocate $(<) : $(TABDIR) ;
+   LOCATE on $(<) = $(TABDIR) ;
+
+   # tab depends from exe and .h definition
+   DEPENDS $(<) : $(>) ;
+   DEPENDS $(<) : $(>:B).h ;
+
+   # exe depends from C source
+   DEPENDS $(>) : $(>:B).c ;
+
+   if $(<:B) = storeDescriptors { 
+      BuildTabFile2 $(<) : $(>) ;
+   }
+   else {
+      BuildTabFile1 $(<) : $(>) ;
+   }
+}
+
+#
+# Actions for building tab files: call generator
+# Different actions, if the OS has 'pushd' 'popd', or only 'cd'
+# PUSHD, POPD an CD are defined in Jamrules
+#
+if $(UNIX) || $(NT)
+{
+  actions BuildTabFile1
+  {
+      $(PUSHD) $(TABDIR)
+      $(>) >$(<)
+      $(POPD)
+  }
+  actions BuildTabFile2
+  {
+      $(PUSHD) $(TABDIR)
+      $(>) $(CLASSIDS_TYC) $(<)
+      $(POPD)
+  }
+}
+else if $(WIN95) || $(WIN98)
+{
+  actions BuildTabFile1
+  {
+      @$(CD) $(TABDIR)
+      $(>) >$(<)
+      @$(CD) $(SUBDIR) >NUL
+  }
+  actions BuildTabFile2
+  {
+      @$(CD) $(TABDIR)
+      $(>) $(CLASSIDS_TYC) $(<)
+      @$(CD) $(SUBDIR) >NUL
+  }
+}
+
+
+rule BuildTabFiles {
+   DEPENDS $(<) : $(>) ;
+}
+
+NOTFILE Boot ;
+BuildTabFiles Boot : $(OPCODES_TAB) $(BUILTINS_TAB) $(STOREDESC_TAB) ;
+
+BuildTabFile $(OPCODES_TAB)   : $(OPCODES)$(SUFEXE) ;
+BuildTabFile $(BUILTINS_TAB)  : $(BUILTINS)$(SUFEXE) ;
+BuildTabFile $(STOREDESC_TAB) : $(CLASSIDS)$(SUFEXE) ;
+
+
+#
+# Cleanup of debug symbols for MS Visual C++
+#
+if $(HOX_COMPILER) = MSVC {
+   makeDirName DBG_TM2      : $(HOX_BIN) libtm2.pdb ;
+   makeDirName DBG_TYCOON2  : $(HOX_BIN) tycoon2.pdb ;
+   makeDirName DBG_OPCODES  : $(HOX_BIN) opcodes.pdb  ;
+   makeDirName DBG_BUILTINS : $(HOX_BIN) builtins.pdb ;
+   makeDirName DBG_CLASSIDS : $(HOX_BIN) classids.pdb ;
+
+   Clean clean : $(DBG_TM2)
+                 $(DBG_TYCOON2)
+                 $(DBG_OPCODES)
+                 $(DBG_BUILTINS)
+                 $(DBG_CLASSIDS) ;
+}
+

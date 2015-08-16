@@ -1,0 +1,155 @@
+class HttpJumpResource
+super HttpFileResource
+public methods
+
+defaultDestination :String
+{ _defaultDestination }
+
+jumpTable :KeyedContainer(String, String)
+{ _jumpTable }
+
+validate :Void
+  (*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ validate any cached information. default: do nothing *)
+{
+  _timeStamp < _file.lastModified ? {
+    tycoon.stdout.writeln("re-reading jump table "+file.path),
+    _timeStamp := _file.lastModified,
+    _jumpTable := nil,
+    _jumpTable := _readFromFile
+  }
+}
+
+get(request :HttpRequest) :HttpResponse
+{
+  jumpTable.isNotNil
+  ? {
+      (* where should we jump to?  find out which button was used to submit the form *)
+      let var destination :String = nil,
+      let var usedButton :String = nil,
+      let url = request.url,
+      formFieldsDo(url, fun(key :String, (*value*) :String) {
+	jumpTable.lookup(key, fun(newDestination :String) :Void {
+	  usedButton := key,
+	  destination := newDestination
+	}, { })
+      }),
+
+      destination.isNil
+      ? { (* if requested without suitable submit button, show jump table *)
+	  super.get(request) }
+      : { let u = URL.inContext(URL.fromString(destination), url),
+          (* if no query is given in the jump destination, use ours *)
+	  let newURL =
+	    u.query.isNotNil ? { u }
+	      : { URL.new8(u.scheme, u.host, u.port, u.isAbsolute, u.segments,
+			   u.parameters, url.query, u.fragment) },
+	  (* ### patch request? *)
+
+	  (* find the resource for this URL (usually the server/s job) *)
+	  let var root :HttpResource = self,
+	  while({root.parent.isNotNil}, {
+	    root := root.parent
+	  }),
+	  let destinationResource = root.pathLookup(request, newURL.arcs),
+
+	  (* pass on the request *)
+	  destinationResource.isNil
+	  ? { (* invalid entry in jump table *)
+	      let response = newResponse(HttpResponse.INTERNAL_SERVER_ERROR),
+	      response.withHtmlGenerator(fun(out :HtmlGenerator) {
+		out.h1({ out.writeString("Jump destination not found") }),
+		out.writeString("Jump table URL: "+request.url.asString), out.br,
+		out.writeString("Jump table file: "+file.path), out.br,
+		out.writeString("Button: "+usedButton), out.br,
+		out.writeString("Destination: "+destination), out.br,
+		out.writeString("Complete destination: "+newURL.asString), out.br
+	      }),
+	      response }
+	  : { destinationResource.process(request) } } }
+  : { (* error parsing jump table *)
+      let response = newResponse(HttpResponse.INTERNAL_SERVER_ERROR),
+      response.withHtmlGenerator(fun(out :HtmlGenerator) {
+	out.h1({ out.writeString("Error parsing jump table") })
+      }),
+      response }
+}
+
+private
+
+_timeStamp :Long,
+_defaultDestination :String,
+_jumpTable :Dictionary(String, String)
+
+methods
+
+(* ### copy & past from HtmlFormProcessor - this is NOT GOOD *)
+formFieldsDo(url :URL, proc :Fun2(String, String, Void))
+{
+  url.query.isNotNil ? {  (* ### workaround for questionable URL behaviour *)
+    let query = url.queryDecoded,
+    let var i = 0,
+    while ({i.isNotNil}, {
+      let nameStart = i,
+      i := query.locateChar1('=', i),
+      i.isNotNil
+      ? { let name = query.subString(nameStart, i - nameStart),
+	  i := i + 1,  (* skip '=' *)
+	  let valueStart = i,
+	  i := query.locateChar1('&', i),
+	  let value =
+	    i.isNotNil
+	    ? { let value = query.subString(valueStart, i - valueStart),
+		i := i + 1, (* skip '&' *)
+		value }
+	    : { query.subString(valueStart, query.size - valueStart) },
+	  proc[name, value] }
+    })
+  }
+}
+
+_init :Void
+{ super._init,
+  _timeStamp := Long.MIN_VALUE,
+  _jumpTable := nil,
+  self
+}
+
+_readFromFile :Dictionary(String, String)
+{
+  file.openRead,
+  let d = try({
+    NameValueParser.instance.parse(file) (* ### error handling *)
+  }, fun(e:Exception) {
+    e.printOn(tycoon.stdout),
+    nil
+  }),
+  file.close,
+  d
+}
+
+(*  (* currently not needed *)
+_modified :Void
+{
+  _timeStamp := Long.MIN_VALUE
+}
+*)
+;

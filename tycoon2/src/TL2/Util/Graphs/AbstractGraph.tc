@@ -1,0 +1,284 @@
+class AbstractGraph(T <: Object, N <: AbstractNode(T, N))
+super Graphs
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ a graph with labeled nodes and unlabeled arcs
+  ### progress indicators!
+ *)
+meta AbstractClass
+{
+nodes :Container(N)
+  (* a read-only Set *)
+{ _nodes }
+
+newNode(value :T) :N
+  (* edges :Set(Edge(EdgeT)) *)
+{
+  result ::= _newNode(value)
+  _nodes.add(result)
+  result
+}
+
+removeNode(n :N) :Void
+  (* *)
+{
+  predecessors(n).as(Array).do(fun(pred :N) {
+    removeEdge(pred, n)
+  })
+  successors(n).as(Array).do(fun(succ :N) {
+    removeEdge(n, succ)
+  })
+  _nodes.remove(n)
+}
+
+addEdge(from :N, to :N) :Void
+  (* *)
+deferred
+
+removeEdge(from :N, to :N) :Void
+  (* *)
+deferred
+
+successors(n :N) :Collection(N)
+  (* *)
+deferred
+
+predecessors(n :N) :Collection(N)
+  (* *)
+deferred
+
+indegree(n :N) :Int
+  (* *)
+{ predecessors(n).count(fun(:N){true})
+}
+
+outdegree(n :N) :Int
+  (* *)
+{ successors(n).count(fun(:N){true})
+}
+
+nodeIndex :Dictionary(T, N)
+  (* compute a dictionary indexing the nodes by their current value, i.e.
+       result[n.val] = n  for all n in nodes
+     All values must be unique (n1.val = v2.val => n1 == n2). *)
+{
+  d ::= Dictionary.new1(nodes.size)
+  nodes.do(fun(n :N) {
+    d[n.value] := n
+  })
+  assert({ d.size = nodes.size })
+  d
+}
+
+printOn(out :Output) :Void
+  (* *)
+{
+  nodes.do(fun(n :N) {
+    n.printOn(out)
+    out.nl
+  })
+}
+
+statistics(out :Output) :Void
+  (* *)
+{
+  out.writeln(nodes.size.printString + " nodes,")
+  out.writeln(nodes.inject(0, fun(accu :Int, n :N) :Int {
+    accu + outdegree(n)
+  }).printString + " edges")
+}
+
+topologicalSort :Array(N)
+  (* ensure:
+       result contains every node of <self> exactly once.
+       If there is a path from result[i] to result[j] in <self>, then i<j. 
+ throws CyclicGraphError iff no such Array exists, i.e. if <self> contains a cycle. *)
+{
+  visited ::= SetStack.new1(nodes.size)
+  history ::= SetStack.new1(nodes.size)
+  nodes.do(fun(n :N) {
+    _topologicalSort(n, visited, history)
+    assert({ history.isEmpty })
+  })
+  Array.fromContainer(visited)
+}
+
+stronglyConnectedComponents :Array(List(N))
+  (* *)
+{
+  progress ::= ProgressIndicator.new(
+    "Computing strongly connected components", nodes.size)
+
+  lowlink ::= Dictionary.new1(nodes.size)
+  blocks ::= GapArray.new0
+  stack ::= SetStack.new1(nodes.size)
+  nodes.do(fun(root :N) {
+    if( !lowlink.includesKey(root) then: {
+      _stronglyConnectedComponents(root, lowlink, blocks, stack, progress)
+    })
+  })
+  result ::= blocks.asArray
+  progress.finish
+  result
+}
+
+reversedGraph(N1 <: AbstractNode(T, N1),
+	      G1 <: AbstractGraph(T, N1),
+	      graphClass :AbstractGraphFactory(T, N1, G1)) :G1
+  (* returns a graph that is isomorphic to <self> with all
+   edges reversed (edge relation inverted) *)
+{
+  result ::= graphClass.new
+  node2revNode ::= Dictionary(:N, :N1).new
+  rev ::= fun(n :N) {
+    node2revNode.memoize(n, {
+      result.newNode(n.value)
+    })
+  }
+  nodes.do(fun(pred :N) {
+    revPred ::= rev[pred]
+    successors(pred).do(fun(succ :N) {
+      result.addEdge(rev[succ], revPred)
+    })
+  })
+  result
+}
+
+condensation( T1 <: Object,
+	      Node1 <: AbstractNode(T1),
+	      Graph1 <: AbstractGraph(T1, Node1),
+	      graphClass :AbstractGraphFactory(T1, Node1, Graph1), 
+	      partition :Container(Container(N)),
+	      map :Fun(:Container(N)):T1) :Graph1
+  (* create a condensation graph from g, using partition <partition>.
+   <partition> contains pairwise disjoint sets of nodes, covering
+   self.nodes.  For every block in <partition>, the newly constructed
+   graph contains one node. <map> computes the information to be
+   associated with this node.
+     In the resulting graph, there is an edge from block A to B if
+   A != B and there is an edge in g from a member of A to a member 
+   of B. *)
+{
+  progress ::=
+    ProgressIndicator.new("Computing condensation graph", 2*nodes.size)
+
+  result ::= graphClass.new
+  ; create nodes for the blocks and build a mapping member->block 
+  nodeToBlock :Dictionary(N, Node1)
+		     := Dictionary.new1(nodes.size)
+  partition.do(fun(block :Container(N)) {
+    blockNode ::= result.newNode(map[block])
+    block.do(fun(n :N) {
+      ; assert !nodeToBlock.includesKey(n), 
+      ; assert nodes.includes(n), 
+      progress.click
+      nodeToBlock[n] := blockNode
+    })
+  })
+  assert({ nodeToBlock.size == nodes.size })
+  nodes.do(fun(n :N) {
+    progress.click
+    blockNode ::= nodeToBlock[n]
+    successors(n).do(fun(n1 :N) {
+      blockNode1 ::= nodeToBlock[n1]
+      if( blockNode1 !== blockNode then: {
+        result.addEdge(blockNode, blockNode1)  ; may be a nop 
+      })
+    })
+  })
+  progress.finish
+  result
+}
+
+private
+
+_nodes :Set(N)
+
+_init :Void
+  (* *)
+{ super._init
+  _nodes := Set.new
+  self
+}
+
+_topologicalSort(n :N, visited :SetStack(N), history :SetStack(N)) :Void
+  (* *)
+{
+  if( !visited.includes(n)
+  then: { if( history.includes(n)
+      then: { ; construct an informative exception 
+          loop ::= GapArray.new(history.size)
+	  loop.add(n)
+	  r ::= history.reader
+	  e :N := r.read
+	  while({ e != n } do: {
+	    loop.add(e)
+	    e := r.read
+	  })
+	  r.close
+	  CyclicGraphError.new(self, n, loop.asArray).raise }
+      else: { history.push(n)
+	  successors(n).do(fun(n1:N) {
+	    _topologicalSort(n1, visited, history)
+	  })
+	  en ::= history.pop assert({ n == en })
+	  visited.push(n) }) })
+}
+
+_stronglyConnectedComponents
+	( node :N,
+	  lowlink :Dictionary(N, Int),
+	  blocks :GapArray(List(N)),
+	  stack :SetStack(N),
+	  progress :ProgressIndicator) :Void
+  (* *)
+require !lowlink.includesKey(node)
+  ensure lowlink.includesKey(node)
+{
+  progress.click
+  serial ::= lowlink.size
+  lowlink[node] := serial
+  stack.push(node)
+  successors(node).do(fun(k :N) {
+    if( !lowlink.includesKey(k) then: {
+      _stronglyConnectedComponents( k, lowlink, blocks, stack, progress )
+    })
+    if( stack.includes(k) then: {
+      if( lowlink[k] < lowlink[node] then: {
+	lowlink[node] := lowlink[k]
+      })
+    })
+  })
+  if( lowlink[node] = serial then: {
+    ; no way to reach an earlier (lower numbered) node, so this must
+;       be the head of a block 
+    block ::= List.new
+    while({ w ::= stack.pop
+	    block := List.cons(w, block)
+	    w != node } do:{})
+    blocks.add(block)
+  })
+}
+
+_newNode(value :T) :N
+  (* *)
+deferred
+
+}

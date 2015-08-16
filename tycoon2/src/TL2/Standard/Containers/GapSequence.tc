@@ -1,0 +1,290 @@
+class GapSequence(E <: Object, Seq <: MutableSequence(E))
+super DynSequence(E)
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+Arrayed sequence with indexed access in O(1) to every element
+and efficient insert operations,
+growing dynamically. 
+
+Author:  Andreas Gawecki
+Date:    13-Feb-1996
+Updates: (Date)	  (Name)	(Description)
+*)
+meta AbstractClass
+{
+"[]"(i :Int) :E
+  (* *)
+{
+  _elements[if( i < _gapStart then: {i} else: {i+_gapSize})]
+}
+
+"[]:="(i :Int, e :E) :E
+  (* Set the value of the element with key 'k' to 'e' *)
+  require validKey(k)
+  ensure self[k] == e 
+{
+  if( i = size then: {
+    insert(e,i)   ; ### axe: is this a good idea?
+  } else: {
+    _elements[if( i < _gapStart then: {i} else: {i+_gapSize})] := e
+  })
+}
+
+clear :Void
+  (* *)
+ensure isEmpty
+{
+  _dontLeak(_gapStart, 0)
+  _dontLeak(_elements.size - _gapEnd, _gapEnd)
+
+  _gapStart := 0
+  _gapSize := _elements.size
+}
+
+size :Int
+  (* *)
+{
+  _elements.size - _gapSize
+}
+
+insert(e :E, at :Int)  :E
+  (* insert element <e> at position <at>.
+   All elements at positions >= <at> move one position forward,
+   the receiver`s size grows by one. *)
+  require 0 <= at & at <= size
+{
+  _moveGap(at)
+  assert({ _gapStart = at })
+  if( _gapSize = 0 then: {_grow(1)})
+  _elements[_gapStart] := e
+  _gapStart := _gapStart+1
+  _gapSize := _gapSize-1
+  e
+}
+
+removeSubSequence(n :Int, at :Int) :Void
+  (* remove n elements starting at position <at>.
+   All following elements move <n> positions back,
+   the receiver`s size shrinks by <n>. *)
+  require 0 <= at && at+n <= size
+{
+  assert({ 0 <= at & at+n <= size })
+  _moveGap(at+n)
+  assert({ _gapStart = at+n })
+  _dontLeak(n,at)
+  _gapStart := _gapStart-n
+  _gapSize := _gapSize+n
+}
+
+removeKey(at :Int) :E
+  (* remove the element with key 'at'.
+     same effect as
+       e ::= self[at]
+       removeSubSequence(1, at)
+       e
+. *)
+  require validKey(at)
+{
+  assert({ at >= 0 & at < size })
+  _moveGap(at+1)
+  assert({ _gapStart = at+1 })
+  e ::= _elements[at]
+  _dontLeak(1, at)
+  _gapStart := _gapStart-1
+  _gapSize := _gapSize+1
+  e
+}
+
+insertContainer(aContainer :Container(E), at :Int) :Void
+  (* *)
+{
+  _moveGap(at)
+  assert({ _gapStart = at })
+  n ::= aContainer.size
+  if( _gapSize < n then: {_grow(n)})
+
+  i ::= at
+  aContainer.do(fun(e :E) {
+    _elements[i] := e
+    i := i + 1
+  })
+  assert({ i = at+n })
+  _gapStart := _gapStart + n
+  _gapSize := _gapSize - n
+  nil
+}
+
+insertSubSequence(seq :Sequence(E), start :Int, n :Int, at :Int) :Void
+  (* *)
+{
+  _moveGap(at)
+  assert({ _gapStart = at })
+  if( _gapSize < n then: {_grow(n)})
+  _elements.replace(n, at, seq, start)
+  _gapStart := _gapStart + n
+  _gapSize := _gapSize - n
+  nil
+}
+
+copy :Self
+  (* *)
+{
+  c ::= shallowCopy
+  ; copy our data structures to avoid aliassing 
+  ; _elements := _elements.copy, 
+; ### type checker bug 
+  _elements := _typeCast(_elements.copy, :Seq)
+  c
+}
+
+add(e :E) :Void
+  (* the following methods add elements at the end (as in Queue, not as in Stack)
+   (-> method addPosition) 
+ more efficient redefinition *)
+{ addLast(e)
+}
+
+addSubSequence(seq :Sequence(E), start :Int, n :Int) :Void
+  (* more efficient redefinition *)
+{ addLastSubSequence(seq, start, n)
+}
+
+addAll(aCollection :Collection(E)) :Void
+  (* more efficient (customized) redefinition *)
+{ aCollection.insertInto(self, size)
+}
+
+as(T <: Object,
+   containerClass :AbstractContainerGenerator(E,T)):T
+  (* *)
+{ _gapToEnd
+  containerClass.fromSubSequence(_elements, 0, size)
+}
+
+replace(n :Int, at :Int, with :Sequence(E), startingAt :Int) :Void
+  (* Replace the elements in the range at..at+(n-1)
+     with consecutive elements of 'with' in
+     the range startingAt..startingAt+(n-1).
+     'with' may denote the receiver, overlapping is handled correctly. *)
+  require n >= 0
+	  & 0 <= at
+	  & at+n <= size
+	  & 0 <= startingAt
+	  & startingAt+n <= with.size
+{ _moveGap(at+n)
+  _elements.replace(n, at, with, startingAt)
+}
+
+validKey(k:Int) :Bool
+  (* May <k> be used as a key for assignment ? *)
+{ ;; note: k = size is allowed
+  k.isNotNil && 0 <= k && k <= size
+}
+
+private
+
+_elements :Seq
+
+_gapStart :Int
+
+_gapSize :Int
+
+_init2(initialSize :Int, initialCapacity :Int) :Void
+  (* *)
+  require initialCapacity >= initialSize
+{
+  _elements := _newElements(initialCapacity)
+  _gapStart := initialSize
+  _gapSize := initialCapacity - initialSize
+  self
+}
+
+_newElements(initialCapacity :Int) :Seq
+  (* *)
+deferred
+
+_dontLeak(n :Int, at :Int) :Void
+  (* <n> elements of _elements starting at <at> have become inaccessible.
+   avoid storage leak if necessary. *)
+{
+  _elements.fill(n,at,nil)
+}
+
+_gapEnd :Int
+  (* *)
+{
+  _gapStart+_gapSize
+}
+
+_moveGap(to :Int) :Void
+  (* *)
+  require 0 <= to && to <= size
+{
+  if( _gapStart != to
+   then: { if( _gapStart < to
+	then: { delta ::= to-_gapStart
+	    _elements.replace(delta, _gapStart, _elements, _gapEnd)
+	    if( delta >= _gapSize
+	    then: { _dontLeak(_gapSize, to) }
+	    else: { _dontLeak(delta, _gapEnd) }) }
+	else: { delta ::= _gapStart-to
+	    _elements.replace(delta, to+_gapSize, _elements, to)
+	    if( delta >= _gapSize
+	    then: { _dontLeak(_gapSize, to) }
+	    else: { _dontLeak(delta, to) }) })
+      _gapStart := to })
+}
+
+_grow(minGap :Int) :Void
+  (* *)
+{
+  delta ::= _elements.size.max(5).max(minGap-_gapSize)
+  newElements ::= _newElements(_elements.size+delta)
+  newElements.replace(_gapStart,0,_elements,0)
+  newElements.replace(size-_gapStart, _gapEnd+delta, _elements, _gapEnd)
+  _elements := newElements
+  _gapSize := _gapSize+delta
+  assert({ _gapSize >= minGap })
+}
+
+_gapToEnd :Void
+  (* *)
+{ _moveGap(size) }
+
+addPosition :Int
+  (* from DynSequence *)
+{ ; always add at the end 
+  size
+  ; ; ### faster, but different semantics: 
+;     _gapStart 
+}
+
+removePosition :Int
+  (* *)
+require !isEmpty
+{ size
+  ; ; ### faster, but different semantics: 
+;    _gapStart > 0
+;    ? { _gapStart-1 }
+;    : { 0 } 
+}
+
+}

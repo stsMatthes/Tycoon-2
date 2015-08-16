@@ -1,0 +1,185 @@
+class BENopByteCodeWriter
+super BEBackEnd
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+*)
+meta SimpleConcreteClass(BENopByteCodeWriter)
+{
+newLabel :BELabel
+  (* *)
+{ assert({ false }) nil }
+
+defineLabel(l :BELabel) :Void
+  (* *)
+{ nil }
+
+send(selector :TL2Selector) :Void
+  (*  *)
+{ }
+
+sendShort(selector :TL2Selector) :Void
+  (*  *)
+{ }
+
+sendSpecial(selector :TL2Selector) :Void
+  (*  *)
+{ }
+
+sendTail(selector :TL2Selector) :Void
+  (* *)
+{ }
+
+sendSuper(selector :TL2Selector) :Void
+  (* *)
+{ }
+
+loadLiteral(literalIdx :Int) :Void
+  (* *)
+{ }
+
+loadChar(c :Char) :Void
+  (* special literals *)
+{ }
+
+loadByte(b :Int) :Void
+  (* *)
+{ }
+
+loadShort(s :Int) :Void
+  (* *)
+{ }
+
+loadSpecial(o :Object) :Void
+  (* *)
+require canLoadSpecial(o)
+{ }
+
+loadArgument(argIdx :Int) :Void
+  (* self == nb_args, last argument is 1 *)
+{ }
+
+loadLocal(localIdx :Int) :Void
+  (* 0 <= n < current stack size *)
+{ }
+
+storeLocal(localIdx :Int) :Void
+  (* 0 <= n < current stack size *)
+{ }
+
+loadGlobal(globalIdx :Int) :Void
+  (* *)
+{ }
+
+cellNew :Void
+  (* *)
+{ }
+
+cellStore :Void
+  (* *)
+{ }
+
+cellLoad :Void
+  (* *)
+{ }
+
+drop(n :Int) :Void
+  (* n times pop *)
+{ }
+
+pop :Void
+  (* *)
+{ }
+
+adjust(n :Int) :Void
+  (* let x = pop, drop(n), push(x) *)
+{ }
+
+closure(nb_globals :Int) :Void
+  (* *)
+{ }
+
+makeArray(nSlots :Int) :Void
+  (* *)
+{ }
+
+sync :Void
+  (* *)
+{ }
+
+return :Void
+  (* *)
+{ }
+
+ifTrue(dest :BELabel) :Void
+  (* *)
+{ }
+
+ifFalse(dest :BELabel) :Void
+  (* *)
+{ }
+
+jump(dest :BELabel) :Void
+  (* *)
+{ }
+
+referenceArgument(argIdx :Int) :Void
+  (* self == nb_args, last argument is 1 *)
+{ }
+
+takeFromArgument(argIdx :Int) :Void
+  (* self == nb_args, last argument is 1 *)
+{ }
+
+referenceLocal(localIdx :Int) :Void
+  (* 0 <= n < current stack size *)
+{ }
+
+takeFromLocal(localIdx :Int) :Void
+  (* 0 <= n < current stack size *)
+{ }
+
+moveToLocal(localIdx :Int) :Void
+  (* 0 <= n < current stack size *)
+{ }
+
+componentCellNew :Void
+  (* *)
+{ }
+
+cellReference :Void
+  (* *)
+{ }
+
+takeFromCell :Void
+  (* *)
+{ }
+
+moveToCell :Void
+  (* *)
+{ }
+
+componentPop :Void
+  (* *)
+{ }
+
+componentAdjust :Void
+  (* let x = pop, componentPop, push(x) *)
+{ }
+}

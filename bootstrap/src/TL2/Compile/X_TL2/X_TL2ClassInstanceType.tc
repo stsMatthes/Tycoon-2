@@ -1,0 +1,270 @@
+class X_TL2ClassInstanceType
+super X_TL2ObjectType
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+*)
+meta X_TL2ClassInstanceTypeClass
+{
+class_ :X_TL2ClassPublic
+
+accept(T <: Void, visitor :X_TL2TypeVisitor(T)) :T
+  (* *)
+{ visitor.visitClassInstanceType(self) }
+
+selfTypeSig :X_TL2TypeIde
+  (* *)
+{ class_.selfTypeSig }
+
+cpl :List(X_TL2CPLType)
+  (* ## cache *)
+{
+    super._init
+    
+    d ::= Dictionary(:String, :X_TL2CPLType).new
+
+    class_.supers.do(fun(t :X_TL2CPLType) {
+      subst ::= t.oper.apply(t.args, X_TL2EmptySubst.instance, X_TL2EmptySubst.instance, true, fun(:X_TL2Type, s :X_TL2Subst) { s })
+      oper  ::= class_.classManager.get(t.className).typeIde.type
+
+      oper.visitor
+        .ifClassInstanceType(fun(oper :X_TL2ClassInstanceType) {
+	  oper.cpl.do(fun(t :X_TL2CPLType) { addCPLType(d, t) })
+	})
+	.ifOperType(fun(oper :X_TL2OperType) {
+	  _typeCast(oper.range, :X_TL2ClassInstanceType).cpl.do(
+	    fun(t :X_TL2CPLType) {
+	      tS ::= X_TL2CPLType.new(t.ide, List.fromReader(t.args.map(fun(arg :X_TL2Type) { substituteType(arg, subst) })))
+	      addCPLType(d, tS)
+	   })
+	 })
+	.visitType(oper)
+    })
+
+    addCPLType(d,
+      X_TL2CPLType.new(
+        class_.typeIde,
+	List.fromReader(class_.domain.map(fun(t :X_TL2TypeIde) { X_TL2IdeType.new(t) }))
+      )
+    )
+
+  List.append(
+    List.with1(d[class_.name]),
+    class_.superclasses.map(fun(c :X_TL2ClassPublic) {
+      d[c.name]
+    }).as(List))
+}
+
+prettyPrint(out :Printer) :Void
+  (* *)
+{
+    out.writeAll(class_.name)
+  }
+
+lookupWithSelf(T <: Void,
+	 selector :Symbol,
+	 subst :X_TL2Subst,
+	 withPrivate :Bool,
+	 selfType :X_TL2Type,
+	 selfTypeSubst :X_TL2Subst,
+	 cont :Fun(:X_TL2Method, :X_TL2Subst):T) :T
+  (* *)
+{
+;    tycoon.stdout.writeln("lookup "+class_.name+"::"+selector), 
+    method :X_TL2Method := nil
+    
+    md ::= class_.methodDictionaries
+    while({ method.isNil &&  !md.isEmpty } do: {
+      dict ::= md.head
+      if( dict.includesKey(selector) then: {
+        method := dict[selector]
+
+	; notify typeChecker 
+	if( dict == tycoon.tl.pool.poolMethods then: {
+	  tycoon.tl.typeChecker.globalIdeReferenced(selector)
+	})
+	
+	nil
+      } else: {
+        md := md.tail
+	nil
+      })
+    })
+
+    if( method.isNil then: {
+      raiseError
+    })
+
+    if( method.isPrivate &&  !withPrivate  then: {
+      raiseError
+    })
+
+    cont[method, X_TL2CompositeSubst.new(
+		   X_TL2CompositeSubst.new(cplSubst, subst),
+		   X_TL2ConsSubst.new(class_.selfTypeSig,
+				 X_TL2SubstType.new(selfType, selfTypeSubst),
+				 X_TL2EmptySubst.instance
+				 )
+		 )]
+  }
+
+methodsWithSelfDo(subst :X_TL2Subst,
+		    withPrivate :Bool,
+		    selfType :X_TL2Type,
+		    selfTypeSubst :X_TL2Subst,
+	            callback :Fun(:X_TL2Method, :X_TL2Subst):Void) :Void
+  (* *)
+{
+    subst ::= X_TL2CompositeSubst.new(
+		   X_TL2CompositeSubst.new(cplSubst, subst),
+		   X_TL2ConsSubst.new(class_.selfTypeSig,
+				 X_TL2SubstType.new(selfType, selfTypeSubst),
+				 X_TL2EmptySubst.instance
+				 )
+		 )
+
+    seen ::= Set(:Symbol).new
+
+    class_.methodDictionaries.do(fun(dict :KeyedContainer(Symbol,X_TL2Method)) {
+      if( dict !== tycoon.tl.pool.poolMethods then: {
+	dict.keysAndElementsDo(fun(selector :Symbol, method :X_TL2Method) {
+	  if( !method.isPrivate ||  withPrivate  then: {
+	    if( !seen.includes(selector) then: {
+	      seen.add(selector)
+
+	      callback[method, subst]
+	    })
+	  })
+	})
+      })
+    })
+  }
+
+resetCPL :Void
+  (* force recompute of cplSubst *)
+{ _cplSubst := nil }
+
+cplSubst :X_TL2Subst
+  (* *)
+{
+    ; this must be done lazily, because expose must evaluate to the receiver
+;       which must happen after class.typeIde.type := X_TL2ClassInstanceType(class)
+;    
+    if( _cplSubst.isNil then: {
+      _cplSubst := cpl.inject(X_TL2EmptySubst.instance,
+		  fun(subst :X_TL2Subst, ct :X_TL2CPLType) {
+		    ct.expose(subst, false, fun(exposed :X_TL2Type, es :X_TL2Subst) {
+		      exposed.visitor.
+			ifClassInstanceType(fun(exposed :X_TL2ClassInstanceType) {
+			  X_TL2CompositeSubst.new(es, X_TL2ConsSubst.new(
+			    exposed.class_.selfTypeSig,
+			    X_TL2IdeType.new(class_.selfTypeSig),
+			    subst)
+			  )
+			}).
+		      visitType(exposed)
+		    })
+		  })
+   })
+
+   _cplSubst
+ }
+
+checkSubClassInstanceType(big :X_TL2ClassInstanceType, subst :X_TL2Subst, bigSubst :X_TL2Subst) :Void
+  (* *)
+{
+   if( subst == X_TL2EmptySubst.instance &&  bigSubst == X_TL2EmptySubst.instance  &&  class_.isSubClassOf(big.class_)  then:
+   { ; Subclassing implies Subtyping 
+}
+   else:
+   { super.checkSubClassInstanceType(big, subst, bigSubst) })
+ }
+
+checkCPL :Void
+  (* called by X_TL2TypeChecker, check the validity of the X_TL2CPL *)
+{
+   ; may indicate that superclasses have changed --- and their Self 
+   _cplSubst := nil
+   
+   ; maps from X_TL2Method selector to X_TL2Method last found
+;   
+   seen ::= Dictionary(:Symbol, :X_TL2Method).new
+
+   class_.methodDictionaries.reverseReader.do(fun(d :KeyedContainer(Symbol, X_TL2Method)) {
+     d.do(fun(m :X_TL2Method) {
+       if( seen.includesKey(m.selector) then: {   ; X_TL2Method overridden 
+         over ::= seen[m.selector]
+
+	 setError2(m.pos, over.pos, "Public method overridden by private: "+m.selector, {
+	   if( m.isPrivate && !over.isPrivate then: {
+	     raiseError
+	   })
+	 })
+	 
+	 setError2(m.pos, over.pos, "Overriding method not subtype: "+m.selector, {
+	   m.methodType.checkSubType(over.methodType, cplSubst, cplSubst)
+	 })
+       })
+
+       seen[m.selector] := m
+     })
+   })
+ }
+
+private
+
+substituteType(t :X_TL2Type, s :X_TL2Subst) :X_TL2Type
+  (* chance again to drop some ide''s --- use X_TL2Type::reduce *)
+{
+  t.reduce(s, fun(t :X_TL2Type, s :X_TL2Subst) {
+    if( s.isEmpty then: {
+      t
+    } else: {
+      X_TL2SubstType.new(t, s)
+    })
+  })
+}
+
+addCPLType(d :Dictionary(String, X_TL2CPLType), t :X_TL2CPLType) :Void
+  (*
+    It is prohibited to use the same class parameterized with different types
+    in the transitive closure of superclasses.
+    ## 'Different types' is interpreted by name not by structure
+    ##
+    ## class X super Y(Z);
+    ##
+    ## class A super T(X), T(Y(Z)); is therefore also forbidden.
+    ##
+  *)
+{
+  ;; ## check not implemented
+  ;; ## if exists, should compare d[t.ide.name] with t
+  d[t.ide.name] := t
+}
+
+_cplSubst :X_TL2Subst
+  (* holds the subst for the whole X_TL2CPL *)
+
+_init1(c :X_TL2ClassPublic) :Void
+  (* *)
+{
+    class_ := c
+  }
+
+}

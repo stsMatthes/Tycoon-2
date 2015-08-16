@@ -1,0 +1,388 @@
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ The classManager manages the system''s class graph.
+ *)
+
+class ClassManager
+super TWL
+metaclass ClassManagerClass
+(* invariant
+    (* unique key (primary index) on aClass.name *)
+     classTable.keys.all(fun(s:String) {
+       classTable[s].name = s
+     })
+   & classTable.all(fun(c:Class_) {
+       c.typeIde == signatures[c.name]
+     })
+   & (* cpl computed correctly *)   (* ### order *)
+     classTable.all(fun(c:Class_) {
+       directSuperClasses(c).all(fun(c1 :Class_) {
+	 superclasses(c).includesAll(superclasses(c1))
+       })
+     })
+   & (* graph is acyclic *)
+     classTable.all(fun(c:Class_) {
+       !superclasses(c).includes(c)
+     })
+   & (* all classes are scoped correctly *) 
+     true  (* not expressible *)
+*)
+public
+
+(* observer on "classChanged" *)
+typeChecker :TypeChecker
+
+methods
+
+set(state :ClassState, errorLog :ErrorLog)
+{
+  (* get metaclass *)
+  let meta_ = self."metaclass"(state),
+  let meta =
+    root.active
+    ? {	meta_."class" !== MetaClass  (* ### allow subclasses? *)
+	? { errorLog.error(state.metaClassDeclaration.pos,
+		"not a metaclass: "+state.metaClassDeclaration.printString),
+	    errorLog.raiseError },
+	_typeCast(meta_, :MetaClass_) }
+    : { Class_ },
+
+  let clazz =
+    _classTable.lookup(state.name, fun(clazz :Class_) {
+      let old = clazz.copy,
+      try({
+        setClassState(clazz, state, errorLog),
+        errorLog.raiseError
+      }, fun(e:Exception) {
+	 tycoon.stdout.writeln("ClassManager: Rolling back ("+e.printString+")"),
+	 setClassState(clazz, old, errorLog),
+	 tycoon.stdout.writeln("ClassManager: Rolled back"),
+	 e.raise
+      }),
+      meta_ != self."metaclass"(old)
+      ? { (* metaclass changed => new class object *)
+	  tycoon.stdout.writeln(
+		     "New class object for "+clazz.name
+		     +": old metaclass "+old.metaClassDeclaration.printString
+		     +", new "+state.metaClassDeclaration.printString),
+	  let newClass = meta.new(state, self),
+	  replaceClass(clazz, newClass),
+	  newClass }
+      : { clazz }
+    }, {
+      (* didn''t exist => create new *)
+      let newClass = meta.new(state, self),
+      doInheritanceChanged(newClass),
+      _classTable[state.name] := newClass,
+      root.registerClass(newClass),
+      newClass
+    }),
+
+  clazz.typeIde.pos := clazz.pos,
+  pool.defineClass(clazz),
+  typeChecker.isNotNil
+  ? { typeChecker.classChanged(clazz) }
+}
+
+get(name :String) :ClassPublic
+{ _get(name) }
+
+classTable :KeyedContainer(String, ClassPublic)
+{ _classTable }
+
+finalize
+{ classTable.do(fun(c:ClassPublic) {
+    c.finalize
+  })
+}
+
+superclasses(clazz :ClassPublic) :Reader(ClassPublic)
+  require classTable.includes(clazz)
+{ let clazzImpl = _classTable[clazz.name],
+  assert clazzImpl = clazz,
+  _superclasses(clazzImpl)
+}
+
+subclasses(clazz :ClassPublic) :Reader(ClassPublic)
+  require classTable.includes(clazz)
+{ let clazzImpl = _classTable[clazz.name],
+  assert clazzImpl = clazz,
+  _subclasses(clazzImpl)
+}
+
+"metaclass"(clazz :ClassState) :ClassPublic
+(*
+{ get(clazz.metaClassDeclaration.className) }
+*)
+{
+  let metaClassName = clazz.metaClassDeclaration.className,
+  root.active
+  ? { get(metaClassName) }
+  : { (* ### bootstrap hack *)
+      classTable.lookup(metaClassName,
+	fun(c:ClassPublic){ c },
+	{ (* This method should only be called if metaClassDeclaration was scoped correctly,
+	     which implies that the metaclass is known to the TypeManager, and thus to the
+	     ClassManager.
+	     So an exception here means we''re in the hacky pre-bootstrap state, and can safely
+	     return nil. *)
+	  nil }) }
+}
+
+directSuperClasses(c :ClassState) :List(ClassPublic)
+{ _directSuperClasses(c) } 
+
+
+checkConsistency
+{
+  assert
+     classTable.keys.all(fun(s:String) {
+       classTable[s].name = s
+     }),
+  assert (* cpl computed correctly *)   (* ### order *)
+     classTable.all(fun(c:ClassPublic) {
+       directSuperClasses(c).all(fun(c1 :ClassPublic) {
+	 List.fromReader(superclasses(c)).includesAll(superclasses(c1))
+       })
+     }),
+   assert (* graph is acyclic *)
+     classTable.all(fun(c:ClassPublic) {
+       !superclasses(c).includes(c)
+     })
+}
+
+(* only necessary to clean up inconsistencys *)
+recomputeAllCPLs
+{
+  let dirty = Set.fromContainer(_classTable),
+  let visited = Set.new1(dirty.size),
+
+  (* recompute CPLs in depth first order,
+     where "a deeper than b" means "a superclass of b" *)
+  dirty.do(fun(c :Class_) {
+    recurDirtyCPL(c, dirty, visited)
+  })
+}
+
+
+root :Root
+{ _root }
+
+pool :Pool
+{ _pool }
+
+(* for access from Class Class *)
+typeManager :TypeManager
+{ _typeManager }
+
+(* a pool variable has changed *)
+globalIdeChanged((*name*) :String)
+{ (* ...drastic measures... *)
+  flushAll
+}
+
+private
+
+(* state *)
+_classTable :Dictionary(String, Class_),
+_root :Root,
+_pool :Pool,
+_typeManager :TypeManager
+
+methods
+
+_get(name :String) :Class_
+{
+  (* classTable[name] *)
+  _classTable.lookup(name,
+    fun(c:Class_) { c },
+    { name.print,
+      assert false, nil })
+}
+
+_directSuperClasses(c :ClassState) :List(Class_)
+{
+  List.fromReader(c.supers.map(fun(t :CPLType){ _get(t.className) }))
+}
+
+_subclasses(clazz :Class_) :Reader(Class_)
+{
+  _classTable.select(fun(subc :Class_) {
+    _superclasses(subc).includes(clazz)
+  })
+}
+
+_superclasses(clazz :Class_) :Reader(Class_)
+{
+  let r = clazz.cpl.reader,
+  r.read,
+  r
+}
+
+(* replace all object references to <clazz> with
+   references to <newClass> (including method dicts) *)
+replaceClass(clazz :Class_, newClass :Class_)
+{
+  assert clazz.name = newClass.name,
+  newClass.id := clazz.id,
+  _classTable[newClass.name] := newClass,
+  doInheritanceChanged1(newClass, clazz),
+  root.classTable[newClass.id] := newClass
+}
+
+setClassState(clazz :Class_, newState :ClassState, errorLog :ErrorLog)
+{
+  let inheritanceIsChanged =
+    ! directSuperClasses(newState).listEqual( directSuperClasses(clazz) ),
+
+  inheritanceIsChanged
+  ? { (* check for cyclic inheritance *)
+      _directSuperClasses(newState).do(fun(c :Class_) {
+	c.cpl.includes(clazz)
+	 ? { errorLog.error(newState.pos, "cyclic inheritance"),
+	     errorLog.error(c.pos, "other class: "+c.name) }
+      }) },
+
+  !errorLog.hasErrors
+  ? { clazz.setState(newState),
+
+      inheritanceIsChanged
+      ? { doInheritanceChanged(clazz) }
+      : { doLayoutChanged(clazz) } }
+}
+
+(* only layout has changed *)
+doLayoutChanged(clazz :Class_)
+{
+  computeLayout(clazz),
+  _subclasses(clazz).do(fun(c :Class_) {
+    tycoon.stdout.writeln("recomputing layout in class "+c.name),
+    computeLayout(c)
+  })
+}
+
+(* ### optional parameters *)
+doInheritanceChanged(clazz :Class_)
+{ doInheritanceChanged1(clazz, clazz) }
+
+doInheritanceChanged1(clazz :Class_, oldClass :Class_)
+{
+  let dirty = Set.fromReader(_subclasses(oldClass)),
+  let visited = Set.new1(dirty.size),
+
+  computeCPL(clazz),
+  computeLayout(clazz),
+  (* recompute CPLs in depth first order,
+     where "a deeper than b" means "a superclass of b" *)
+  dirty.do(fun(c :Class_) {
+    recurDirtyCPL(c, dirty, visited)
+  })
+}
+
+recurDirtyCPL(c :Class_, dirty :Set(Class_), visited :Set(Class_))
+  require dirty.includes(c)
+  (* ensure <c> and all superclasses of <c> that were dirty have been visited. *)
+  (* note: we may not modify <dirty> because an iteration is in progress *)
+{
+  !visited.includes(c)
+  ? { _directSuperClasses(c).do(fun(c1 :Class_) {
+        dirty.includes(c1) 
+        ? { recurDirtyCPL(c1, dirty, visited) }
+      }),
+      tycoon.stdout.writeln("recomputing cpl & layout in class "+c.name),
+      computeCPL(c),
+      computeLayout(c),
+      visited.addNew(c) }
+}
+
+computeCPL(c :Class_)
+{
+  c.cpl.clear,
+  _directSuperClasses(c).reverseDo(fun(c1 :Class_) {
+    (* add oldest ancestor first *)
+    c.cpl.addAll(c1.cpl.reverseReader)
+  }),
+  c.cpl.addNew(c)
+}
+
+(* compute slotMap, instanceSize and methodDictionaries,
+   depending on the class precedence list *)
+computeLayout(clazz :Class_)
+{
+  (* from toolClasses.inheritanceChanged *)
+
+  let newSlotMap = GapArray.new0,
+  let allocateSlot = fun(id:Symbol) {
+    let pos = newSlotMap.locate(id),   (* ### slow? *)
+    pos.isNotNil ? { pos } : {
+      let pos = newSlotMap.size,
+      newSlotMap.add(id),
+      pos
+    }
+  },
+
+  let var dicts :List(MethodDictionaryPublic) = EmptyList.new,
+  let addDict = 
+    fun(md :MethodDictionaryPublic) {
+      dicts := List.cons(md, dicts)
+    },
+  addDict[pool.poolMethods],
+
+  (* inherited slots and methods, slots possibly at different offset *)
+  clazz.cpl.reverseReader.do(fun(c :Class_) {
+    (* ### share method dictionaries if same offset? *)
+    let dic = c.makeSlotMethods(allocateSlot),
+    !dic.isEmpty ? {
+      addDict[dic]
+    },
+    addDict[c.methodDictionary]
+  }),
+
+  (* update the runtime-relevant portion of class object
+     as atomic as possible *)
+  clazz.methodDictionaries := dicts,
+  clazz.slotMap := Array.fromSequence(newSlotMap),
+
+  (* flush method cache *)
+  flushClass(clazz)
+}
+
+flushAll
+  builtin
+
+flushClass(c :Class_)
+  builtin
+
+flushSingle(c :Class_, selector :Int)
+  builtin
+
+_init :Self
+{
+  super._init,
+  _classTable := Dictionary.new,
+  root.classes.do(fun(c :Class_) {
+    _classTable[c.name] := c,
+    c.classManager := self
+  }),
+  pool.observers.add(self),
+  self
+}
+;
+

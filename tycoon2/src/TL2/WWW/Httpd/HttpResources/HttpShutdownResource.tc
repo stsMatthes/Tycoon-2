@@ -1,0 +1,25 @@
+class HttpShutdownResource
+
+super HttpResource
+
+public
+
+httpd :Httpd
+
+methods
+
+get(request :HttpRequest) :HttpResponse
+{
+   let response = httpd.shutdown(request),
+   response.noCache,
+   response
+}
+
+ 
+private
+
+methods
+
+;
+
+

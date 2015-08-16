@@ -1,0 +1,184 @@
+class TL2MethodType
+super TL2TypeImpl, TL2ApplyMixin
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+*)
+meta TL2MethodTypeClass
+{
+selector :Symbol
+
+domain :List(TL2Ide)
+
+_keywords :Array(Symbol)
+  (* ### temp hack *)
+
+range :TL2Type
+
+keywords :Array(Symbol)
+  (* *)
+{ k ::= _keywords
+  if( k.isNotNil then: { k } else: { Array.with0 })
+}
+
+"keywords:="(k :Array(Symbol)) :Array(Symbol)
+  (* *)
+{ _keywords := k }
+
+plainDomain :Reader(TL2Ide)
+  (* plain, i.e. non-keyword parameters *)
+{
+  domain.subSequenceReader(0,domain.size - keywords.size)
+}
+
+keywordDomain :Reader(Pair(Symbol, TL2ValueIde))
+  (* *)
+{
+  domain.nthTail(domain.size - keywords.size)
+      .keysAndElementsMap(fun(i:Int, param :TL2Ide) {
+         sym ::= keywords[i]
+	 param ::= param.asValueIde
+	 assert({ param.isNotNil })
+	 Pair.new(sym, param)
+       })
+}
+
+hasPlain :Bool
+  (* *)
+{ domain.size - keywords.size > 0
+}
+
+hasKeywords :Bool
+  (* *)
+{ !keywords.isEmpty }
+
+selectorSansAt :Symbol
+{
+  if( isComponent then: {
+    ;; cut off trailing @
+    Symbol.fromSubSequence(selector, 0, selector.size-1)
+  } else: {
+    selector
+  })
+}
+
+isComponent :Bool
+{ selector.size > 0 && selector[selector.size-1] = '@' }
+
+prettyPrint(out:Printer) :Void
+  (* *)
+{
+  ;; out.writeAll("Method ")
+  out.writeString(selectorSansAt)
+  if( !domain.isEmpty then: {
+    simpleDomain ::= domain.all(fun(i:TL2Ide) {
+			     i.type.isNil || i.type.isLeaf})
+    out.write('(')
+    out.withAbsIndent(out.column, {
+      plainDomain.doBetween(fun(i :TL2Ide) {
+	i.prettyPrint(out)
+      }, {
+	out.write(',')
+	if( simpleDomain then: { out.space } else: { out.nl })
+      })
+      if( hasKeywords then: {
+	if( hasPlain then: { out.nl })
+	keywordDomain.doBetween(fun(p :Pair(Symbol, TL2ValueIde)) {
+	  out << p.first << ": "
+	  p.second.prettyPrint(out)
+	}, {
+	  out.nl
+	})
+      })
+    })
+    out.write(')')
+  })
+  if( isComponent then: {
+    out.writeAll(" @:")
+  } else: {
+    out.writeAll(" :")
+  })
+  if( range.isNil then: {
+    out.writeAll("??")
+  } else: {
+    range.prettyPrint(out)
+  })
+}
+
+children :Reader(TL2ProgramObject)
+  (* *)
+{
+    r ::= domain.map(fun(i:TL2Ide):TL2ProgramObject{i.type})
+    if( range.isNil
+     then: { r }
+     else: { Reader.cons(range, r) })
+  }
+
+scope(env :TL2Scoper) :TL2MethodType
+  (* *)
+{
+    env.withScopedSignatures(domain, {
+      if( range.isNotNil then: { range := range.scope(env) })
+    })
+    self
+  }
+
+accept(T <: Void, visitor :TL2TypeVisitor(T)) :T
+  (* visitor support
+     calls the appropriate method in visitor
+  *)
+{
+    visitor.visitMethodType(self)
+  }
+
+checkSubMethodType(big :TL2MethodType, subst :TL2Subst, bigSubst :TL2Subst) :Void
+  (* *)
+{
+    ; Sub TL2Method:
+;
+;       |- T <:: S   |- V[T/S] <: W
+;      -----------------------------
+;       |-   (S)->V  <:  (T)->W
+;
+;       Principally, the same algorithm as for Sub Oper. A nice and hopefully sound implication:
+;
+;       (T <: Void, :T) -> T    <:    (:String) -> String
+;    
+
+    if( hasKeywords ||  big.hasKeywords  then: {
+      ; ### keyword args 
+      setError2(pos, big.pos, "keyword signatures not implemented", { raiseError })
+    })
+
+    bigArgs ::= List.fromReader(big.domain.map(fun(i :TL2Ide) :TL2Argument {
+      if( i.isTypeIde
+      then: { a :TL2Argument := TL2IdeType.new(i.asTypeIde) }
+      else: { vi :TL2ValueIde := i.asValueIde
+	      a :TL2Argument :=
+	        if(vi.component
+		then: { TL2TakeFromValue.new(vi) }
+		else: { TL2IdeValue.new(vi) }) })
+    }))
+
+    applyArgs(pos, domain, bigArgs, subst, bigSubst, range, true, false, true, fun(range :TL2Type, subst :TL2Subst) {
+      range.checkSubType(big.range, subst, bigSubst)
+    })
+  }
+
+}

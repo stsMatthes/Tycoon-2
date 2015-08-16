@@ -1,0 +1,99 @@
+class TL2ClassPublic
+super TL2ClassState
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ TL2ClassPublic.tc
+   intended public interface for class objects *)
+meta AbstractClass
+{
+classManager :TL2ClassManager
+  (* The manager for this class object *)
+deferred
+
+isSubClassOf(other :TL2ClassPublic) :Bool
+  (* *)
+deferred
+
+isSuperClassOf(other :TL2ClassPublic) :Bool
+  (* *)
+deferred
+
+subclasses :Reader(TL2ClassPublic)
+  (* all subclasses, in no particular order *)
+deferred
+
+superclasses :Reader(TL2ClassPublic)
+  (* all superclasses, in cpl order *)
+deferred
+
+"metaclass" :TL2ClassPublic
+  (* *)
+deferred
+
+methodDictionaries :List(TL2MethodDictionaryPublic)
+  (* contains all method dictionaries of the classes in the cpl
+     in lookup order. May also contain shadow method 
+     dictionaries that hide slot methods with access
+     and upate methods with the right indices (due 
+     to multiple inheritance).
+     This slot is maintained by the TL2ClassManager.
+     Used by TM during method lookup. *)
+deferred
+
+slotMap :Array(TL2Slot)
+  (* all slots, including those inherited from superclasses.
+     the nth slot (as returned by __basicAt) of an instance of self 
+     is described by the nth element of slotMap. *)
+deferred
+
+disassemble(vmInterface :TL2VMInterface) :Void
+  (* *)
+deferred
+
+finalize :Void
+  (* throw away all information not needed for plain execution *)
+deferred
+
+id :Int
+  (* unique code for this class. Used to encode class information 
+     within object headers. *)
+deferred
+
+instanceSize :Int
+  (* size of instances in slots, used by the 'new' method. *)
+deferred
+
+typeIde :TL2TypeIde
+  (* *)
+deferred
+
+asType :TL2Type
+  (* either an TL2ObjectType or TL2OperType, depending on whether domain is empty *)
+deferred
+
+"pos:="(rhs:SourcePos) :SourcePos
+  (* ### only for TL2ClassLoader (fix TL2ClassLoader!) *)
+deferred
+
+"sourceTime:="(rhs:Long) :Long
+  (* *)
+deferred
+
+}

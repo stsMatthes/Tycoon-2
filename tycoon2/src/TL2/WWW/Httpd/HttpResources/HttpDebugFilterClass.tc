@@ -1,0 +1,19 @@
+class HttpDebugFilterClass
+
+super ConcreteClass(HttpDebugFilter)
+
+metaclass MetaClass
+
+public methods
+
+new(resource :HttpResource, debugResource :HttpDebugResource) :HttpDebugFilter
+  {
+  let instance = _new,
+  instance._init,
+  instance.resource := resource,
+  instance.debugResource := debugResource,
+  instance
+  }
+
+;
+

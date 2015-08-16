@@ -1,0 +1,297 @@
+class TL2CompiledMethod
+super TL2Method
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+*)
+meta TL2CompiledMethodClass
+{
+body :TL2Value
+
+  (* debug mode of the generated code.  a DEBUG_... constant. ### not implemented *)
+
+debugMode :Int
+
+  (* slots used by the machine: (sync with tvm.doc) *)
+
+compiledIn :TL2ClassPublic
+
+byteCode :ByteArray
+
+literals :Array(Object)
+
+selectorID :Int
+
+stackPeak :Int
+
+exceptionTable :ShortArray
+  (* may be nil. six short integers: fromIP..toIP -> handlerIP, sp, nativeCode (two shorts) *)
+
+acceptMethodVisitor(T <: Void, visitor :TL2MethodVisitor(T)) :T
+  (* *)
+{ visitor.visitCompiled(self) }
+
+prettyPrint(out :Printer) :Void
+  (* *)
+{
+  super.prettyPrint(out)
+  if( body.isNil
+  then: { tycoon.stdout.writeString("\n  (* finalized *)") }
+  else: { if( precondition.isNotNil
+      then: { out.withRelIndent(2, {
+	    out << "\nrequire "
+	    precondition.prettyPrint(out)
+	  }) })
+      if( postcondition.isNotNil
+      then: { out.withRelIndent(2, {
+	    out << "\nensure "
+	    postcondition.prettyPrint(out)
+	  }) })
+
+      out.writeAll("\n{")
+      out.withRelIndent(2, {
+	out.nl
+	body.prettyPrint(out)
+      })
+      out.writeAll("\n}") })
+}
+
+scopeMethod(env :TL2Scoper) :Void
+  (* *)
+{
+  saved ::= env.warnUnused
+  env.warnUnused := warnUnused
+  domain.do(fun(i:TL2Ide){ i.setImmutable })
+  env.withScopedSignatures(domain, {
+    if( range.isNotNil then: { range := range.scope(env) })  ; for Funs 
+    if( precondition.isNotNil then: {
+      precondition := precondition.scope(env)
+      if( precondition.isComponent then: {
+        env.errorLog.error(pos, "precondition result must not be a component")
+      })
+    })
+    body := wrapComponents(domain, body)
+    body := body.scope(env)
+    if( body.isComponent != methodType.isComponent then: {
+      if( methodType.isComponent then: {
+        env.errorLog.error(pos, "reference result for component returning method")
+      } else: {
+        env.errorLog.error(pos, "component result for reference returning method")
+      })
+    })
+    if( postcondition.isNotNil then: {
+      postcondition := postcondition.scope(env) ; ### scope old, result 
+      if( postcondition.isComponent then: {
+        env.errorLog.error(pos, "postcondition result must not be a component")
+      })
+    })
+  })
+  env.warnUnused := saved
+}
+
+warnUnused :Bool
+  (* *)
+{ true }
+
+compileMethod(selfSig :TL2ValueIde, compiler :TL2Compiler) :Void
+  (* *)
+{
+  super.compileMethod(selfSig, compiler)  ;; arity, sorts
+  ; optimize 
+  ; we could allocate a new optimizer, but that would be SLOW 
+  optimizer ::= compiler.optimizer
+  optimizer.optimize(body, compiler.errorLog)
+  ; ...and compile 
+  compile(Dictionary.new, selfSig, compiler)
+  ; ### to do: optional debug mode, compiling pre & postcondition 
+}
+
+DEBUG_none :Int
+  (* no debugging *)
+{ 0 }
+
+DEBUG_precondition :Int
+  (* only check precondition *)
+{ 1 }
+
+DEBUG_preAndPost :Int
+  (* check pre- and postcondition *)
+{ 3 }
+
+DEBUG_assert :Int
+  (* check assertions, pre- and postcondition *)
+{ 4 }
+
+DEBUG_all :Int
+  (* check assertions, pre- and postcondition *)
+{ 7 }
+
+compile( env :Dictionary(TL2ValueIde,BEVariable), selfSig :TL2ValueIde, compiler :TL2Compiler) :Void
+  (* *)
+{
+  bek ::= BEMethodManager.new(self, env, compiler)
+
+  extendedDomain ::=
+    if( selfSig.isNil
+     then: { domain }
+     else: { List(:TL2Ide).cons(selfSig, domain) })
+  valueArgs ::=
+      extendedDomain.sfw(
+        ; select 
+        fun(i :TL2Ide){ i.asValueIde },
+	; where 
+        fun(i :TL2Ide){ i.isValueIde })
+      .as(List)
+
+  valueArgs.do(fun(ide :TL2ValueIde) {
+    ide.setImmutable
+  })
+
+  bek.withArgumentBindings(valueArgs, {
+    body.genCodeReturn(bek)
+  })
+  bek.finished
+}
+
+disassembleOn(out :Printer, reader :BEByteCodeReader) :Void
+  (* *)
+{
+  methodType.prettyPrint(out)
+  out.withRelIndent(1, {
+    out << '\n'
+        << "Selector id = " << selectorID
+	<< " ("<<compiledIn.classManager.root.selectors[selectorID] << ")\n"
+    out << "Stack peak = " << stackPeak << '\n'
+    freeVarHook(out)
+    out.writeString( "Literals:" )
+    out.withRelIndent(1, {
+      literals.keysAndElementsDo(fun(i :Int, o :Object) {
+        out.nl
+	i.printOn(out) out.writeString(": ")
+	if( o."class" == TL2CompiledFun then: {
+	  cf ::= _typeCast(o, :TL2CompiledFun)
+	  out.withRelIndent(4, {
+	    cf.disassembleOn(out, reader)
+	  })
+	} else: {
+	  o.printOn(out)
+	})
+      })
+    })
+    if( exceptionTable.isNotNil then: {
+      out.writeln("\nException Handlers:")
+      forStep(0, exceptionTable.size - 6, 6, fun(p :Int) {
+        out.nl
+        out << exceptionTable[p] << '-' << exceptionTable[p+1] << ": "
+	    << exceptionTable[p+2] << ", sp=" << exceptionTable[p+3]
+      })
+    })
+    out.writeString("\nCode:")
+    out.withRelIndent(1, {
+      disass ::= makeDisassembler
+      reader.do(byteCode, disass)
+      disass.finished.do(fun(s:String) {
+	out.nl
+        out.writeString(s)
+      })
+    })
+  })
+  out.nl out.nl
+}
+
+makeDisassembler :BEDisassembler
+  (* *)
+{
+  dis ::= BEDisassembler.new
+  args ::=
+    MutableArray.fromReader(
+      Reader.cons("self",
+	domain.select(fun(i:TL2Ide){ i.isValueIde })
+	      .map(fun(i:TL2Ide){ i.name })))
+  args.reverse
+  dis.argumentNames := args
+  dis
+}
+
+freeVarHook( :Printer) :Void
+  (* *)
+{ }
+
+finalize :Void
+  (* *)
+{ body := nil
+  submethods.do(fun(cm :TL2CompiledMethod) {
+    cm.finalize
+  })
+}
+
+patchClass(compiledIn :TL2ClassPublic) :Void
+  (* since the class object doesn''t exist already during compilation,
+   we need an extra pass to fill the compiledIn-fields afterwards *)
+{
+  self."compiledIn:="(compiledIn)
+  submethods.do(fun(cm :TL2CompiledMethod){
+    cm.patchClass(compiledIn)
+  })
+}
+
+private
+
+wrapComponents(dom :List(TL2Ide), body :TL2Value) :TL2Value
+  (* move component arguments to local variables
+     (simplifies cleanup etc.) *)
+{
+  if( dom.isEmpty then: {
+    body
+  } else: {
+    ide ::= dom.head
+    rest ::= dom.tail
+    if( ide.isValueIde && ide.asValueIde.component then: {
+      vide ::= ide.asValueIde
+      shadow ::= TL2ValueIde.new(vide.pos, vide.name, vide.component, vide.type)
+      shadow.setImmutable
+      TL2LetValue.new(
+	vide.pos,
+        shadow,
+	TL2TakeFromValue.new(vide),
+	wrapComponents(rest, body))
+    } else: {
+      wrapComponents(rest, body)
+    })
+  })
+}
+
+
+submethods :Reader(TL2CompiledMethod)
+  (* *)
+{
+  literals.sfw(
+    ; select 
+fun(o: Object) {
+      _typeCast(o, :TL2CompiledMethod)
+    },
+    ; where 
+fun(o :Object) {
+      o."class" == TL2CompiledMethod
+      || ( o."class" == TL2CompiledFun
+         ||  o."class" == TL2BuiltinMethod )
+     })
+}
+
+}

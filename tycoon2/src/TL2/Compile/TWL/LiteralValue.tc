@@ -1,0 +1,76 @@
+class LiteralValue
+super Value, LeafMixin
+metaclass LiteralValueClass
+public
+value :Object
+
+methods
+
+prettyPrint(out :Printer)
+{
+  value.printOn(out)
+}
+
+scope(env :Scoper) :LiteralValue
+{ self }
+
+genCode(backEnd :MethodManager)
+{ backEnd.loadLiteral(value)
+}
+
+genCodeIgnore(backEnd :MethodManager)
+{ backEnd.errorLog.warning(pos, "unused constant "+value.printString) }
+
+genCodeBranch(backEnd :MethodManager, dest :MMLabel, branchIf :Bool)
+{
+  (*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ ### this is the only reason for dead code. *)
+  (value."class" == True || {value."class" == False})
+   ? { let b = _typeCast(value, :Bool),
+       b == branchIf
+        ? { backEnd.jump(dest) }
+	: { (* nop, ignore dest *) } }
+   : { backEnd.errorLog.error(pos, "conditional constant is not a boolean"),
+       super.genCodeBranch(backEnd, dest, branchIf) }
+}
+
+
+private methods
+
+  doCheck(T <: Void, cont :Fun2(Type, Subst, T)) :T
+  {
+    value == nil ? {
+      cont[NilType.instance, EmptySubst.instance]
+    } : {
+      let literalType = value."class".typeIde.type,
+
+      literalType.visitor.
+	ifClassInstanceType(fun(:ClassInstanceType) {
+	  cont[IdeType.new(value."class".typeIde), EmptySubst.instance]
+	}).
+      visitType(literalType)
+    }
+  }
+
+
+;
+
+

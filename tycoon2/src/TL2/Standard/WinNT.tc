@@ -1,0 +1,158 @@
+class WinNT
+super OS
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+My instance represents the Windows NT operating system
+
+Author:		Andre Willomat
+Date:		14-May-1996
+Derived From:	Linux.tc
+
+Updates: (Date)	  (Name)	(Description)
+*)
+meta SimpleConcreteClass(WinNT)
+{
+
+visit(T <: Void, aVisitor :OSVisitor(T)) :T
+  (* *)
+{
+  aVisitor.visitWinNT(self)
+}
+
+exec(command :String) :Int
+  (*##make tycoon.atomic()*)
+{
+  ret ::= tycoon.tycoonOS.tosProcess_system(command)
+  if( ret == (-1 )|| ret == 0 && tycoon.tycoonOS.errorCode == 2 then: {
+    OSError.new(self, tycoon.tycoonOS).raise
+  })
+  ret
+}
+
+ENOENT :Int
+  (* *)
+{ 2 }
+
+EINTR :Int
+  (* *)
+{ 4 }
+
+EIO :Int
+  (* *)
+{ 5 }
+
+EACCES :Int
+  (* *)
+{ 13 }
+
+EEXIST :Int
+  (* *)
+{ 17 }
+
+ENOTDIR :Int
+  (* *)
+{ 20 }
+
+EISDIR :Int
+  (* *)
+{ 21 }
+
+ENFILE :Int
+  (* *)
+{ 23 }
+
+EMFILE :Int
+  (* *)
+{ 24 }
+
+EFBIG :Int
+  (* *)
+{ 27 }
+
+ENOSPC :Int
+  (* *)
+{ 28 }
+
+EROFS :Int
+  (* *)
+{ 30 }
+
+EMLINK :Int
+  (* *)
+{ 31 }
+
+EDEADLK :Int
+  (* *)
+{ 36 }
+
+ENOLCK :Int
+  (* *)
+{ 39 }
+
+ENAMETOOLONG :Int
+  (* *)
+{ 38 }
+
+ENOTEMPTY :Int
+  (* *)
+{ 41 }
+
+;
+; Following codes are not supported as errno values
+; under Win 32. See WSA error codes (Winsocket) for
+; more details.
+;
+EBADFD :Int
+  (* not supported *)
+{ nil }
+
+ELOOP :Int
+  (* not supported *)
+{ nil }
+
+ENOTSUP :Int
+  (* not supported *)
+{ nil }
+
+EDQUOT :Int
+  (* not supported *)
+{ nil }
+
+
+SOCK_STREAM :Int
+  (* *)
+{ 1 }
+
+SOCK_DGRAM :Int
+  (* *)
+{ 2 }
+
+SOCK_RAW :Int
+  (* *)
+{ 3 }
+
+private
+
+getFS: FS
+  (* allocate my filesystem object *)
+{ WinFS.new }
+
+}

@@ -1,0 +1,107 @@
+class TL2MethodVisitor(T <: Void)
+super TL2
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+*)
+meta AbstractClass
+{
+visitExternal	   (m :TL2ExternalMethod)      :T
+  (* methods with source representation *)
+{ visitDefault(m) }
+
+visitDeferred	   (m :TL2DeferredMethod)      :T
+  (* *)
+{ visitDefault(m) }
+
+visitBuiltin	   (m :TL2BuiltinMethod)       :T
+  (* *)
+{ visitCompiled(m) }
+
+visitCompiled	   (m :TL2CompiledMethod)      :T
+  (* *)
+{ visitDefault(m) }
+
+visitUnimplemented (m :TL2UnimplementedMethod) :T
+  (* ### deprecated *)
+{ visitDefault(m) }
+
+visitSlot	   (m :TL2SlotMethod)	       :T
+  (* slot methods *)
+{ visitDefault(m) }
+
+visitSlotAccess	   (m :TL2SlotAccessMethod)    :T
+  (* *)
+{ visitSlot(m) }
+
+visitSlotUpdate	   (m :TL2SlotUpdateMethod)    :T
+  (* *)
+{ visitSlot(m) }
+
+visitCSlotAccess   (m :TL2CSlotAccessMethod)   :T
+  (* *)
+{ visitSlot(m) }
+
+visitCSlotUpdate   (m :TL2CSlotUpdateMethod)   :T
+  (* *)
+{ visitSlot(m) }
+
+visitSlotReference(m :TL2SlotReferenceMethod) :T
+  (* *)
+{ visitSlot(m) }
+
+visitSlotMoveTo(m :TL2SlotMoveToMethod) :T
+  (* *)
+{ visitSlot(m) }
+
+visitSlotTakeFrom(m :TL2SlotTakeFromMethod) :T
+  (* *)
+{ visitSlot(m) }
+
+visitCSlotReference(m :TL2CSlotReferenceMethod) :T
+  (* *)
+{ visitSlot(m) }
+
+visitCSlotMoveTo(m :TL2CSlotMoveToMethod) :T
+  (* *)
+{ visitSlot(m) }
+
+visitCSlotTakeFrom(m :TL2CSlotTakeFromMethod) :T
+  (* *)
+{ visitSlot(m) }
+
+visitPool	   (m :TL2PoolMethod)	       :T
+  (* pool methods *)
+{ visitDefault(m) }
+
+visitPoolAccess	   (m :TL2PoolAccessMethod)    :T
+  (* *)
+{ visitPool(m) }
+
+visitPoolUpdate	   (m :TL2PoolUpdateMethod)    :T
+  (* *)
+{ visitPool(m) }
+
+visitDefault( :TL2Method) :T
+  (* *)
+{ ; unhandled case 
+  assert({ false })
+}
+
+}

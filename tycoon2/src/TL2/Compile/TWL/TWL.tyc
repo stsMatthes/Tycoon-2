@@ -1,0 +1,363 @@
+class TWL
+super Compile
+metaclass AbstractClass
+;
+
+
+(* forward decls in no particular order *)
+
+class AndValue metaclass AbstractClass;
+class ApplyType metaclass AbstractClass;
+class ApplyMixin metaclass AbstractClass;
+class AssertValue metaclass AbstractClass;
+class AssignValue metaclass AbstractClass;
+class Bindings metaclass AbstractClass;
+class BlockValue metaclass AbstractClass;
+class BuiltinDescriptor metaclass AbstractClass;
+class BuiltinMethod metaclass AbstractClass;
+class ByteCodeReader metaclass AbstractClass;
+class ByteCodeWriter metaclass AbstractClass;
+class CPLType metaclass AbstractClass;
+class CPL metaclass AbstractClass;
+class CSlotAccessMethod metaclass AbstractClass;
+class CSlotUpdateMethod metaclass AbstractClass;
+class ClassBuilder metaclass AbstractClass;
+class ClassInstanceType metaclass AbstractClass;
+class ClassLoader metaclass AbstractClass;
+class ClassManager metaclass AbstractClass;
+class ClassPublic metaclass AbstractClass;
+class ClassState metaclass AbstractClass;
+class Class_ metaclass AbstractClass;
+class CompiledCodeWriter metaclass AbstractClass;
+class CompiledFun metaclass AbstractClass;
+class CompiledMethod metaclass AbstractClass;
+class Compiler metaclass AbstractClass;
+class CompositeSubst metaclass AbstractClass;
+class ConsSubst metaclass AbstractClass;
+class DeferredMethod metaclass AbstractClass;
+class Disassembler metaclass AbstractClass;
+class ExternalMethod metaclass AbstractClass;
+class Ide metaclass AbstractClass;
+class IdeType metaclass AbstractClass;
+class IdeValue metaclass AbstractClass;
+class IfValue metaclass AbstractClass;
+class Label metaclass AbstractClass;
+class LabelRef metaclass AbstractClass;
+class LetValue metaclass AbstractClass;
+class LiteralValue metaclass AbstractClass;
+class MMLabel metaclass AbstractClass;
+class MetaClass_ metaclass AbstractClass;
+class MethodDictionary metaclass AbstractClass;
+class MethodDictionaryPublic metaclass AbstractClass;
+class MethodLookupError metaclass AbstractClass;
+class MethodManager metaclass AbstractClass;
+class MethodType metaclass AbstractClass;
+class Method metaclass AbstractClass;
+class MutableClassState metaclass AbstractClass;
+class NotValue metaclass AbstractClass;
+class NilType metaclass AbstractClass;
+class ObjectType metaclass AbstractClass;
+class OpcodeDescriptor metaclass AbstractClass;
+class OperType metaclass AbstractClass;
+class OrValue metaclass AbstractClass;
+class Pool metaclass AbstractClass;
+class PoolAccessMethod metaclass AbstractClass;
+class PoolUpdateMethod metaclass AbstractClass;
+class RTStack metaclass AbstractClass;
+class ReentrantTWLScanner metaclass AbstractClass;
+class Root metaclass AbstractClass;
+class Scoper metaclass AbstractClass;
+class Scopable(R <: Object) metaclass AbstractClass;
+class Selector metaclass AbstractClass;
+class Selector metaclass AbstractClass;
+class SendValue metaclass AbstractClass;
+class SlotAccessMethod metaclass AbstractClass;
+class SlotUpdateMethod metaclass AbstractClass;
+class SubTypeIde metaclass AbstractClass;
+class SubTypeDB metaclass AbstractClass;
+class SubTypeRelation metaclass AbstractClass;
+class Subst metaclass AbstractClass;
+class SubstType metaclass AbstractClass;
+class SuperSendValue metaclass AbstractClass;
+class TL metaclass AbstractClass;
+class TWLGram metaclass AbstractClass;
+class TWLPUBindings metaclass AbstractClass;
+class TWLPUClass metaclass AbstractClass;
+class TWLPUDefine metaclass AbstractClass;
+class TWLPUDo metaclass AbstractClass;
+class TWLProgramObject metaclass AbstractClass;
+class TWLScanner metaclass AbstractClass;
+class TWLScannerState metaclass AbstractClass;
+class TWLTerminals metaclass AbstractClass;
+class TopLevel metaclass AbstractClass;
+class TryValue metaclass AbstractClass;
+class TspDescriptor metaclass AbstractClass;
+class Type metaclass AbstractClass;
+class TypeCheckError metaclass AbstractClass;
+class TypeCheckMixin metaclass AbstractClass;
+class TypeCheckTypeError metaclass AbstractClass;
+class TypeCheckAbort metaclass AbstractClass;
+class TypeChecker metaclass AbstractClass;
+class TypeCheckTrace metaclass AbstractClass;
+class TypeTrace metaclass AbstractClass;
+class SubTypeTrace metaclass AbstractClass;
+class ValueTrace metaclass AbstractClass;
+class SimpleTrace metaclass AbstractClass;
+class TypeImpl metaclass AbstractClass;
+class TypeIde metaclass AbstractClass;
+class TypeManager metaclass AbstractClass;
+class TypeVisitor metaclass AbstractClass;
+class FunTypeVisitor metaclass AbstractClass;
+class UnificationDB metaclass AbstractClass;
+class UnifyType metaclass AbstractClass;
+class UnimplementedMethod metaclass AbstractClass;
+class VMInterface metaclass AbstractClass;
+class Value metaclass AbstractClass;
+class ValueIde metaclass AbstractClass;
+class Variable metaclass AbstractClass;
+class VoidType metaclass AbstractClass;
+class WhileValue metaclass AbstractClass;
+
+DO load "../TWL/Compile/TWL/MNO.tc";
+
+DO load "../TWL/Compile/TWL/TWLScannerStateClass.tc";
+DO load "../TWL/Compile/TWL/TWLScannerState.tc";
+DO load "../TWL/Compile/TWL/TWLScanner.tc";
+DO load "../TWL/Compile/TWL/ReentrantTWLScannerClass.tc";
+DO load "../TWL/Compile/TWL/ReentrantTWLScanner.tc";
+
+DO load "../TWL/Compile/TWL/TWLTerminals.tc";
+
+(* DO load "../TWL/Compile/TWL/Transaction.tc"; *)
+
+(******************************* AST stuff *******************************)
+
+
+DO load "../TWL/Compile/TWL/MethodLookupErrorClass.tc";
+DO load "../TWL/Compile/TWL/MethodLookupError.tc";
+
+DO load "../TWL/Compile/TWL/ScoperClass.tc";
+DO load "../TWL/Compile/TWL/Scoper.tc";
+DO load "../TWL/Compile/TWL/Scopable.tc";
+DO load "../TWL/Compile/TWL/LeafMixin.tc";
+
+DO load "../TWL/Compile/TWL/Subst.tc";
+DO load "../TWL/Compile/TWL/EmptySubst.tc";
+
+DO load "../TWL/Compile/TWL/TypeCheckMixin.tc";
+
+DO load "../TWL/Compile/TWL/TWLProgramObject.tc";
+DO load "../TWL/Compile/TWL/Ide.tc";
+DO load "../TWL/Compile/TWL/ValueIdeClass.tc";
+DO load "../TWL/Compile/TWL/ValueIde.tc";
+DO load "../TWL/Compile/TWL/TypeIdeClass.tc";
+DO load "../TWL/Compile/TWL/TypeIde.tc";
+DO load "../TWL/Compile/TWL/SubTypeIdeClass.tc";
+DO load "../TWL/Compile/TWL/SubTypeIde.tc";
+DO load "../TWL/Compile/TWL/Value.tc";
+DO load "../TWL/Compile/TWL/LiteralValueClass.tc";
+DO load "../TWL/Compile/TWL/LiteralValue.tc";
+DO load "../TWL/Compile/TWL/IdeValueClass.tc";
+DO load "../TWL/Compile/TWL/IdeValue.tc";
+DO load "../TWL/Compile/TWL/LetValueClass.tc";
+DO load "../TWL/Compile/TWL/LetValue.tc";
+DO load "../TWL/Compile/TWL/TryValueClass.tc";
+DO load "../TWL/Compile/TWL/TryValue.tc";
+DO load "../TWL/Compile/TWL/BlockValueClass.tc";
+DO load "../TWL/Compile/TWL/BlockValue.tc";
+DO load "../TWL/Compile/TWL/SendValueClass.tc";
+DO load "../TWL/Compile/TWL/SendValue.tc";
+DO load "../TWL/Compile/TWL/SuperSendValueClass.tc";
+DO load "../TWL/Compile/TWL/SuperSendValue.tc";
+DO load "../TWL/Compile/TWL/AssignValueClass.tc";
+DO load "../TWL/Compile/TWL/AssignValue.tc";
+DO load "../TWL/Compile/TWL/AssertValueClass.tc";
+DO load "../TWL/Compile/TWL/AssertValue.tc";
+DO load "../TWL/Compile/TWL/WhileValueClass.tc";
+DO load "../TWL/Compile/TWL/WhileValue.tc";
+DO load "../TWL/Compile/TWL/IfValueClass.tc";
+DO load "../TWL/Compile/TWL/IfValue.tc";
+DO load "../TWL/Compile/TWL/NotValueClass.tc";
+DO load "../TWL/Compile/TWL/NotValue.tc";
+DO load "../TWL/Compile/TWL/Bool2Value.tc";
+DO load "../TWL/Compile/TWL/AndValueClass.tc";
+DO load "../TWL/Compile/TWL/AndValue.tc";
+DO load "../TWL/Compile/TWL/OrValueClass.tc";
+DO load "../TWL/Compile/TWL/OrValue.tc";
+
+
+
+DO load "../TWL/Compile/TWL/BuiltinDescriptorClass.tc";
+DO load "../TWL/Compile/TWL/BuiltinDescriptor.tc";
+DO load "../TWL/Compile/TWL/OpcodeDescriptorClass.tc";
+DO load "../TWL/Compile/TWL/OpcodeDescriptor.tc";
+
+DO load "../TWL/Compile/TWL/TypeVisitor.tc";
+DO load "../TWL/Compile/TWL/FunTypeVisitor.tc";
+
+DO load "../TWL/Compile/TWL/Type.tc";
+DO load "../TWL/Compile/TWL/TypeImpl.tc";
+DO load "../TWL/Compile/TWL/NilType.tc";
+DO load "../TWL/Compile/TWL/IdeTypeClass.tc";
+DO load "../TWL/Compile/TWL/IdeType.tc";
+DO load "../TWL/Compile/TWL/ApplyTypeClass.tc";
+DO load "../TWL/Compile/TWL/ApplyType.tc";
+
+DO load "../TWL/Compile/TWL/CPLTypeClass.tc";
+DO load "../TWL/Compile/TWL/CPLType.tc";
+DO load "../TWL/Compile/TWL/SubstTypeClass.tc";
+DO load "../TWL/Compile/TWL/SubstType.tc";
+DO load "../TWL/Compile/TWL/UnifyTypeClass.tc";
+DO load "../TWL/Compile/TWL/UnifyType.tc";
+DO load "../TWL/Compile/TWL/MethodTypeClass.tc";
+DO load "../TWL/Compile/TWL/MethodType.tc";
+DO load "../TWL/Compile/TWL/ObjectType.tc";
+
+DO load "../TWL/Compile/TWL/ApplyMixin.tc";
+DO load "../TWL/Compile/TWL/ClassInstanceTypeClass.tc";
+DO load "../TWL/Compile/TWL/ClassInstanceType.tc";
+DO load "../TWL/Compile/TWL/VoidType.tc";
+DO load "../TWL/Compile/TWL/OperTypeClass.tc";
+DO load "../TWL/Compile/TWL/OperType.tc";
+DO load "../TWL/Compile/TWL/ConsSubstClass.tc";
+DO load "../TWL/Compile/TWL/ConsSubst.tc";
+DO load "../TWL/Compile/TWL/CompositeSubstClass.tc";
+DO load "../TWL/Compile/TWL/CompositeSubst.tc";
+
+DO load "../TWL/Compile/TWL/CPLClass.tc";
+DO load "../TWL/Compile/TWL/CPL.tc";
+DO load "../TWL/Compile/TWL/SubTypeRelationClass.tc";
+DO load "../TWL/Compile/TWL/SubTypeRelation.tc";
+DO load "../TWL/Compile/TWL/SubTypeDBClass.tc";
+DO load "../TWL/Compile/TWL/SubTypeDB.tc";
+DO load "../TWL/Compile/TWL/UnificationDB.tc";
+
+DO load "../TWL/Compile/TWL/TypeCheckError.tc";
+DO load "../TWL/Compile/TWL/TypeCheckTypeErrorClass.tc";
+DO load "../TWL/Compile/TWL/TypeCheckTypeError.tc";
+DO load "../TWL/Compile/TWL/TypeCheckAbort.tc";
+
+DO load "../TWL/Compile/TWL/TypeCheckTraceClass.tc";
+DO load "../TWL/Compile/TWL/TypeCheckTrace.tc";
+DO load "../TWL/Compile/TWL/TypeTraceClass.tc";
+DO load "../TWL/Compile/TWL/TypeTrace.tc";
+DO load "../TWL/Compile/TWL/SubTypeTraceClass.tc";
+DO load "../TWL/Compile/TWL/SubTypeTrace.tc";
+DO load "../TWL/Compile/TWL/ValueTraceClass.tc";
+DO load "../TWL/Compile/TWL/ValueTrace.tc";
+DO load "../TWL/Compile/TWL/SimpleTraceClass.tc";
+DO load "../TWL/Compile/TWL/SimpleTrace.tc";
+
+
+DO load "../TWL/Compile/TWL/Method.tc";
+DO load "../TWL/Compile/TWL/CompiledMethodClass.tc";
+DO load "../TWL/Compile/TWL/CompiledMethod.tc";
+DO load "../TWL/Compile/TWL/CompiledFunClass.tc";
+DO load "../TWL/Compile/TWL/CompiledFun.tc";
+DO load "../TWL/Compile/TWL/DeferredMethodClass.tc";
+DO load "../TWL/Compile/TWL/DeferredMethod.tc";
+DO load "../TWL/Compile/TWL/ExternalMethodClass.tc";
+DO load "../TWL/Compile/TWL/ExternalMethod.tc";
+DO load "../TWL/Compile/TWL/UnimplementedMethodClass.tc";
+DO load "../TWL/Compile/TWL/UnimplementedMethod.tc";
+DO load "../TWL/Compile/TWL/BuiltinMethodClass.tc";
+DO load "../TWL/Compile/TWL/BuiltinMethod.tc";
+DO load "../TWL/Compile/TWL/SlotMethod.tc";
+DO load "../TWL/Compile/TWL/SlotAccessMethodClass.tc";
+DO load "../TWL/Compile/TWL/SlotAccessMethod.tc";
+DO load "../TWL/Compile/TWL/SlotUpdateMethodClass.tc";
+DO load "../TWL/Compile/TWL/SlotUpdateMethod.tc";
+DO load "../TWL/Compile/TWL/CSlotMethod.tc";
+DO load "../TWL/Compile/TWL/CSlotAccessMethodClass.tc";
+DO load "../TWL/Compile/TWL/CSlotAccessMethod.tc";
+DO load "../TWL/Compile/TWL/CSlotUpdateMethodClass.tc";
+DO load "../TWL/Compile/TWL/CSlotUpdateMethod.tc";
+DO load "../TWL/Compile/TWL/PoolMethod.tc";
+DO load "../TWL/Compile/TWL/PoolAccessMethodClass.tc";
+DO load "../TWL/Compile/TWL/PoolAccessMethod.tc";
+DO load "../TWL/Compile/TWL/PoolUpdateMethodClass.tc";
+DO load "../TWL/Compile/TWL/PoolUpdateMethod.tc";
+DO load "../TWL/Compile/TWL/MethodDictionaryClass.tc";
+DO load "../TWL/Compile/TWL/MethodDictionary.tc";
+DO load "../TWL/Compile/TWL/MethodDictionaryPublic.tc";
+
+DO load "../TWL/Compile/TWL/ClassState.tc";
+DO load "../TWL/Compile/TWL/ClassPublic.tc";
+DO load "../TWL/Compile/TWL/MutableClassState.tc";
+DO load "../TWL/Compile/TWL/Class.tc";
+DO load "../TWL/Compile/TWL/MetaClass.tc";
+
+DO load "../TWL/Compile/TWL/ClassBuilderClass.tc";
+DO load "../TWL/Compile/TWL/ClassBuilder.tc";
+
+(* ------------------------------------------------------------ *)
+(* actual grammar *)
+
+DO load "../TWL/Compile/TWL/TWLParseUnitVisitor.tc";
+DO load "../TWL/Compile/TWL/TWLParseUnit.tc";
+DO load "../TWL/Compile/TWL/TWLPUClassClass.tc";
+DO load "../TWL/Compile/TWL/TWLPUClass.tc";
+DO load "../TWL/Compile/TWL/TWLPUBindingsClass.tc";
+DO load "../TWL/Compile/TWL/TWLPUBindings.tc";
+DO load "../TWL/Compile/TWL/TWLPUDefineClass.tc";
+DO load "../TWL/Compile/TWL/TWLPUDefine.tc";
+DO load "../TWL/Compile/TWL/TWLPUDoClass.tc";
+DO load "../TWL/Compile/TWL/TWLPUDo.tc";
+
+DO load "../TWL/Compile/TWL/TWLGramClass.tc";
+DO load "../TWL/Compile/TWL/TWLGram.tc";
+
+(* ------------------------------------------------------------ *)
+(* Backend *)
+
+DO load "../TWL/Compile/TWL/BackEnd/BackEnd.tyc";
+
+(* Store / Tracer *)
+DO load "../TWL/SystemTracer/SystemTracer.tyc";
+
+(* ------------------------------------------------------------ *)
+(* system *)
+
+DO load "../TWL/Compile/TWL/SelectorClass.tc";
+DO load "../TWL/Compile/TWL/Selector.tc";
+
+DO load "../TWL/Compile/TWL/ClassManagerClass.tc";
+DO load "../TWL/Compile/TWL/ClassManager.tc";
+DO load "../TWL/Compile/TWL/TypeCheckerClass.tc";
+DO load "../TWL/Compile/TWL/TypeChecker.tc";
+DO load "../TWL/Compile/TWL/TypeManagerClass.tc";
+DO load "../TWL/Compile/TWL/TypeManager.tc";
+
+DO load "../TWL/Compile/TWL/RTStackClass.tc";
+DO load "../TWL/Compile/TWL/RTStack.tc";
+DO load "../TWL/Compile/TWL/RootClass.tc";
+DO load "../TWL/Compile/TWL/Root.tc";
+DO load "../TWL/Compile/TWL/VMInterfaceClass.tc";
+DO load "../TWL/Compile/TWL/VMInterface.tc";
+
+
+(* glue *)
+DO load "../TWL/Compile/TWL/CompilerClass.tc";
+DO load "../TWL/Compile/TWL/Compiler.tc";
+
+DO load "../TWL/Compile/TWL/TopLevelClass.tc";
+DO load "../TWL/Compile/TWL/TopLevel.tc";
+
+DO load "../TWL/Compile/TWL/ClassLoaderClass.tc";
+DO load "../TWL/Compile/TWL/ClassLoader.tc";
+
+DO load "../TWL/Compile/TWL/Pool.tc";
+
+DO load "../TWL/Compile/TWL/TLClass.tc";
+DO load "../TWL/Compile/TWL/TL.tc";
+
+(* DO check; *)
+
+NilType.init;
+EmptySubst.init;
+VoidType.init;
+SubTypeRelation.init;
+
+(* for the rest of the story, take a look at bootstrap.tyc. *)
+
+

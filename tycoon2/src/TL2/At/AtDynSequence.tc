@@ -1,0 +1,139 @@
+class AtDynSequence(E <: Object)
+super AtMutableSequence(E), AtAddMixin(E), AtGiveByKeyMixin(Int, E)
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+Component Sequences whose domain can change
+i.e. elements can be inserted and removed dynamically
+
+### omitted complicated double dispatch stuff
+
+Author:  Axel Wienberg
+Date:    12-Oct-1998
+Original: DynSequence
+*)
+meta AbstractClass
+{
+
+clear :Void
+  (* normative implementation *)
+  ensure isEmpty
+{ removeSubSequence1(size) }
+
+removeSubSequence(n :Int, at :Int) :Void
+  (* remove n elements starting at position <at>.
+     All following elements move <n> positions back,
+     the receiver`s size shrinks by <n>. 
+     n ::= 0 *)
+  require 0 <= at && at+n <= size
+deferred
+
+removeSubSequence1(n :Int) :Void
+  (* normative implementation *)
+{
+  removeSubSequence(n, 0)
+}
+
+giveByKey(at :Int) @:E
+  (* Give the component element stored at position <at>.  All
+     following elements move one position back, the size of the
+     receiver shrinks by one. *)
+  require validKey(k)
+{
+  e @::= self[at]@    ;; assume validKey implies includesKey
+  removeSubSequence(1, at)
+  e@
+}
+
+giveLast @:E
+  (* normative implementation *)
+{
+  giveByKey(size-1)@
+}
+
+giveFirst @:E
+  (* aka pop
+     aka dequeue 
+ normative implementation *)
+{
+  giveByKey(0)@
+}
+
+insert(e @:E, at :Int) :Void
+  (* insert element <e> at position <at>.
+   All elements at positions >= <at> move one position forward,
+   the receiver`s size grows by one. *)
+  require 0 <= at & at <= size
+  deferred
+
+insertAll(source :AtReader(E), at :Int) :Void
+  (* insert all components coming out of <source> into self,
+     starting at position <at>.
+     Maintain the order of components in self. *)
+  require 0 <= at & at <= size
+{
+  i ::= at
+  source.do(fun(e @:E) {
+    insert(e@,i)
+    i := i + 1
+  })
+}
+
+addLast(e @:E) :Void
+  (* aka enqueue *)
+{
+  insert(e@, size)
+}
+
+addLastAll(source :AtReader(E)) :Void
+  (* normative implementation *)
+{
+  insertAll(source, size)
+}
+
+addFirst(e @:E) :Void
+  (* aka push *)
+{
+  insert(e@, 0)
+}
+
+addFirstAll(source :AtReader(E)) :Void
+  (* *)
+{
+  insertAll(source, 0)
+}
+
+add(e @:E) :Void
+  (* add and remove elements anywhere you like *)
+ ensure includes(old e)
+	&& occurrencesOf(old e) = old occurrencesOf(e) + 1
+{ insert(e@, addPosition) }
+
+addAll(source :AtReader(E)) :Void
+  (* *)
+{ insertAll(source, addPosition) }
+
+private
+
+addPosition :Int
+  (* where to add elements with unspecified position (beginning or end) *)
+deferred
+
+}

@@ -1,0 +1,33 @@
+(* installation of the store descriptors must be done
+   before the classes are registered or loaded for the first time
+   (no way to change this later) *)
+
+let d = fun(name :String, format :String) {
+  tycoon.tl.classManager.declareStructClass(name, format)
+},
+d["TL2Selector"           , "oii"],
+d["TL2Method"             , "ooooooiiii"],
+d["TL2CompiledMethod"     , "ooooooiiiioioooiio"],
+d["TL2BuiltinMethod"      , "ooooooiiiioioooiioii"],
+d["TL2ExternalMethod"     , "ooooooiiiiooooii"],
+d["TL2PoolMethod"         , "ooooooiiiio"],
+d["TL2PoolAccessMethod"   , "ooooooiiiio"],
+d["TL2PoolUpdateMethod"   , "ooooooiiiio"],
+d["TL2SlotMethod"         , "ooooooiiiioi"],
+d["TL2SlotAccessMethod"   , "ooooooiiiioi"],
+d["TL2SlotUpdateMethod"   , "ooooooiiiioi"],
+d["TL2CSlotMethod"        , "ooooooiiiioiC"],
+d["TL2CSlotAccessMethod"  , "ooooooiiiioiC"],
+d["TL2CSlotUpdateMethod"  , "ooooooiiiioiC"],
+d["TL2SlotReferenceMethod", "ooooooiiiioi"],
+d["TL2SlotTakeFromMethod" , "ooooooiiiioi"],
+d["TL2SlotMoveToMethod"   , "ooooooiiiioi"],
+d["TL2CSlotReferenceMethod","ooooooiiiioiC"],
+d["TL2CSlotTakeFromMethod", "ooooooiiiioiC"],
+d["TL2CSlotMoveToMethod"  , "ooooooiiiioiC"],
+d["TL2CompiledFun"        , "ooooooiiiioioooiiooi"],
+d["TL2DeferredMethod"     , "ooooooiiii"],
+d["TL2UnimplementedMethod", "ooooooiiii"],
+d["TL2Slot"               , "ooooiio"],
+d["TL2Root"               , "ooooooooiiooio"],
+true;

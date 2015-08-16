@@ -1,0 +1,44 @@
+class URLConnection
+super WWW
+metaclass AbstractClass
+public methods
+openRead :Input
+  deferred
+
+writeTo(content :String)
+  deferred
+
+delete
+  deferred
+
+basicAuthorization(:String, :String)
+  deferred
+  
+private
+url :URL
+
+methods
+ipAddressFromHost :IPAddress
+{
+  url.host.isNil ? {
+    IPAddress.localHost
+  } : {
+    IPAddress.byName(url.host)
+  }
+}
+  
+_init1(u :URL) :Self
+{
+  _init,
+  url := u,
+  self
+}
+
+_init3(url :URL, user :String, passwd :String) :Self
+{
+  _init1(url),
+  basicAuthorization(user, passwd),
+  self
+}
+
+;

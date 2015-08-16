@@ -1,0 +1,57 @@
+DO load "../TWL/Sgml/Sgml.tc";
+	
+class SgmlPos metaclass AbstractClass;
+class SgmlOutput metaclass AbstractClass;
+class SgmlContentType metaclass AbstractClass;
+(*;
+class SgmlContext(S <: SgmlContext(S)) metaclass AbstractClass;
+class SgmlState metaclass AbstractClass;
+*);
+class SgmlComposer(T<:Object) metaclass AbstractClass;
+class AbstractSgmlElement(T<:Object) metaclass AbstractClass;
+class AbstractSgmlTreeBuilder(T<:Object) metaclass AbstractClass;
+
+
+DO load "../TWL/Sgml/SgmlPosClass.tc";
+DO load "../TWL/Sgml/SgmlPos.tc";
+DO load "../TWL/Sgml/SgmlOutput.tc";
+(*
+DO load "../TWL/Sgml/SgmlContext.tc";
+DO load "../TWL/Sgml/SgmlState.tc";
+*)
+DO load "../TWL/Sgml/SgmlContentTypeClass.tc";
+DO load "../TWL/Sgml/SgmlContentType.tc";
+
+(* ------------------------------------------------------------ *)
+(* scanner for Sgmls output *)
+
+class SgmlsParserError metaclass AbstractClass;
+
+DO load "../TWL/Sgml/SgmlsParserErrorClass.tc";
+DO load "../TWL/Sgml/SgmlsParserError.tc";
+DO load "../TWL/Sgml/SgmlsParser.tc";
+
+(* ------------------------------------------------------------ *)
+(* AbstractSgmlTreeBuilder: a generic SgmlOutput for building trees *)
+
+DO load "../TWL/Sgml/SgmlComposerClass.tc";
+DO load "../TWL/Sgml/SgmlComposer.tc";
+DO load "../TWL/Sgml/AbstractSgmlElement.tc";
+DO load "../TWL/Sgml/AbstractSgmlTreeBuilder.tc";
+
+SgmlContentType.init;
+
+class SgmlEntityOutput metaclass AbstractClass;
+DO load "../TWL/Sgml/SgmlEntityOutputClass.tc";
+DO load "../TWL/Sgml/SgmlEntityOutput.tc";
+class SgmlGenerator metaclass AbstractClass;
+DO load "../TWL/Sgml/SgmlGeneratorClass.tc";
+DO load "../TWL/Sgml/SgmlGenerator.tc";
+
+(* example application in TWL/Sgml/Tree *)
+
+(*
+
+
+
+*)

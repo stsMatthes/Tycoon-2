@@ -1,0 +1,122 @@
+class OperType 
+  super TypeImpl, ApplyMixin
+  metaclass OperTypeClass
+
+public
+
+  domain :List(TypeIde), 
+  range :Type
+
+methods
+
+  visit(T <: Void, visitor :TypeVisitor(T)) :T { visitor.visitOperType(self) }
+  
+
+  (*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ applies self to args,
+     and calls cont with the result
+  *)
+  apply(T <: Void, args :List(Type), subst :Subst, argsSubst :Subst, exact :Bool, cont :Fun2(Type, Subst, T)) :T
+  {
+    (* domain.forAll(!inSubst) *)
+    applyArgs(pos, domain, args, subst, argsSubst, range, false, false, false, cont)
+  }
+
+  checkApplication(args :List(Type), subst :Subst)
+  {
+    applyArgs(pos, domain, args, subst, subst, range, true, true, false, fun(:Type, :Subst) {})
+  }
+
+  lookupWithSelf(T <: Void,
+	         selector :Symbol,
+	         subst :Subst,
+		 withPrivate :Bool,
+		 selfType :Type,
+		 selfTypeSubst :Subst,
+	         cont: Fun2(Method, Subst, T)) :T
+  {
+    raiseError
+  }
+
+  methodsDoWithSelf(subst :Subst,
+		    withPrivate :Bool,
+		    selfType :Type,
+		    selfTypeSubst :Subst,
+		    callback: Fun2(Method, Subst, Void))
+  {
+    raiseError
+  }
+
+  (* subtype tests: inherits
+     checkSubIdeType
+     checkSubUnifyType
+     checkSubMethodType
+  *)
+
+  (* oper is no subtype of parameterless object types *)
+  checkSubObjectType(big :ObjectType, subst :Subst, bigSubst :Subst) { raiseSubTypeError(self, big) }
+
+  checkSubNilType(big :NilType, subst :Subst, bigSubst :Subst)    { raiseSubTypeError(self, big) }
+  
+  checkSubApplyType(big :ApplyType, subst :Subst, bigSubst :Subst)   {
+    big.expose(bigSubst, true, fun(big :Type, bigSubst :Subst) { checkSubType(big, subst, bigSubst) })
+  }
+
+  (* sub oper
+     A = ForAll(B <: C).D
+     E = ForAll(F <: G).H
+
+     F <: G |- A(F) type   F <: G |- D[F / B] <: H
+    -----------------------------------------------
+                    |- A <: E
+
+  *)
+  checkSubOperType(big :OperType, subst :Subst, bigSubst :Subst)
+  {
+    let bigArgs = List.fromReader(big.domain.map(fun(i :TypeIde) {
+      IdeType.new(i)
+    })),
+
+    applyArgs(pos, domain, bigArgs, subst, bigSubst, range, true, false, true, fun(range :Type, subst :Subst) {
+      range.checkSubType(big.range, subst, bigSubst)
+    })
+  }
+
+
+  prettyPrint(out :Printer)
+  {
+    out.writeAll("(\\-/"),
+    domain.doBetween(fun(i :TypeIde) { i.prettyPrint(out) }, { out.writeAll(", ") }),
+    out.writeAll("."),
+    range.prettyPrint(out),
+    out.writeAll(")")
+  }
+
+private methods
+
+  doExpose(T <: Void, subst :Subst, exact :Bool, cont :Fun2(Type, Subst, T)) :T
+  {
+    cont[self, subst]
+  }
+  
+
+
+  ;

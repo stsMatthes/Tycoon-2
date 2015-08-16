@@ -1,0 +1,4 @@
+class TaskRec
+super Object
+metaclass AbstractClass
+;

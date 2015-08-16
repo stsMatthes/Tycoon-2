@@ -1,0 +1,11 @@
+class X_ThreadDescriptor
+super X_StructDescriptor
+metaclass SingletonClass(X_ThreadDescriptor)
+public methods
+
+format :String
+{ "ioiiiiiioooooooooooo" }
+
+layout :Int
+{ layoutThread }
+;

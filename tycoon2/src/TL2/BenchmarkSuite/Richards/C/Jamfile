@@ -1,0 +1,47 @@
+#
+# Jamfile 1.0  99/01/27  Andre Willomat
+#
+# Jamfile for building executables for the Richards Benchmark.
+# Sample for how to use Jamfiles and how to bind to TycoonOS
+# from external tools.
+#
+
+
+#
+# We resides in the context of the tycoon2 Jamfiles
+# because we need TycoonOS
+#
+SubDir HOX_HOME src TL2 BenchmarkSuite Richards C ;
+SubDirHdrs $(HOX_HOME)/src/tycoonOS ;
+
+
+#
+# Use C-flags for C++, korrekt linker usage (jam problem)
+#
+C++FLAGS += $(HOX_CC_FLAGS) ;
+LINK      = $(C++) ;
+
+
+#
+# Build Main
+#
+Main richards : richards.cpp tasks.cpp types.cpp ;
+
+
+#
+# Link TycoonOS
+#
+LinkLibraries richards : $(HOX_LIB)/$(LIBPREFIX)tos ;
+
+
+#
+# Cleanup of debug symbols for MS Visual C++
+#
+if $(HOX_COMPILER) = MSVC {
+   makeDirName DBG_RICH : $(HOX_HOME) src TL2 BenchmarkSuite Richards C richards.pdb ;
+   makeDirName DBG_VC50 : $(HOX_HOME) src TL2 BenchmarkSuite Richards C vc50.pdb ;
+   makeDirName DBG_VC60 : $(HOX_HOME) src TL2 BenchmarkSuite Richards C vc60.pdb ;
+
+   Clean clean : $(DBG_RICH) $(DBG_VC50) $(DBG_VC60) ;
+}
+

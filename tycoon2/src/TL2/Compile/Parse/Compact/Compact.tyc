@@ -1,0 +1,17 @@
+class Compact
+super Parse
+metaclass AbstractClass
+;
+
+class CompactParser metaclass AbstractClass;
+
+DO load "../TWL/Compile/Parse/Compact/CompactAction.tc";
+
+class ReentrantCompactParser metaclass AbstractClass;
+DO load "../TWL/Compile/Parse/Compact/ReentrantCompactParserClass.tc";
+DO load "../TWL/Compile/Parse/Compact/ReentrantCompactParser.tc";
+
+DO load "../TWL/Compile/Parse/Compact/CompactParserClass.tc";
+DO load "../TWL/Compile/Parse/Compact/CompactParser.tc";
+
+DO load "../TWL/Compile/Parse/Compact/CompactParserBuilder.tc";

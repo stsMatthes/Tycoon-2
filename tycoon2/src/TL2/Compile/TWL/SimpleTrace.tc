@@ -1,0 +1,22 @@
+class SimpleTrace
+  super TypeCheckTrace
+
+public methods
+
+  msg :String { _msg }
+
+  shouldPrint :Bool { true }
+
+private
+
+  _msg :String
+
+methods
+
+  _init2(pos :Collection(SourcePos), msg :String)
+  {
+    _msg := msg,
+    super._init1(pos)
+  }
+
+;

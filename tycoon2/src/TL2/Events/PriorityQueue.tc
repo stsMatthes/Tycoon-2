@@ -1,0 +1,94 @@
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ 
+Author:  Axel Wienberg, Gerd Bremer
+Date:    09-Oct-1997
+Updates: (Date)	  (Name)	(Description)
+*)
+
+(* just a hack -- should be half a dynsequence: removeXXX  *)
+
+class PriorityQueue(E <: Ordered(E))
+super Events, Sequence(E)
+metaclass SimpleConcreteClass(PriorityQueue(E))
+
+public methods
+
+"[]"(i :Int) :E
+
+  require i.isNotNil
+(* ------------------------------------------------------------ *)  
+  { _elements[i] }
+
+  
+size :Int
+(* ------------------------------------------------------------ *)  
+  { _elements.size }
+
+  
+add(e :E) :Void
+
+  require e.isNotNil
+(* binary insert of 'e' into '_elements' *)
+(* N.Wirth, Algorithmen und Datenstrukturen, 2. Auflage, Seite 95 *)
+(* -------------------------------------------------------------- *)  
+  { 
+    let var l = 0,
+    let var r = _elements.size-1,
+    while({ l <= r },
+      {
+        (* all _elements with index < l are less than e,
+           all _elements with index > r are greater or equal e *)
+        let m = (l + r) / 2,
+        e < _elements[m] ? { r := m - 1 } : { l := m + 1 } 
+      }),
+    _elements.insert(e, l)
+  }
+
+
+removeFirst :E
+
+  require _elements.size > 0
+(* ------------------------------------------------------------ *)  
+  { _elements.removeFirst }
+
+
+remove(e :E) :Void
+
+  require e.isNotNil
+(* ------------------------------------------------------------ *)
+  { _elements.remove(e) }
+  
+    
+private
+
+_elements: Queue(E)
+
+methods
+
+_init :Self
+(* ------------------------------------------------------------ *)  
+  {
+    super._init,
+    _elements := Queue.new,
+    self
+  }
+  
+;

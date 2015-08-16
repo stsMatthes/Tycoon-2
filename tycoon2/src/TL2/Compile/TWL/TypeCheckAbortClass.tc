@@ -1,0 +1,14 @@
+class TypeCheckAbortClass
+  super ConcreteClass(TypeCheckAbort)
+  metaclass MetaClass
+
+public methods
+
+  new :TypeCheckAbort
+  {
+    let instance = _new,
+    instance._init,
+    instance
+  }
+
+;

@@ -1,0 +1,168 @@
+class TL2Compiler
+super TL2
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ selectors, active *)
+meta TL2CompilerClass
+{
+errorLog :ErrorLog
+
+  (* ### the error log should be specific to each activation of the compiler!
+       no guarantee what happens when doing multiple compilations in parallel now. 
+ target machine *)
+
+vmInterface :TL2VMInterface
+
+optimizer :TL2Optimizer
+
+typeChecker :TL2TypeChecker
+
+simpleEval(self_ :Object, inClass :TL2ClassPublic, expression :TL2Value, errorLog :ErrorLog) :Object
+  (* *)
+{
+  selfTypeSig ::= inClass.selfTypeSig
+  selfSig ::= TL2ValueIde.new(selfTypeSig.pos, "self", false, selfTypeSig.type)
+  environment ::= Dictionary(:TL2ValueIde,:Object).new
+  environment[selfSig] := self_
+
+  eval(environment, inClass, expression, errorLog)
+}
+
+eval( environment :Dictionary(TL2ValueIde, Object),
+      inClass :TL2ClassPublic,
+      expression :TL2Value,
+      errorLog :ErrorLog) :Object
+  (* *)
+{
+  evalChecked(environment, inClass, expression, errorLog, false)
+}
+
+evalChecked( environment :Dictionary(TL2ValueIde, Object),
+             inClass :TL2ClassPublic,
+             expression :TL2Value,
+             errorLog :ErrorLog,
+	     checked :Bool) :Object
+  (* *)
+{
+  ; create a closure for <expression>,
+;     compile it and execute it. 
+  f ::= TL2CompiledFun.new(
+    expression.pos,
+    #"[]",		  ; selector (no component result!)
+    EmptyList.new,        ; domain 
+    TL2VoidType.instance, ; range, ### should be Object 
+    expression)           ; body 
+
+  selfTypeSig ::= inClass.selfTypeSig
+
+  env ::= TL2Scoper.new(selfTypeSig, errorLog, inClass.classManager.typeManager)
+
+  env.withSignatures(inClass.domain, {
+    env.withSignature(selfTypeSig, {
+      env.withSignatures( List.fromReader(environment.keys), {
+	f1 ::= f.scope(env)
+	assert({ f1 == f })
+      })
+    })
+  })
+
+  if( checked &&  !errorLog.hasErrors  then: {
+    try({
+      typeChecker.checkValue(expression)
+    } else: fun(e :Exception) {
+      errorLog.error(expression.pos, e.printString)
+    })
+  })
+    
+  if( !errorLog.hasErrors
+  then: { globalVars ::= Dictionary.new
+      closure ::= newClosure(environment.size+1)
+      idx ::= 1
+      environment.keysAndElementsDo(fun(i :TL2ValueIde, o :Object) {
+        if( i.celled
+	then: { assert({ o."class" == Cell }) }
+	else: { i.setImmutable })
+        globalVars[i] := BEGlobalVar.new(i, idx)
+	closure.__basicAtPut(idx, o)
+	idx := idx + 1
+      })
+
+      ; we could allocate a new optimizer, but that would be SLOW 
+      optimizer.optimize(f, errorLog)
+
+      self.errorLog := errorLog
+      f.compile(globalVars, nil, self)
+      f.patchClass(inClass)
+      closure.__basicAtPut(0, f)
+
+      if( !errorLog.hasErrors
+      then: { if( root.active
+	  then: { closure[] }
+	  else: { closure }) }
+      else: { nil }) }
+  else: { nil })
+}
+
+getSelectorId(selector :TL2Selector) :Int
+  (* for the MethodManagers *)
+{ selectorIndex.memoize(selector, {
+    root.newSelectorId(selector)
+  })
+}
+
+private
+
+root :TL2Root
+
+selectorIndex :Dictionary(TL2Selector, Int)
+
+newClosure(n :Int) :Fun():Object
+  (* *)
+{
+  if( root.active
+  then: { ; ### should use a builtin _newClosure 
+      assert({ n <= 3 })
+      f1 ::= n
+      f2 ::= n+1
+      f3 ::= n+2
+      result ::= fun():Object{ f1 * f2 * f3 }
+      assert({ result.__basicSize >= n })
+      result }
+  else: { _typeCast(MutableArray(:Object).new(n), :Fun():Object) })
+}
+
+makeSelectorIndex :Void
+  (* *)
+{
+  selectorIndex := Dictionary.new
+  root.selectors.keysAndElementsDo(fun(id :Int, s :TL2Selector) {
+    selectorIndex[s] := id
+  })
+}
+
+_init :Void
+  (* *)
+{ super._init
+  makeSelectorIndex
+  optimizer := TL2Optimizer.new(nil)
+  self
+}
+
+}

@@ -1,0 +1,87 @@
+class GapSequenceClass(E <:Object, Seq <: GapSequence(E,MutableSequence(E)))
+super DynSequenceGeneratorMixin(E, Seq), ConcreteClass(Seq)
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+Metaclass for subclasses of GapSequence
+	 
+Author:  Andreas Gawecki
+Date:    22-Feb-1996
+Updates: (Date)	  (Name)	(Description)
+	 9-May-96 Axel Wienberg subclass of AbstractSequenceClass now
+				allow specification of initialSize as well
+				as initialCapacity
+*)
+meta MetaClass
+{
+new0 :Seq
+  (* various combinations of optional arguments for new2:
+     new0: no args
+     new (traditional):  capacity
+     new1: size
+     new2: size and capacity
+
+ ### "new0" should be "new" *)
+{
+  _new2(0,0)
+}
+
+new1(initialSize :Int) :Seq
+  (* ensure result.size = size *)
+{
+  _new2(initialSize, initialSize)
+}
+
+new(initialCapacity :Int) :Seq
+  (* ensure result.size = 0 *)
+{
+  _new2(initialCapacity, 0)
+}
+
+new2(initialSize :Int, initialCapacity :Int) :Seq
+  require initialCapacity >= initialSize
+  ensure result.size = initialSize
+{
+  _new2(initialCapacity, initialSize)
+}
+
+fromReverseReader(reader :Reader(E)) :Seq
+  (* result will contain exactly the elements delivered by reader,
+     with the element delivered earlier at the higher index. *)
+{
+  ;; addFirst is rather slow
+  instance ::= fromReader(reader)
+  instance.reverse
+  instance
+}
+
+private
+
+_new2(initialCapacity :Int, initialSize :Int) :Seq
+  (* create a new instance with initial capacity <initialCapacity> and
+     initial size <initialSize>. *)
+  require initialCapacity >= initialSize
+  ensure result.size = initialSize
+{
+  instance ::= _new
+  instance._init2(initialSize, initialCapacity)
+  instance
+}
+}

@@ -1,0 +1,106 @@
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+A simple and incomplete implementation of a
+Simple Mail Transfer Protocol (Smtp) client
+with formated text messages
+
+The Smtp protocol is specified in RFC 821
+The format of text messages are specified in RFC 822
+
+Author:  Gerd Bremer
+Date:    30-Sep-1997
+Updates: (Date)	  (Name)	(Description)
+
+*)
+
+class SmtpMessage
+super MimeMessage
+metaclass SmtpMessageClass
+
+public
+
+methods
+
+parser :MimeMessageParser(Self) { SmtpMessageParser.new }
+
+fromString :String { "From" }
+hasFrom :Bool { hasHeader(fromString) }
+from :String { headerValue(fromString) }
+"from:="(from :String) { setHeaderValue(fromString, MimeString, from) }
+
+toString :String { "To" }
+hasTo :Bool { hasHeader(toString) }
+to :String { headerValue(toString) }
+"to:="(to :String) { setHeaderValue(toString, MimeString, to) }
+
+subjectString :String { "Subject" }
+hasSubject :Bool { hasHeader(subjectString) }
+subject :String { headerValue(subjectString) }
+"subject:="(subject :String) { setHeaderValue(subjectString, MimeString, subject) }
+
+messageIdString :String { "Message-Id" }
+hasMessageId :Bool { hasHeader(messageIdString) }
+messageId :String { headerValue(messageIdString) }
+"messageId:="(messageId :String) { setHeaderValue(messageIdString, MimeString, messageId) }
+
+ccString :String { "Cc" }
+hasCC :Bool { hasHeader(ccString) }
+cc :String { headerValue(ccString) }
+"cc:="(cc :String) { setHeaderValue(ccString, MimeString, cc) }
+
+bccString :String { "Bcc" }
+hasBCC :Bool { hasHeader(bccString) }
+bcc :String { headerValue(bccString) }
+"bcc:="(bcc :String) { setHeaderValue(bccString, MimeString, bcc) }
+
+
+send(server :IPAddress, verbose :Bool) :Void
+
+  require server.isNotNil &
+    verbose.isNotNil
+(* ------------------------------------------------------------ *)    
+  {
+    let client = SmtpClient.new(server, verbose),
+    let sendfrom = from,
+    let recipient = to,
+    sendfrom.isNotNil & recipient.isNotNil & sendfrom.size < 256 &
+      recipient.size < 256 ?
+      {        
+        client.open,
+	client.sender(sendfrom),
+	client.recipient(recipient),
+	client.data,
+	let out = StringBuilderOutput.new,
+	emit(out),	
+	client.body(out.contents),
+	client.close
+      } :
+      { (* ## raise error *) }
+  }
+	
+
+
+private
+
+methods
+
+;
+

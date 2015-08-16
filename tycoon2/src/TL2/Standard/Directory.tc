@@ -1,0 +1,132 @@
+class Directory
+super KeyedContainer(String, DirectoryContents), DirectoryContents
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+
+Author:  Hubertus Koehler
+Date:    22-Aug-1996
+Updates: (Date)	     (Name)	     (Description)
+	 13-Jan-1997 ag              inheritance changed from Container to KeyedContainer
+			             (many new methods)
+         03-Mar-99   Andre Willomat  new tycoonOS
+*)
+meta DirectoryClass()
+
+{
+size :Int
+  (* *)
+{
+  rd ::= keys keys.inject(0, fun(accu :Int, k :String) {accu+1})
+}
+
+case(T <:Void,
+     ifDirectory :Fun(:Directory):T,
+     ifFile :Fun(:File):T) :T
+  (* *)
+{ ifDirectory[self] }
+
+visit(T <:Object, visitor :DirectoryContentsVisitor(T)) :T
+  (* *)
+{ visitor.visitDirectory(self) }
+
+"[]"(name :String) :DirectoryContents
+  (* Return the directory or file with the given name.
+     Raise KeyNotFoundError if no such object exists. *)
+{
+  DirectoryContents.new2(path, name)
+}
+
+keys :DirectoryKeysReader
+  (* answer a reader of the keys of the receiver.
+     the returned reader should be explicitely closed (by
+     DiretoryKeysReader::close) when no longer used
+  *)
+{
+  DirectoryKeysReader.new(path)
+  }
+
+reader :DirectoryReader
+  (* answer a reader of the elements of the receiver.
+     the returned reader should be explicitely closed (by
+     DiretoryReader::close) when no longer used
+  *)
+{
+  DirectoryReader.new(path, keys)
+}
+
+mkDir :Int
+  (* *)
+{
+  tycoon.atomic({
+    if( tycoon.tycoonOS.directory_create(_path) = 0
+      then: { 0 }
+      else: { IOError.new(self, tycoon.tycoonOS).raise })
+  })
+}
+
+copyRecursively(to :String, copyFiles :Bool) :Void
+  (* *)
+{
+  toDir ::= Directory.new(to)
+  if( !toDir.exists then: { toDir.mkDir })
+  do(
+    fun(dirContents :DirectoryContents) {
+      dirContents.case(
+        fun(d :Directory) {
+	  d.copyRecursively(tycoon.os.fs.composePath(Array.with2(to, d.name)), copyFiles)
+	},
+	fun(f :File) {
+	  if( copyFiles then: {
+	    f.copyContents(tycoon.os.fs.composePath(Array.with2(to, f.name)))
+	  })
+	})
+    })
+}
+
+remove :Void
+  (* *)
+{
+  tycoon.atomic({
+    if( tycoon.tycoonOS.directory_remove(_path) < 0 then: {
+      IOError.new(self, tycoon.tycoonOS).raise })
+  })
+}
+
+removeRecursively :Void
+  (* Attention!!!: use with care, because a whole directory tree is removed recursively *)
+{
+  do(
+    fun(dirContents :DirectoryContents)
+      {
+      dirContents.case(
+        fun(dir :Directory) { dir.removeRecursively },
+	fun(file :File) { file.remove })
+      })
+  remove
+  }
+
+printOn(out :Output) :Void
+  (* *)
+{ out.writeString("Directory(" + _path.printString + ")") }
+
+private
+
+}

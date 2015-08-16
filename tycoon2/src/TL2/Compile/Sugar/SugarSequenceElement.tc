@@ -1,0 +1,10 @@
+class SugarSequenceElement
+super Sugar
+metaclass AbstractClass
+public methods
+
+sequenceElementCase(T <: Void,
+  ifBinding :Fun1(SugarBinding, T),
+  ifValue   :Fun1(SugarValue, T)) :T
+ deferred
+;

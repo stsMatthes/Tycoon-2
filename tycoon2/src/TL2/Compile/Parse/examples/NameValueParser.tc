@@ -1,0 +1,206 @@
+class NameValueParser
+super Object
+metaclass SingletonClass(NameValueParser)
+
+public methods
+
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ parse <in> as a sequence of name = value pairs.
+   Each non-empty line in <in> must consist of a name, an equal sign and another name,
+   with optional whitespace inbetween or at the beginning or end of the line.
+   name may consist of alphanumeric characters plus any of _!#$%&*+-/:;<>?@^`|~
+   or may use the standard Tycoon string syntax including escapes.
+   to do: comments *)
+(* On lexical errors, raises an Exception;
+   on grammatical errors, returns nil. (###) *)
+parse(input :Input) :Dictionary(String, String)
+{
+  let scanner = Scanner.new(scannerTables, input),
+  parser.parse(scanner,
+    fun(offendingToken :Token(Object)) {
+      tycoon.stdout.writeln("NameValueParser: Parse error on "+offendingToken.printString),  (* ### *)
+      nil
+    })
+}
+
+hackScannerTables :ScannerTables(Token(Object), Scanner(Token(Object)))
+{ scannerTables }
+
+private
+
+escapes :Dictionary(Char,Char),
+
+scannerTables :ScannerTables(Token(Object), Scanner(Token(Object))),
+parser :AbstractParser(Dictionary(String,String)),
+
+equalT :SimpleTerminal,
+newlineT :SimpleTerminal,
+stringT :ValueTerminal(String)
+
+methods
+
+_init :Self
+{ super._init,
+  createTerminals,
+  buildScannerTables,
+  buildParser,
+  self
+}
+
+createTerminals
+{
+  equalT := SimpleTerminal.new("="),
+  newlineT := SimpleTerminal.new("newline"),
+  stringT := ValueTerminal.new("string")
+}
+
+buildScannerTables
+{
+  Let MyScanner = Scanner(Token(Object)),
+
+  let sb = ScannerBuilder(:Token(Object), :MyScanner).new,
+
+  sb.addToken("[ \t\f]+", fun(s:MyScanner){ s.read }),
+
+  sb.addToken("=", fun(:MyScanner){ equalT.token }),
+  sb.addToken("\n", fun(:MyScanner){ newlineT.token }),
+
+  (* ### copy&paste from TWLScannerBuilder: *)
+
+  escapes := Dictionary.new,
+  escapes['n'] := '\n',
+  escapes['t'] := '\t',
+  escapes['r'] := '\r',
+  escapes['f'] := '\f',
+  escapes['\''] := '\'',
+  escapes['\"'] := '\"',
+  escapes['\\'] := '\\',
+
+  let digit = "[0-9]",
+  let alpha = "[a-zA-Z_]",
+  let special = "[!#$%&*+-/:;<>?@^`|~]",
+  let simpleEscape = quoteRE(String.fromReader(escapes.keys)),  (* for '\\' *)
+  let escape = "\\\\(["+simpleEscape+"]|"+digit+digit+digit+")",
+  let delimiter = "([()\\{\\}.,=]|\\[|\\])",
+
+  sb.addToken("\"(" + digit +
+		"|" + alpha +
+		"|" + special +
+		"|" + escape +
+		"|" + delimiter + "| )*\"",
+    fun(s :MyScanner) {
+      let r = s.token.subSequenceReader(1,s.tokenSize-2),
+      stringT.token( String.fromReader(FunReader.new({ decodeChar(r) })) )
+    }
+  ),
+
+  sb.addToken("("+digit+"|"+alpha+"|"+special+")+", fun(s:MyScanner){
+    stringT.token(s.token)
+  }),
+
+  scannerTables := sb.generate
+}
+
+decodeChar(r :Reader(Char)) :Char
+{
+  let c = r.read,
+  c.isNil || { c !== '\\' } ? {
+    c
+  } : {
+    let c = r.read,
+    escapes.lookup(c,
+      fun(coded :Char) {
+        coded
+      },
+      { 
+        assert c.isDigit,
+	let i = c.digitValue,
+	let c = r.read,
+	assert c.isNotNil & c.isDigit,
+	let i = i * 10 + c.digitValue,
+	let c = r.read,
+	assert c.isNotNil & c.isDigit,
+	let i = i * 10 + c.digitValue,
+	i.asChar
+      }
+    )
+  }
+}
+
+(* ### what a hack! *)
+quoteRE(s :String) :String
+{
+  let qs = MutableString.new(s.size * 2),
+  for(0, s.size-1, fun(i :Int) {
+    qs[2*i] := '\\',
+    qs[2*i+1] := s[i]
+  }),
+  qs
+}
+
+buildParser
+{
+  let pair = MutableNonterminal(:Pair(String,String)).new("pair"),
+  pair.addRule3( stringT, equalT, stringT,
+		 fun(name :String, :Object, value :String) {
+		   Pair.new(name, value)
+		 }),
+
+  (* there has to be at least one newline between adjacent pairs. *)
+  (* all ::= {newline} [ pair { newline | newline pair } ] *)
+
+  let newlines = MutableNonterminal(:Object).new("newlines"),
+  newlines.addRule0( { nil } ),
+  newlines.addRule2( newlines, newlineT,
+		     fun(:Object, :Object){ nil }),
+
+  let pairs = MutableNonterminal(:Dictionary(String,String)).new("pairs"),
+  pairs.addRule1( pair,
+		  fun(p :Pair(String,String)) {
+		    let d = Dictionary.new,
+		    d[p.first] := p.second,
+		    d
+		  }),
+  pairs.addRule3( pairs, newlineT, pair,
+		fun(d :Dictionary(String,String), :Object, p :Pair(String,String)) {
+		  d[p.first] := p.second,
+		  d
+		}),
+  pairs.addRule2( pairs, newlineT,
+		fun(d :Dictionary(String,String), :Object) {
+		  d
+		}),
+
+  let all = MutableNonterminal(:Dictionary(String,String)).new("all"),
+  all.addRule2( newlines, pairs,
+		fun(:Object, d :Dictionary(String,String)) {
+		  d
+		}),
+  all.addRule1( newlines,
+		fun(:Object) {
+		  Dictionary.new
+		}),
+
+  let gram = Grammar.new(all),
+  let parserBuilder = ParserGen(:ReentrantCompactParser).new(CompactParserBuilder.new),
+  parser := parserBuilder.generate(gram)
+}
+;

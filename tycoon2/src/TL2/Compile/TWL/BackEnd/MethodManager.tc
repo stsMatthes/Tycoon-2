@@ -1,0 +1,286 @@
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ back end for one ByteCode array *)
+
+class MethodManager
+super BackEnd
+metaclass MethodManagerClass
+public
+
+method :CompiledMethod,
+bindings :Bindings,
+compiler :Compiler,
+
+writer :CompiledCodeWriter,
+literals :GapArray(Object),
+exceptionTable :GapArray(ExceptionHandler),
+
+sp :Int,
+(* local variable number of last push. 
+   nil if current position is not reachable. *)
+stackPeak :Int
+
+methods
+
+errorLog :ErrorLog
+{ compiler.errorLog }
+
+(* logic *)
+
+withBinding(v :Variable, thunk :Fun0(Void))
+{
+  assert !bindings.env.includesKey(v.ide),
+  bindings.add( v ),
+  thunk[]
+  (* don''t bother to unbind <v>, valueIdes are unique anyway *)
+}
+
+bindArgument(ide :ValueIde, argIdx :Int)
+{ bindings.add( ArgumentVar.new(ide, argIdx) )
+}
+
+withLocal(ide :ValueIde, thunk :Fun0(Void))
+{
+  ide.celled ? {
+    writer.cellNew
+  },
+  withBinding( LocalVar.new(ide, sp), thunk )
+}
+
+exceptionHandler(from :MMLabel, to :MMLabel, handler :MMLabel)
+{
+  let x = ExceptionHandler.new,
+  x.from := from,
+  x.to := to,
+  x.handler := handler,
+  exceptionTable.isNil ? { exceptionTable := GapArray.new(1) },
+  exceptionTable.add(x)
+}
+
+(* emitting *)
+
+drop(n :Int)
+{  writer.drop(n),   (* ### remove bindings? *)
+   sp := sp - n
+}
+
+pop   (* drop(1) *)
+{ writer.pop,
+  sp := sp - 1
+}
+
+adjust(n :Int)
+{  writer.adjust(n),   (* ### remove bindings? *)
+   sp := sp - n
+}
+
+(* number of args excludes receiver. *)
+send(selector :Symbol, nbArgs :Int)
+{
+  let id = getSelectorId(selector, nbArgs),
+  writer.send(id, nbArgs),
+  sp := sp - nbArgs
+}
+
+sendSuper(selector :Symbol, nbArgs :Int)
+{
+  let id = getSelectorId(selector, nbArgs),
+  writer.sendSuper(id, nbArgs),
+  sp := sp - nbArgs
+}
+
+loadLiteral(literal :Object)
+{
+  writer.canLoadSpecial(literal) ? {
+    writer.loadSpecial(literal)
+  } : {
+    literal."class" == Char ? {
+      writer.loadChar( _typeCast(literal, :Char) )
+    } : { literal."class" == Int ? {
+      let i = _typeCast(literal, :Int),
+      i >= -128 && { i <= 127 } ? {
+	writer.loadByte(i)
+      } : { i >= -32768 && { i <= 32767 } ? {
+        writer.loadShort(i)
+      } : {
+        vectorLiteral(i)
+      }}
+    } : {
+      vectorLiteral(literal)
+    }}
+  },
+  incSp
+}
+
+load(ide :ValueIde)
+{ bindings[ide].genLoad(writer),
+  incSp
+}
+
+loadRef(ide :ValueIde)
+{ bindings[ide].genLoadRef(writer),
+  incSp
+}
+
+store(ide :ValueIde)
+{ bindings[ide].genStore(writer)
+}
+
+closure(nbGlobals :Int)
+{ writer.closure(nbGlobals),
+  sp := sp - nbGlobals
+}
+
+sync
+{ writer.sync }
+
+return
+{  writer.return,
+   sp := nil
+}
+
+sendTail(selector :Symbol, nbArgs :Int)
+{
+  let id = getSelectorId(selector, nbArgs),
+  writer.sendTail(id, nbArgs),
+  sp := nil
+}
+
+(* for control structures.
+   A MMLabel (MethodManagerLabel) represents a point in the bytecode together with the stack level. *)
+
+newLabel :MMLabel
+{ let memo = MMLabel.new,
+  memo.sp := -1,  (* unbound *)
+  memo.label := writer.newLabel,
+  memo
+}
+
+_reachable(memo :MMLabel)
+{  (* "unify" sp and memo.sp *)
+  memo.unbound
+  ? { memo.sp := sp }
+  : { sp.isNil
+      ? { sp := memo.sp }
+      : { assert sp == memo.sp, nil } }
+}
+
+(* ### memo must have been reached somehow before setLabel can be called.
+   This disallows constructions like the following:
+      jump test
+   loop: ...
+   test: ...
+      ifFalse loop
+ *)
+defineLabel(memo :MMLabel)
+{
+  _reachable(memo),
+  writer.defineLabel(memo.label),
+  sp := memo.sp
+}
+
+jump(memo :MMLabel)
+{
+  _reachable(memo),
+  writer.jump(memo.label),
+  sp := nil
+}
+
+ifFalse(memo :MMLabel)
+{
+  sp := sp - 1,
+  _reachable(memo),
+  writer.ifFalse(memo.label)
+}
+
+ifTrue(memo :MMLabel)
+{
+  sp := sp - 1,
+  _reachable(memo),
+  writer.ifTrue(memo.label)
+}
+
+isReached :Bool
+  (* is the current code ever reached? *)
+{  sp.isNotNil }
+
+finished
+{  (* Write back results to <meth>. *)
+  method.byteCode := writer.finished,
+  method.literals := literals.asArray,
+
+  exceptionTable.isNil ? {
+    method.exceptionTable := nil
+  } : {
+    let table = ShortArray.new(exceptionTable.size * 6),
+    exceptionTable.keysAndElementsDo(fun(i :Int, eh :ExceptionHandler) {
+      let p = i * 6,
+      table[p]   := eh.from.label.position,
+      table[p+1] := eh.to.label.position,
+      table[p+2] := eh.handler.label.position,
+      table[p+3] := eh.handler.sp
+    }),
+    method.exceptionTable := table
+  },
+    
+  method.stackPeak := stackPeak, 
+  method.selectorID := getSelectorId(method.selector, method.arity)
+}
+
+getSelectorId(selector :Symbol, nbArgs :Int) :Int
+{
+  compiler.getSelectorId(Selector.new(selector, nbArgs))
+}
+
+(* only public for try *)
+incSp
+{ sp := sp + 1,
+  sp > stackPeak ? { stackPeak := sp }
+}
+
+private methods
+
+_init :Self
+{ super._init,
+  writer := 
+    CompiledCodeWriter.new1(compiler.vmInterface,
+      fun(selector :Selector) {
+        compiler.getSelectorId(selector)
+      }),
+  literals := GapArray.new0,
+  sp := 0,
+  stackPeak := 0,
+  self
+}
+
+
+vectorLiteral(literal :Object)
+{
+  let var i =
+    literals.keys.detect(fun(i :Int){ literals[i] == literal }),
+  i.isNil
+    ? { i := literals.size,
+	literals.add(literal) },
+  writer.loadLiteral(i)
+}
+
+;
+
+

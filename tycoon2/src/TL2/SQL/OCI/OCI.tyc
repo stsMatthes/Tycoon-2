@@ -1,0 +1,33 @@
+(* File   : OCI.tyc
+   Author : Michael Skusa
+   Date   : 12-Sep-1996
+   Purpose: Declarations of TWL ODBC-classes
+*)
+
+(* Forward declarations *)
+
+class OCIErrorClass metaclass MetaClass;
+class OCIConnection metaclass SimpleConcreteClass(OCIConnection);
+
+(* Load Oracle-Call-Interface *)
+
+DO load "../TWL/SQL/OCI/OCI.tc";
+define oci:OCI;
+oci:=OCI.new;
+oci.open;
+
+
+(* Load OCI-classes *)
+
+DO load "../TWL/SQL/OCI/OCIError.tc";
+DO load "../TWL/SQL/OCI/OCIErrorClass.tc";
+DO load "../TWL/SQL/OCI/OCICursorMetaData.tc";
+DO load "../TWL/SQL/OCI/OCICursor.tc";
+DO load "../TWL/SQL/OCI/OCIStatement.tc";
+DO load "../TWL/SQL/OCI/OCIConnection.tc";
+DO load "../TWL/SQL/OCI/OCIDriver.tc";
+
+DO check;
+
+OCIDriver.init;
+SQLDriverManager.instance.registerDriver(OCIDriver.instance);

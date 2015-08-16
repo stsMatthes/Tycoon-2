@@ -1,0 +1,11 @@
+class LongArrayDescriptor
+super AbstractArrayDescriptor
+metaclass SingletonClass(LongArrayDescriptor)
+public methods
+
+layout :Int
+{ layoutLongArray }
+
+elementFmt :Char
+{ 'w' }
+;

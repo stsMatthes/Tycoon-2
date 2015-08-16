@@ -1,0 +1,37 @@
+class HttpdAdminApplication
+super StmlApplication(HttpdAdminApplication)
+meta SimpleConcreteClass(HttpdAdminApplication)
+{
+
+httpd :Httpd
+
+sessions :KeyedContainer(String, HttpdAdminSession)
+{ _sessions }
+
+newSession :HttpdAdminSession
+{
+  result ::= HttpdAdminSession.new("xyz"+unique.printString)
+  _sessions[result.name] := result
+  unique := unique + 1
+  result
+}
+
+endSession(s :HttpdAdminSession) :Void
+{
+  _sessions.removeKey(s.name)
+}
+
+private
+
+_sessions :Dictionary(String, HttpdAdminSession)
+
+unique :Int
+
+_init :Void
+{ super._init
+  unique := 10000
+  _sessions := Dictionary.new
+  compiler.registerClass(HttpdAdminProcessor)
+}
+}
+

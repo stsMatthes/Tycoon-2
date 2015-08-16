@@ -1,0 +1,34 @@
+class FTPResponse
+
+super FTP
+
+public
+
+code :Int,
+msg :String
+
+methods
+
+parse(in :Input)
+{
+  let line = in.readln,
+  line.size < 3 ||
+      { !line[0].isDigit ||
+      { !line[1].isDigit ||
+      { !line[2].isDigit}}}
+    ? { FTPError.new(nil).raise },
+
+  code := Int.fromReader(line.subSequenceReader(0,3)),
+
+tycoon.stdout << line,
+
+  msg := String.fromSubSequence(line, 3, line.size-3).trim
+  
+,tycoon.stdout << "\n" << self 
+}
+
+printOn(out :Output) 
+{
+  out << clazz.name << ": " << code << " " << msg << '\n'
+}
+;

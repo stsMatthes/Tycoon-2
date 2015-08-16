@@ -1,0 +1,73 @@
+class BufferOutput
+super  Output
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+Writing into a Buffer
+Author:  Axel Wienberg
+Date:    15-Jan-1997
+Updates: (Date)	  (Name)	(Description)
+
+ invariant:
+   _pos >= 0 *)
+meta AbstractClass
+{
+write(ch :Char) :Void
+  (* *)
+{
+  if( _pos >= _bufferSize then: {_needBuffer(1)})
+  _buffer[_pos] := ch
+  _pos := _pos + 1
+  }
+
+writeBuffer(buffer :String, start :Int, n :Int) :Void
+  (* *)
+{
+  if( _pos + n > _bufferSize
+  then: { nFree ::= _bufferSize - _pos
+      writeBuffer(buffer, start, nFree)  ; will use the fast path 
+      _needBuffer(n - nFree)
+      writeBuffer(buffer, start+nFree, n-nFree) }
+  else: { ; fast path 
+      _buffer.replace(n, _pos, buffer, start)
+      _pos := _pos + n })
+}
+
+private
+
+_buffer :MutableString
+
+_pos :Int
+
+_bufferSize :Int
+  (* normative implementation 
+ can be redefined as a slot *)
+{
+  _buffer.size
+}
+
+_needBuffer(n :Int) :Void
+  (* "Please make room in the buffer for <n> more Characters.
+    Be sure to make room for at least one." *)
+require _pos = _bufferSize
+  ensure _bufferSize - _pos > 0
+  deferred
+
+}

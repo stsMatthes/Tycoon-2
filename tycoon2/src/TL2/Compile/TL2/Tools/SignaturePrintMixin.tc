@@ -1,0 +1,95 @@
+class SignaturePrintMixin
+super Tools
+meta AbstractClass
+{
+
+private
+
+printSelector(selector :Symbol) :Void
+{
+  ;; ## todo: check for reserved words
+  if( selector.all(fun(c:Char){ c.isAlphaNumeric || c = '_' }) then: {
+    out << selector
+  } else: {
+    out << '\"'
+    selector.do(fun(ch :Char) {ch.printEscapeSequence(out)})
+    out << '\"'
+  })
+}
+
+printDomain(t :TL2MethodType) :Bool
+  (*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ print the domain of t.
+     result: was everything printed on one line?
+   *)
+{
+  simpleDomain ::= t.domain.all(fun(i:TL2Ide) {
+			   i.type.isNil || i.type.isLeaf})
+  out.withAbsIndent(out.column, {
+    t.plainDomain.doBetween(fun(i :TL2Ide) {
+      printPositionalParameter(i)
+    }, {
+      out << ','
+      if( simpleDomain then: { out.space } else: { out.nl })
+    })
+    if( t.hasKeywords then: {
+      if( t.hasPlain then: { out.nl })
+      t.keywordDomain.doBetween(fun(p :Pair(Symbol, TL2ValueIde)) {
+	printKeywordParameter(p.first, p.second)
+      }, {
+	out.nl
+      })
+    })
+  })
+  simpleDomain
+}
+
+printKeywordParameter(key :Symbol, i :TL2ValueIde) :Void
+{
+  out << key << ": "
+  printPositionalParameter(i)
+}
+
+printPositionalParameter(i :TL2Ide) :Void
+  (* also used for Apply types *)
+{
+  if( i.name.isNotNil then: {
+    out << i.name
+;    out << "[" + identityHash.printString + "]"
+  })
+  out << i.case(
+        fun(vi:TL2ValueIde){ if( vi.component then: {"@:"} else: {":"}) },
+	fun(:TL2TypeIde){ "=" },
+	fun(:TL2SubTypeIde){ "<:" })
+  if( i.type.isNil then: {
+    out << "??"
+  } else: {
+    printType(i.type)
+  })
+}
+
+printType(t :TL2Type) :Void
+  deferred
+
+out :Printer
+  deferred
+  
+}

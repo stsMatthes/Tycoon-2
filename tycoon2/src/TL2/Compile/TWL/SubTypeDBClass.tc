@@ -1,0 +1,10 @@
+class SubTypeDBClass
+super AbstractSetClass(SubTypeRelation, SubTypeDB)
+metaclass MetaClass
+public methods
+
+new1(initialCapacity :Int) :SubTypeDB
+{
+  _new._init1(initialCapacity)
+}
+;

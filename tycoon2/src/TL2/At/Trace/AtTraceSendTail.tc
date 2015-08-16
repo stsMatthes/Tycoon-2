@@ -1,0 +1,20 @@
+class AtTraceSendTail
+super AtTraceSend
+meta AtTraceSendTailClass
+{
+
+case(T<:Void,
+     ifSend :Fun(:AtTraceSend):T,
+     ifSendTail :Fun(:AtTraceSendTail):T,
+     ifReturn :Fun(:AtTraceReturn):T,
+     ifThrow :Fun(:AtTraceThrow):T,
+     ifStart :Fun(:AtTraceStart):T
+     ) :T
+{ ifSendTail[self] }
+
+printOn(out :Output) :Void
+{
+  out<<"SendTail{a "<<sender."class".name<<" -> a "<<receiver."class".name<<"."<<selector<<"}"
+}
+
+}

@@ -1,0 +1,14 @@
+class TypeCheckTypeErrorClass
+  super ConcreteClass(TypeCheckTypeError)
+  metaclass MetaClass
+
+public methods
+
+  new :TypeCheckTypeError
+  {
+    let instance = _new,
+    instance._init,
+    instance
+  }
+
+;

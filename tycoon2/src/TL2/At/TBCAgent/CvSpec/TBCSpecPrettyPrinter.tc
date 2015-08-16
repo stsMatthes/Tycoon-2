@@ -1,0 +1,84 @@
+class TBCSpecPrettyPrinter
+super TBCSpecVisitor, ContentSpecPrettyPrinter, PrettyPrintMixin
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ TBCSpecPrettyPrinter.tc
+
+   Tycoon Business Conversations (TBC) for Tycoon 2
+   ------------------------------------------------
+   An example TBC/spec visitor whichs pretty-prints the entire tycoon-
+   business-conversation-specification.
+
+   18.08.97 hw : created
+   
+*)
+meta PrettyPrinterClass(TBCSpecPrettyPrinter)
+{
+
+conversationSpec(spec :ConversationSpec) :Void
+  (* *)
+{
+  out << "CONVERSATION "
+  spec.name.printOn(out)
+  out << " WITH\n"
+  tabInc
+  spec[spec.initialDialogName].visit(self)
+  spec.do(fun(c :DialogSpec) :Void {
+    if( c.name != spec.initialDialogName then: {
+      c.visit(self)
+    })
+  })
+  tabDec
+  out << "END -- Conversation\n"
+}
+
+dialogSpec(spec :DialogSpec) :Void
+  (* *)
+{
+  out << tab << "DIALOG "
+  spec.name.printOn(out)
+  out << " WITH\n"
+  tabInc
+
+  spec.replies.do(fun(c :RequestSpec) :Void {c.visit(self)})
+
+  out << tab << "CONTENT\n"
+  printNamedFields(spec.contentSpec)
+  out << tab << "END -- Content\n"
+
+  tabDec
+  out << tab << "END -- Dialog\n"
+}
+
+requestSpec(spec :RequestSpec) :Void
+  (* *)
+{
+  out << tab << "REQUEST "
+  spec.name.printOn(out)
+  out << " TO "
+  spec.keys.doBetween(fun(k :String) {
+    k.printOn(out)
+  }, {
+    out << ", "
+  })
+  out << " END\n"
+}
+
+}

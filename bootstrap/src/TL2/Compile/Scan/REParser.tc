@@ -1,0 +1,169 @@
+class REParser
+super Scan
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+*)
+meta REParserClass()
+
+{
+isAcceptable :Fun(:Char):Bool
+  (* should return true if the given character may appear in the input stream *)
+
+parse(in :Reader(Char)) :NFA
+  (* *)
+{
+  _in := in
+  scan
+  nfa ::= alt
+  if( !eof then: { REParserError.new.raise })
+  nfa
+  }
+
+private
+
+_in :Reader(Char)
+
+_ch :Char
+
+scan :Char
+  (* *)
+{ _ch := _in.read }
+
+eof :Bool
+  (* *)
+{ _ch.isNil }
+
+skip(ch :Char) :Void
+  (* *)
+{
+  if( _ch != ch then: { REParserError.new.raise })
+  scan
+  }
+
+alt :NFA
+  (* parse ' expr (| expr)* ' *)
+{
+  nfa ::= concat
+  while({_ch = '|'} do: {
+    skip('|')
+    nfa.union(concat) })
+  nfa
+  }
+
+concat :NFA
+  (* parse ' expr expr* ' *)
+{
+  nfa ::= closure
+  while({!eof & _ch != '|' & _ch != ')'} do: {
+    nfa.concat(closure) })
+  nfa
+  }
+
+closure :NFA
+  (* parse ' expr ['*' | '+' | '?'] ' *)
+{
+  nfa ::= primary
+  while({_ch = '*' || (_ch = '+' || _ch = '?')} do: {
+    ch ::= _ch
+    scan
+    if( ch = '?'
+      then: { nfa.start.addTransition(nfa.epsilon, nfa.final) }
+      else: { if( ch = '+'
+	    then: { nfa.closure1 }
+	    else: { nfa.closure0 })})    ; '*' 
+    })
+  nfa
+  }
+
+primary :NFA
+  (* parse  char | '[' ['^'] charset ']' | '(' alt ')' *)
+{
+  if( _ch = '['
+    then: { skip('[')
+        charset }
+    else: { if( _ch = '('
+          then: { skip('(')
+	      nfa ::= alt
+	      skip(')')
+	      nfa }
+	  else: { unquote
+	      nfa ::= NFA.singleton(_ch)
+	      scan
+	      nfa })
+      })
+  }
+
+charset :NFA
+  (* parse '[' ['^'] charset ']' *)
+{
+  nfa ::= NFA.new
+  nfa.final := nfa.newState
+  
+  fIni ::= if( _ch = '^'
+    then: { skip('^')
+        true }
+    else: { false })
+
+  charset ::= MutableArray(:Bool).new(256)
+
+  for(0 to:charset.size-1 do:fun(i :Int) {
+    charset[i] := if( isAcceptable[i.asChar]
+      then: {fIni}
+      else: { false })})
+
+  while({!eof && _ch != ']'} do: {
+      unquote
+      ch ::= _ch
+      scan
+      ch2 ::=
+	if( _ch != '-' then: {ch} else: {
+	  scan
+	  unquote
+	  if( eof then: { REParserError.new.raise })
+	  ch2 ::= _ch
+	  scan
+	  ch2
+	  })
+      for(ch.asInt to: ch2.asInt do: fun(i :Int) {
+	charset[i] := !fIni
+	})
+    })
+
+
+  if( _ch != ']' then: {REParserError.new.raise })
+
+  for(0 to: 255 do: fun(i :Int) {
+      if( charset[i] then: {nfa.start.addTransition(i.asChar, nfa.final)})})
+  
+  skip(']')
+  
+  nfa
+  }
+
+unquote :Void
+  (*##handle control characters? *)
+{
+  if( _ch = '\\' then: {
+    scan
+    if( _ch.isNil then: {REParserError.new.raise})
+    })
+  }
+
+}

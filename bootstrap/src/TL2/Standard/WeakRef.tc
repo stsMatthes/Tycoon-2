@@ -1,0 +1,131 @@
+class WeakRef(T <:Object)
+super Object
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+
+  Author:  Andreas Gawecki, Marc Weicard
+  Date:    27-Jan-1997
+
+  WeakRef objects make sure that some user specified finalization function (the
+  'finalizer') is executed once some given 'target' object becomes
+  'unreachable'.  An object is 'reachable' if it can be reached by a path from
+  the object store root, from any root pointer enumerated, or from a WeakRef
+  other than itself.
+
+  The object is not collected immediately. The finalizer may install references
+  to the object in other objects, i.e. re-establish reachability.  Otherwise,
+  the object will be eventually collected by some of the next garbage
+  collections.
+
+  For example, if A and B are objects which are weakly referenced by WeakRef
+  objects, then if B is reachable from A, B is reachable. But if A is not
+  reachable, then the garbage collector will eventually detect this and
+  schedule the finalizer with A. If the finalizer returns without
+  resecurrecting A, then A's storage will be reclaimed, at which point B will
+  be unreachable, which will lead to a finalizer call with B.
+
+  If A and B are weakly referenced objects which are connected by a cycle, then
+  both A and B are reachable. This situation represents a storage leak and
+  should be avoided.
+
+  Note: A and B may denote the same object.
+
+  The finalizer of a WeakRef object will be executed only once.  That is, if
+  the finalizer re-establishes reachability, the finalizer will not be invoked
+  again.
+
+  More than one WeakRef objects may reference the same target object. In this case,
+  all the finalizers will be invoked in some undetermined order.
+
+  The Tycoon system launches a special Finalizer thread to actually execute the
+  finalizer functions of WeakRefs.A WeakRef that is scheduled for finalization
+  is temporarily turned into an ordinary object. That is, the 'weak reference'
+  to the target object is turned into a 'hard' reference to protect the target
+  object from beeing collected by the next garbage collection before the finalizer
+  had a chance to run. Once the Finalizer thread has executed the finalizer function,
+  the reference to the target object is broken by storing nil into the '_value'
+  slot. This allows the target object to be collected, provided it is not otherwise
+  reachable again (see above).
+
+*)
+meta WeakRefClass(T )
+
+{
+value :T
+  (* *)
+{ _value }
+
+printOn(out :Output) :Void
+  (* default print method for objects.
+     Subclasses should override it appropriately. *)
+{
+  out.writeString("WeakRef(")
+  value.printOn(out)
+  out.write(')')
+}
+
+finalize :Void
+  (* call the finalizer function.
+     This method is called by the Finalizer thread.
+     It should not be called by anyone else.
+  *)
+{
+  _finalizer[_value]
+  _value := nil		; allow collection of the target object 
+}
+
+next :WeakRef(Object)
+  (* answer the next WeakRef in list.
+     This method is called by the Finalizer thread.
+     It should not be called by anyone else.
+  *)
+{
+  _next  
+}
+
+private
+
+_value :T
+
+  (* the target object of this weak reference *)
+
+_finalizer :Fun(:T):Void
+
+  (* finalizer to be invoked finally *)
+
+_next :WeakRef(Object)
+
+  (* weakref list successor *)
+
+_previous :WeakRef(Object)
+  (* weakref list predecessor *)
+
+__init :Void
+  (* *)
+builtin
+
+_init :Void
+  (* register the receiver with the TVM *)
+{
+  __init
+}
+
+}

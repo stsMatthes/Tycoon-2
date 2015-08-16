@@ -1,0 +1,87 @@
+class StmlIf
+super SimpleTypingMixin, StmlComponent
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+*)
+meta StmlIfClass
+{
+condition :StmlTycoonSource
+
+then :StmlSequence
+
+else :StmlSequence
+
+computeType(bindings :StmlBindings, errorLog :ErrorLog) :StmlType
+  (* *)
+{
+  thenT ::= then.computeSequenceType(bindings, errorLog, false)
+  elseT ::=
+    if( else.isNotNil
+    then: { else.computeSequenceType(bindings, errorLog, false) }
+    else: { StmlBottomType.new(position) })
+  thenT.commonSuperType(elseT)
+}
+
+compileAsString( out :StmlASTOutput ) :Void
+  (* *)
+{
+  trueBranch ::= then.compileInStringContext(out.context)
+  falseBranch ::=
+    if( else.isNotNil then: {
+      else.compileInStringContext(out.context)
+    } else: {
+      TL2BlockValue.newIncomplete
+    })
+
+  makeIf(out, trueBranch, falseBranch)
+}
+
+compileAsValue( out :StmlASTWriter ) :Void
+  (* *)
+{ 
+  trueBranch ::= then.compileInValueContext(out.context)
+  falseBranch ::=
+    if( else.isNotNil
+    then: { else.compileInValueContext(out.context) }
+    else: { TL2BlockValue.newIncomplete })
+
+  makeIf(out, trueBranch, falseBranch)
+}
+
+makeIf(out :StmlASTWriter, trueBranch :TL2Value, falseBranch :TL2Value) :Void
+  (* *)
+{
+  out.tycoonExpression(
+    TL2SendValue.new(position,
+      TL2IdeValue.new(TL2ValueIde.newRef(position, "self")),
+      #if,
+      List.with3(
+        condition.compileToValue(out.context),
+	makeFun0(trueBranch),
+	makeFun0(falseBranch))))
+   ;;; keywords will come later (AST is "normalized")
+}
+
+makeFun0(body :TL2Value) :TL2CompiledFun
+{
+  TL2CompiledFun.new(position, #"[]", List.with0, nil, body)
+}
+
+}

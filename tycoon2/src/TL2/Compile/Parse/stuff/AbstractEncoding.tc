@@ -1,0 +1,14 @@
+class AbstractEncoding(E <: Object)
+super Parse
+public methods
+
+fromInt(i :Int) :E
+  deferred
+
+toInt(e :E) :Int
+  deferred
+
+max :Int
+  deferred
+
+;

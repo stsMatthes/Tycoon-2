@@ -1,0 +1,531 @@
+class X_TL2Optimizer
+super X_TL2RecursiveValueVisitor
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ X_TL2Optimizer
+   A visitor that selects the appropriate generator for each SendValue, in effect
+   ad-hox inlining some methods.
+   In the progress, we find out which closures actually become closure objects at runtime. *)
+meta X_TL2OptimizerClass
+{
+optimize(v :X_TL2Value, errorLog :ErrorLog) :Void
+{
+  self.errorLog := errorLog
+  freeIdes := Set.new
+  v.accept(self)
+  freeIdes := nil
+}
+
+visitSend(v :X_TL2SendValue) :Void
+  (* *)
+{
+  optimized ::=
+    specialSelectors.lookup(v.selector,
+      fun(handler :Fun(:X_TL2SendValue):X_TL2CodeGenerator) {
+	optimized ::= handler[v]
+	if( optimized.isNil
+	then: { errorLog.warning(v.pos, "Improper use of optimizable selector: "+v.selector.printString) })
+	optimized
+      },
+      { nil })
+  if( optimized.isNotNil
+  then: { v.generator := optimized }
+  else: { super.visitSend(v)
+      v.generator := X_TL2SendGenerator.new(v) })
+}
+
+visitSuperSend(v :X_TL2SuperSendValue) :Void
+  (* *)
+{ super.visitSend(v) }
+
+visitIde(iv :X_TL2IdeValue) :Void
+  (* *)
+{
+  ;  specialSelector.includesKey(v.ide.name) ? { ... }
+  ;    not necessary because the tree is already scoped 
+  freeIdes.add(iv.ide)
+}
+
+visitAssign(a :X_TL2AssignValue) :Void
+  (* *)
+{
+  super.visitAssign(a)
+  freeIdes.add(a.lhs)
+}
+
+visitLet(v :X_TL2LetValue) :Void
+{
+  super.visitLet(v)
+  freeIdes.remove(v.ide)
+}
+
+visitFun(v :X_TL2CompiledFun) :Void
+  (* *)
+{
+  savedFreeIdes ::= freeIdes
+  freeIdes := Set.with0
+  super.visitFun(v)
+  newFreeIdes ::= freeIdes
+  newFreeIdes.removeAll(v.domain)
+  freeIdes := savedFreeIdes
+  freeIdes.addAll(newFreeIdes)
+ 
+  diff ::= v.freeValueIdes.as(Set)
+  diff.removeAll(newFreeIdes)
+  if( diff.size = 1 && diff.as(Array)[0].name = "self" then: {
+    ;; this is OK
+  } else: {
+    if( !diff.isEmpty then: {
+      tycoon.stdout << "superfluous ides: " << diff << "\n"
+      tycoon.stdout << v
+      tycoon.stdout << '\n'
+    })
+  })
+ 
+  diff ::= newFreeIdes.as(Set)
+  diff.removeAll(v.freeValueIdes)
+  if( !diff.isEmpty then: {
+    tycoon.stdout << "additional (?!) ides: " << diff << "\n"
+    tycoon.stdout << v
+    tycoon.stdout << '\n'
+  })
+
+  ;; selfSig hack for X_Tracer
+  ;; hack part one: ensure self is stored in the closure
+  selfSig ::= v.freeValueIdes[0]
+  assert({ selfSig.name = "self" })
+  newFreeIdes.add(selfSig)
+
+  freeValueIdesArray ::= newFreeIdes.as(MutableArray)
+
+  ;; hack part two:  bring selfSig to first position
+  selfSigPos ::= freeValueIdesArray.locate(selfSig)
+  freeValueIdesArray.swap(0,selfSigPos)
+
+  v.freeValueIdes := freeValueIdesArray
+  v.freeValueIdes.do(fun(ide :X_TL2ValueIde) {
+    ide.setAccessedFromClosure
+  })
+}
+
+private
+
+errorLog :ErrorLog
+
+specialSelectors :Dictionary(Symbol, Fun(:X_TL2SendValue):X_TL2CodeGenerator)
+
+freeIdes :Set(X_TL2ValueIde)
+
+fillSpecialSelectors :Void
+  (* *)
+{
+  ; Bool (control structures) 
+  specialSelectors[Symbol.new("?")] :=
+    fun(v :X_TL2SendValue){ optimizeIf1(v) }
+  specialSelectors[Symbol.new("?:")] :=
+    fun(v :X_TL2SendValue){ optimizeIf2(v) }
+  specialSelectors[Symbol.new("&&")] :=
+    fun(v :X_TL2SendValue){ optimizeAnd(v) }
+  specialSelectors[Symbol.new("||")] :=
+    fun(v :X_TL2SendValue){ optimizeOr(v) }
+  specialSelectors[Symbol.new("!")] :=
+    fun(v :X_TL2SendValue){ optimizeNot(v) }
+
+  ; Object (self sends) 
+  specialSelectors[Symbol.new("try")] :=
+    fun(v :X_TL2SendValue){ optimizeTry(v) }
+  specialSelectors[Symbol.new("while")] :=
+    fun(v :X_TL2SendValue){ optimizeWhile(v) }
+  specialSelectors[Symbol.new("assert")] :=
+    fun(v :X_TL2SendValue){ optimizeAssert(v) }
+  specialSelectors[Symbol.new("for")] :=
+    fun(v :X_TL2SendValue){ optimizeFor(v) }
+  specialSelectors[Symbol.new("forDownto")] :=
+    fun(v :X_TL2SendValue){ optimizeForDownto(v) }
+  ; ### ...forStep, forDowntoStep ? hardly ever used 
+
+  ; Tycoon 1.0 support 
+  ; &&, ||, !, try, while, for:  as above 
+  specialSelectors[Symbol.new("if")] :=
+    fun(v :X_TL2SendValue){ optimizeNewIf(v) }
+  specialSelectors[Symbol.new("nil")] :=
+    fun(v :X_TL2SendValue){ optimizeNil(v) }
+  specialSelectors[Symbol.new("true")] :=
+    fun(v :X_TL2SendValue){ optimizeTrue(v) }
+  specialSelectors[Symbol.new("false")] :=
+    fun(v :X_TL2SendValue){ optimizeFalse(v) }
+  ; ### repeat 
+}
+
+optimizeNot(v :X_TL2SendValue) :X_TL2CodeGenerator
+  (* *)
+{
+  if( v.args.size = 0
+  then: { v.receiver.accept(self)
+      result :X_TL2CodeGenerator := X_TL2NotGenerator.new(v.receiver) }
+  else: { nil })
+}
+
+optimizeOr(v :X_TL2SendValue) :X_TL2CodeGenerator
+  (* *)
+{
+  optimizeOneValueArg(v, fun(a :X_TL2Value) {
+    optimizeFun0(a, fun(cond2 :X_TL2Value) {
+      v.receiver.accept(self)
+      cond2.accept(self)
+      X_TL2OrGenerator.new(v.receiver, cond2)
+    })
+  })
+}
+
+optimizeAnd(v :X_TL2SendValue) :X_TL2CodeGenerator
+  (* *)
+{
+  optimizeOneValueArg(v, fun(a :X_TL2Value) {
+    optimizeFun0(a, fun(cond2 :X_TL2Value) {
+      v.receiver.accept(self)
+      cond2.accept(self)
+      X_TL2AndGenerator.new(v.receiver, cond2)
+    })
+  })
+}
+
+optimizeAssert(v :X_TL2SendValue) :X_TL2CodeGenerator
+  (* *)
+{
+  if( v.isSelfSend
+  then: { optimizeOneValueArg(v, fun(a :X_TL2Value) {
+        optimizeFun0(a, fun(cond :X_TL2Value) {
+	  pos ::= v.pos
+	  selfRef ::= v.receiver
+
+	  ;  <value>
+;	       ? { }
+;	       : { self._raiseAssertError(<line>,<column>,<where>) }
+;	   
+
+	  cond.accept(self)
+	  thenBranch ::=
+	    X_TL2BlockValue.new(pos, List.with0)
+	  thenBranch.accept(self)
+	  elseBranch ::=
+	    X_TL2SendValue.new(pos, selfRef,
+	      Symbol.new("_raiseAssertError"),
+	      List.with3( X_TL2LiteralValue.new(pos, pos.line),
+			  X_TL2LiteralValue.new(pos, pos.column),
+			  X_TL2LiteralValue.new(pos, pos.where)))
+	  elseBranch.accept(self)
+
+	  X_TL2IfGenerator.new(
+	    cond,
+	    thenBranch,
+	    elseBranch)
+	})
+      }) }
+  else: { nil })
+}
+
+optimizeWhile(v :X_TL2SendValue) :X_TL2CodeGenerator
+  (* *)
+{
+  if( v.isSelfSend
+  then: { optimizeTwoValueArgs(v, fun(a1 :X_TL2Value, a2 :X_TL2Value) {
+        optimizeFun0(a1, fun(cond :X_TL2Value) {
+          optimizeFun0(a2, fun(body :X_TL2Value) {
+	    cond.accept(self)
+	    body.accept(self)
+	    X_TL2WhileGenerator.new(cond, body)
+	  })
+	})
+      }) }
+  else: { nil })
+}
+
+optimizeFor(v :X_TL2SendValue) :X_TL2CodeGenerator
+  (* *)
+{
+  if( v.isSelfSend
+  then: { optimizeThreeValueArgs(v, fun(fromValue :X_TL2Value, toValue :X_TL2Value, a3 :X_TL2Value) {
+        optimizeFun1(a3, fun(sig :X_TL2ValueIde, body :X_TL2Value) {
+	  forGenerator(v.pos, v.receiver,
+		       fromValue, toValue, X_TL2LiteralValue.new(v.pos, 1), true,
+		       sig, body)
+	})
+      }) }
+  else: { nil })
+}
+
+optimizeForDownto(v :X_TL2SendValue) :X_TL2CodeGenerator
+  (* *)
+{
+  if( v.isSelfSend
+  then: { optimizeThreeValueArgs(v, fun(fromValue :X_TL2Value, toValue :X_TL2Value, a3 :X_TL2Value) {
+        optimizeFun1(a3, fun(sig :X_TL2ValueIde, body :X_TL2Value) {
+	  forGenerator(v.pos, v.receiver,
+		       fromValue, toValue, X_TL2LiteralValue.new(v.pos, 1), false,
+		       sig, body)
+	})
+      }) }
+  else: { nil })
+}
+
+forGenerator(pos :SourcePos, selfValue :X_TL2Value,
+	     fromValue :X_TL2Value, toValue :X_TL2Value, stepValue :X_TL2Value, countUp :Bool,
+	     sig :X_TL2ValueIde, body :X_TL2Value) :X_TL2CodeGenerator
+  (* *)
+{
+  ; let <from> = <fromValue>,
+;     let <to> = <toValue>,
+;     while ({ <from> <= <to> }, {
+;       let <sig> = <from>,   ; immutable 
+;       <body>,
+;       <from> := <from> + <stepValue>
+;     }) 
+  ; bei !countUp wird "<=" zu ">=" und "+" zu "-" 
+  fromIde ::= X_TL2ValueIde.new(fromValue.pos, "<from>", false, nil)
+  fromIde.setAssigned
+  toIde ::= X_TL2ValueIde.new(toValue.pos, "<to>", false, nil)
+  result ::=
+    X_TL2LetValue.new(fromValue.pos, fromIde, fromValue,
+      X_TL2LetValue.new(toValue.pos, toIde, toValue,
+	X_TL2SendValue.new( pos, selfValue,  ; receiver is self 
+			  Symbol.new("while"),
+			  List.with2(
+			    X_TL2CompiledFun.new(pos, #"[]", List.with0, nil,
+			      X_TL2SendValue.new(pos,
+				X_TL2IdeValue.new(fromIde),
+				if( countUp then: { Symbol.new("<=") } else: { Symbol.new(">=") }),
+				List.with1(X_TL2IdeValue.new(toIde)))),
+			    X_TL2CompiledFun.new(pos, #"[]", List.with0, nil,
+			      X_TL2BlockValue.new(pos,
+				List(:X_TL2Value).with2(
+				  X_TL2LetValue.new(pos, sig, X_TL2IdeValue.new(fromIde),
+				    body),
+				  X_TL2AssignValue.new(pos, fromIde,
+				    X_TL2SendValue.new(pos,
+				      X_TL2IdeValue.new(fromIde),
+				      if( countUp then: { Symbol.new("+") } else: { Symbol.new("-") }),
+				      List.with1(stepValue))))))))))
+  result.accept(self)
+  result
+}
+
+optimizeIf1(v :X_TL2SendValue) :X_TL2CodeGenerator
+  (* *)
+{
+  optimizeOneValueArg(v, fun(a :X_TL2Value) {
+    optimizeFun0(a, fun(thenBranch :X_TL2Value) {
+      elseBranch ::= X_TL2BlockValue.new(v.pos, List.with0)
+      v.receiver.accept(self)
+      thenBranch.accept(self)
+      elseBranch.accept(self)
+      X_TL2IfGenerator.new(v.receiver, thenBranch, elseBranch)
+    })
+  })
+}
+
+optimizeIf2(v :X_TL2SendValue) :X_TL2CodeGenerator
+  (* *)
+{
+  optimizeTwoValueArgs(v, fun(a1 :X_TL2Value, a2 :X_TL2Value) {
+    optimizeFun0(a1, fun(thenBranch :X_TL2Value) {
+      optimizeFun0(a2, fun(elseBranch :X_TL2Value) {
+	v.receiver.accept(self)
+	thenBranch.accept(self)
+	elseBranch.accept(self)
+	X_TL2IfGenerator.new(v.receiver, thenBranch, elseBranch)
+      })
+    })
+  })
+}
+
+optimizeNewIf(v :X_TL2SendValue) :X_TL2CodeGenerator
+  (* *)
+{
+  if( v.isSelfSend then: {
+    optimizeThreeValueArgs(v, fun(cond :X_TL2Value, a1 :X_TL2Value, a2 :X_TL2Value) {
+      optimizeFun0(a1, fun(thenBranch :X_TL2Value) {
+	optimizeFun0(a2, fun(elseBranch :X_TL2Value) {
+	  cond.accept(self)
+	  thenBranch.accept(self)
+	  elseBranch.accept(self)
+	  X_TL2IfGenerator.new(cond, thenBranch, elseBranch)
+	})
+      })
+    })
+  } else: {
+    nil
+  })
+}
+
+optimizeTry(v :X_TL2SendValue) :X_TL2CodeGenerator
+  (* try(T <:Void, block :Fun():T, handler :Fun(:Exception):T) :T *)
+{
+  if( v.isSelfSend
+  then: { args ::= v.args
+      ; discard type argument 
+      if( args.size = 3
+      then: { args[0].argumentCase(
+            fun(:X_TL2Value){ },
+	    fun(:X_TL2Type){ args := args.tail }) })
+      optimizeTwoValueArgs1(args, fun(a1 :X_TL2Value, a2 :X_TL2Value) {
+        optimizeFun0(a1, fun(body :X_TL2Value) {
+          optimizeFun1(a2, fun(sig :X_TL2ValueIde, handler :X_TL2Value) {
+	    if( !sig.component then: {
+	      body.accept(self)
+	      handler.accept(self)
+	      freeIdes.remove(sig)
+	      X_TL2TryGenerator.new(body, sig, handler)
+	    } else: { nil })
+	  })
+	})
+      }) }
+  else: { nil })
+}
+
+optimizeNil(v :X_TL2SendValue) :X_TL2CodeGenerator
+  (* *)
+{
+  optimizeLiteral(v, nil)
+}
+
+optimizeTrue(v :X_TL2SendValue) :X_TL2CodeGenerator
+  (* *)
+{
+  optimizeLiteral(v, true)
+}
+
+optimizeFalse(v :X_TL2SendValue) :X_TL2CodeGenerator
+  (* *)
+{
+  optimizeLiteral(v, false)
+}
+
+optimizeLiteral(v :X_TL2SendValue, value :Object) :X_TL2CodeGenerator
+  (* *)
+{
+  if( v.isSelfSend &&  v.args.isEmpty 
+  then: { X_TL2LiteralValue.new(v.pos, value) }
+  else: { nil })
+}
+
+optimizeOneValueArg( v :X_TL2SendValue,
+		     f :Fun(:X_TL2Value):X_TL2CodeGenerator) :X_TL2CodeGenerator
+  (* utilities *)
+{
+  if( v.args.size = 1 then: {
+    a ::= v.args[0]
+    a.argumentCase(
+      ; value:
+      fun(a1 :X_TL2Value) {
+	if( !a1.isComponent then:{ f[a1] } else: { nil })
+      },
+      ; type: 
+      fun( :X_TL2Type){ nil })
+  } else: { nil })
+}
+
+optimizeTwoValueArgs( v :X_TL2SendValue,
+		      f :Fun(:X_TL2Value, :X_TL2Value):X_TL2CodeGenerator) :X_TL2CodeGenerator
+  (* *)
+{ optimizeTwoValueArgs1(v.args, f) }
+
+optimizeTwoValueArgs1( args :List(X_TL2Argument),
+		      f :Fun(:X_TL2Value, :X_TL2Value):X_TL2CodeGenerator) :X_TL2CodeGenerator
+  (* *)
+{ if( args.size = 2
+  then: { a1 ::= args[0]
+      a2 ::= args[1]
+      loose ::= fun(:X_TL2Type){ nil }
+      a1.argumentCase(
+        fun(a1 :X_TL2Value) {
+	  a2.argumentCase(
+	    fun(a2 :X_TL2Value) {
+	      if( !a1.isComponent && !a2.isComponent then: {
+	        f[a1,a2]
+	      } else: { nil })
+	    }, loose)
+	}, loose) }
+  else: { nil })
+}
+
+optimizeThreeValueArgs( v :X_TL2SendValue,
+		      f :Fun(:X_TL2Value, :X_TL2Value, :X_TL2Value):X_TL2CodeGenerator) :X_TL2CodeGenerator
+  (* *)
+{ if( v.args.size = 3
+  then: { a1 ::= v.args[0]
+      a2 ::= v.args[1]
+      a3 ::= v.args[2]
+      loose ::= fun(:X_TL2Type){ nil }
+      a1.argumentCase(
+        fun(a1 :X_TL2Value) {
+	a2.argumentCase(
+	  fun(a2 :X_TL2Value) {
+	    a3.argumentCase(
+	      fun(a3 :X_TL2Value) {
+		if( !a1.isComponent && !a2.isComponent && !a3.isComponent
+		   then: { f[a1,a2,a3] }
+		   else: { nil })
+	      }, loose)
+	  }, loose)
+	}, loose) }
+  else: { nil })
+}
+
+optimizeFun0( f :X_TL2Value,
+	      optF :Fun(:X_TL2Value):X_TL2CodeGenerator) :X_TL2CodeGenerator
+  (* if f is a fun without parameters, call optF with its body.
+   otherwise return nil. *)
+{
+  f.visitor
+    .ifFun(fun(f :X_TL2CompiledFun) {
+       if( f.domain.size = 0 then: { optF[f.body] } else: { nil })
+    }).otherwise(fun(:Object){
+       nil
+    }).visit
+}
+
+optimizeFun1( f :X_TL2Value,
+	      optF :Fun(sig:X_TL2ValueIde, body:X_TL2Value):X_TL2CodeGenerator) :X_TL2CodeGenerator
+  (* if f is a fun with one parameter, call optF with its parameter and body.
+   otherwise return nil. After visiting the body, remember to remove the signature from
+   the free ides. *)
+{
+  f.visitor
+    .ifFun(fun(f :X_TL2CompiledFun) {
+       if( f.domain.size = 1
+       then: { ide ::= f.domain[0].asValueIde
+	   assert({ ide.isNotNil })  	   ; funs can not have type parameters 
+	   optF[ide, f.body] }
+       else: { nil })
+    }).otherwise(fun(:Object){
+       nil
+    }).visit
+}
+
+_init :Void
+  (* *)
+{ super._init
+  specialSelectors := Dictionary.new
+  fillSpecialSelectors
+  self
+}
+
+}

@@ -1,0 +1,25 @@
+(* File   : SQL.tyc
+   Author : Michael Skusa
+   Date   : 30-Aug-1996
+   Purpose: Declarations of TWL SQL-classes
+*)
+
+(* Forward declarations: *)
+
+class SQLConnection metaclass AbstractClass;
+
+(* Load SQL-classes: *)
+
+DO load "../TWL/SQL/SQL.tc";
+DO load "../TWL/SQL/SQLError.tc";
+DO load "../TWL/SQL/SQLCursorMetaData.tc";
+DO load "../TWL/SQL/SQLCursor.tc";
+DO load "../TWL/SQL/SQLParameterMetaData.tc";
+DO load "../TWL/SQL/SQLStatement.tc";
+DO load "../TWL/SQL/SQLConnection.tc";
+DO load "../TWL/SQL/SQLDriver.tc";
+DO load "../TWL/SQL/SQLDriverManager.tc";
+
+DO check;
+
+SQLDriverManager.init;

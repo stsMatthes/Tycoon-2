@@ -1,0 +1,378 @@
+class X_BEMethodManager
+super X_BEBackEnd
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ back end for one ByteCode array *)
+meta X_BEMethodManagerClass
+{
+method :X_TL2CompiledMethod
+
+bindings :Dictionary(X_TL2ValueIde, X_BEVariable)
+
+compiler :X_TL2Compiler
+
+writer :X_BECompiledCodeWriter
+
+literals :GapArray(Object)
+
+exceptionTable :GapArray(X_BEExceptionHandler)
+componentScopes :GapArray(Triple(X_BEMMLabel, X_BEMMLabel, X_BEMMLabel))
+
+sp :Int
+
+  (* local variable number of last push. 
+   nil if current position is not reachable. *)
+
+stackPeak :Int
+
+errorLog :ErrorLog
+  (* *)
+{ compiler.errorLog }
+
+withBinding(v :X_BEVariable, thunk :Fun():Void) :Void
+  (* logic *)
+{
+  bindings[v.ide] := v
+  thunk[]
+  ;; not necessary, ides are unique anyway:
+  ; bindings.removeKey(v.ide)
+}
+
+withArgumentBindings(args :List(X_TL2ValueIde), thunk :Fun():Void) :Void
+  (* call <thunk> with bindings for the arguments <args>.  First element
+     in the list gets the highest index. *)
+{
+  if( args.isEmpty then: {
+    thunk[]
+  } else: {
+    ide ::= args.head
+    argIdx ::= args.tail.size
+    withBinding( X_BEArgumentVar.new(ide, argIdx), {
+      withArgumentBindings(args.tail, thunk)
+    })
+  })
+}
+
+withLocal(ide :X_TL2ValueIde, thunk :Fun():Void) :Void
+  (* *)
+{
+  withBinding( X_BELocalVar.new(ide, sp), thunk)
+}
+
+exceptionHandler(from :X_BEMMLabel, to :X_BEMMLabel, handler :X_BEMMLabel) :Void
+  (* *)
+{
+  x ::= X_BEExceptionHandler.new
+  x.from := from
+  x.to := to
+  x.handler := handler
+  if( exceptionTable.isNil then: { exceptionTable := GapArray.new(1) })
+  exceptionTable.add(x)
+}
+
+cellNew :Void
+{ writer.cellNew }
+
+componentCellNew :Void
+{ writer.componentCellNew }
+
+pop :Void
+  (* *)
+{ writer.pop
+  sp := sp - 1
+}
+
+adjust(n :Int) :Void
+  (* *)
+{  writer.adjust(n)   ; ### remove bindings? 
+   sp := sp - n
+}
+
+componentPop :Void
+  (* *)
+{ writer.componentPop
+  sp := sp - 1
+}
+
+componentAdjust :Void
+  (* *)
+{  writer.componentAdjust   ; ### remove bindings? 
+   sp := sp - 1
+}
+
+send(selector :X_TL2Selector) :Void
+{
+  vmInterface ::= compiler.vmInterface
+  if( vmInterface.specialSends.includesKey(selector)
+  then: { writer.sendSpecial(selector) }
+  else: { if( selector.arity <= vmInterface.shortSendMax
+	  then: { writer.sendShort(selector) }
+	  else: { writer.send(selector) }) })
+  ;; remove args, remove receiver, add result
+  sp := sp - selector.arity  
+}
+
+sendSuper(selector :X_TL2Selector) :Void
+  (* *)
+{
+  writer.sendSuper(selector)
+  ;; remove args, remove receiver, add result
+  sp := sp - selector.arity
+}
+
+loadLiteral(literal :Object) :Void
+  (* *)
+{
+  if( literal.isNil || compiler.vmInterface.specialLiterals.includesKey(literal) then: {
+    writer.loadSpecial(literal)
+  } else: {
+    if( literal."class" == Char then: {
+      writer.loadChar( _typeCast(literal, :Char) )
+    } else: { if( literal."class" == Int then: {
+      i ::= _typeCast(literal, :Int)
+      if( i >= (-128 )&&  i <= 127  then: {
+	writer.loadByte(i)
+      } else: { if( i >= (-32768 )&&  i <= 32767  then: {
+        writer.loadShort(i)
+      } else: {
+        vectorLiteral(i)
+      })})
+    } else: {
+      vectorLiteral(literal)
+    })})
+  })
+  incSp
+}
+
+load(ide :X_TL2ValueIde) :Void
+  (* *)
+{ bindings[ide].genLoad(writer)
+  incSp
+}
+
+loadRef(ide :X_TL2ValueIde) :Void
+  (* *)
+{ bindings[ide].genLoadRef(writer)
+  incSp
+}
+
+store(ide :X_TL2ValueIde) :Void
+  (* *)
+{ bindings[ide].genStore(writer)
+}
+
+reference(ide :X_TL2ValueIde) :Void
+  (* *)
+{ bindings[ide].genReference(writer)
+  incSp
+}
+
+takeFrom(ide :X_TL2ValueIde) :Void
+  (* *)
+{ bindings[ide].genTakeFrom(writer)
+  incSp
+}
+
+moveTo(ide :X_TL2ValueIde) :Void
+  (* *)
+{ bindings[ide].genMoveTo(writer)
+}
+
+closure(nbGlobals :Int) :Void
+  (* *)
+{ writer.closure(nbGlobals)
+  sp := sp - nbGlobals
+}
+
+makeArray(nSlots :Int) :Void
+  (* *)
+{ writer.makeArray(nSlots)
+  sp := sp - nSlots + 1
+}
+
+sync :Void
+  (* *)
+{ writer.sync }
+
+return :Void
+  (* *)
+{  writer.return
+   sp := nil
+}
+
+sendTail(selector :X_TL2Selector) :Void
+  (* *)
+{
+  writer.sendTail(selector)
+  sp := nil
+}
+
+newLabel :X_BEMMLabel
+  (* for control structures.
+   A X_BEMMLabel (MethodManagerLabel) represents a point in the bytecode together with the stack level. *)
+{ memo ::= X_BEMMLabel.new
+  memo.sp := (-1)  ; unbound 
+  memo.label := writer.newLabel
+  memo
+}
+
+_reachable(memo :X_BEMMLabel) :Void
+  (* *)
+{  ; "unify" sp and memo.sp 
+  if( memo.unbound
+  then: { memo.sp := sp }
+  else: { if( sp.isNil
+      then: { sp := memo.sp }
+      else: { assert({ sp == memo.sp }) nil }) })
+}
+
+defineLabel(memo :X_BEMMLabel) :Void
+  (* ### memo must have been reached somehow before setLabel can be called.
+   This disallows constructions like the following:
+      jump test
+   loop: ...
+   test: ...
+      ifFalse loop
+ *)
+{
+  _reachable(memo)
+  writer.defineLabel(memo.label)
+  sp := memo.sp
+}
+
+jump(memo :X_BEMMLabel) :Void
+  (* *)
+{
+  _reachable(memo)
+  writer.jump(memo.label)
+  sp := nil
+}
+
+ifFalse(memo :X_BEMMLabel) :Void
+  (* *)
+{
+  sp := sp - 1
+  _reachable(memo)
+  writer.ifFalse(memo.label)
+}
+
+ifTrue(memo :X_BEMMLabel) :Void
+  (* *)
+{
+  sp := sp - 1
+  _reachable(memo)
+  writer.ifTrue(memo.label)
+}
+
+isReached :Bool
+  (* is the current code ever reached? *)
+{  sp.isNotNil }
+
+finished :Void
+  (* *)
+{
+  genComponentCleanup
+
+  ; Write back results to <meth>. 
+  method.byteCode := writer.finished
+  method.literals := literals.asArray
+
+  if( exceptionTable.isNil then: {
+    method.exceptionTable := nil
+  } else: {
+    table ::= ShortArray.new(exceptionTable.size * 6)
+    exceptionTable.keysAndElementsDo(fun(i :Int, eh :X_BEExceptionHandler) {
+      p ::= i * 6
+      table[p]   := eh.from.label.position
+      table[p+1] := eh.to.label.position
+      table[p+2] := eh.handler.label.position
+      table[p+3] := eh.handler.sp
+    })
+    method.exceptionTable := table
+  })
+
+  method.stackPeak := stackPeak 
+  method.selectorID :=
+    compiler.getSelectorId(
+      X_TL2Selector.new1(method.selector, method.arity, method.sorts))
+}
+
+incSp :Void
+  (* only public for try *)
+{ sp := sp + 1
+  if( sp > stackPeak then: { stackPeak := sp })
+}
+
+addComponentScope(scopeStart :X_BEMMLabel, scopeEnd :X_BEMMLabel) :Void
+{
+  assert({ scopeStart.label.isDefined && scopeEnd.label.isDefined })
+  if( scopeStart.label.position < scopeEnd.label.position then: {
+    handlerStart ::= newLabel
+    if( componentScopes.isNil then: { componentScopes := GapArray.new(1) })
+    componentScopes.add(Triple.new(scopeStart, scopeEnd, handlerStart))
+    exceptionHandler(scopeStart, scopeEnd, handlerStart)
+  })
+}
+
+private
+
+genComponentCleanup :Void
+{
+  if( componentScopes.isNotNil then: {
+    sel ::= X_TL2Selector.new(#_raise, #())
+    componentScopes.do(fun(t :Triple(X_BEMMLabel, X_BEMMLabel, X_BEMMLabel)) {
+      sp := t.first.sp
+      assert({ sp.isNotNil })
+      assert({ sp != -1 })
+      defineLabel(t.third)
+      componentAdjust
+      send(sel)
+      ;; the generated send never returns
+      sp := nil
+    })
+  })
+}
+
+_init :Void
+  (* *)
+{ super._init
+  writer := 
+    X_BECompiledCodeWriter.new(compiler.vmInterface,
+      fun(selector :X_TL2Selector) {
+        compiler.getSelectorId(selector)
+      })
+  literals := GapArray.new0
+  sp := 0
+  stackPeak := 0
+  self
+}
+
+vectorLiteral(literal :Object) :Void
+  (* *)
+{
+  i ::=
+    literals.keys.detect(fun(i :Int){ literals[i] == literal })
+  if( i.isNil
+    then: { i := literals.size
+	literals.add(literal) })
+  writer.loadLiteral(i)
+}
+
+}

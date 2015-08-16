@@ -1,0 +1,52 @@
+class RootClass
+super ConcreteClass(Root)
+metaclass MetaClass
+public methods
+
+new(storeDescriptorsPath :String) :Root
+{
+  let instance = _new,
+  instance.storeDescriptors := parseStoreDescriptors(storeDescriptorsPath),
+  instance._init
+}
+
+parseStoreDescriptors(path :String) :Dictionary(String, TspDescriptor)
+{
+  let d = Dictionary.new,
+  let nameToDescriptor = Dictionary(:String, :TspDescriptor).new,
+  nameToDescriptor["WeakRef"] := WeakRefDescriptor.instance,
+  nameToDescriptor["Array"] := ArrayDescriptor.instance,
+  nameToDescriptor["ByteArray"] := ByteArrayDescriptor.instance,
+  nameToDescriptor["ShortArray"] := ShortArrayDescriptor.instance,
+  nameToDescriptor["IntArray"] := IntArrayDescriptor.instance,
+  nameToDescriptor["LongArray"] := LongArrayDescriptor.instance,
+  nameToDescriptor["Thread"] := ThreadDescriptor.instance,
+  nameToDescriptor["Stack"] := StackDescriptor.instance,
+
+  parseTabs(path, fun(a :Array(String)) {
+    let className = a[0],
+    let layout = a[1],
+    let descriptor =
+      nameToDescriptor.lookup(layout,
+        fun(t :TspDescriptor) { t },
+	{ layout = "Struct"
+          ? { StructDescriptor.new(a[2]) }
+	  : { tycoon.stdout
+	         << "Unknown store layout name `"<<layout<<"\' for class "<<className<<'\n',
+	      assert false,
+	      nil }}),
+    d[className] := descriptor
+  }),
+  d
+}
+
+parseTabs(path :String, fu :Fun1(Array(String),Void))
+{
+  let f = File.openRead(path).bufferedInput,
+  let var line :String = nil,
+  while({ line := f.readln, line.isNotNil }, {
+    fu[Array.fromReader(Tokenizer.new(line.reader, "\t"))]
+  }),
+  f.close
+}
+;

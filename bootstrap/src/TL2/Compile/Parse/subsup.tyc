@@ -1,0 +1,62 @@
+(* From the dragon book, grammar (4.25) *)
+
+define E :MutableNonterminal(Object);
+
+E := MutableNonterminal.new("E");
+
+define t :Dictionary(String, SimpleTerminal);
+t := Dictionary.new;
+t["{"] := SimpleTerminal.new("{");
+t["}"] := SimpleTerminal.new("}");
+t["sub"] := SimpleTerminal.new("sub");
+t["sup"] := SimpleTerminal.new("sup");
+t["c"] := SimpleTerminal.new("c");
+
+t["sub"].precedence := t["sup"].precedence :=
+        Precedence.right(1);
+
+E.addRule5(
+	E, t["sub"], E, t["sup"], E,
+	fun(:Object, :Object, :Object, :Object, :Object) :Object
+	{ nil });
+E.addRule3(
+	E, t["sub"], E,
+	fun(:Object, :Object, :Object) :Object
+	{ nil });
+E.addRule3(
+	E, t["sup"], E,
+	fun(:Object, :Object, :Object) :Object
+	{ nil });
+E.addRule3(
+	t["{"], E, t["}"], 
+	fun(:Object, :Object, :Object) :Object
+	{ nil });
+E.addRule1(
+	t["c"],
+	fun(:Object) :Object
+	{ nil });
+
+
+define g :Grammar(Object);
+g := Grammar.new(E);
+
+define parserGen :ParserGen(NaiveParser);
+parserGen := ParserGen(:NaiveParser).new(NaiveParserBuilder.new);
+
+define p :NaiveParser(Object);
+p := parserGen.generate(g);
+
+(*
+define testInput :List(Token(Object));
+
+testInput := List(:Token(Object)).new7(
+	  tNumber.token(2), 
+          t["*"].token, 
+	  tNumber.token(1),
+          t["+"].token, 
+          t["("].token, 
+	  tNumber.token(3),
+          t[")"].token);
+
+p.parse(testInput.reader);  (* 8 or 5 ? *)
+*)

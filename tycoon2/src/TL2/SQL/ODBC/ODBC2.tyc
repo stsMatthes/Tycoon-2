@@ -1,0 +1,24 @@
+(* File   : ODBC2.tyc
+   Author : Michael Skusa
+   Date   : 11-Mar-1997
+   Purpose: Declarations of TWL ODBC-classes for Tycoon-2
+*)
+
+tycoon.tl.loader.registerFile("SQL/ODBC/ODBC.tc");
+tycoon.tl.loader.update;
+define odbc:ODBC;
+odbc:=ODBC.new;
+odbc.open;
+tycoon.tl.loader.registerFile("SQL/ODBC/ODBCError.tc");
+tycoon.tl.loader.registerFile("SQL/ODBC/ODBCErrorClass.tc");
+tycoon.tl.loader.registerFile("SQL/ODBC/ODBCCursorMetaData.tc");
+tycoon.tl.loader.registerFile("SQL/ODBC/ODBCParameterMetaData.tc");
+tycoon.tl.loader.registerFile("SQL/ODBC/ODBCCursor.tc");
+tycoon.tl.loader.registerFile("SQL/ODBC/ODBCStatement.tc");
+tycoon.tl.loader.registerFile("SQL/ODBC/ODBCConnection.tc");
+tycoon.tl.loader.registerFile("SQL/ODBC/ODBCDriver.tc");
+
+tycoon.tl.loader.update;
+
+ODBCDriver.init;
+SQLDriverManager.instance.registerDriver(ODBCDriver.instance);

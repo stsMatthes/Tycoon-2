@@ -1,0 +1,16 @@
+class AtTraceReturnClass
+super ConcreteClass(AtTraceReturn)
+meta MetaClass
+{
+
+new(sendingComponent :Object, sender :Object, result :Void) :AtTraceReturn
+{
+  instance ::= _new
+  instance.sendingComponent := sendingComponent
+  instance.sender := sender
+  instance.result := result
+  instance._init
+  instance
+}
+
+}

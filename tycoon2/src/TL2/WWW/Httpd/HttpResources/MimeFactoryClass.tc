@@ -1,0 +1,10 @@
+class MimeFactoryClass
+
+super SingletonClass(MimeFactory)
+
+metaclass MetaClass
+
+public methods
+
+;
+

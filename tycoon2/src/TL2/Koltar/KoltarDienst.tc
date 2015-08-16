@@ -1,0 +1,25 @@
+class KoltarDienst
+super Koltar, StructurePrintingMixin
+meta KoltarDienstClass
+{
+name :String
+erklaerung :String
+
+save(out :Output) :Void
+{
+  p ::= Properties.new
+  p["name"] := name
+  p["erklaerung"] := erklaerung
+  p.save(out)
+}
+
+private
+
+_load(in :Input) :Void
+{
+  p ::= Properties.new
+  p.load(in)
+  name := p["name"]
+  erklaerung := p["erklaerung"]
+}
+}

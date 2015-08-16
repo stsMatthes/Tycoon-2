@@ -1,0 +1,16 @@
+class AtTraceReceiveClass
+super ConcreteClass(AtTraceReceive)
+meta MetaClass
+{
+
+new(receivingComponent :Object, receiver :Object, value :Object) :AtTraceReceive
+{
+  instance ::= _new
+  instance.receivingComponent := receivingComponent
+  instance.receiver := receiver
+  instance.value := value
+  instance._init
+  instance
+}
+
+}

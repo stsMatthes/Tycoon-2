@@ -1,0 +1,13 @@
+class AtTraceIncomingEvent
+super AtTraceEvent
+meta AbstractClass
+{
+
+receivingComponent :Object
+
+receiver :Object
+
+case(T<:Void, ifEnter :Fun(:AtTraceEnter):T, ifReceive :Fun(:AtTraceReceive):T) :T
+  deferred
+
+}

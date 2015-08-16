@@ -1,0 +1,52 @@
+class HttpFileResource
+
+super HttpResource
+
+public
+
+contentType :MediaType,
+contentEncoding :String
+
+methods
+
+contents :DirectoryContents
+{
+  file
+}
+
+file :File { _file }
+"file:="(f :File) :File { _file := f }
+
+get(request :HttpRequest) :HttpResponse
+{
+  let response = newResponse(HttpResponse.OK),
+  response.contentLength := contentLength,
+  response.contentType := contentType,
+  response.contentEncoding := contentEncoding,
+  response.body := File.new(file.path).openRead,
+  response
+}
+
+printOn(out :Output)
+{
+  out.writeln(clazz.name
+    + "("
+    + (file.isNil ? {let result :Object = file} : {file.path}).printString
+    + ")"
+  )
+}
+  
+private
+
+_file :File
+
+methods
+
+_init :Void
+{
+  super._init,
+  self
+}
+;
+
+

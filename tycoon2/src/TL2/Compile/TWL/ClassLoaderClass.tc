@@ -1,0 +1,17 @@
+class ClassLoaderClass
+super ConcreteClass(ClassLoader)
+metaclass MetaClass
+public methods
+new( scanner :ReentrantTWLScanner,
+     parser :AbstractParser(TWLParseUnit),
+     compiler :Compiler,
+     classManager :ClassManager) :ClassLoader
+{
+  let instance = _new,
+  instance._scanner := scanner,
+  instance._parser := parser,
+  instance._compiler := compiler,
+  instance._classManager := classManager,
+  instance._init
+}
+;
