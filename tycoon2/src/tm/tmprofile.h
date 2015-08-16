@@ -21,10 +21,10 @@
 /*
   Copyright (c) 1997 Higher-Order GmbH, Hamburg. All rights reserved.
 
-  tmprofile.h 1.2 98/05/18 Marc Weikard
+  $File: //depot/tycoon2/stsmain/tycoon2/src/tm/tmprofile.h $ $Revision: #3 $ $Date: 2003/10/01 $ Marc Weikard
 
   Tycoon Machine Profiler
-
+  
 */
 
 #ifndef TMPROFILE_H

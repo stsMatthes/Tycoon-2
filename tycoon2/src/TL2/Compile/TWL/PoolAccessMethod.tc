@@ -1,7 +1,0 @@
-class PoolAccessMethod
-super PoolMethod
-metaclass PoolAccessMethodClass
-;
-
-
-

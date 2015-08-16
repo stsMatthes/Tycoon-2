@@ -21,7 +21,7 @@
 /*
   Copyright (c) 1996 Higher-Order GmbH, Hamburg. All rights reserved.
 
-  tyc.h 1.44 98/11/10 Andreas Gawecki, Marc Weikard
+  $File: //depot/tycoon2/stsmain/tycoon2/src/tm/tyc.h $ $Revision: #3 $ $Date: 2003/10/01 $ Andreas Gawecki, Marc Weikard
 
   Tycoon Objects
 
@@ -64,8 +64,8 @@ typedef struct tyc_Real {
 
 
 /* Tagged Integers: avoid bit loss
-   00!0xxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-   11!1xxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+   00!0xxxxxxxxxxxxxxxxxxxxxxxxxxxxx 
+   11!1xxxxxxxxxxxxxxxxxxxxxxxxxxxxx 
 */
 
 #define tyc_MUST_BOX_INT(v) ( ((Int) (v)) != (( ((Int) (v)) << 2) >> 2) )
@@ -73,10 +73,10 @@ typedef struct tyc_Real {
 #define tyc_IS_TAGGED_INT(x) \
   ( (x) ? (tsp_IS_IMMEDIATE(x) ? TRUE : tsp_classId(x) == tyc_ClassId_Int) \
       : FALSE )
-
+  
 #define tyc_TAGGED_INT_VALUE(x) \
   ( tsp_IS_IMMEDIATE(x) ? ( ((Int) (x)) >> 2) : ( ((tyc_Int *) (x))->value ))
-
+  
 #define tyc_TAG_MAYBEBOXED(v) \
   ((tsp_OID) (tyc_MUST_BOX_INT(v) ? \
               (Int) tyc_boxInt((Int) (v)) : ( (((Int) (v)) << 2) | 1)) )
@@ -109,13 +109,13 @@ extern tsp_OID * tyc_boxReal(Real value);
 #define tyc_NIL   NULL
 
 #define tyc_CLASSID(x) ((x) == NULL ? tyc_ClassId_Nil : tsp_IS_IMMEDIATE(x) ? \
-                        tyc_ClassId_Int : tsp_classId(x))
+			tyc_ClassId_Int : tsp_classId(x))
 
 #define tyc_CLASS(id)     (tyc_pRoot->apClassTable[(id)])
 #define tyc_SELECTOR(id)  (tyc_pRoot->apSelectorTable[(id)]->pSymbol)
 #define tyc_ARGUMENTS(id) (tyc_pRoot->apSelectorTable[(id)]->wArity)
 #define tyc_SORTS(id)     (tyc_pRoot->apSelectorTable[(id)]->wSorts)
-                        
+
 
 /* ClassId codes used by the virtual machine: */
 
@@ -123,7 +123,7 @@ extern tsp_OID * tyc_boxReal(Real value);
 typedef enum {
 
   #include "classids.h"
-
+  
   tyc_ClassId_nPredefined
 } tyc_PredefinedClassIds;
 #undef TYC_CLASSID
@@ -152,7 +152,7 @@ typedef char *    tyc_Symbol;
 typedef tsp_OID * tyc_Array;
 typedef Byte *    tyc_ByteArray;
 typedef Short *   tyc_ShortArray;
-typedef Int *     tyc_IntArray;
+typedef Int *	  tyc_IntArray;
 typedef void      tyc_Nil;
 
 
@@ -192,7 +192,7 @@ typedef struct tyc_Class {
   tyc_Slot **slotMap;
 } tyc_Class;
 
-typedef struct tyc_MethodDictionary {
+typedef struct tyc_MethodDictionary { 
   tsp_OID _elementCount;	    /* tagged Int */
   tyc_Symbol * apszKeys;
   struct tyc_Method ** apElements;
@@ -242,14 +242,14 @@ typedef struct tyc_CompiledMethod {
   tyc_Class * pClass;
   Byte * pbCode;
   tyc_Array * pLiterals;
-  Word idSelector;
-  Word cwStackPeak;                 /* stack peak */
+  Word idSelector; 
+  Word cwStackPeak;	      	    /* stack peak */
   tyc_CatchFrame * asHandlerTable;  /* may be null (no handlers) */
 } tyc_CompiledMethod;
 
 typedef struct tyc_BuiltinMethod {
   tyc_CompiledMethod compiledMethod;
-
+  
   Word iNumber;
   void * pNativeBody;
 } tyc_BuiltinMethod;
@@ -259,11 +259,11 @@ typedef struct tyc_CompiledFun {
 
   tsp_OID freeValueIdes;
   void * pNativeBody;
-} tyc_CompiledFun;
+} tyc_CompiledFun;  
 
 typedef struct tyc_ExternalMethod {
   tyc_Method method;
-
+  
   char * pszLanguage;
   char * pszLabel;
   char * pszTycoonArgs;
@@ -274,17 +274,16 @@ typedef struct tyc_ExternalMethod {
 
 typedef struct tyc_SlotMethod {
   tyc_Method method;
+  
   tyc_Slot *slot;
   Word iOffset;
 } tyc_SlotMethod;
-
 
 typedef struct tyc_CSlotMethod {
   tyc_SlotMethod slotMethod;
 
   char cTycoonType;
 } tyc_CSlotMethod;
-
 
 typedef struct tyc_PoolMethod {
   tyc_Method method;
@@ -302,9 +301,9 @@ typedef struct tyc_PoolUpdateMethod {
 
 } tyc_PoolUpdateMethod;
 
-typedef struct tyc_Fun {            /* only one struct for all FunNs */
-  tyc_CompiledFun * pCompiledFun;
-  tsp_OID awGlobals[1];             /* actually 0..n */
+typedef struct tyc_Fun {            /* only one struct for all FunNs */  
+  tyc_CompiledFun * pCompiledFun;   
+  tsp_OID awGlobals[1];	            /* actually 0..n */
 } tyc_Fun;
 
 
@@ -384,7 +383,7 @@ typedef struct tyc_DLLOpenError {
 
 typedef struct tyc_DLLCallError {
   tsp_OID pDLL;
-  char * pszEntry;
+  char * pszEntry; 
 } tyc_DLLCallError;
 
 typedef struct tyc_DivisionByZero {
@@ -410,7 +409,7 @@ typedef struct tyc_Finalizer {
   tyc_Thread * pThread;
   tsp_OID running;
   tsp_OID idle;
-} tyc_Finalizer;
+} tyc_Finalizer;  
 
 typedef struct tyc_Root {
   tyc_Thread * pThread;         /* first thread in linked list */
@@ -451,4 +450,3 @@ extern void tyc_enumAmbiguousRootPtr(tsp_VisitPtr visitAmbiguousPtr);
 #endif
 
 #endif
-

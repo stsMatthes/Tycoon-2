@@ -1,68 +1,68 @@
 class HttpResponseParser(Response <: HttpResponse)
 super HttpMessageParser(Response)
-metaclass SimpleConcreteClass(HttpResponseParser(Response))
-
-public methods
-
-parse(from :Input, to :Response)
+(**)
+meta SimpleConcreteClass(HttpResponseParser(Response))
 {
-  let p = MimeParser.new(from),
+parse(from :Input, to :Response) :Void
+  (* *)
+{
+  p ::= MimeParser.new(from)
 
-  p.skip('H'), p.skip('T'), p.skip('T'), p.skip('P'),
-  p.skip('/'),
-  let major = p.nextDigits,
-  p.skip('.'),
-  let minor = p.nextDigits,
+  p.skip('H') p.skip('T') p.skip('T') p.skip('P')
+  p.skip('/')
+  major ::= p.nextDigits
+  p.skip('.')
+  minor ::= p.nextDigits
 
-  p.skip(' '),
-  (*
- * This file is part of the Tycoon-2 system.
- *
- * The Tycoon-2 system is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation (Version 2).
- *
- * The Tycoon-2 system is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty
- * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public
- * License along with the Tycoon-2 system; see the file LICENSE.
- * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
- * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
- * 
- * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
- *
- Care is necessary not to read too much characters *)
-  let statusCode = p.nextDigits,
-  p.skip(' '),
+  p.skip(' ')
+  ;
+; * This file is part of the Tycoon-2 system.
+; *
+; * The Tycoon-2 system is free software; you can redistribute it and/or
+; * modify it under the terms of the GNU General Public License
+; * as published by the Free Software Foundation (Version 2).
+; *
+; * The Tycoon-2 system is distributed in the hope that it will be useful,
+; * but WITHOUT ANY WARRANTY; without even the implied warranty
+; * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+; * See the GNU General Public License for more details.
+; * 
+; * You should have received a copy of the GNU General Public
+; * License along with the Tycoon-2 system; see the file LICENSE.
+; * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+; * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+; * 
+; * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+; *
+; Care is necessary not to read too much characters 
+  statusCode ::= p.nextDigits
+  p.skip(' ')
 
-  let status = GapString.new(40),
-  while({p.char != '\r' & p.char != '\n'}, {
-    status.add(p.char),
+  status ::= GapString.new(40)
+  while({p.char != '\r' & p.char != '\n'} do: {
+    status.add(p.char)
     p.next
-  }),
+  })
 
-  (* Care is necessary not to read too much characters *)
-  p.char = '\r' ? {
-    p.next,
-    p.char != '\n' ? {
+  ; Care is necessary not to read too much characters 
+  if( p.char = '\r' then: {
+    p.next
+    if( p.char != '\n' then: {
       MimeParserError.new("Termination of request line").raise
-    }
-  } : {
-  p.char = '\n' ? {
-  } : {
+    })
+  } else: {
+  if( p.char = '\n' then: {
+  } else: {
     MimeParserError.new("Termination of request line").raise
-  }},
+  })})
 
-  to.major := major.asInt,
-  to.minor := minor.asInt,
+  to.major := major.asInt
+  to.minor := minor.asInt
 
-  to.statusCode := statusCode.asInt,
-  to.status     := status.asString,
+  to.statusCode := statusCode.asInt
+  to.status     := status.asString
   
   super.parse(from, to)
 }
-  
-;
+
+}

@@ -1,13 +1,8 @@
 class PersonalizeHttpCookieState
-
 super PersonalizeHttpState
-
-metaclass SimpleConcreteClass(PersonalizeHttpCookieState)
-
-public
-
-methods
-
+(**)
+meta SimpleConcreteClass(PersonalizeHttpCookieState)
+{
 noCookiesPlease(client :PersonalizeHttpClient) :Void
   (*
  * This file is part of the Tycoon-2 system.
@@ -32,16 +27,16 @@ noCookiesPlease(client :PersonalizeHttpClient) :Void
      we switched to cookie state since the client already accepted
      one. *)
 {
-  assert false
+  assert({ false })
 }
 
 personalizeHttp(client :PersonalizeHttpClient,
    request :HttpRequest,
    response :HttpResponse) :HttpResponse
+  (* *)
 {
-  (* Netscape did the work for us. *)
+  ; Netscape did the work for us. 
   response
 }
 
-;
-
+}

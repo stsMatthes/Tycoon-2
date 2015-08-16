@@ -1,24 +1,7 @@
-class Httpd metaclass AbstractClass;
+tycoon.tl.loader.registerDirectory("WWW/Httpd");
 DO load "../TWL/WWW/Httpd/HttpResources/HttpResources.tyc";
-
-class HttpdAccessLog metaclass AbstractClass;
-DO load "../TWL/WWW/Httpd/HttpdAccessLogClass.tc";
-DO load "../TWL/WWW/Httpd/HttpdAccessLog.tc";
-
-class HttpdErrorLog metaclass AbstractClass;
-DO load "../TWL/WWW/Httpd/HttpdErrorLogClass.tc";
-DO load "../TWL/WWW/Httpd/HttpdErrorLog.tc";
-
-class HttpdError metaclass AbstractClass;
-DO load "../TWL/WWW/Httpd/HttpdErrorClass.tc";
-DO load "../TWL/WWW/Httpd/HttpdError.tc";
-
-DO load "../TWL/WWW/Httpd/HttpdProperties.tc";
-
-DO load "../TWL/WWW/Httpd/HttpdClass.tc";
-DO load "../TWL/WWW/Httpd/Httpd.tc";
-
-DO check;
+tycoon.tl.loader.update;
+tycoon.tl.typeChecker.check;
 
 (*
 

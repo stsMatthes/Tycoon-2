@@ -21,10 +21,10 @@
 /*
   Copyright (c) 1996 Higher-Order GmbH, Hamburg. All rights reserved.
 
-  tvm.h 1.14 98/05/18 Andreas Gawecki, Marc Weikard
+  $File: //depot/tycoon2/stsmain/bootstrap/src/tm/tvm.h $ $Revision: #3 $ $Date: 2003/10/02 $ Andreas Gawecki, Marc Weikard
 
   Tycoon Virtual Machine Interface
-
+  
 */
 
 #ifndef TVM_H
@@ -42,7 +42,7 @@ extern "C" {
 typedef enum {
 
   #include "opcodes.h"
-
+  
   tvm_Op_nOps
 } tvm_Opcode;
 #undef TVM_OP

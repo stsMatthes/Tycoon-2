@@ -1,7 +1,5 @@
 class TaskState
 super Object
-metaclass TaskStateClass(TaskState)
-
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -21,51 +19,73 @@ metaclass TaskStateClass(TaskState)
  * 
  * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
  *
- "Richards" benchmark: ported from C++ to TL-2 *)   
+ "Richards" benchmark: ported from C++ to TL-2 *)
+meta TaskStateClass(TaskState)
+{
+packetPending :Bool
 
-public
+taskWaiting   :Bool
 
-packetPending :Bool,
-taskWaiting   :Bool,
 taskHolding   :Bool
 
-methods
-
 setPacketPending() :Void
+  (* *)
 {
-  packetPending := true,
-  taskWaiting := false,
+  packetPending := true
+  taskWaiting := false
   taskHolding := false
 }
 
 setWaiting() :Void
+  (* *)
 {
-  packetPending := false,
-  taskWaiting := true,
+  packetPending := false
+  taskWaiting := true
   taskHolding := false
 }
 
 setRunning() :Void
+  (* *)
 {
-  packetPending := false,
-  taskWaiting := false,
+  packetPending := false
+  taskWaiting := false
   taskHolding := false
 }
 
 setWaitingWithPacket() :Void
+  (* *)
 {
-  packetPending := true,
-  taskWaiting := true,
+  packetPending := true
+  taskWaiting := true
   taskHolding := false
 }
 
-(* not needed in TL-2 but is nicer to read: *)
-isPacketPending() :Bool { packetPending }
-isTaskWaiting() :Bool { taskWaiting }
-isTaskHolding() :Bool { taskHolding }
-isRunning() :Bool {!packetPending & !taskWaiting & !taskHolding }
-isWaiting() :Bool {!packetPending & taskWaiting & !taskHolding }
-isWaitingWithPacket() :Bool { packetPending & taskWaiting & !taskHolding }
-isTaskHoldingOrWaiting() :Bool {taskHolding | (!packetPending  & taskWaiting)}
+isPacketPending() :Bool
+  (* not needed in TL-2 but is nicer to read: *)
+{ packetPending }
 
-;
+isTaskWaiting() :Bool
+  (* *)
+{ taskWaiting }
+
+isTaskHolding() :Bool
+  (* *)
+{ taskHolding }
+
+isRunning() :Bool
+  (* *)
+{!packetPending & !taskWaiting & !taskHolding }
+
+isWaiting() :Bool
+  (* *)
+{!packetPending & taskWaiting & !taskHolding }
+
+isWaitingWithPacket() :Bool
+  (* *)
+{ packetPending & taskWaiting & !taskHolding }
+
+isTaskHoldingOrWaiting() :Bool
+  (* *)
+{taskHolding | (!packetPending  & taskWaiting)}
+
+}

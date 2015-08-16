@@ -1,5 +1,5 @@
-class ThreadClass(T <:Void)
-super ConcreteClass(Thread(T))
+class ThreadClass(T <:Void,Instance <:Thread(T))
+super ConcreteClass(Instance)
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -23,7 +23,7 @@ super ConcreteClass(Thread(T))
 meta MetaClass
 {
 
-new(fn :Fun():T) :Thread(T)
+new(fn :Fun():T) :Instance
   (* spawn a new thread computing the given function.
      answer the running new thread.
   *)
@@ -32,6 +32,14 @@ new(fn :Fun():T) :Thread(T)
   t._fn := fn
   t._init
   t
+}
+
+new(fn :Fun():T) @:Instance
+  (* spawn a new thread computing the given function.
+     answer the running new thread.
+  *)
+{
+  fetch(new(fn))@
 }
 
 this :Thread(Void)
@@ -87,7 +95,7 @@ TRACE_INHERIT :Int
 
 private
 
-_new :Thread(T)
+_new :Instance
   (* *)
 builtin
 

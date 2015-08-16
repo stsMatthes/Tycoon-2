@@ -1,11 +1,10 @@
 class HttpRequestClass
 super ConcreteClass(HttpRequest)
-metaclass MetaClass
-
-public methods
-
+(**)
+meta MetaClass
+{
 new :HttpRequest
-(*
+  (*
  * This file is part of the Tycoon-2 system.
  *
  * The Tycoon-2 system is free software; you can redistribute it and/or
@@ -24,10 +23,9 @@ new :HttpRequest
  * 
  * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
  *
- ------------------------------------------------------------ *)  
-  { new6(nil, nil, 1, 1, MimeHeaderDictionary.new, nil) }
+ ------------------------------------------------------------ *)
+{ new6(nil, nil, 1, 1, MimeHeaderDictionary.new, nil) }
 
-  
 new6(method :String,
      uri :String,
      major :Int,
@@ -35,23 +33,21 @@ new6(method :String,
      headers :MimeHeaderDictionary(MimeHeaderValue),
      body :Input
     ) :HttpRequest
-
-  require headers.isNotNil    
-(* ------------------------------------------------------------ *)  
+  (* ------------------------------------------------------------ *)
+require headers.isNotNil    
+  
  { _new._init6(method, uri, major, minor, headers, body) }
 
- 
-init
-(* ------------------------------------------------------------ *)  
-  {
-    MimeHeaderRegistry.instance.registerHeader("accept", AcceptListHeader),
-    MimeHeaderRegistry.instance.registerHeader("if-modified-since", MimeDate),
-    MimeHeaderRegistry.instance.registerHeader("cookie", HttpCookiesHeader),
-    MimeHeaderRegistry.instance.registerHeader("authorization", HttpCredentialsHeader),
-    MimeHeaderRegistry.instance.registerHeader("user-agent", HttpProductListHeader),
-    MimeHeaderRegistry.instance.registerHeader("x-cgi2tl-remote-addr", IPAddressHeader),
+init :Void
+  (* ------------------------------------------------------------ *)
+{
+    MimeHeaderRegistry.instance.registerHeader("accept", AcceptListHeader)
+    MimeHeaderRegistry.instance.registerHeader("if-modified-since", MimeDate)
+    MimeHeaderRegistry.instance.registerHeader("cookie", HttpCookiesHeader)
+    MimeHeaderRegistry.instance.registerHeader("authorization", HttpCredentialsHeader)
+    MimeHeaderRegistry.instance.registerHeader("user-agent", HttpProductListHeader)
+    MimeHeaderRegistry.instance.registerHeader("x-cgi2tl-remote-addr", IPAddressHeader)
     MimeHeaderRegistry.instance.registerHeader("x-cgi2tl-remote-host", MimeString)
   }
 
-;
-
+}

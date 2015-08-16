@@ -2,7 +2,7 @@ class CyclicGraphError(T <: Object,
 		    
 		       N <: Node(T),
 		       G <: Graph(T) )
-super Parse, Exception
+super Graphs, Exception
 (*
  * This file is part of the Tycoon-2 system.
  *

@@ -1,3 +1,5 @@
+class ClassDescriptor
+super ArrayDescriptor
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -23,38 +25,36 @@
    user-defined class slots are set to <nil>, and will have to
    be initialized on system startup.
 *)
-
-class ClassDescriptor
-super ArrayDescriptor
-metaclass SingletonClass(ClassDescriptor)
-public methods
-
-allocate(o :Object, tl2Class :TL2Class, tracer :Tracer) :Int
-  require o."class".name = tl2Class.name
+meta TspDescriptorClass(ClassDescriptor)
 {
-  assert o."class" == TL2Class,
-  assert tl2Class.name = "Class",
+allocate(o :Object, tl2Class :TL2Class) :Int
+  (* *)
+require o."class".name = tl2Class.name
+{
+  assert({ o."class" == TL2Class })
+  assert({ tl2Class.name = "Class" })
 
-  let o = _typeCast(o, :TL2Class),
+  o ::= _typeCast(o, :TL2Class)
   
-  (* the allocated object will be an instance of <meta> *)
-  let metaName = o.metaClassDeclaration.className,
-  let meta = tracer.root.classes.detect(fun(c:TL2Class){ c.name = metaName }), (* ### slow? *)
-  let classId = meta.id,
-  (* the allocated object must be a class
-     (its class must inherit from TL2Class) *)
-  assert meta.cpl.includes(tl2Class),
-  let extraSlots =
-    meta.instanceSize - tl2Class.instanceSize,
-  assert extraSlots >= 0,
-  assert o.__basicSize = tl2Class.instanceSize,
+  ; the allocated object will be an instance of <meta> 
+  metaName ::= o.metaClassDeclaration.className
+  metac ::= _tracer.root.classes.detect(fun(c:TL2Class){ c.name = metaName }) ; ### slow? 
+  classId ::= metac.id
+  ; the allocated object must be a class
+  ;   (its class must inherit from TL2Class) 
+  assert({ metac.cpl.includes(tl2Class) })
+  extraSlots ::=
+    metac.instanceSize - tl2Class.instanceSize
+  assert({ extraSlots >= 0 })
+  assert({ o.__basicSize = tl2Class.instanceSize })
 
-  let bytes = objectSize(o, tracer) + extraSlots * 4,
-  tracer.allocate(o, bytes, classId, o.identityHash, {
-    dumpInstance(o, tracer),
-    for(1,extraSlots,fun(i:Int) {
-      tracer.dumpOID(nil)
+  bytes ::= objectSize(o) + extraSlots * 4
+  _tracer.allocate(o, bytes, classId, o.identityHash, {
+    dumpInstance(o)
+    for(1 to:extraSlots do:fun(i:Int) {
+      _tracer.dumpOID(nil)
     })
   })
-} 
-;
+}
+
+}

@@ -21,10 +21,10 @@
 /*
   Copyright (c) 1996 Higher-Order GmbH, Hamburg. All rights reserved.
 
-  tmdebug.c 1.16 98/11/02 Marc Weikard
+  $File: //depot/tycoon2/stsmain/tycoon2/src/tm/tmdebug.c $ $Revision: #3 $ $Date: 2003/10/01 $ Marc Weikard
 
   Simple Debugging
-
+  
 */
 
 #include <stdio.h>
@@ -152,13 +152,13 @@ void disassemble(Byte * pCode, FILE * out)
 
 void tmdebug_backTrace(tyc_Thread * pThread, FILE * out)
 {
-  Word iFrame = 0;
+  Word iFrame = 0; 
   Byte * ip;
   tyc_StackFrame * fp;
   tsp_OID * sp, * pStack;
-
+  
   assert(pThread);
-
+  
   pStack = pThread->pStack;
   sp = pThread->sp;
   fp = pThread->fp;

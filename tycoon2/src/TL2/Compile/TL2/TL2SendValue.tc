@@ -245,7 +245,9 @@ isMetaClassSend(receiverType :TL2Type) :Bool
       ; Either receiverIde is nil or it contains the TL2TypeIde of the type of the receiver 
 
       receiverIde == ConcreteClass.domain[0] ||
-      receiverIde == CStructClass.domain[0]
+      receiverIde == CStructClass.domain[0] ||
+      receiverIde == WeakRefClass.domain[1] ||
+      receiverIde == ThreadClass.domain[1]
     )
   }
 

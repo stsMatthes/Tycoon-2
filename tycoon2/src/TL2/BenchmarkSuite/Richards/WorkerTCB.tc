@@ -1,35 +1,33 @@
 class WorkerTCB
 super TaskControlBlock
-metaclass WorkerTCBClass(WorkerTCB)
-
-public
-
+(**)
+meta WorkerTCBClass(WorkerTCB)
+{
 handle :WorkerTaskRec
 
-methods
-
 actionFunc(p :Packet,  noWork :Bool) :List(TaskControlBlock)
+  (* *)
 {
-  let bm = TaskControlBlock.benchmark,
-  noWork
-    ? { bm.wait }
-    : { let dest = (handle.destination == bm.handlerA
-                      ? {bm.handlerB} : {bm.handlerA}),
-        handle.destination := dest,
-	p.ident := dest,
-	p.datum := 1,
-	for(0,p.data.size-1,
+  bm ::= TaskControlBlock.benchmark
+  if( noWork
+    then: { bm.wait }
+    else: { dest ::= if( handle.destination == bm.handlerA
+                      then: {bm.handlerB} else: {bm.handlerA})
+        handle.destination := dest
+	p.ident := dest
+	p.datum := 1
+	for(0 to:p.data.size-1 do:
 	  fun(i :Int)
-	  {  handle.count := handle.count + 1,
-	     handle.count > 26 ? { handle.count := 1 },
+	  {  handle.count := handle.count + 1
+	     if( handle.count > 26 then: { handle.count := 1 })
 	     p.data[i] := (65 + handle.count).asChar
-          }),
+          })
 	bm.queuePacket(p)
-      }
-}      
-
+      })
+}
 
 print() :Void
+  (* *)
 {}
-  
-;
+
+}

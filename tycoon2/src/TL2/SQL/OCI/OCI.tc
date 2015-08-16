@@ -1,3 +1,5 @@
+class OCI
+super DLL
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -29,159 +31,202 @@ Updates: (Date)		(Name)	(Description)
 				of classes which are using this interface
 
 *)
+meta SimpleConcreteClass(OCI)
+{
+fTypeCode:Dictionary(Class,Int)
 
-class OCI
-
-super DLL
-
-metaclass SimpleConcreteClass(OCI)
-
-public
-
-fTypeCode:Dictionary(Class,Int),
-
-errorDictionary:Dictionary(Int,String) (* For error-messages which occur
+errorDictionary:Dictionary(Int,String)
+  (* For error-messages which occur
                                           before a server-connection has
 					  been established
 					*)
 
-					
-methods
-
 visitOS(os:OS) :String
+  (* *)
 {
  "libocic.so"
 }
 
-(* Some OCI-constants *)
+NULL_DATA:Int
+  (* Some OCI-constants *)
+{ (-1 )}
 
-NULL_DATA:Int	      { -1 }
-NTS:Int		      { -1 }
+NTS:Int
+  (* *)
+{ (-1 )}
 
-VARCHAR:Int	      {  1 }
-NUMBER:Int	      {  2 }
-DATE:Int	      { 12 }
-LONGRAW:Int	      { 24 }
+VARCHAR:Int
+  (* *)
+{  1 }
 
-FETCH_OUT_OF_SEQUENCE:Int     { 1002 }
-COLUMN_NOT_FOUND:Int	      { 1007 }
-NO_MORE_ROWS:Int	      { 1403 }
-RETURNED_NULL:Int	      { 1405 }
+NUMBER:Int
+  (* *)
+{  2 }
 
-maxRawBuffer():Int {65535} (* Maximum length of C-Buffer for Raw-Data,
+DATE:Int
+  (* *)
+{ 12 }
+
+LONGRAW:Int
+  (* *)
+{ 24 }
+
+FETCH_OUT_OF_SEQUENCE:Int
+  (* *)
+{ 1002 }
+
+COLUMN_NOT_FOUND:Int
+  (* *)
+{ 1007 }
+
+NO_MORE_ROWS:Int
+  (* *)
+{ 1403 }
+
+RETURNED_NULL:Int
+  (* *)
+{ 1405 }
+
+maxRawBuffer():Int
+  (* *)
+{65535}
+
+olog (lda:Int32, hda:Int32,
+      uid:String, uidl:Int, pswd:String, pswdl:Int, conn:String, connl:Int):Int
+  (* Maximum length of C-Buffer for Raw-Data,
                               only used for cursors. Input parameters have
 			      to be stored in buffers of the size of
 			      the current parameter-value
 			      (rebind parameter, where necessary)
-			    *)
-
-(* OCI-Standard-Functions, see OCI-Reference for detailed parameter-
-   description. *)
-
-(* Connecting to a Data Source *)
-
-olog (lda:Int32, hda:Int32,
-      uid:String, uidl:Int, pswd:String, pswdl:Int, conn:String, connl:Int):Int
-  {
-  (*extern*)
-  orlon (lda, hda,
+			    
+ OCI-Standard-Functions, see OCI-Reference for detailed parameter-
+   description. 
+ Connecting to a Data Source *)
+{
+  ;extern
+  orlon(lda, hda,
          uid+"@"+conn, uidl,
          pswd, pswdl,
-         -1)
+         (-1))
   
   }
-      
+
 orlon (lda:Int32, hda:Int32,
        uid:String, uidl:Int,
        pswd:String, pswdl:Int,
-       audit :Int):Int extern
-      
-(* Terminating a Connection *)
+       audit :Int):Int
+  (* *)
+extern "orlon"
 
-ologof (lda:Int32):Int extern
+ologof (lda:Int32):Int
+  (* Terminating a Connection *)
+extern "ologof"
 
-(* Setting Driver Options *)
+oopen(cda:Int32, lda:Int32, dbn:String, dbnl:Int, arsize:Int, uid:String, uidl:Int):Int
+  (* Setting Driver Options 
+ Preparing Requests *)
+extern "oopen"
 
-(* Preparing Requests *)
+oparse(cda:Int32, sqlstm:String, sqllen:Int, defflg:Int, lngflg:Int):Int
+  (* *)
+extern "oparse"
 
-oopen(cda:Int32, lda:Int32, dbn:String, dbnl:Int, arsize:Int, uid:String, uidl:Int):Int extern
-
-oparse(cda:Int32, sqlstm:String, sqllen:Int, defflg:Int, lngflg:Int):Int extern
-
-(* Submitting Requests *)
-
-oexec(cda:Int32):Int extern
-
-(* Retrieving Results and Information about Results *)
+oexec(cda:Int32):Int
+  (* Submitting Requests *)
+extern "oexec"
 
 odescr(cda:Int32, pos:Int, dbsize:Int32, dbtype:Int32,
        cbuf:Int32, cbufl:Int32, dsize:Int32, prec:Int32,
-       scale:Int32, nullok:Int32):Int extern
+       scale:Int32, nullok:Int32):Int
+  (* Retrieving Results and Information about Results *)
+extern "odescr"
 
 odefin(cda:Int32, pos:Int, buf:Int32, bufl:Int, ftype:Int,
        scale:Int, indp:Int32, fmt:String, fmtl:Int, fmtt:Int,
-       rlen:Int32, rcode:Int32):Int extern
-       
-oexfet(cda:Int32, nrows:Int, cancel:Int, exact:Int):Int extern
+       rlen:Int32, rcode:Int32):Int
+  (* *)
+extern "odefin"
 
-ofen(cda:Int32, nrows:Int):Int extern
+oexfet(cda:Int32, nrows:Int, cancel:Int, exact:Int):Int
+  (* *)
+extern "oexfet"
+
+ofen(cda:Int32, nrows:Int):Int
+  (* *)
+extern "ofen"
 
 oflng(cda:Int32, pos:Int, buf:Int32, bufl:Int, dtype:Int, retl:Int32,
-      offset:Int):Int extern
+      offset:Int):Int
+  (* *)
+extern "oflng"
 
-oerhms(lda:Int32, rcode:Int, buf:Int32, bufsiz:Int):Int extern
-
-(* Handling parameters *)
+oerhms(lda:Int32, rcode:Int, buf:Int32, bufsiz:Int):Int
+  (* *)
+extern "oerhms"
 
 obndra(cda:Int32, sqlvar:String, sqlvl:Int, progv:Int32, progvl:Int,
        ftype:Int, scale:Int, indp:Int32, alen:Int32, arcode:Int32,
-       maxsiz:Int, currsiz:Int32, fmt:String, fmtl:Int, fmtt:Int):Int extern
+       maxsiz:Int, currsiz:Int32, fmt:String, fmtl:Int, fmtt:Int):Int
+  (* Handling parameters *)
+extern "obndra"
 
 obndrv(cda :Int32, sqlvar:String, sqlvl:Int, progv:Int32, progvl:Int,
        ftype:Int, scale:Int, indp:Int32,
-       fmt:String, fmtl:Int, fmtt:Int):Int extern
-       
-(* Terminating a Statement *)
+       fmt:String, fmtl:Int, fmtt:Int):Int
+  (* *)
+extern "obndrv"
 
-ocan(cda:Int32):Int extern
+ocan(cda:Int32):Int
+  (* Terminating a Statement *)
+extern "ocan"
 
-oclose(cda:Int32):Int extern
+oclose(cda:Int32):Int
+  (* *)
+extern "oclose"
 
-(* Transaction handling *)
+ocom(lda:Int32):Int
+  (* Transaction handling *)
+extern "ocom"
 
-ocom(lda:Int32):Int extern
+orol(lda:Int32):Int
+  (* *)
+extern "orol"
 
-orol(lda:Int32):Int extern
+ocon(lda:Int32):Int
+  (* *)
+extern "ocon"
 
-ocon(lda:Int32):Int extern
+ocof(lda:Int32):Int
+  (* *)
+extern "ocof"
 
-ocof(lda:Int32):Int extern
-
-private methods
+private
 
 _initTypeCode:Void
+  (* *)
 {
-  fTypeCode := Dictionary.new,
-  fTypeCode[Int] := 3,
-  fTypeCode[Real] := 4,
-  fTypeCode[String] := 5,
-  fTypeCode[Date] := 5,
+  fTypeCode := Dictionary.new
+  fTypeCode[Int] := 3
+  fTypeCode[Real] := 4
+  fTypeCode[String] := 5
+  fTypeCode[Date] := 5
   fTypeCode[File] := 24
 }
 
-_initErrorDictionary
+_initErrorDictionary :Void
+  (* *)
 {
-  errorDictionary := Dictionary.new,
-  errorDictionary[1017] := "invalid username/password; logon denied",
+  errorDictionary := Dictionary.new
+  errorDictionary[1017] := "invalid username/password; logon denied"
   errorDictionary[12154] := "TNS:could not resolve service name\n" +
     "- Verify that a TNSNAMES.ORA file exists and\n" +
     "  is in the proper place and accessible.\n" +
     "- Check to see that the service name exists in the TNSNAMES.ORA file\n" +
-    "  and add it if necessary.",
+    "  and add it if necessary."
   errorDictionary[12203] := "TNS:unable to connect to destination\n" +
     "Invalid TNS address supplied or destination is not listening.\n" +
     "This error can also occur because of underlying " +
-    "NETWORK TRANSPORT PROBLEMS.\n",
+    "NETWORK TRANSPORT PROBLEMS.\n"
   errorDictionary[12545] := "TNS:name lookup failure\n" +
     "- A protocol specific ADDRESS parameter cannot be resolved.\n" +
     "  Ensure the ADDRESS parameters have been entered correctly.\n" +
@@ -190,15 +235,12 @@ _initErrorDictionary
 }
 
 _init:Self
+  (* *)
 {
-  super._init,
-  _initTypeCode,
-  _initErrorDictionary,
+  super._init
+  _initTypeCode
+  _initErrorDictionary
   self
 }
 
-;
-
-
-
-
+}

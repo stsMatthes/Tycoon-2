@@ -34,9 +34,9 @@ asString :String
 
 private
 
-_newElements(initialCapacity :Int) :MutableString
+_newElements(initialCapacity :Int) @:MutableString
   (* *)
-{ MutableString.new(initialCapacity) }
+{ MutableString.new(initialCapacity)@ }
 
 _dontLeak( :Int,  :Int) :Void
   (* <n> elements of _elements starting at <at> have become inaccessible.

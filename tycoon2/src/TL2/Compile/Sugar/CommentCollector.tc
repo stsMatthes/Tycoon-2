@@ -1,8 +1,5 @@
 class CommentCollector
 super Sugar
-metaclass SingletonClass(CommentCollector)
-public methods
-
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -22,16 +19,19 @@ public methods
  * 
  * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
  *
- For method/class header comments:
-   write comment content to <comment>, everything else to
-   <other>. *)
-collect(input :Input, commentOut :Output, otherOut :Output)
+ *)
+meta SingletonClass(CommentCollector)
 {
-  (* we are slightly abusing the scanner idea here:
-     everything is done via side effects. *)
-  let scanner =
+collect(input :Input, commentOut :Output, otherOut :Output) :Void
+  (* For method/class header comments:
+     write comment content to <comment>, everything else to
+     <other>. *)
+{
+  ; we are slightly abusing the scanner idea here:
+  ;   everything is done via side effects. 
+  scanner ::=
     UserScanner.new(tables, input,
-       CommentCollectorState.new(commentOut, otherOut)),
+       CommentCollectorState.new(commentOut, otherOut))
   scanner.read
 }
 
@@ -39,49 +39,50 @@ private
 
 tables :UserScannerTables(Nil, CommentCollectorState)
 
-methods
-
-buildScannerTables(S = UserScanner(Nil, CommentCollectorState))
+buildScannerTables(S = UserScanner(Nil, CommentCollectorState)) :Void
+  (* *)
 {
-  let sb = ScannerBuilder(:Nil, :CommentCollectorState).new,
-  let normMode = 0,
-  let commentMode = sb.newMode,
+  sb ::= ScannerBuilder(:Nil, :CommentCollectorState).new
+  normMode ::= 0
+  commentMode ::= sb.newMode
 
   sb.addTokenMode(normMode, "\\(\\*", fun(s :S) {
-      s.mode := commentMode,
-      s.userState.nesting := 1,
-      s.userState.nComments > 0 ? { s.userState.commentOut.nl },
+      s.mode := commentMode
+      s.userState.nesting := 1
+      if( s.userState.nComments > 0 then: { s.userState.commentOut.nl })
       s.read
-    }),
+    })
   sb.addTokenMode(normMode, "[^]", fun(s :S) {
-    s.userState.otherOut.write(s.token[0]),
+    s.userState.otherOut.write(s.token[0])
     s.read
-  }),
+  })
 
   sb.addTokenMode(commentMode, "[^]", fun(s:S) {
-    s.userState.commentOut.write(s.token[0]),
+    s.userState.commentOut.write(s.token[0])
     s.read
-  }),
+  })
   sb.addTokenMode(commentMode, "\\(\\*", fun(s:S) {
-    s.userState.nesting := s.userState.nesting + 1,
-    s.userState.commentOut.writeString("[*"),
+    s.userState.nesting := s.userState.nesting + 1
+    s.userState.commentOut.writeString("[*")
     s.read
-  }),
+  })
   sb.addTokenMode(commentMode, "\\*\\)", fun(s:S) {
-    s.userState.nesting := s.userState.nesting -1,
-    s.userState.nesting = 0
-    ? { s.userState.nComments := s.userState.nComments + 1,
+    s.userState.nesting := s.userState.nesting -1
+    if( s.userState.nesting = 0
+    then: { s.userState.nComments := s.userState.nComments + 1
         s.mode := normMode }
-    : { s.userState.commentOut.writeString("*]") },
+    else: { s.userState.commentOut.writeString("*]") })
     s.read
-  }),
+  })
 
   tables := sb.generate
 }
 
 _init :Void
-{ super._init,
-  buildScannerTables,
+  (* *)
+{ super._init
+  buildScannerTables
   self
 }
-;
+
+}

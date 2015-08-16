@@ -1,3 +1,5 @@
+class WWWAuthenticate
+super Http
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -22,42 +24,44 @@
 
    Matthias Ernst 20/1/97
 *)
+meta WWWAuthenticateClass()
 
-class WWWAuthenticate
-super Http
+{
+scheme :String
+  (* *)
+{ _scheme }
 
-public methods
+realm  :String
+  (* *)
+{ _realm  }
 
-  scheme :String { _scheme }
-  realm  :String { _realm  }
+parameters :Dictionary(String, String)
+  (* *)
+{ _parameters }
 
-  parameters :Dictionary(String, String) { _parameters }
-
-  printOn(o :Output)
-  {
-    o.writeAll("WWWAuthenticate("+scheme+" realm="+realm+", "),
+printOn(o :Output) :Void
+  (* *)
+{
+    o.writeAll("WWWAuthenticate("+scheme+" realm="+realm+", ")
     parameters.printOn(o)
   }
-    
+
 private
 
-  _scheme :String,
-  _realm  :String,
-  _parameters :Dictionary(String, String)
+_scheme :String
 
-methods
+_realm  :String
 
-  _init3(s :String, r :String, p :Dictionary(String, String))
-  {
-    super._init,
+_parameters :Dictionary(String, String)
 
-    _scheme := s,
-    _realm  := r,
+_init3(s :String, r :String, p :Dictionary(String, String)) :Void
+  (* *)
+{
+    super._init
+
+    _scheme := s
+    _realm  := r
     _parameters := p
   }
 
-
-
-;
-
-
+}

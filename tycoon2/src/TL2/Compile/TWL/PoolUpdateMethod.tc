@@ -1,6 +1,0 @@
-class PoolUpdateMethod
-super PoolMethod
-metaclass PoolUpdateMethodClass
-;
-
-

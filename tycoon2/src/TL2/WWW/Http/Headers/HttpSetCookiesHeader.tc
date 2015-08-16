@@ -1,15 +1,18 @@
 class HttpSetCookiesHeader
 super MimeHeaderValueImpl(List(HttpSetCookie))
-metaclass MimeHeaderValueImplClass(List(HttpSetCookie))
-
-private methods
+(**)
+meta MimeHeaderValueImplClass(List(HttpSetCookie))
+{
+private
 
 parseValue(s :String) :List(HttpSetCookie)
+  (* *)
 {
-  let var setCookies :List(HttpSetCookie) = EmptyList.new
+  setCookies :List(HttpSetCookie) := EmptyList.new
 }
 
-(*
+unparseValue(c :List(HttpSetCookie)) :String
+  (*
  * This file is part of the Tycoon-2 system.
  *
  * The Tycoon-2 system is free software; you can redistribute it and/or
@@ -46,42 +49,40 @@ parseValue(s :String) :List(HttpSetCookie)
 
   setCookies
 *)
-
-unparseValue(c :List(HttpSetCookie)) :String
 {
-  let result = c.fold(
+  result ::= c.fold(
 	       fun(cookie :HttpSetCookie) {
 	         cookie.name + "=" + cookie.value
 
-		 + (cookie.expires != nil ? {
+		 + if( cookie.expires != nil then: {
 		   ";EXPIRES=" + MimeDate.withValue(cookie.expires).string
-		 } : {
+		 } else: {
 		   ""
 		 })
 
-		 + (cookie.domain != nil ? {
+		 + if( cookie.domain != nil then: {
 		   ";DOMAIN=" + cookie.domain
-		 } : {
+		 } else: {
 		   ""
 		 })
 
-		 + (cookie.path != nil ? {
+		 + if( cookie.path != nil then: {
 		   ";PATH=" + cookie.path
-		 } : {
+		 } else: {
 		   ""
 		 })
 
-		 + (cookie.secure ? {
+		 + if( cookie.secure then: {
 		   ";SECURE"
-		 } : {
+		 } else: {
 		   ""
 		 })
 	       },
-(* ### Hack because of Netscapes ignoring of Mime-Definition: *)
+; ### Hack because of Netscapes ignoring of Mime-Definition: 
 	       fun(s :String, c :String) { s + "\r\nset-cookie: " + c }
-	       ),
+	       )
 
-  result = nil ? { "" } : { result }	       
+  if( result = nil then: { "" } else: { result })	       
 }
 
-;
+}

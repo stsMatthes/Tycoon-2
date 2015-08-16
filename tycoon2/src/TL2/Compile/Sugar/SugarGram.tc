@@ -1,3 +1,5 @@
+class SugarGram
+super Sugar
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -17,141 +19,149 @@
  * 
  * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
  *
- File: SugarGram.tc
+
+   File: SugarGram.tc
  Author: Axel Wienberg
    Date: ??-Jun-1996
 Purples: grammar for producing a salted version of Tycoon source
 	 (it's all syntactic Sugar, anyway)
-*)
 
-class SugarGram
-super Sugar
-metaclass SugarGramClass
-public 
-
-(* MNO is a MutableNonterminal(Object) *)
-
-(* forward decls / exports: *)
-
+ MNO is a MutableNonterminal(Object) 
+ forward decls / exports: 
+ Selector -->* new selector, keyword or "" (positional) or ":" (type) *)
+meta SugarGramClass
+{
 gram :Grammar(String)
 
 private
 
-(* Selector -->* new selector, keyword or "" (positional) or ":" (type) *)
-keywordSends :Dictionary(String, KeywordSend),
+keywordSends :Dictionary(String, KeywordSend)
 
-terminals :SugarTerminals,
+terminals :SugarTerminals
 
-spaced: Dictionary(GrammarSymbol(String), Nonterminal(String)),
+spaced: Dictionary(GrammarSymbol(String), Nonterminal(String))
 
-concat0 :Fun0(String),
-concat1 :Fun1(String, String),
-concat2 :Fun2(String, String, String),
-concat3 :Fun3(String, String, String, String),
-concat4 :Fun4(String, String, String, String, String),
-concat5 :Fun5(String, String, String, String, String, String),
-concat6 :Fun6(String, String, String, String, String, String, String),
-concat7 :Fun7(String, String, String, String, String, String, String, String),
-concat8 :Fun8(String, String, String, String, String, String, String, String, String),
-concat9 :Fun9(String, String, String, String, String, String, String, String, String, String),
+concat0 :Fun():String
+
+concat1 :Fun(:String):String
+
+concat2 :Fun(:String, :String):String
+
+concat3 :Fun(:String, :String, :String):String
+
+concat4 :Fun(:String, :String, :String, :String):String
+
+concat5 :Fun(:String, :String, :String, :String, :String):String
+
+concat6 :Fun(:String, :String, :String, :String, :String, :String):String
+
+concat7 :Fun(:String, :String, :String, :String, :String, :String, :String):String
+
+concat8 :Fun(:String, :String, :String, :String, :String, :String, :String, :String):String
+
+concat9 :Fun(:String, :String, :String, :String, :String, :String, :String, :String, :String):String
 
 newPrecedence :Dictionary(String, Precedence)
 
-methods
-
 mnnew(name :String) :MutableNonterminal(String)
+  (* *)
 {
   MutableNonterminal.new(name)
 }
 
 s(symName :String) :ValueTerminal(String)
+  (* *)
 {
   terminals.symbol(symName)
 }
 
 k(name :String) :ValueTerminal(String)
+  (* *)
 {
   terminals.keyword(name)
 }
 
 _init :Void
+  (* *)
 {
-  spaced := Dictionary.new,
-  createKeywordSends,
-  createPrecedences,
-  createNewPrecedences,
-  createConcat,
-  let top = createRules,
-  gram := Grammar.new(top),
-  patchPrecedences,
+  spaced := Dictionary.new
+  createKeywordSends
+  createPrecedences
+  createNewPrecedences
+  createConcat
+  top ::= createRules
+  gram := Grammar.new(top)
+  patchPrecedences
   self
 }
 
-createPrecedences
+createPrecedences :Void
+  (* *)
 {
   s(".").precedence :=
   s("[").precedence :=
-  s("]").precedence := Precedence.left(120),
-  s("!").precedence := Precedence.right(110),
+  s("]").precedence := Precedence.left(120)
+  s("!").precedence := Precedence.right(110)
   s("*").precedence :=
   s("/").precedence :=
-  s("%").precedence := Precedence.left(100),
+  s("%").precedence := Precedence.left(100)
   s("+").precedence :=
-  s("-").precedence := Precedence.left(90),
+  s("-").precedence := Precedence.left(90)
   s("<<").precedence :=
-  s(">>").precedence := Precedence.left(85),
+  s(">>").precedence := Precedence.left(85)
   s("<").precedence :=
   s("<=").precedence :=
   s(">").precedence :=
-  s(">=").precedence := Precedence.left(80),
+  s(">=").precedence := Precedence.left(80)
   s("=").precedence :=
   s("==").precedence :=
   s("!=").precedence :=
-  s("!==").precedence := Precedence.left(70),
+  s("!==").precedence := Precedence.left(70)
   s("&").precedence :=
-  s("&&").precedence := Precedence.left(60),
+  s("&&").precedence := Precedence.left(60)
   s("|").precedence :=
-  s("||").precedence := Precedence.left(50),
+  s("||").precedence := Precedence.left(50)
   s("=>").precedence :=
-  s("=>=>").precedence := Precedence.left(40),
-  s(":").precedence := Precedence.nonAssoc(31),
-  s("?").precedence := Precedence.right(30),
-  s(":=").precedence := Precedence.left(20),
+  s("=>=>").precedence := Precedence.left(40)
+  s(":").precedence := Precedence.nonAssoc(31)
+  s("?").precedence := Precedence.right(30)
+  s(":=").precedence := Precedence.left(20)
   k("assert").precedence := Precedence.nonAssoc(10)
 }
 
-createNewPrecedences
+createNewPrecedences :Void
+  (* *)
 {
-  newPrecedence := Dictionary.new,
+  newPrecedence := Dictionary.new
   newPrecedence["."]   :=
   newPrecedence["["]   :=
-  newPrecedence["]"]   := Precedence.left(130),
+  newPrecedence["]"]   := Precedence.left(130)
   newPrecedence["!"]   :=
-  newPrecedence["~"]   := Precedence.right(120),
+  newPrecedence["~"]   := Precedence.right(120)
   newPrecedence["*"]   :=
   newPrecedence["/"]   :=
-  newPrecedence["%"]   := Precedence.left(110),
+  newPrecedence["%"]   := Precedence.left(110)
   newPrecedence["+"]   :=
-  newPrecedence["-"]   := Precedence.left(100),
+  newPrecedence["-"]   := Precedence.left(100)
   newPrecedence["<<"]  :=
-  newPrecedence[">>"]  := Precedence.left(90),
+  newPrecedence[">>"]  := Precedence.left(90)
   newPrecedence["<"]   :=
   newPrecedence["<="]  :=
   newPrecedence[">"]   :=
-  newPrecedence[">="]  := Precedence.left(80),
+  newPrecedence[">="]  := Precedence.left(80)
   newPrecedence["="]   :=
   newPrecedence["=="]  := 
   newPrecedence["!="]  :=
-  newPrecedence["!=="] := Precedence.left(70),
-  newPrecedence["&"]   := Precedence.left(60),
-  newPrecedence["^"]   := Precedence.left(50),
-  newPrecedence["|"]   := Precedence.left(40),
-  newPrecedence["&&"]  := Precedence.left(30),
-  newPrecedence["||"]  := Precedence.left(20),
+  newPrecedence["!=="] := Precedence.left(70)
+  newPrecedence["&"]   := Precedence.left(60)
+  newPrecedence["^"]   := Precedence.left(50)
+  newPrecedence["|"]   := Precedence.left(40)
+  newPrecedence["&&"]  := Precedence.left(30)
+  newPrecedence["||"]  := Precedence.left(20)
   newPrecedence[":="]  := Precedence.right(10)
 }
 
-patchPrecedences
+patchPrecedences :Void
   (* The heurstic used by RuleClass for computing a rule's default precedence
      takes the last terminal symbol's precedence.  In our case, however,
      there are only the nonterminals returned by addSpace.  So we have to
@@ -159,158 +169,169 @@ patchPrecedences
      terminals as well as nonterminals from addSpace on its right side,
      which simplifies the implementation. *)
 {
-  let p = Dictionary(:SymbolO, :Precedence).new,
-  let fillP =
+  p ::= Dictionary(:SymbolO, :Precedence).new
+  fillP ::=
     fun(s :Terminal(String)) :Void {
-      s.precedence.isNotNil
-      ? { spaced.lookup(s, fun(n :Nonterminal(String)) {
+      if( s.precedence.isNotNil
+      then: { spaced.lookup(s, fun(n :Nonterminal(String)) {
 	    p[n] := s.precedence
-	  }, {}) }
-    },
-  terminals.symbols.do(fillP),
-  terminals.keywords.do(fillP),
+	  }, {}) })
+    }
+  terminals.symbols.do(fillP)
+  terminals.keywords.do(fillP)
   gram.rules.do(fun(r:RuleO) {
-    r.precedence.isNil
-    ? { let precedent =
-          r.rhs.detectLast(fun(s :SymbolO){ p.includesKey(s) }, r.rhs.size),
-	(*tycoon.stdout << r <<": "<<precedent<<"\n",*)
-	precedent.isNotNil
-	? { r.withPrecedence(p[precedent]) (* actually assignment *) } }
+    if( r.precedence.isNil
+    then: { precedent ::=
+          r.rhs.detectLast(fun(s :SymbolO){ p.includesKey(s) }, r.rhs.size)
+	;tycoon.stdout << r <<": "<<precedent<<"\n",
+	if( precedent.isNotNil
+	then: { r.withPrecedence(p[precedent]) }) })  ; actually assignment 
    })
 }
 
 opt(T <: Object, T1 <: Object,
     t :Terminal(String), nt :Nonterminal(T),
-    ifFound :Fun3(String, String, T, T1),
-    ifAbsent :Fun0(T1)) :Nonterminal(T1)
+    ifFound :Fun(:String, :String, :T):T1,
+    ifAbsent :Fun():T1) :Nonterminal(T1)
+  (* *)
 {
-  let mno = MutableNonterminal(:T1).new("opt/"+t.name+"/"+nt.name),
+  mno ::= MutableNonterminal(:T1).new("opt/"+t.name+"/"+nt.name)
   mno.addRule3( t, terminals.space, nt,
-		ifFound),
+		ifFound)
   mno.addRule0(
-		ifAbsent),
+		ifAbsent)
   mno
 }
 
 optS(T <: Object, T1 <: Object,
     key :String, nt :Nonterminal(T),
-    ifFound :Fun3(String, String, T, T1),
-    ifAbsent :Fun0(T1)) :Nonterminal(T1)
+    ifFound :Fun(:String, :String, :T):T1,
+    ifAbsent :Fun():T1) :Nonterminal(T1)
+  (* *)
 {
   opt(s(key), nt, ifFound, ifAbsent)
 }
 
 optK(T <: Object, T1 <: Object,
     key :String, nt :Nonterminal(T),
-    ifFound :Fun3(String, String, T, T1),
-    ifAbsent :Fun0(T1)) :Nonterminal(T1)
+    ifFound :Fun(:String, :String, :T):T1,
+    ifAbsent :Fun():T1) :Nonterminal(T1)
+  (* *)
 {
   opt(k(key), nt, ifFound, ifAbsent)
 }
 
 addSpace(s :GrammarSymbol(String)) :Nonterminal(String)
+  (* *)
 {
   spaced.memoize(s, {
-    let mn = mnnew(s.name+" "),
-    mn.addRule2(s, terminals.space, concat2),
+    mn ::= mnnew(s.name+" ")
+    mn.addRule2(s, terminals.space, concat2)
     mn
   })
 }
 
 sS(symName :String) :Nonterminal(String)
+  (* *)
 {
   addSpace(s(symName))
 }
 
 kS(name :String) :Nonterminal(String)
+  (* *)
 {
   addSpace(k(name))
 }
 
 nonEmptyCommaListS(nt :Nonterminal(String)) :Nonterminal(String)
+  (* *)
 {
-  let nonempty = mnnew(nt.name+"/S,+"),
+  nonempty ::= mnnew(nt.name+"/S,+")
   nonempty.addRule3( nonempty, sS(","), nt,
-		     concat3),
+		     concat3)
   nonempty.addRule1( nt,
-		     concat1),
+		     concat1)
   nonempty
 }
 
 commaListS(nt :Nonterminal(String)) :Nonterminal(String)
+  (* *)
 {
-  let nonempty = nonEmptyCommaListS(nt),
-  let result = mnnew(nt.name+"/S,*"),
+  nonempty ::= nonEmptyCommaListS(nt)
+  result ::= mnnew(nt.name+"/S,*")
   result.addRule1( nonempty,
-		   concat1),
+		   concat1)
   result.addRule0( 
-		   concat0),
+		   concat0)
   result
 }
 
-
 nonEmptyCommaList(E<:Object, nt :Nonterminal(E)) :Nonterminal(SugarList(E))
+  (* *)
 {
-  let nonempty = MutableNonterminal(:SugarList(E)).new(nt.name+"/,+"),
+  nonempty ::= MutableNonterminal(:SugarList(E)).new(nt.name+"/,+")
   nonempty.addRule3( nonempty, sS(","), nt,
 		     fun(l :SugarList(E), comma :String, element :E) {
-		       l.commas.addLast(comma),
-		       l.elements.addLast(element),
+		       l.commas.addLast(comma)
+		       l.elements.addLast(element)
 		       l
-		     }),
+		     })
   nonempty.addRule1( nt,
 		     fun(element :E) {
-		       let l = SugarList.new,
-		       l.elements.add(element),
+		       l ::= SugarList.new
+		       l.elements.add(element)
 		       l
-		     }),
+		     })
   nonempty
 }
 
 commaList(E<:Object, nt :Nonterminal(E)) :Nonterminal(SugarList(E))
+  (* *)
 {
-  let nonempty = nonEmptyCommaList(:E, nt),
-  let result = MutableNonterminal(:SugarList(E)).new(nt.name+"/,*"),
+  nonempty ::= nonEmptyCommaList(:E, nt)
+  result ::= MutableNonterminal(:SugarList(E)).new(nt.name+"/,*")
   result.addRule1( nonempty,
-		   fun(l:SugarList(E)){l}),
+		   fun(l:SugarList(E)){l})
   result.addRule0( 
-		   {SugarList(:E).new}),
+		   {SugarList(:E).new})
   result
 }
 
-createConcat
+createConcat :Void
+  (* *)
 {
-  concat0 := { "" },
-  concat1 := fun(s:String){s},
-  concat2 := fun(s1 :String, s2:String){String.concat(s1,s2)},
+  concat0 := { "" }
+  concat1 := fun(s:String){s}
+  concat2 := fun(s1 :String, s2:String){String.concat(s1,s2)}
   concat3 := fun(s1 :String, s2:String, s3:String)
-	       { String.concatAll(Array.with3(s1,s2,s3)) },
+	       { String.concatAll(Array.with3(s1,s2,s3)) }
   concat4 := fun(s1 :String, s2:String, s3:String, s4:String)
-	       { String.concatAll(Array.with4(s1,s2,s3,s4)) },
+	       { String.concatAll(Array.with4(s1,s2,s3,s4)) }
   concat5 := fun(s1 :String, s2:String, s3:String, s4:String, s5:String)
-	       { String.concatAll(Array.with5(s1,s2,s3,s4,s5)) },
+	       { String.concatAll(Array.with5(s1,s2,s3,s4,s5)) }
   concat6 := fun(s1 :String, s2:String, s3:String, s4:String, s5:String,
 	         s6:String)
-	       { String.concatAll(Array.with6(s1,s2,s3,s4,s5,s6)) },
+	       { String.concatAll(Array.with6(s1,s2,s3,s4,s5,s6)) }
   concat7 := fun(s1 :String, s2:String, s3:String, s4:String, s5:String,
 	         s6:String, s7 :String)
-	       { String.concatAll(Array.with7(s1,s2,s3,s4,s5,s6,s7)) },
+	       { String.concatAll(Array.with7(s1,s2,s3,s4,s5,s6,s7)) }
   concat8 := fun(s1 :String, s2:String, s3:String, s4:String, s5:String,
 	         s6:String, s7 :String, s8 :String)
-	       { String.concatAll(Array.with8(s1,s2,s3,s4,s5,s6,s7,s8)) },
+	       { String.concatAll(Array.with8(s1,s2,s3,s4,s5,s6,s7,s8)) }
   concat9 := fun(s1 :String, s2:String, s3:String, s4:String, s5:String,
 	         s6:String, s7 :String, s8 :String, s9 :String)
 	       { String.concatAll(Array.with9(s1,s2,s3,s4,s5,s6,s7,s8,s9)) }
 }
 
-binop(value :MutableNonterminal(SugarValue), sym :String)
+binop(value :MutableNonterminal(SugarValue), sym :String) :Void
+  (* *)
 {
-  let precedence = newPrecedence[sym],
-  let priority = precedence.priority,
-  let leftMin =
-    precedence.isLeftAssoc ? { priority } : { priority + 1 },
-  let rightMin =
-    precedence.isRightAssoc ? { priority } : { priority + 1 },
+  precedence ::= newPrecedence[sym]
+  priority ::= precedence.priority
+  leftMin ::=
+    if( precedence.isLeftAssoc then: { priority } else: { priority + 1 })
+  rightMin ::=
+    if( precedence.isRightAssoc then: { priority } else: { priority + 1 })
   value.addRule3( value, sS(sym), value,
 		  fun(v1 :SugarValue, s :String, v2 :SugarValue) {
 		    SugarValue.new(priority, fun(out :Output) {
@@ -321,239 +342,239 @@ binop(value :MutableNonterminal(SugarValue), sym :String)
 		  })
 }
 
-lazyBinop(value :MutableNonterminal(SugarValue), sym :String)
+lazyBinop(value :MutableNonterminal(SugarValue), sym :String) :Void
+  (* *)
 {
-  let precedence = newPrecedence[sym],
-  let priority = precedence.priority,
-  let leftMin =
-    precedence.isLeftAssoc ? { priority } : { priority + 1 },
-  let rightMin =
-    precedence.isRightAssoc ? { priority } : { priority + 1 },
+  precedence ::= newPrecedence[sym]
+  priority ::= precedence.priority
+  leftMin ::=
+    if( precedence.isLeftAssoc then: { priority } else: { priority + 1 })
+  rightMin ::=
+    if( precedence.isRightAssoc then: { priority } else: { priority + 1 })
 
   value.addRule3( value, sS(sym), value,
     fun(cond1 :SugarValue, junctor :String, cond2 :SugarValue) {
-      (* MODIFICATION:
-	   x && fun(){ y }
-	 -->
-	   x &&  y
-
-	   x && fun() { a, b }
-	 -->
-	   x && ( a b )
-
-	   x && y
-	 -->
-	   x ."&&"( y)
-       *)
+      ; MODIFICATION:
+      ;    x && fun(){ y }
+      ;  -->
+      ;    x &&  y
+      ;
+      ;    x && fun() { a, b }
+      ;  -->
+      ;    x && ( a b )
+      ;
+      ;    x && y
+      ;  -->
+      ;    x ."&&"( y)
+      ; 
       SugarValue.new(priority, fun(out :Output) {
-	let cond1 = withMinPriority(leftMin, cond1),
-	let fun2 = cond2.asFun,
-	fun2.isNotNil
-	? { let body = fun2.body,  (* ## fun():T is zapped completely *)
-	    body.openingParen := butFirst(body.openingParen),
-	    body.closingParen := butFirst(body.closingParen),
-	    let needParen =
+	cond1 ::= withMinPriority(leftMin, cond1)
+	fun2 ::= cond2.asFun
+	if( fun2.isNotNil
+	then: { body ::= fun2.body  ; ## fun():T is zapped completely 
+	    body.openingParen := butFirst(body.openingParen)
+	    body.closingParen := butFirst(body.closingParen)
+	    needParen ::=
 	      body.elements.size != 1
-	      || { body.elements[0].sequenceElementCase(
+	      ||  body.elements[0].sequenceElementCase(
 	              fun(  :SugarBinding) { true },
-		      fun(v :SugarValue) { v.priority < rightMin }) },
-	    needParen
-	     ? { body.openingParen := "("+body.openingParen,
-		 body.closingParen := ")"+body.closingParen },
+		      fun(v :SugarValue) { v.priority < rightMin }) 
+	    if( needParen
+	     then: { body.openingParen := "("+body.openingParen
+		 body.closingParen := ")"+body.closingParen })
 	    out << cond1 << junctor << body }
-	: { splitWhite(junctor, fun(junctor :String, ws :String) {
+	else: { splitWhite(junctor, fun(junctor :String, ws :String) {
 	      out << cond1 << ".\"" << junctor << "\"(" << ws
 		  << cond2 << ")"
-	    }) }
+	    }) })
       })
     })
 }
 
 createRules(O=Object) :MutableNonterminal(String)
+  (* *)
 {
-  let ident = terminals.ident,
-  let string = terminals.string,
-  let char = terminals.char,
-  let int = terminals.int,
-  let real = terminals.real,
-  let space = terminals.space,
+  ident ::= terminals.ident
+  string ::= terminals.string
+  char ::= terminals.char
+  int ::= terminals.int
+  real ::= terminals.real
+  space ::= terminals.space
 
-  let identS = addSpace(ident),
-  let stringS = addSpace(string),
-  let charS = addSpace(char),
-  let intS = addSpace(int),
-  let realS = addSpace(real),
+  identS ::= addSpace(ident)
+  stringS ::= addSpace(string)
+  charS ::= addSpace(char)
+  intS ::= addSpace(int)
+  realS ::= addSpace(real)
 
-  let type = mnnew("type"),
-  let sValue = mnnew("sValue"),
-  let signature = mnnew("signature"),
-  let valueSignature = mnnew("valueSignature"),
-  let sequence =
-         MutableNonterminal(:SugarList(SugarSequenceElement)).new("sequence"),
+  type ::= mnnew("type")
+  sValue ::= mnnew("sValue")
+  signature ::= mnnew("signature")
+  valueSignature ::= mnnew("valueSignature")
+  sequence ::=
+         MutableNonterminal(:SugarList(SugarSequenceElement)).new("sequence")
 
-  let optType = optS( ":", type, 
+  optType ::= optS( ":", type, 
 		      concat3,
-		      concat0),
+		      concat0)
 
-  let argument = mnnew("argument"),
+  argument ::= mnnew("argument")
   argument.addRule1( sValue,
-		     concat1),
+		     concat1)
   argument.addRule2( sS(":"), type,
-		     concat2),
+		     concat2)
   argument.addRule5( kS("let"), identS, optType, sS("="), sValue,
 		     fun(:O,:O,:O,:O, valueS :String) {
-			(* throw away old argument names *)
+			; throw away old argument names 
 			valueS
-		     }),
+		     })
 
-  let signatures = commaListS(signature),
-  let typeListS = commaListS(type),
+  signatures ::= commaListS(signature)
+  typeListS ::= commaListS(type)
 
-  let typeList = commaList(type),
+  typeList ::= commaList(type)
 
-  let arguments = commaList(argument),
+  arguments ::= commaList(argument)
   
-(* types *)
+; types 
 
-  let typeIde = mnnew("typeIde"),
+  typeIde ::= mnnew("typeIde")
   typeIde.addRule1( identS,
-		    concat1),
+		    concat1)
 
-  let selfTypeIdent = mnnew("Self"),
+  selfTypeIdent ::= mnnew("Self")
   selfTypeIdent.addRule1( kS("Self"),
-			  concat1),
+			  concat1)
 
-  (* created above *)
+  ; created above 
   type.addRule4( type, sS("("), typeList, sS(")"),
 		 fun(op :String,
 		     openingParen :String,
 		     args :SugarArgsList,
 		     closingParen :String) {
-		   let out = StringBuilderOutput.new,
-		   args.openingParen := openingParen,
-		   args.closingParen := closingParen,
-		   op.startsWith("Fun")
-		   && { let n = op.subString(3,op.size-3).asInt,
+		   out ::= StringBuilderOutput.new
+		   args.openingParen := openingParen
+		   args.closingParen := closingParen
+		   if( op.startsWith("Fun")
+		   && ( n ::= op.subString(3,op.size-3).asInt
 		        op = "Fun"+n.printString
-			&& { args.elements.size = n+1 }}
-		   ? { (* MODIFICATION:
-		           Fun2(A,B,C)
-			  -->
-			   Fun(:A,:B):C
-			*)
+			&&  args.elements.size = n+1 )
+		   then: { ; MODIFICATION:
+                           ;  Fun2(A,B,C)
+                           ; -->
+                           ;  Fun(:A,:B):C
+                           ;
 			splitWhite(closingParen, fun(closingParen :String,
 						    ws :String) {
-			  args.closingParen := closingParen,
-			  let resultT = args.elements.removeLast,
-			  !args.commas.isEmpty ? {args.commas.removeLast},
+			  args.closingParen := closingParen
+			  resultT ::= args.elements.removeLast
+			  if( !args.commas.isEmpty then: {args.commas.removeLast})
 			  args.elements := GapArray.fromReader(
 			    args.elements.keysAndElementsMap(fun(i:Int, s:String){
 			      args.elements[i] := ":"+s
-			    })),
+			    }))
 			  out << "Fun"<<args<<":"<<resultT<<ws
 			}) }
-		    : { out << op<<args },
+		    else: { out << op<<args })
 		    out.contents
-		  }),
+		  })
   type.addRule1( kS("Void"),
-		 concat1),
+		 concat1)
   type.addRule1( kS("Nil"),
-		 concat1),
+		 concat1)
   type.addRule1( selfTypeIdent,
-		 concat1),
+		 concat1)
   type.addRule1( typeIde,
-		 concat1),
+		 concat1)
 
-  (* no Void, Nil or Self in super type declaration;
-     no nested ApplyTypes *)
-  let cplType = mnnew("cplType"),
-  let cplTypeList = commaListS(cplType),
+  ; no Void, Nil or Self in super type declaration;
+  ;   no nested ApplyTypes 
+  cplType ::= mnnew("cplType")
+  cplTypeList ::= commaListS(cplType)
   cplType.addRule4( typeIde, sS("("), typeListS, sS(")"),
 		    fun(op :String, parOp :String, args :String, parCl :String) {
-		      (* MODIFICATION:
-		         kill whitespace between type operator and args *)
+		      ; MODIFICATION:
+		      ;  kill whitespace between type operator and args 
 		      splitWhite(op, fun(op :String, :String) {
 		        concat4[op,parOp,args,parCl]
 		      })
-		    }),
+		    })
   cplType.addRule1( typeIde,
-		    concat1),
+		    concat1)
 
-  (* classes *)
+  ; classes 
 
-(* classHeader *)
-  let className = mnnew("className"),
+; classHeader 
+  className ::= mnnew("className")
   className.addRule1( identS,
-		      concat1),
+		      concat1)
   className.addRule1( kS("Nil"),
-		      concat1),
+		      concat1)
 
-  (* created above *)
-  let domainElement = MutableNonterminal(:Pair(String,String)).new("domainElement"),
+  ; created above 
+  domainElement ::= MutableNonterminal(:Pair(String,String)).new("domainElement")
   domainElement.addRule3( identS, sS("<:"), type,
 		          fun(id :String, sub :String, bound :String) {
 			    Pair.new(id, concat3[id,sub,bound])
-			  }),
+			  })
 
-  let nonEmptyDomain = MutableNonterminal(:Pair(List(String), String)).new("nonEmptyDomain"),
+  nonEmptyDomain ::= MutableNonterminal(:Pair(List(String), String)).new("nonEmptyDomain")
   nonEmptyDomain.addRule3( nonEmptyDomain, sS(","), domainElement,
 			   fun(dom :Pair(List(String), String), comma :String, el :Pair(String, String)) {
 			     Pair.new(
 			       List.append(dom.first, List.with1(el.first)),
 			       concat3[dom.second,comma,el.second])
-			   }),
+			   })
   nonEmptyDomain.addRule1( domainElement,
 			   fun(el :Pair(String, String)) {
 			     Pair.new(List.with1(el.first), el.second)
-			   }),
+			   })
 
-  let classDomain = MutableNonterminal(:Pair(List(String), String)).new("classDomain"),
+  classDomain ::= MutableNonterminal(:Pair(List(String), String)).new("classDomain")
   classDomain.addRule1( nonEmptyDomain,
-		   fun(x :Pair(List(String), String)) { x }),
+		   fun(x :Pair(List(String), String)) { x })
   classDomain.addRule0(
-		   { Pair.new(EmptyList.new, "") }),
+		   { Pair.new(EmptyList.new, "") })
 
-  let optClassDomain = MutableNonterminal(:Pair(List(String), String)).new("optClassDomain"),
+  optClassDomain ::= MutableNonterminal(:Pair(List(String), String)).new("optClassDomain")
   optClassDomain.addRule3( sS("("), classDomain, sS(")"),
 			   fun(opening :String, dom :Pair(List(String), String), closing :String) {
 			     Pair.new(dom.first, concat3[opening,dom.second,closing])
-			   }),
+			   })
   optClassDomain.addRule0(
-		           { Pair.new(EmptyList.new, "") }),
+		           { Pair.new(EmptyList.new, "") })
 
-  let optMeta = optK( "metaclass", cplType, 
+  optMeta ::= optK( "metaclass", cplType, 
 		      fun(:String, sp :String, met :String) {
-		        (* MODIFICATION:
-			   replace "metaclass" with "meta"
-			 *)
+		        ; MODIFICATION:
+			;   replace "metaclass" with "meta"
 			   concat3["meta",sp,met]
-		      }, concat0),
+		      }, concat0)
 
-  let optSelfSig = mnnew("optSelfSig"),
+  optSelfSig ::= mnnew("optSelfSig")
   optSelfSig.addRule3( selfTypeIdent, sS("="), type,
-		       concat3),
+		       concat3)
   optSelfSig.addRule3( selfTypeIdent, sS("<:"), type,
-		       concat3),
+		       concat3)
   optSelfSig.addRule0(
-		       concat0),
+		       concat0)
 
-  let optSuper = optK("super", cplTypeList,
+  optSuper ::= optK("super", cplTypeList,
 		      concat3,
-		      concat0),
+		      concat0)
 
-  let optInv = optK( "invariant", sValue,
+  optInv ::= optK( "invariant", sValue,
 		     fun(:String,:String,:String) {
-		       (* MODIFICATION:
-		          remove invariant
-			*)
+		       ; MODIFICATION:
+		       ;  remove invariant
 		       ""
-		     }, concat0),
+		     }, concat0)
 
-  (* derived attribute: (text, comments, default metaclass) *)
-  let classHeader1 = MutableNonterminal(:Triple(String, String, String)).new("classHeader1"),
+  ; derived attribute: (text, comments, default metaclass) 
+  classHeader1 ::= MutableNonterminal(:Triple(String, String, String)).new("classHeader1")
   classHeader1.addRule4( kS("class"), className, optClassDomain, optSuper,
 			fun(s1:String, s2:String, dom :Pair(List(String),String), s4 :String) {
-			  let s3 = dom.second,
+			  s3 ::= dom.second
 			  collectComments(s1, fun(c1 :String, s1 :String) {
 			  collectComments(s2, fun(c2 :String, s2 :String) {
 			  collectComments(s3, fun(c3 :String, s3 :String) {
@@ -562,32 +583,32 @@ createRules(O=Object) :MutableNonterminal(String)
 			  splitWhite(s3, fun(s3 :String, :String) {
 			  splitWhite(s4, fun(s4 :String, :String) {
 
-			    (* MOD:
-			       replace whitespace after class name, domain, and supers with single newline,
-			       gather comments *)
+			    ; MOD:
+			    ;  replace whitespace after class name, domain, and supers with single newline,
+			    ;  gather comments 
 
-			    let out = StringBuilderOutput.new,
-			    out <<s1<<s2<<s3<<'\n',
-			    !s4.isEmpty
-			    ? { out << s4 << '\n' },
+			    out ::= StringBuilderOutput.new
+			    out <<s1<<s2<<s3<<'\n'
+			    if( !s4.isEmpty
+			    then: { out << s4 << '\n' })
 
-			    let comments =
+			    comments ::=
 			      joinComments(c1,
 			       joinComments(c2,
-			        joinComments(c3, c4))),
-			    let text = out.contents,
-			    out.clear,
-			    (* default metaclass: *)
-			    out << "meta "<<s2<<"Class(",
+			        joinComments(c3, c4)))
+			    text ::= out.contents
+			    out.clear
+			    ; default metaclass: 
+			    out << "meta "<<s2<<"Class("
 			    dom.first.doBetween(fun(el :String) {
 			      out << el
 			    }, {
 			      out << ", "
-			    }),
-			    out << ")\n",
+			    })
+			    out << ")\n"
 			    Triple.new(text, comments, out.contents)
-			  })})})})})})})}),
-  let classHeader2 = MutableNonterminal(:Fun1(String, Pair(String, String))).new("classHeader2"),
+			  })})})})})})})})
+  classHeader2 ::= MutableNonterminal(:Fun(:String):Pair(String, String)).new("classHeader2")
   classHeader2.addRule3( optSelfSig, optMeta, optInv,
 			 fun(s1 :String, s2 :String, s3 :String) {
 			  fun(defaultMetaClass :String) {
@@ -598,356 +619,356 @@ createRules(O=Object) :MutableNonterminal(String)
 			   splitWhite(s2, fun(s2 :String,  :String) {
 			   splitWhite(s3, fun(s3 :String,  :String) {
 
-			     (* MOD:
-				replace whitespace with single newline,
-				gather comments *)
+			     ; MOD:
+			     ;  replace whitespace with single newline,
+			     ;  gather comments 
 
-			     let out = StringBuilderOutput.new,
-			     !s1.isEmpty ? { out << s1 << '\n' },
-			     out << (!s2.isEmpty ? { s2 } : { defaultMetaClass }) << '\n',
-			     !s3.isEmpty ? { out << s3 << '\n' },
+			     out ::= StringBuilderOutput.new
+			     if( !s1.isEmpty then: { out << s1 << '\n' })
+			     out << if( !s2.isEmpty then: { s2 } else: { defaultMetaClass }) << '\n'
+			     if( !s3.isEmpty then: { out << s3 << '\n' })
 
-			     let comments =
+			     comments ::=
 			       joinComments(c1,
-				joinComments(c2, c3)),
+				joinComments(c2, c3))
 			     Pair.new(out.contents, comments)
-			   })})})})})})}}),
+			   })})})})})})}})
 			    
 
-(* methods *)
-  let selectorNoS = mnnew("selectorNoS"),
+; methods 
+  selectorNoS ::= mnnew("selectorNoS")
   selectorNoS.addRule1( ident,
-			concat1),
+			concat1)
   selectorNoS.addRule1( string,
-			concat1),
+			concat1)
 
-  let selector = addSpace(selectorNoS),
+  selector ::= addSpace(selectorNoS)
 
-  let optRange = optType,
-  let optMethodRange = optRange,
+  optRange ::= optType
+  optMethodRange ::= optRange
 
-  let optFormals = mnnew("optFormals"),
+  optFormals ::= mnnew("optFormals")
   optFormals.addRule3( sS("("), signatures, sS(")"),
-		       concat3),
+		       concat3)
   optFormals.addRule0(
-		       concat0),
+		       concat0)
 
-  let methodHeader = mnnew("methodHeader"),
+  methodHeader ::= mnnew("methodHeader")
   methodHeader.addRule3( selector, optFormals, optMethodRange,
 			 fun(sel :String, formals :String, range :String) {
-			   range.isEmpty
-			   ? { splitWhite(sel+formals, fun(selFormals :String, ws :String) {
+			   if( range.isEmpty
+			   then: { splitWhite(sel+formals, fun(selFormals :String, ws :String) {
 			         concat3[selFormals, " :Void", ws]
 			       }) }
-			   : { concat3[sel, formals, range] }
-			 }),
+			   else: { concat3[sel, formals, range] })
+			 })
 
 
-  let optPre = optK( "require", sValue, concat3, concat0),
+  optPre ::= optK( "require", sValue, concat3, concat0)
 
-  let optPost = optK( "ensure", sValue, concat3, concat0),
+  optPost ::= optK( "ensure", sValue, concat3, concat0)
 
-  let methodCond = mnnew("methodCond"),
+  methodCond ::= mnnew("methodCond")
   methodCond.addRule2( optPre, optPost,
-		       concat2),
+		       concat2)
 
 
-  let body = MutableNonterminal(:SugarList(SugarSequenceElement)).new("body"),
+  body ::= MutableNonterminal(:SugarList(SugarSequenceElement)).new("body")
   body.addRule3( sS("{"), sequence, sS("}"),
 		 fun(curlyOpen :String, seq :SugarList(SugarSequenceElement),
 					curlyClose :String) {
-		   seq.openingParen := curlyOpen,
-		   seq.closingParen := curlyClose,
+		   seq.openingParen := curlyOpen
+		   seq.closingParen := curlyClose
 		   seq
-		 }),
+		 })
 
-  let optBody = mnnew("optBody"),
+  optBody ::= mnnew("optBody")
   optBody.addRule1( body,
 		    fun(l :SugarList(SugarSequenceElement)) {
 		      l.printString
-		    }),
+		    })
   optBody.addRule0(
-		    concat0),
+		    concat0)
 
-  let methodBody = mnnew("methodBody"),
+  methodBody ::= mnnew("methodBody")
   methodBody.addRule1( kS("deferred"),
-		       concat1),
-  methodBody.addRule0(  (* MODIFICATION - whip up missing body *)
-		       { "{ nil }" }),
+		       concat1)
+  methodBody.addRule0(  ; MODIFICATION - whip up missing body 
+		       { "{ nil }" })
   methodBody.addRule1( kS("extern"),
-		       concat1),
+		       concat1)
   methodBody.addRule2( kS("extern"), stringS,
 		       fun(ext :String, lang :String) {
 		         splitWhite(lang, fun(:String, ws :String) {
 			   ext+ws
 			 })
-		       }),
+		       })
   methodBody.addRule3( kS("extern"), stringS, stringS,
 		       fun(ext :String, lang :String, id :String) {
 		         splitWhite(lang, fun(:String, ws :String) {
 			   concat3[ext,ws,id]
 			 })
-		       }),
+		       })
   methodBody.addRule2( kS("builtin"), optBody,
-		       concat2),
+		       concat2)
   methodBody.addRule1( body,
 		       fun(l:SugarList(SugarSequenceElement)){
 		         l.printString
-		       }),
+		       })
 
-  (* The derived attribute is a pair of
-     - a function that, given the comments before this method, returns
-       the complete transformed body for this method, and
-     - the trailing comments of this method *)
-  let method =
-    MutableNonterminal(:Pair(Fun1(String, String), String)).new("method"),
+  ; The derived attribute is a pair of
+  ;   - a function that, given the comments before this method, returns
+  ;     the complete transformed body for this method, and
+  ;   - the trailing comments of this method 
+  method ::=
+    MutableNonterminal(:Pair(Fun(:String):String, String)).new("method")
   method.addRule3( methodHeader, methodCond, methodBody,
 		   fun(header :String, cond :String, body :String) {
-		     (* MODIFICATION:
-			comment shuffling (gather everything directly after the
-			method signature) *)
+		     ; MODIFICATION:
+		     ;  comment shuffling (gather everything directly after the
+		     ;  method signature) 
 		     collectComments(header, fun(headerComments :String, header :String) {
 		     splitWhite(header, fun(header :String, :String) {
-		     (* MOD: throw away trailing whitespace, replace with single newline *)
+		     ; MOD: throw away trailing whitespace, replace with single newline 
 		     collectComments(cond, fun(condComments :String, cond :String) {
 		     splitWhite(body, fun(body :String, trail :String) {
 		     collectComments(trail, fun(trailComments :String, :String) {
-		     (* MOD: throw away trailing whitespace, replace with one empty line *)
-		     let body =
-		       body = "extern"
-		       ? { let selector = extractSelectorString(header),
+		     ; MOD: throw away trailing whitespace, replace with one empty line 
+		     body ::=
+		       if( body = "extern"
+		       then: { selector ::= extractSelectorString(header)
 		           "extern "+selector }
-		       : { transformBody(body) },
+		       else: { transformBody(body) })
 		     Pair.new(
 		       fun(foreComments :String) :String {
-		         let comments =
+		         comments ::=
 			   joinComments(foreComments,
-			     joinComments(headerComments, condComments)),
-			 let comments =
-			   comments.isEmpty ? { " " } : { comments },
+			     joinComments(headerComments, condComments))
+			 comments ::=
+			   if( comments.isEmpty then: { " " } else: { comments })
 
-			 let out = StringBuilderOutput.new,
+			 out ::= StringBuilderOutput.new
 			 out << header << '\n'
 			     << "  (*" << comments << "*)\n"
 			     << cond
 			     << body << '\n'
-			     << '\n',
+			     << '\n'
 			 out.contents
 		       },
 		       trailComments)
-		     })})})})})   (* CPS has its drawbacks... *)
-		   }),
+		     })})})})})   ; CPS has its drawbacks... 
+		   })
 
-  let methods_ =
-    MutableNonterminal(:Fun1(String, String)).new("methods_"),
+  methods_ ::=
+    MutableNonterminal(:Fun(:String):String).new("methods_")
   methods_.addRule2( method, methods_,
-		    fun(m :Pair(Fun1(String,String), String),
-			rest :Fun1(String, String)) {
+		    fun(m :Pair(Fun(:String):String, String),
+			rest :Fun(:String):String) {
 		      fun(foreComments :String) {
 		        m.first[foreComments] + rest[m.second]
 		      }
-		    }),
+		    })
   methods_.addRule0(
 		    { fun(s:String) :String {
-		        s.isEmpty
-			? { s }
-			: { (* Houston, we`ve got a problem!
-			       Where to put trailing comments? *)
-			    "###(*"+s+"*)" }
-		      }}),
+		        if( s.isEmpty
+			then: { s }
+			else: { ; Houston, we`ve got a problem!
+				; Where to put trailing comments? 
+			    "###(*"+s+"*)" })
+		      }})
 		        
 
-(* slotsAndMethods *)
-  let optMethods = optK( "methods", methods_,
+; slotsAndMethods 
+  optMethods ::= optK( "methods", methods_,
 			 fun(:String, sp :String,
-			     meth :Fun1(String, String)) {
-			   (* MODIFICATION:
-			      remove "methods" *)
+			     meth :Fun(:String):String) {
+			   ; MODIFICATION:
+			   ;   remove "methods" 
 			   collectComments(sp, fun(foreComments :String, :String) {
 			     meth[foreComments]
 			   })
-			 }, concat0),
+			 }, concat0)
 
-  let nESlots = mnnew("nESlots"),
+  nESlots ::= mnnew("nESlots")
   nESlots.addRule1(valueSignature,
 		   fun(s:String) {
 		     collectComments(s,fun(comments :String, s:String) {
 		       splitWhite(s, fun(s:String, :String) {
-			 (* MOD:
-			    whitespace becomes an empty line
-			    comment shuffling *)
-			 comments.isEmpty
-			 ? { s+"\n\n" }
-			 : { s+"\n  (*"+comments+"*)\n\n" }
+			 ; MOD:
+			 ;   whitespace becomes an empty line
+			 ;   comment shuffling 
+			 if( comments.isEmpty
+			 then: { s+"\n\n" }
+			 else: { s+"\n  (*"+comments+"*)\n\n" })
 		       })
 		     })
-		   }),
+		   })
   nESlots.addRule3(valueSignature, sS(","), nESlots,
 		   fun(s1 :String, s2 :String, s3:String) {
-		     (* MODIFICATION:
-		        remove comma
-			comment shuffling
-			whitespace becomes single newline
-		      *)
+		     ; MODIFICATION:
+                     ;  remove comma
+                     ;  comment shuffling
+                     ;  whitespace becomes single newline
+                     ;
 		     collectComments(s1, fun(c1 :String, s1 :String) {
 		       collectComments(s2, fun(c2 :String,  :String) {
 		         splitWhite(s1, fun(s1 :String, :String) {
-			   let comments = joinComments(c1, c2),
-			   comments.isEmpty
-			   ? { s1+"\n\n"+s3 }
-			   : { s1+"\n\n  (*"+comments+"*)\n\n"+s3 }
+			   comments ::= joinComments(c1, c2)
+			   if( comments.isEmpty
+			   then: { s1+"\n\n"+s3 }
+			   else: { s1+"\n\n  (*"+comments+"*)\n\n"+s3 })
 			 })
 		       })
 		     })
-		   }),
+		   })
 
-  let slots = mnnew("slots"),
+  slots ::= mnnew("slots")
   slots.addRule0(
-		concat0),
+		concat0)
   slots.addRule1(nESlots,
-		 concat1),
+		 concat1)
 
-  let slotsAndMethods1 = mnnew("slotsAndMethods1"),
+  slotsAndMethods1 ::= mnnew("slotsAndMethods1")
   slotsAndMethods1.addRule2( slots, optMethods,
-			     concat2),
+			     concat2)
 
-  let optPublic = optK( "public", slotsAndMethods1,
+  optPublic ::= optK( "public", slotsAndMethods1,
 		        fun(:String, sp:String, slom :String) {
-			  (* MODIFICATION:
-			     remove "public"
-			     ignore whitespace *)
+			  ; MODIFICATION:
+			  ;  remove "public"
+			  ;  ignore whitespace 
 			  collectComments(sp, fun(comments :String, :String) {
 			    Pair.new(comments,slom)
 			  })
 			}, {
 			  Pair.new("","")
-			}),
+			})
 
-  let optPrivate = optK( "private", slotsAndMethods1,
+  optPrivate ::= optK( "private", slotsAndMethods1,
 		        fun(pri :String, sp:String, slom :String) {
 			  collectComments(sp, fun(comments :String, :String) {
-			    (* MOD: ignore whitespace *)
+			    ; MOD: ignore whitespace 
 			    Pair.new(comments,pri+"\n\n"+slom)
 			  })
 			}, {
 			  Pair.new("","")
-			}),
+			})
 
-  let class_ = mnnew("class_"),
+  class_ ::= mnnew("class_")
   class_.addRule5( space, classHeader1, classHeader2, optPublic, optPrivate,
-		   fun(ws :String, h1 :Triple(String, String, String), h2 :Fun1(String, Pair(String, String)),
+		   fun(ws :String, h1 :Triple(String, String, String), h2 :Fun(:String):Pair(String, String),
 		       pub :Pair(String, String),
 		       pri :Pair(String, String)) {
-		     let h2 = h2[h1.third],
+		     h2 ::= h2[h1.third]
 		     collectComments(ws, fun(c1 :String, :String) {
-		     let comments =
+		     comments ::=
 		       joinComments(c1,
 		        joinComments(h1.second,
 			 joinComments(h2.second,
-			  joinComments(pub.first, pri.first)))),
-		     let out = StringBuilderOutput.new,
-		     out<<h1.first<<"(*"<<comments<<"*)\n"<<h2.first<<"{\n"<<pub.second<<pri.second<<"}\n",
+			  joinComments(pub.first, pri.first))))
+		     out ::= StringBuilderOutput.new
+		     out<<h1.first<<"(*"<<comments<<"*)\n"<<h2.first<<"{\n"<<pub.second<<pri.second<<"}\n"
 		     out.contents
 		     })
-		   }),
+		   })
 
-(* values *)
+; values 
 
-  let value = MutableNonterminal(:SugarValue).new("value"),
+  value ::= MutableNonterminal(:SugarValue).new("value")
   sValue.addRule1( value,
 		   fun(v :SugarValue) {
 		     v.asString
-		   }),
+		   })
 
-  let valueIde = mnnew("valueIde"),
+  valueIde ::= mnnew("valueIde")
   valueIde.addRule1( identS,
-		     concat1),
+		     concat1)
 
-  let parenArguments =
-    MutableNonterminal(:SugarArgsList).new("parenArguments"),
+  parenArguments ::=
+    MutableNonterminal(:SugarArgsList).new("parenArguments")
   parenArguments.addRule3( sS("("), arguments, sS(")"),
 			fun(openingParen :String,
 			    l :SugarArgsList,
 			    closingParen :String) {
-			  l.openingParen := openingParen,
-			  l.closingParen := closingParen,
+			  l.openingParen := openingParen
+			  l.closingParen := closingParen
 			  l
-			}),
+			})
 
-  let optParenArguments =
-    MutableNonterminal(:SugarArgsList).new("optParenArguments"),
+  optParenArguments ::=
+    MutableNonterminal(:SugarArgsList).new("optParenArguments")
   optParenArguments.addRule1( parenArguments,
 			 fun(l:SugarArgsList) {
 			   l
-			 }),
+			 })
   optParenArguments.addRule0(
-			{ SugarArgsList.new }),
+			{ SugarArgsList.new })
 
-  let vConcat1 =
+  vConcat1 ::=
     fun(s:Object) {
       SugarValue.new(SugarValue.atomicPriority, fun(out :Output) {
         out << s
-      }) },
-  let vConcat2 =
+      }) }
+  vConcat2 ::=
     fun(s1:Object, s2:Object) {
       SugarValue.new(SugarValue.atomicPriority, fun(out :Output) {
         out << s1 << s2
-      }) },
-  let vConcat3 =
+      }) }
+  vConcat3 ::=
     fun(s1:Object, s2:Object, s3 :Object) {
       SugarValue.new(SugarValue.atomicPriority, fun(out :Output) {
         out << s1 << s2 << s3
-      }) },
+      }) }
 
-  (* created above *)
+  ; created above 
   value.addRule1( kS("nil"),
-		  vConcat1),
+		  vConcat1)
   value.addRule1( kS("true"),
-		  vConcat1),
+		  vConcat1)
   value.addRule1( kS("false"),
-		  vConcat1),
+		  vConcat1)
   value.addRule1( kS("self"),
-		  vConcat1),
+		  vConcat1)
 
-  value.addRule1( stringS, vConcat1 ),
-  value.addRule1( charS,   vConcat1 ),
-  value.addRule1( intS,    vConcat1 ),
-  value.addRule1( realS,   vConcat1 ),
+  value.addRule1( stringS, vConcat1 )
+  value.addRule1( charS,   vConcat1 )
+  value.addRule1( intS,    vConcat1 )
+  value.addRule1( realS,   vConcat1 )
   value.addRule2( sS("+"), intS,
-		  fun((*sign*):String, i:String) {
+		  fun(:String, i:String) {
 		    vConcat1[i]
-		  }),
+		  })
   value.addRule2( sS("+"), realS,
-		  fun((*sign*):String, r:String) {
+		  fun(:String, r:String) {
 		    vConcat1[r]
-		  }),
+		  })
 
   value.addRule2( sS("-"), intS,
 		  fun(sign:String, i:String) {
 		    SugarValue.new(SugarValue.atomicPriority, fun(out :Output) {
-		      (* take a walk on the SAFE side: always () *)
+		      ; take a walk on the SAFE side: always () 
 		      out <<"("<<sign<<i<<")"
 		    })
-		  }),
+		  })
   value.addRule2( sS("-"), realS,
 		  fun(sign:String, r:String) {
 		    SugarValue.new(SugarValue.atomicPriority, fun(out :Output) {
-		      (* take a walk on the SAFE side: always () *)
+		      ; take a walk on the SAFE side: always () 
 		      out <<"("<<sign<<r<<")"
 		    })
-		  }),
+		  })
 
   value.addRule1( valueIde,
-		  vConcat1),
+		  vConcat1)
   value.addRule3( valueIde, sS(":="), value,
 		  fun(s1:String, s2:String, v :SugarValue) {
-		    let precedence = newPrecedence[":="],
-		    let priority = precedence.priority,
-		    let minRight = precedence.isRightAssoc ? { priority } : { priority+1 },
+		    precedence ::= newPrecedence[":="]
+		    priority ::= precedence.priority
+		    minRight ::= if( precedence.isRightAssoc then: { priority } else: { priority+1 })
 		    SugarValue.new(priority, fun(out :Output) {
 		      out<<s1<<s2<<withMinPriority(minRight, v)
 		    })
-		  }),
+		  })
   value.addRule3( ident, space, parenArguments,
 		  fun(sel:String, ws:String, args :SugarArgsList) {
 		    keywordSends.lookup(sel, fun(format :KeywordSend) {
@@ -955,141 +976,142 @@ createRules(O=Object) :MutableNonterminal(String)
 		        format.format(args, out)
 		      })
 		    }, {
-		      (* MODIFICATION:
-			   Whitespace before arguments is eaten *)
-		      let ws1 = args.elements.isEmpty ? {ws}:{""},
+		      ; MODIFICATION:
+		      ;   Whitespace before arguments is eaten 
+		      ws1 ::= if( args.elements.isEmpty then: {ws}else:{""})
 		      SugarValue.new(SugarValue.atomicPriority, fun(out:Output) {
 			out <<sel<<ws1<<args
 		      })
 		    })
-		  }),
+		  })
 		  
   value.addRule6( kS("fun"), sS("("), signatures, sS(")"), optRange, body,
 		  fun( s1 :String, s2 :String, s3 :String, s4 :String,
 		       s5 :String, body :SugarList(SugarSequenceElement)) {
 		    SugarFunValue.new(s1,s2,s3,s4,s5,body)
-		  }),
+		  })
 
   value.addRule1( body,
 		  fun(body :SugarList(SugarSequenceElement)) {
 		    SugarFunValue.new("","","","","",body)
-		  }),
+		  })
   value.addRule3( sS("("), value, sS(")"),
 		  fun(s1 :String, v :SugarValue, s2 :String) {
-		    (* MODIFICATION:
-		         remove superfluous parens *)
-		    v.isAtomic
-		    ? { splitWhite(s2, fun( :String, w2 :String) {
+		    ; MODIFICATION:
+		    ;    remove superfluous parens 
+		    if( v.isAtomic
+		    then: { splitWhite(s2, fun( :String, w2 :String) {
 		          SugarValue.new(v.priority, fun(out :Output) {
 			    out << v << w2
 			  })
 			}) }
-		    : { SugarValue.new(SugarValue.atomicPriority, fun(out :Output) {
+		    else: { SugarValue.new(SugarValue.atomicPriority, fun(out :Output) {
 			  out << s1 << v << s2
-			}) }
-		  }),
+			}) })
+		  })
 
   value.addRule3( value, sS("."), selector,
-		  vConcat3),
+		  vConcat3)
   value.addRule( Rule.new5(value,
 		  value, sS("."), selectorNoS, space, parenArguments,
 		  fun(receiverS :SugarValue, dotS:String,
-		      sel :String, (*ws*):String,
+		      sel :String, ;ws
+:String,
 		      args :SugarArgsList) {
-                    (* ### selector = "try", "while" ? *)
-		    (* MODIFICATION:
-		       Whitespace before arguments is eaten *)
+                    ; ### selector = "try", "while" ? 
+		    ; MODIFICATION:
+		    ;  Whitespace before arguments is eaten 
 		    SugarValue.new(SugarValue.atomicPriority, fun(out:Output) {
 		      out <<receiverS<<dotS<<sel<<args
 		    })
-		  }).withPrecedence(s(".").precedence)),
+		  }).withPrecedence(s(".").precedence))
   value.addRule5( value, sS("."), selector, sS(":="), value,
 		  fun(v1 :SugarValue, s2:String, s3 :String, s4:String,
 		      v5 :SugarValue) {
-		    let precedence = newPrecedence[":="],
-		    let priority = precedence.priority,
-		    let minRight = precedence.isRightAssoc ? { priority } : { priority+1 },
+		    precedence ::= newPrecedence[":="]
+		    priority ::= precedence.priority
+		    minRight ::= if( precedence.isRightAssoc then: { priority } else: { priority+1 })
 		    SugarValue.new(priority, fun(out :Output) {
 		      out<<v1<<s2<<s3<<s4<<withMinPriority(minRight, v5)
 		    })
-		  }),
+		  })
 
   value.addRule3( kS("super"), sS("."), selector,
-		  vConcat3),
+		  vConcat3)
   value.addRule( Rule.new5(value,
 		  kS("super"), sS("."), selectorNoS, space, parenArguments,
 		  fun(receiverS :String, dotS:String,
-		      sel :String, (*ws*):String,
+		      sel :String, :String,
 		      args :SugarArgsList) {
-		    (* MODIFICATION:
-		       Whitespace before arguments is eaten *)
+		    ; MODIFICATION:
+		    ;  Whitespace before arguments is eaten 
 		    SugarValue.new(SugarValue.atomicPriority, fun(out:Output) {
 		      out <<receiverS<<dotS<<sel<<args
 		    })
-		  }).withPrecedence(s(".").precedence)),
+		  }).withPrecedence(s(".").precedence))
   value.addRule5( kS("super"), sS("."), selector, sS(":="), value,
 		  fun(s1 :String, s2:String, s3 :String, s4:String,
 		      v5 :SugarValue) {
-		    let precedence = newPrecedence[":="],
-		    let priority = precedence.priority,
-		    let minRight = precedence.isRightAssoc ? { priority } : { priority+1 },
+		    precedence ::= newPrecedence[":="]
+		    priority ::= precedence.priority
+		    minRight ::= if( precedence.isRightAssoc then: { priority } else: { priority+1 })
 		    SugarValue.new(priority, fun(out :Output) {
 		      out<<s1<<s2<<s3<<s4<<withMinPriority(minRight, v5)
 		    })
-		  }),
+		  })
 
-  let applyArgs = mnnew("applyArgs"),
+  applyArgs ::= mnnew("applyArgs")
   applyArgs.addRule3(sS("["), arguments, sS("]"),
 		     fun(openingBracket :String,
 		         args :SugarArgsList,
 			 closingBracket :String) {
-		       let out = StringBuilderOutput.new,
-		       out <<openingBracket<<args<<closingBracket,
+		       out ::= StringBuilderOutput.new
+		       out <<openingBracket<<args<<closingBracket
 		       out.contents
-		     }),
+		     })
 
   value.addRule2( value, applyArgs,
 		  fun(v :SugarValue, args :String) {
 		    SugarValue.new(SugarValue.atomicPriority, fun(out :Output) {
 		      out <<v<<args
 		    })
-		  }),
+		  })
   value.addRule4( value, applyArgs, sS(":="), value,
 		  fun(v :SugarValue, args :String, s:String, v2 :SugarValue) {
-		    let precedence = newPrecedence[":="],
-		    let priority = precedence.priority,
-		    let minRight = precedence.isRightAssoc ? { priority } : { priority+1 },
+		    precedence ::= newPrecedence[":="]
+		    priority ::= precedence.priority
+		    minRight ::= if( precedence.isRightAssoc then: { priority } else: { priority+1 })
 		    SugarValue.new(priority, fun(out :Output) {
 		      out <<v<<args<<s<<withMinPriority(minRight,v2)
 		    })
-		  }),
+		  })
 
 
   value.addRule2( sS("!"), value,
-		  vConcat2),
+		  vConcat2)
 
-  binop(value, "*"),
-  binop(value, "/"),
-  binop(value, "%"),
-  binop(value, ">>"),
-  binop(value, "<<"),
-  binop(value, "+"),
-  binop(value, "-"),
-  binop(value, "<"),
-  binop(value, "<="),
-  binop(value, ">"),
-  binop(value, ">="),
-  binop(value, "="),
-  binop(value, "=="),
-  binop(value, "!="),
-  binop(value, "!=="),
+  binop(value, "*")
+  binop(value, "/")
+  binop(value, "%")
+  binop(value, ">>")
+  binop(value, "<<")
+  binop(value, "+")
+  binop(value, "-")
+  binop(value, "<")
+  binop(value, "<=")
+  binop(value, ">")
+  binop(value, ">=")
+  binop(value, "=")
+  binop(value, "==")
+  binop(value, "!=")
+  binop(value, "!==")
 
 
-  binop(value, "&"),
-  lazyBinop(value, "&&"),
+  binop(value, "&")
+  lazyBinop(value, "&&")
 
-  binop(value, "|"),
-  lazyBinop(value, "||"),
+  binop(value, "|")
+  lazyBinop(value, "||")
 
   value.addRule3( value, sS("=>"), value,
 		  fun(v1 :SugarValue, implS :String, v2 :SugarValue) {
@@ -1098,7 +1120,7 @@ createRules(O=Object) :MutableNonterminal(String)
 			out<<v1<<".\"=>\"("<<ws<<v2<<")"
 		      })
 		    })
-		  }),
+		  })
 
   value.addRule3( value, sS("=>=>"), value,
 		  fun(v1 :SugarValue, implS :String, v2 :SugarValue) {
@@ -1107,179 +1129,179 @@ createRules(O=Object) :MutableNonterminal(String)
 			out<<v1<<".\"=>=>\"("<<ws<<v2<<")"
 		      })
 		    })
-		  }),
+		  })
 
 
   value.addRule3( value, sS("?"), value,
      fun(test :SugarValue, question :String, thenBranch:SugarValue) {
-       (* MODIFICATION:
-	   a ? {bla} ...
-	  -->
-	   if( a then: {bla}) ...
-
-	   a?{bla} ...
-	  -->
-	   if(a then:{bla}) ...
-	*)
-       let thenBranch = thenBranch.asString,
-       let ws2 = butFirst(question),
+       ; MODIFICATION:
+       ;    a ? {bla} ...
+       ;   -->
+       ;    if( a then: {bla}) ...
+       ;
+       ;    a?{bla} ...
+       ;   -->
+       ;    if(a then:{bla}) ...
+       ; 
+       thenBranch ::= thenBranch.asString
+       ws2 ::= butFirst(question)
        splitWhite(thenBranch, fun(thenBranch :String, ws3 :String) {
 	 SugarValue.new(SugarValue.atomicPriority, fun(out :Output) {
-	   let test = test.asString,
-	   let separator = 
-	     test[test.size-1].isAlphaNumeric ? { " " } : { "" },
+	   test ::= test.asString
+	   separator ::= 
+	     if( test[test.size-1].isAlphaNumeric then: { " " } else: { "" })
 	   out<<"if( "<<test<<separator
 	      <<"then:"<<ws2<<thenBranch<<")"<<ws3
 	 })
        })
-     }),
+     })
 
   value.addRule( Rule.new5(value,
 		  value, sS("?"), value, sS(":"), value,
      fun(test :SugarValue, question :String, thenBranch :SugarValue,
 	 colon :String, elseBranch :SugarValue) {
-       (* MODIFICATION:
-	   a ? {bla} : {blub} ...
-	  -->
-	   if( a then: {bla} else: {blub}) ...
-	*)
-       let thenBranch = thenBranch.asString,
-       let elseBranch = elseBranch.asString,
-       let ws2 = butFirst(question),
+       ; MODIFICATION:
+       ;   a ? {bla} : {blub} ...
+       ;   -->
+       ;    if( a then: {bla} else: {blub}) ...
+       ; 
+       thenBranch ::= thenBranch.asString
+       elseBranch ::= elseBranch.asString
+       ws2 ::= butFirst(question)
        splitWhite(thenBranch, fun(thenBranch :String, ws3 :String) {
-	 let ws4 = butFirst(colon),
+	 ws4 ::= butFirst(colon)
 	 splitWhite(elseBranch, fun(elseBranch :String, ws5 :String) {
 	   SugarValue.new(SugarValue.atomicPriority, fun(out :Output) {
-	     let test = test.asString,
-	     let separator = 
-	       test[test.size-1].isAlphaNumeric ? { " " } : { "" },
+	     test ::= test.asString
+	     separator ::= 
+	       if( test[test.size-1].isAlphaNumeric then: { " " } else: { "" })
 	     out<<"if( "<<test<<separator
 		<<"then:"<<ws2<<thenBranch<<ws3
 		<<"else:"<<ws4<<elseBranch<<")"<<ws5
 	   })
 	 })
        })
-     }).withPrecedence(s("?").precedence)),
+     }).withPrecedence(s("?").precedence))
 
   value.addRule( Rule.new3(value,
 		  k("assert"), space, value,
 		  fun(assertS :String, ws1 :String, assertion :SugarValue) {
-		    (* MODIFICATION:
-		         assert foo ...
-		       -->
-		         assert({ foo }) ...
-		     *)
-		    let assertion = assertion.asString,
+		    ; MODIFICATION:
+		    ;    assert foo ...
+		    ;  -->
+		    ;    assert({ foo }) ...
+		    ; 
+		    assertion ::= assertion.asString
 		    splitWhite(assertion, fun(assertion :String, ws2 :String) {
 		      SugarValue.new(SugarValue.atomicPriority, fun(out :Output) {
 		        out<<assertS<<"({"<<ws1<<assertion<<" })"<<ws2
 		      })
 		    })
-		  }).withPrecedence(k("assert").precedence)),
+		  }).withPrecedence(k("assert").precedence))
 
 
-(* signatures *)
+; signatures 
 
-  let optIdent = mnnew("optIdent"),
+  optIdent ::= mnnew("optIdent")
   optIdent.addRule1( identS,
-		     concat1),
+		     concat1)
   optIdent.addRule0(
-		     concat0),
+		     concat0)
 
 
-  (* created above *)
+  ; created above 
   signature.addRule3( optIdent, sS("="), type,
-		      concat3),
+		      concat3)
   signature.addRule3( optIdent, sS("<:"), type,
-		      concat3),
+		      concat3)
   signature.addRule3( optIdent, sS(":"), type,
-		      concat3),
+		      concat3)
 
   valueSignature.addRule3( optIdent, sS(":"), type,
-		           concat3),
+		           concat3)
 
 		      
-(* sequence *)
+; sequence 
 
-  let optVar = mnnew("optVar"),
+  optVar ::= mnnew("optVar")
   optVar.addRule1( kS("var"),
-		   concat1),
+		   concat1)
   optVar.addRule0(
-		   concat0),
+		   concat0)
 
-  let sequenceElement =
-     MutableNonterminal(:SugarSequenceElement).new("sequenceElement"),
+  sequenceElement ::=
+     MutableNonterminal(:SugarSequenceElement).new("sequenceElement")
 
   sequenceElement.addRule1( value,
 			    fun(v :SugarValue) {
 			      v
-			    }),
+			    })
 
   sequenceElement.addRule6( kS("let"), optVar, identS, optType, sS("="), sValue,
-		     fun( (*letS*) :String, (*var*) :String,
+		     fun( :String, :String,
 			  ide :String, t :String, equal :String, val :String) {
-		     (* MODIFICATION:
-		          let var x : T = foo ...
-			-->
-			  x : T := foo
-
-			  let x = foo ...
-			-->
-			  x ::= foo ...
-		      *)
+		     ; MODIFICATION:
+		     ;    let var x : T = foo ...
+		     ;  -->
+		     ;    x : T := foo
+		     ;
+		     ;    let x = foo ...
+		     ;  -->
+		     ;    x ::= foo ...
+		     ;
 		      SugarBinding.new(ide, t, equal, val)
-		     }),
+		     })
 
-  let nESequence :Nonterminal(SugarList(SugarSequenceElement))
-			= nonEmptyCommaList(sequenceElement),
+  nESequence :Nonterminal(SugarList(SugarSequenceElement))
+			:= nonEmptyCommaList(sequenceElement)
 
   sequence.addRule1( nESequence,
 		     fun(l :SugarList(SugarSequenceElement)) {
-		       (* MODIFICATION:
-		            a , b , c
-			  -->
-			    a  b  c
-			*)
+		       ; MODIFICATION:
+		       ;    a , b , c
+		       ;  -->
+		       ;    a  b  c
+		       ;
 		       l.commas.keysAndElementsDo(fun(i:Int, c :String) {
 		         l.commas[i] := butFirst(c)
-		       }),
+		       })
 		       l
-		     }),
+		     })
   sequence.addRule0( 
-		     { SugarList.new }),
+		     { SugarList.new })
 
-  let doArg = mnnew("doArg"),
+  doArg ::= mnnew("doArg")
   doArg.addRule1(stringS,
-		 concat1),
+		 concat1)
   doArg.addRule1(identS,
-		 concat1),
+		 concat1)
   doArg.addRule1(kS("true"),
-		 concat1),
+		 concat1)
   doArg.addRule1(kS("false"),
-		 concat1),
+		 concat1)
 
-  let doArgs = mnnew("doArgs"),
+  doArgs ::= mnnew("doArgs")
   doArgs.addRule0(
-		  concat0),
+		  concat0)
   doArgs.addRule2( doArgs, doArg,
-		   concat2),
+		   concat2)
 
-  (* the top is the place
-     where nobody goes
-     you just imagine *)
+  ; the top is the place
+  ;   where nobody goes
+  ;   you just imagine 
 
-  (* export! *)
-  let top = mnnew("top"),
+  ; export! 
+  top ::= mnnew("top")
   top.addRule1( class_,
-		concat1),
+		concat1)
   top.addRule2( space, sequence,
 		fun(ws:String, seq:SugarList(SugarSequenceElement)) {
 		  ws + seq.printString
-		}),
+		})
   top.addRule3( space, kS("define"), signatures,
-		concat3),
+		concat3)
   top.addRule4( space, kS("DO"), identS, doArgs,
-		concat4),
+		concat4)
 
   top
 }
@@ -1288,113 +1310,121 @@ withMinPriority(minimum :Int, v :SugarValue) :SugarValue
   (* return a version of v that has at least priority <minimum>
      (i.e. add parens if necessary) *)
 {
-  v.priority < minimum
-  ? { (* add parens *)
+  if( v.priority < minimum
+  then: { ; add parens 
       splitWhite(v.asString, fun(v :String, ws :String) {
         SugarValue.new(SugarValue.atomicPriority, fun(out :Output) {
 	  out << "(" << v << ")" << ws
 	})
       }) }
-  : { v }
+  else: { v })
 }
 
-(* split the trailing whitespace including comments off s and
+splitWhite(T <: Void, s :String, cont :Fun(:String,:String):T) :T
+  (* split the trailing whitespace including comments off s and
    call <cont> with both parts (whitespace second) *)
-splitWhite(T <: Void, s :String, cont :Fun2(String,String,T)) :T
 {
-   (* could use regexps (?) *)
-  let var nesting = 0,
-  let var i = s.size-1,
-  let var done = false,
-  let peek = { i >= 0 ? { s[i] } : { nil } },
-  let read = { i := i - 1 },
-  while({!done}, {
-    let c = peek[],
-    c.isNil
-    ? { assert nesting = 0,
+   ; could use regexps (?) 
+  nesting ::= 0
+  i ::= s.size-1
+  done ::= false
+  peek ::= { if( i >= 0 then: { s[i] } else: { nil }) }
+  read ::= { i := i - 1 }
+  while({!done} do: {
+    c ::= peek[]
+    if( c.isNil
+    then: { assert({ nesting = 0 })
         done := true }
-    : { c.isSpace
-    ? { read[] }
-    : { c == ')' && { i>0 && { s[i-1]=='*' } } && { i < 2 || { s[i-2]!=='(' } }
-    ? { read[],
-	read[],
+    else: { if( c.isSpace
+    then: { read[] }
+    else: { if( c == ')' && ( i>0 &&  s[i-1]=='*'  ) && ( i < 2 ||  s[i-2]!=='('  )
+    then: { read[]
+	read[]
 	nesting := nesting + 1 }
-    : { c == '*' && { i>0 && { s[i-1]=='(' } }
-    ? { read[],
-        read[],
-	assert nesting > 0,
+    else: { if( c == '*' && ( i>0 &&  s[i-1]=='('  )
+    then: { read[]
+        read[]
+	assert({ nesting > 0 })
 	nesting := nesting - 1 }
-    : { (* non-whitespace character *)
-        nesting = 0
-	? { done := true }
-	: { read[] }}}}}
-  }),
-  i := i + 1,
-  (* i is now on first trailing whitespace *)
+    else: { ; non-whitespace character 
+        if( nesting = 0
+	then: { done := true }
+	else: { read[] })})})})})
+  })
+  i := i + 1
+  ; i is now on first trailing whitespace 
   cont[s.subString(0,i), s.subString(i, s.size-i)]
 }
 
 butFirstN(s :String, n :Int) :String
+  (* *)
 {
   s.subString(n, s.size-n)
 }
 
 transformBody(body :String) :String
-{ (* ### This is not exact.
-     If comments appear between "extern" or "builtin" and further parts of the method body,
-     they will also be transformed to single-line comments. *)
+  (* *)
+{ ; ### This is not exact.
+  ;   If comments appear between "extern" or "builtin" and further parts of the method body,
+  ;   they will also be transformed to single-line comments. 
   CommentTransformer.instance.transform(body)  
 }
 
-collectComments(T <: Void, s :String, cont: Fun2(String, String, T)) :T
+collectComments(T <: Void, s :String, cont: Fun(:String, :String):T) :T
+  (* *)
 {
-  let commentOut = StringBuilderOutput.new,
-  let otherOut = StringBuilderOutput.new,
-  CommentCollector.instance.collect(StringInput.new(s), commentOut, otherOut),
+  commentOut ::= StringBuilderOutput.new
+  otherOut ::= StringBuilderOutput.new
+  CommentCollector.instance.collect(StringInput.new(s), commentOut, otherOut)
   cont[commentOut.contents, otherOut.contents]
 }
 
 extractSelectorString(header :String) :String
+  (* *)
 {
-  header[0] = '\"'
-  ? { let i :Int = 0,
-      while({ i := header.locateChar1('\"', i+1),
-	      i.isNotNil && { header[i-1] = '\\' }}, {
-      }),
-      assert i.isNotNil,  (* there must be a closing quote *)
+  if( header[0] = '\"'
+  then: { i :Int := 0
+      while({ i := header.locateChar1('\"', i+1)
+	      i.isNotNil &&  header[i-1] = '\\' } do: {
+      })
+      assert({ i.isNotNil })  ;; there must be a closing quote
       header.subString(0,i+1) }
-  : { let firstNonSel =
-        header.detectKey(fun(c:Char){ !c.isAlphaNumeric && { c != '_' } }),
-      firstNonSel.isNil
-      ? { "\""+header+"\"" }
-      : { "\""+header.subString(0, firstNonSel)+"\"" } }
+  else: { firstNonSel ::=
+        header.detectKey(fun(c:Char){ !c.isAlphaNumeric &&  c != '_'  })
+      if( firstNonSel.isNil
+      then: { "\""+header+"\"" }
+      else: { "\""+header.subString(0, firstNonSel)+"\"" }) })
 }
 
 butFirst(s:String):String
+  (* *)
 { butFirstN(s,1) }
 
 joinComments(s1 :String, s2 :String) :String
+  (* *)
 {
-  s1.isEmpty
-  ? { s2 }
-  : { s2.isEmpty
-      ? { s1 }
-      : { s1+"\n"+s2 }}
+  if( s1.isEmpty
+  then: { s2 }
+  else: { if( s2.isEmpty
+      then: { s1 }
+      else: { s1+"\n"+s2 })})
 }
 
-createKeywordSends
+createKeywordSends :Void
+  (* *)
 {
-  let d = Dictionary.new,
-  let add = fun(k :KeywordSend) {
+  d ::= Dictionary.new
+  add ::= fun(k :KeywordSend) {
     d[k.oldSelector] := k
-  },
+  }
   add[ KeywordSend.new( "while",
-			"while", 1, 0, Array.with1("do")) ],
+			"while", 1, 0, Array.with1("do")) ]
   add[ KeywordSend.new( "try",
-			"try", 1, 1, Array.with1("else")) ],
+			"try", 1, 1, Array.with1("else")) ]
   add[ KeywordSend.new( "for",
-			"for", 1, 0, Array.with2("to", "do")) ],
-  (* ... forDownto etc.? *)
+			"for", 1, 0, Array.with2("to", "do")) ]
+  ; ... forDownto etc.? 
   keywordSends := d
 }
-;
+
+}

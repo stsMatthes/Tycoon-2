@@ -1,10 +1,12 @@
 (*
-   Debug.tyc 1.3 98/11/19 Axel Wienberg
+   $File: //depot/tycoon2/stsmain/tycoon2/src/TL2/Debug/Debug.tyc $ $Revision: #4 $ $Date: 2003/10/01 $ Axel Wienberg
 
    load script for debug package
  *)
 tycoon.tl.loader.registerDirectory("Debug");
 tycoon.tl.loader.update;
+tycoon.tl.typeChecker.check;
+(* short cut:
 tycoon.tl.typeChecker.finalize;
 tycoon.tl.classManager.classTable.do(fun(c:Class){
   let path = c.pos.where,
@@ -12,24 +14,23 @@ tycoon.tl.classManager.classTable.do(fun(c:Class){
   && { tycoon.tl.typeChecker.agenda.includes(c) }
   ? { tycoon.tl.typeChecker.checkClass(c) }
 });
+*)
 tycoon.tl.typeChecker.finalize;
 
-tycoon.tl.root.debugger := TL2Debugger.new;
-
-DbgTracer.init;
-DbgTracer.instance.startTracer;
-DbgTracer.instance.startPrinter;
+DO load "Debug/Init.tyc";
 
 (*;
+(* warning: the printer will interfere with the sequence diagram stml page! for console use only. *)
+DbgTracer.instance.startPrinter;
 DbgTracer.instance.trace({
   for(1,2,fun(:Int) {
     tycoon.stdout << "work...\n",
     Thread.sleep(Long.fromInt(2))
   })
 });
-
-
-
-DbgTracer.instance.stopTracer;
 DbgTracer.instance.stopPrinter;
+*)
+
+(*
+DbgTracer.instance.stopTracer;
 *)

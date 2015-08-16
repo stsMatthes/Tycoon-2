@@ -1,3 +1,5 @@
+class OCIDriver
+super SQLDriver
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -22,29 +24,23 @@ Author:  Michael Skusa
 Date:    6-May-1997
 Updates: (Date)	  (Name)	(Description)
 *)
-
-class OCIDriver
-
-super SQLDriver
-
-metaclass SingletonClass(OCIDriver)
-
-public methods
-
+meta SingletonClass(OCIDriver)
+{
 acceptsURL(url:URL):Bool
   (*
      Returns true, if current instance of SQLConnection can handle url,
      false otherwise
    *)
 {
-  !url.arcs.isEmpty && {url.arcs[0]="oci"}
+  !url.arcs.isEmpty && url.arcs[0]="oci"
 }
 
-private methods
+private
 
 newConnection(url:URL):OCIConnection
+  (* *)
 {
   OCIConnection.new.open(url)
 }
 
-;
+}

@@ -1,0 +1,57 @@
+class SgmlsParserData
+super Sgml
+(**)
+meta SimpleConcreteClass(SgmlsParserData)
+{
+out :SgmlOutput
+
+attributes :Dictionary(String, String)
+
+nextIsEmpty :Bool
+
+attribute(name :String, value :String) :Void
+  (* *)
+{ ; tycoon.stdout.writeln(name+" = "+(value.isNil?{"nil"}:{value})), 
+  attributes[name] := value 
+}
+
+openTag(name :String) :Void
+  (* *)
+{
+  if( !_definedGIs.includes(name) then: {
+    contentType ::= 
+	if( nextIsEmpty 
+	then: {SgmlContentType.empty} 
+	else: {SgmlContentType.mixed})
+    defaultAttributeValues ::= Dictionary.new  ; ### 
+    out.defineElement(name, 
+	contentType,
+	defaultAttributeValues)
+    _definedGIs.add(name)
+  })
+  if( nextIsEmpty then: { nextIsEmpty := false })
+  attr ::= attributes
+  attributes := Dictionary.new
+  out.startElement(name, attr)
+}
+
+closeTag(name :String) :Void
+  (* *)
+{
+  out.endElement(name)
+}
+
+private
+
+_definedGIs: Set(String)
+
+_init :Self
+  (* *)
+{ super._init
+  _definedGIs := Set.new
+  attributes := Dictionary.new
+  nextIsEmpty := false
+  self
+}
+
+}

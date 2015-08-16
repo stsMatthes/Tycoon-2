@@ -1,16 +1,18 @@
 class SugarBindingClass
 super ConcreteClass(SugarBinding)
-metaclass MetaClass
-public methods
-
-new(ide :String, type :String, equal :String, val :String) :SugarBinding
+(**)
+meta MetaClass
 {
-  let instance = _new,
-  instance.ide := ide,
-  instance.type := type,
-  instance.equal := equal,
-  instance.val := val,
-  instance._init,
+new(ide :String, type :String, equal :String, val :String) :SugarBinding
+  (* *)
+{
+  instance ::= _new
+  instance.ide := ide
+  instance.type := type
+  instance.equal := equal
+  instance.val := val
+  instance._init
   instance
 }
-;
+
+}

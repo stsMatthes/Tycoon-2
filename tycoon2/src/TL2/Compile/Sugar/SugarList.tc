@@ -1,10 +1,5 @@
 class SugarList(E <: Object)
 super Sugar
-metaclass SimpleConcreteClass(SugarList(E))
-public
-
-openingParen :String,
-
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -24,40 +19,47 @@ openingParen :String,
  * 
  * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
  *
- elements[n] is followed by commas[n].
-   comma.size is arg.size - 1 *)
-elements :GapArray(E),
-commas :GapArray(String),
+ *)
+meta SimpleConcreteClass(SugarList(E))
+{
+openingParen :String
+
+elements :GapArray(E)
+  (* elements[n] is followed by commas[n].
+     comma.size is arg.size - 1 *)
+
+commas :GapArray(String)
 
 closingParen :String
 
-methods
-
-printOn(out :Output)
+printOn(out :Output) :Void
+  (* *)
 {
-  out << openingParen,
-  !elements.isEmpty
-  ? { let argsReader = elements.reader,
-      let commasReader = commas.reader,
-      out << argsReader.read,
-      while({ let c = commasReader.read,
-	      let a = argsReader.read,
+  out << openingParen
+  if( !elements.isEmpty
+  then: { argsReader ::= elements.reader
+      commasReader ::= commas.reader
+      out << argsReader.read
+      while({ c ::= commasReader.read
+	      a ::= argsReader.read
 	      c.isNotNil
-	      && { out << c << a,
-	           true } }, {
-      }) },
+	      && ( out << c << a
+	           true ) } do: {
+      }) })
   out << closingParen
 }
 
-private methods
+private
 
 _init :Void
+  (* *)
 {
-  super._init,
-  openingParen := "",
-  elements := GapArray.new0,
-  commas := GapArray.new0,
-  closingParen := "",
+  super._init
+  openingParen := ""
+  elements := GapArray.new0
+  commas := GapArray.new0
+  closingParen := ""
   self
 }
-;
+
+}

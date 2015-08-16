@@ -1,0 +1,12 @@
+class Person
+super UML99
+meta PersonClass
+{
+name :String
+birthdate :Date
+
+birthday :Void
+{
+  tycoon.stdout << "Today is the birthday of " << name << '\n'
+}
+}

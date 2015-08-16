@@ -21,7 +21,7 @@
 /*
   Copyright (c) 1996 Higher-Order GmbH, Hamburg. All rights reserved.
 
-  rtstatic.c 1.2 98/05/18 Andreas Gawecki
+  $File: //depot/tycoon2/stsmain/tycoon2/src/tm/rtstatic.c $ $Revision: #3 $ $Date: 2003/10/01 $ Andreas Gawecki
 
   Support Dynamic Lookup in Statically Linked Objects
 
@@ -35,9 +35,9 @@
 
 /* 1. Declare external symbols: */
 
-#define LIB(lib,ext)
+#define LIB(lib,ext) 
 #define SYM(sym) extern void sym();
-#define ENDLIB
+#define ENDLIB 
 
 #include "static.h"
 
@@ -60,8 +60,8 @@
 /* 3. Build library table: */
 
 #define LIB(lib,ext) { #lib "." #ext, lib ## _syms },
-#define SYM(sym)
-#define ENDLIB
+#define SYM(sym) 
+#define ENDLIB 
 
 rtstatic_Lib rtstatic_aStaticLibs[] = {
 

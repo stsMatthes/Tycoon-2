@@ -51,7 +51,7 @@ readString(n :Int) :String
 require n >= 0
   
 {
-  buffer ::= MutableString.new(n)
+  buffer @::= MutableString.new(n)@
   red ::= readBuffer(buffer, 0, n)
   if( red < n then: { buffer.subString(0, red) } else: { buffer })
 }
@@ -73,12 +73,12 @@ readlnBuffer(buffer :DynSequence(Char)) :Int
 readln :String
   (* *)
 {
-  ga ::= GapString.new(160)
+  ga @::= GapString.new(160)@
   n ::= readlnBuffer(ga)
   if( n == nil
     then: { result :String := nil }
     else: { ga.asString })
-  }
+}
 
 linesDo(statement :Fun(:Int,:String):Void) :Void
   (* *)

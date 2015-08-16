@@ -1,0 +1,16 @@
+class Event
+super UML99, Ordered(Event)
+meta AbstractClass
+{
+date: Date
+  (* when does the event take place? *)
+description :String
+  (* lala *)
+action :Fun():Void
+  (* to be called when the time comes *)
+
+order(other :Event) :Int
+{
+  date.order(other.date)
+}
+}

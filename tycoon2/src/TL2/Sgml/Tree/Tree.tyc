@@ -3,23 +3,9 @@
 (* SgmlTreeBuilder
    an application of SgmlTreeBuilder: just a tree, no chrome *)
 
-class SgmlComponent metaclass AbstractClass;
-class SgmlLeaf metaclass AbstractClass;
-class SgmlComment metaclass AbstractClass;
-class SgmlComposite metaclass AbstractClass;
-class SgmlElement metaclass AbstractClass;
-class SgmlTreeBuilder metaclass AbstractClass;
-
-DO load "../TWL/Sgml/Tree/SgmlElementClass.tc";
-DO load "../TWL/Sgml/Tree/SgmlElement.tc";
-DO load "../TWL/Sgml/Tree/SgmlComponent.tc";
-DO load "../TWL/Sgml/Tree/SgmlLeafClass.tc";
-DO load "../TWL/Sgml/Tree/SgmlLeaf.tc";
-DO load "../TWL/Sgml/Tree/SgmlCommentClass.tc";
-DO load "../TWL/Sgml/Tree/SgmlComment.tc";
-DO load "../TWL/Sgml/Tree/SgmlCompositeClass.tc";
-DO load "../TWL/Sgml/Tree/SgmlComposite.tc";
-DO load "../TWL/Sgml/Tree/SgmlTreeBuilder.tc";
+tycoon.tl.loader.registerDirectory("Sgml/Tree");
+tycoon.tl.loader.update;
+tycoon.tl.typeChecker.check;
 
 
 (*;

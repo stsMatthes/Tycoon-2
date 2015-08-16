@@ -1,11 +1,10 @@
 class HttpMessageClass
 super ConcreteClass(HttpMessage)
-metaclass MetaClass
-
-public methods
-
+(**)
+meta MetaClass
+{
 new :HttpMessage
-(*
+  (*
  * This file is part of the Tycoon-2 system.
  *
  * The Tycoon-2 system is free software; you can redistribute it and/or
@@ -24,35 +23,31 @@ new :HttpMessage
  * 
  * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
  *
- ------------------------------------------------------------ *)  
-  { new2(MimeHeaderDictionary.new, nil) }
+ ------------------------------------------------------------ *)
+{ new2(MimeHeaderDictionary.new, nil) }
 
-  
 new2(headers :MimeHeaderDictionary(MimeHeaderValue),
      body    :Input) :HttpMessage
-     
-  require headers.isNotNil
-(* ------------------------------------------------------------ *)  
+  (* ------------------------------------------------------------ *)
+require headers.isNotNil
+  
  {
-    let instance = _new._init2(headers, body),
+    instance ::= _new._init2(headers, body)
     instance
   }
 
-  
 init :Void
-(* ------------------------------------------------------------ *)  
-  {
-    MimeHeaderRegistry.instance.registerHeader("cache-control", MimeString),
-    MimeHeaderRegistry.instance.registerHeader("connection", StringListHeader),
-    MimeHeaderRegistry.instance.registerHeader("date", MimeDate),
-    MimeHeaderRegistry.instance.registerHeader("forwarded", StringListHeader ),
-    MimeHeaderRegistry.instance.registerHeader("keep-alive", StringListHeader ),
-    MimeHeaderRegistry.instance.registerHeader("pragma", StringListHeader),
-    MimeHeaderRegistry.instance.registerHeader("upgrade", StringListHeader),
-    MimeHeaderRegistry.instance.registerHeader("content-encoding", MimeToken),
+  (* ------------------------------------------------------------ *)
+{
+    MimeHeaderRegistry.instance.registerHeader("cache-control", MimeString)
+    MimeHeaderRegistry.instance.registerHeader("connection", StringListHeader)
+    MimeHeaderRegistry.instance.registerHeader("date", MimeDate)
+    MimeHeaderRegistry.instance.registerHeader("forwarded", StringListHeader )
+    MimeHeaderRegistry.instance.registerHeader("keep-alive", StringListHeader )
+    MimeHeaderRegistry.instance.registerHeader("pragma", StringListHeader)
+    MimeHeaderRegistry.instance.registerHeader("upgrade", StringListHeader)
+    MimeHeaderRegistry.instance.registerHeader("content-encoding", MimeToken)
     MimeHeaderRegistry.instance.registerHeader("transfer-encoding", MimeToken)  
   }
 
-;
-
-  
+}

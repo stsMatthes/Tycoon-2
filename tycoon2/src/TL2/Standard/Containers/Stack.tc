@@ -98,7 +98,7 @@ as(T <: Object,
 
 private
 
-_elements: MutableArray(E)
+_elements @: MutableArray(E)
 
 _elementStart :Int
 
@@ -106,9 +106,9 @@ _grow :Void
   (* *)
 {
   delta ::= 8
-  newElements ::= MutableArray.new(_elements.size + delta)
+  newElements @::= MutableArray.new(_elements.size + delta)@
   newElements.replace(_elements.size, delta, _elements, 0)
-  _elements := newElements
+  _elements := newElements@
   _elementStart := delta
 }
 

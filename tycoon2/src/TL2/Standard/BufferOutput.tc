@@ -52,7 +52,7 @@ writeBuffer(buffer :String, start :Int, n :Int) :Void
 
 private
 
-_buffer :MutableString
+_buffer @:MutableString
 
 _pos :Int
 

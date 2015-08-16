@@ -1,27 +1,32 @@
 class MimeURL
 super MimeHeaderValueImpl(URL)
-metaclass MimeHeaderValueImplClass(URL)
+(**)
+meta MimeHeaderValueImplClass(URL)
+{
+private
 
-private methods
-
-parseValue(s: String): URL {
-  let p = MimeParser.new(s.reader),
-  p.skiphws,
+parseValue(s: String): URL
+  (* *)
+{
+  p ::= MimeParser.new(s.reader)
+  p.skiphws
   URL.fromString(p.nextUnquoted)
 }
 
-unparseValue(s: URL): String {
-  let result = GapString.new(10),
+unparseValue(s: URL): String
+  (* *)
+{
+  result ::= GapString.new(10)
 
-  result.add('\"'),
+  result.add('\"')
   s.asString.reader.do(fun(c :Char) {
-    c = '\"' ? { result.addAll("\\\"") } : {
-    c = '\\' ? { result.addAll("\\\\") } : {
-    result.add(c) } }
-  }),
+    if( c = '\"' then: { result.addAll("\\\"") } else: {
+    if( c = '\\' then: { result.addAll("\\\\") } else: {
+    result.add(c) }) })
+  })
 
-  result.add('\"'),
+  result.add('\"')
   result.asString
 }
 
-;
+}

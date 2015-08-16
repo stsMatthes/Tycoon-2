@@ -1,4 +1,0 @@
-class BackEnd
-super TWL
-metaclass AbstractClass
-;

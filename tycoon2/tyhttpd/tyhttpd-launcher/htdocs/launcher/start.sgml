@@ -1,0 +1,20 @@
+<assign name=title>Tycoon Web Server Start</assign>
+
+<tycoon> success := start </tycoon>
+
+<if true=success>
+  <assign name=msg>
+    <p><b><a href='`"http://" +
+      (properties.host = Httpd.anyHost ? { "localhost" } : { properties.host }) +
+      ":" + properties.port.printString`'>
+	    <ref name=server>tyhttpd-X</ref></a>
+       </b> started
+  </assign>
+<else>
+  <assign name=msg>
+    <p><tycoon/ SgmlEntityOutput.new(out) << errorMsg /
+
+    <p><a href='`"file:" + errorLogPath`'>View Error Log</a>
+  </assign>
+</if>
+

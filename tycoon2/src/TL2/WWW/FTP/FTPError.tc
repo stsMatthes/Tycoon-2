@@ -1,4 +1,5 @@
 class FTPError
+super FTP, Exception
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -19,19 +20,16 @@ class FTPError
  * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
  *
  an error occurred during communication with the FTP server *)
+meta FTPErrorClass()
 
-super FTP, Exception
+{
+response :FTPResponse
+  (* may be nil if no valid response was received *)
 
-public
-
-response :FTPResponse  (* may be nil if no valid response was received *)
-
-methods
-
-printOn(out :Output) 
+printOn(out :Output) :Void
+  (* *)
 {
   out << clazz.name << ": " << response
 }
 
-
-;
+}

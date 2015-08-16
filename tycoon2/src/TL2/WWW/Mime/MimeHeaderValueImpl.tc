@@ -1,3 +1,5 @@
+class MimeHeaderValueImpl(T <: Object)
+super MimeHeaderValue
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -23,55 +25,57 @@
    Date    : 9.12.96
    Changes : me   6.1.97   separate class+metaclass, name change
 
-*)
 
-(* typed MIME header fields. *)
- 
-class MimeHeaderValueImpl(T <: Object)
-super MimeHeaderValue
-metaclass AbstractClass
-
-public methods
-
-(* The value after interpretation of raw *)
-value :T {
-  (* Lazy parsing *)
-  _value == nil && { _string != nil } ? {
+ typed MIME header fields. *)
+meta AbstractClass
+{
+value :T
+  (* The value after interpretation of raw *)
+{
+  ; Lazy parsing 
+  if( _value == nil &&  _string != nil  then: {
     _value := parseValue(_string)
-  },
+  })
 
   _value
 }
 
-"value:="(t: T) {
-  _value := t,
+"value:="(t: T) :Void
+  (* *)
+{
+  _value := t
   _string := nil
 }
 
-string :String {
-  (* Lazy unparsing *)
-  _string == nil && { _value != nil } ? {
+string :String
+  (* *)
+{
+  ; Lazy unparsing 
+  if( _string == nil &&  _value != nil  then: {
     _string := unparseValue(_value)
-  },
+  })
 
   _string
 }
 
-"string:="(s: String) {
-  _string := s,
+"string:="(s: String) :Void
+  (* *)
+{
+  _string := s
   _value  := nil
 }
 
 private
 
-_string :String,
+_string :String
+
 _value  :T
 
-methods
+parseValue  (:String) :T
+  (* parse the header value string *)
+deferred
 
-parseValue  (:String) :T      deferred (* parse the header value string *)
-unparseValue(:T)      :String deferred (* give a string representation of value *)
-
-
-;
-
+unparseValue(:T)      :String
+  (* give a string representation of value *)
+deferred
+}

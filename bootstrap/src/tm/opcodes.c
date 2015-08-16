@@ -17,6 +17,7 @@
  * 
  * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
  *
+ * $File: //depot/tycoon2/stsmain/bootstrap/src/tm/opcodes.c $ $Revision: #2 $ $Date: 2003/10/02 $  Marc Weikard
  */
 #include <stdio.h>
 #include <stdlib.h>

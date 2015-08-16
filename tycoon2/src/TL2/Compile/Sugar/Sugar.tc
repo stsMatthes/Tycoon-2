@@ -1,4 +1,6 @@
 class Sugar
 super Object
-metaclass AbstractClass
-;
+(**)
+meta AbstractClass
+{
+}

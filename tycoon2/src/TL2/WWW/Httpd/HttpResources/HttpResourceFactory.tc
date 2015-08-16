@@ -1,13 +1,8 @@
 class HttpResourceFactory
-
 super Http
-
-metaclass AbstractClass
-
-public
-
-methods
-
+(**)
+meta AbstractClass
+{
 newResource(dir :Directory, name :String) :HttpResource
   (*
  * This file is part of the Tycoon-2 system.
@@ -33,11 +28,11 @@ newResource(dir :Directory, name :String) :HttpResource
   *)
 {
    dir[name].case(
-     let ifDirectory = fun(dir :Directory) { newDirectoryResource(dir) },
-     let ifFile = fun(file :File) { newFileResource(file) }
+     fun(dir :Directory) { newDirectoryResource(dir) },
+     fun(file :File) { newFileResource(file) }
    )
 }
-  
+
 fs :FS
   (* shortcut *)
 {
@@ -58,9 +53,4 @@ newDirectoryResource(dir :Directory) :HttpResource
 
 private
 
-methods
-
-
-;
-
-
+}

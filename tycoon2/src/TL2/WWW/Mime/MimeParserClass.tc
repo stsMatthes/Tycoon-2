@@ -1,3 +1,5 @@
+class MimeParserClass
+super ConcreteClass(MimeParser)
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -22,19 +24,14 @@
 
   Author: Matthias Ernst 12/96
 *)
-
-class MimeParserClass
-super ConcreteClass(MimeParser)
-metaclass MetaClass
-
-public methods
-
+meta MetaClass
+{
 new(r :Reader(Char)) :MimeParser
+  (* *)
 { 
-  let instance = _new,
-  instance.init(r),
+  instance ::= _new
+  instance.init(r)
   instance
 }
 
-;
-
+}

@@ -21,7 +21,7 @@
 /*
   Copyright (c) 1996 Higher-Order GmbH, Hamburg. All rights reserved.
 
-  classids.h 1.24 97/12/08 Marc Weikard
+  $File: //depot/tycoon2/stsmain/bootstrap/src/tm/classids.h $ $Revision: #4 $ $Date: 2003/10/02 $ Marc Weikard
 
   Tycoon Predefined ClassIds
 

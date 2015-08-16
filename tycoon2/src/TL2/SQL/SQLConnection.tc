@@ -1,3 +1,5 @@
+class SQLConnection
+super SQL
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -24,26 +26,19 @@ Author:  Michael Skusa
 Date:    16-Aug-1996
 Updates: (Date)	  (Name)	(Description)
 *)
-
-class SQLConnection
-
-super SQL
-
-metaclass AbstractClass
-
-public
-
+meta AbstractClass
+{
 isClosing:Bool
 
-methods
+newStatement():SQLStatement
+  (* *)
+deferred
 
-newStatement():SQLStatement deferred
+addStatement(s:SQLStatement) :Void
   (* Creates SQLStatement,
      returns nil if connection is closed
-   *)
-
-addStatement(s:SQLStatement)
-  (* Adds s to internal set of open statements,
+   
+ Adds s to internal set of open statements,
      is called automatically by SQLStatement.new (i.e. newStatement) *)
 {
   _statements.add(s)
@@ -56,37 +51,40 @@ removeStatement(s:SQLStatement):Void
   _statements.remove(s)
 }
 
-setAutoCommit(on:Bool):Void deferred
+setAutoCommit(on:Bool):Void
+  (* *)
+deferred
+
+commit():Void
   (* on = true  enables AutoCommit, each single sql-statement is executed
                 and commited immediately,
                 this is the default,
      on = false changes become persistent only if commit is called after
                 their execution
    *)
+deferred
 
-commit():Void deferred
+rollback():Void
   (* Commits all statements associated with the current connection,
      MUST be called to make changes persistent if AutoCommit was disabled,
      especially before disconnecting from the database (close)
    *)
-
-rollback():Void deferred
-  (* Discards all changes which were made after the last commit,
-     does only work if AutoCommit was disabled.
-   *)
+deferred
 
 close():Void
-  (* Closes connection and all associated SQLStatements. *)
+  (* Discards all changes which were made after the last commit,
+     does only work if AutoCommit was disabled.
+   
+ Closes connection and all associated SQLStatements. *)
 {
-  !isClosed() ? {isClosing:=true,
-                 _statements.do(fun (s:SQLStatement) {s.close()}),
-                 isClosing:=false,
-		 _statements.clear,
-                 _releaseHandles(),
-		 _hdbc:=nil, _henv:=nil}
+  if( !isClosed() then: {isClosing:=true
+                 _statements.do(fun (s:SQLStatement) {s.close()})
+                 isClosing:=false
+		 _statements.clear
+                 _releaseHandles()
+		 _hdbc:=nil _henv:=nil})
 }
 
-   
 open(url:URL):Self
   (*
      Uses url to establish a database-connection. Returns nil, if url
@@ -96,45 +94,41 @@ open(url:URL):Self
      or invalid connection-parameters (e.g. wrong password).
    *)
 {
-  !isClosed ? {close()},
-  _open(url),
-  setAutoCommit(true),
+  if( !isClosed then: {close()})
+  _open(url)
+  setAutoCommit(true)
   self
 }
 
 isClosed():Bool
+  (* *)
 { (_hdbc = nil) | (_henv = nil) }
 
 private
 
-_henv:Int32,
+_henv:Int32
 
-_hdbc:Int32,
+_hdbc:Int32
 
 _statements:Set(SQLStatement)
 
-methods
-
 _init:Self
+  (* *)
 {
-  super._init,
-  _statements:=Set.new,
-  _henv:=nil,
-  _hdbc:=nil,
-  isClosing:=false,
+  super._init
+  _statements:=Set.new
+  _henv:=nil
+  _hdbc:=nil
+  isClosing:=false
   self
 }
 
-_open(url:URL):Void deferred
+_open(url:URL):Void
+  (* *)
+deferred
 
-_releaseHandles():Void deferred
-		 
-;
+_releaseHandles():Void
+  (* *)
+deferred
 
-
-
-
-
-
-
-
+}

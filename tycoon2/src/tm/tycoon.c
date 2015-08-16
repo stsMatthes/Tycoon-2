@@ -21,10 +21,10 @@
 /*
   Copyright (c) 1996 Higher-Order GmbH, Hamburg. All rights reserved.
 
-  tycoon.c 1.9 98/05/18 Marc Weikard
-
-  Tycoon Main
-
+  $File: //depot/tycoon2/stsmain/tycoon2/src/tm/tycoon.c $ $Revision: #3 $ $Date: 2003/10/01 $ Marc Weikard
+ 
+  Tycoon Main 
+  
 */
 
 #include "tm.h"
@@ -34,4 +34,3 @@ int main(int argc, char * argv[])
 {
   return tm_main(argc, argv);
 }
-

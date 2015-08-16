@@ -1,13 +1,8 @@
 class PersonalizeHttpUndecidedState
-
 super PersonalizeHttpState
-
-metaclass SimpleConcreteClass(PersonalizeHttpUndecidedState)
-
-public
-
-methods
-
+(**)
+meta SimpleConcreteClass(PersonalizeHttpUndecidedState)
+{
 noCookiesPlease(client :PersonalizeHttpClient) :Void
   (*
  * This file is part of the Tycoon-2 system.
@@ -36,32 +31,32 @@ noCookiesPlease(client :PersonalizeHttpClient) :Void
 personalizeHttp(client :PersonalizeHttpClient,
   request :HttpRequest,
   response :HttpResponse) :HttpResponse
+  (* *)
 {
-  (* use both cookies and url encoding: *)
+  ; use both cookies and url encoding: 
 
-  let cookies = response.hasSetCookies
-    ? { response.setCookies }
-    : { EmptyList.instance },
-  let cookie =
-    HttpSetCookie.new(HttpPersonalizer.COOKIE_NAME, client.id, nil, nil, nil, false),
-  response.setCookies := List.cons(cookie, cookies),
+  cookies ::= if( response.hasSetCookies
+    then: { response.setCookies }
+    else: { EmptyList.instance })
+  cookie ::=
+    HttpSetCookie.new(HttpPersonalizer.COOKIE_NAME, client.id, nil, nil, nil, false)
+  response.setCookies := List.cons(cookie, cookies)
   _urlEncodeState.personalizeHttp(client, request, response)
 }
 
 private
 
-_urlEncodeState :PersonalizeHttpState,
+_urlEncodeState :PersonalizeHttpState
+
 _cookieState :PersonalizeHttpState
 
-methods
-
 _init :Self
+  (* *)
 {
-  super._init,
-  _urlEncodeState := PersonalizeHttpURLEncodeState.new,
-  _cookieState := PersonalizeHttpCookieState.new,
+  super._init
+  _urlEncodeState := PersonalizeHttpURLEncodeState.new
+  _cookieState := PersonalizeHttpCookieState.new
   self
 }
 
-;
-
+}

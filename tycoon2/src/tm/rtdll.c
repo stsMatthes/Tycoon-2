@@ -21,10 +21,10 @@
 /*
   Copyright (c) 1996 Higher-Order GmbH, Hamburg. All rights reserved.
 
-  rtdll.c 1.13 98/07/22 Andreas Gawecki, Marc Weikard, Andre Willomat
+  $File: //depot/tycoon2/stsmain/tycoon2/src/tm/rtdll.c $ $Revision: #3 $ $Date: 2003/10/01 $ Andreas Gawecki, Marc Weikard, Andre Willomat
 
   Dynamic Link Library Support
-
+  
 */
 
 #include <string.h>
@@ -39,13 +39,12 @@
 
 /* avoid duplicated libraries: */
 
-static char * apszDLL[1000];            /* should grow dynamically */
+static char * apszDLL[1000];		/* should grow dynamically */
 static rtdll_T ahDLL[1000];
 static Int nDLL = 0;
 
 static rtstatic_Lib * pStaticLibs = NULL;
 static Int nStaticLibs = 0;
-
 
 void rtdll_begin(rtstatic_Lib * pStaticLibs_)
 {
@@ -55,10 +54,9 @@ void rtdll_begin(rtstatic_Lib * pStaticLibs_)
   }
 }
 
-
 rtdll_T rtdll_open(char * pszPath)
 {
-  Int i;
+  Int i;  
 
   for(i = 0; i < nStaticLibs; i++) {
     if (strcmp(pszPath, pStaticLibs[i].pszName) == 0)
@@ -80,10 +78,8 @@ rtdll_T rtdll_open(char * pszPath)
   return ahDLL[i];
 }
 
-
 void * rtdll_lookup(rtdll_T hDLL, char * pszSym)
 {
-
   if ((Word) hDLL >= (Word) &pStaticLibs[0] &&
       (Word) hDLL <= (Word) &pStaticLibs[nStaticLibs]) {
     rtstatic_Sym * pSym = &(((rtstatic_Lib *)hDLL)->aSyms[0]);
@@ -95,17 +91,15 @@ void * rtdll_lookup(rtdll_T hDLL, char * pszSym)
   }
   return tosDll_lookup(hDLL, pszSym);
 }
-
-
+  
+  
 Int rtdll_close(rtdll_T hDLL)
 {
   return tosDll_close(hDLL);
 }
-
 
 void rtdll_end()
 {
   nDLL = 0;
   nStaticLibs = 0;
 }
-

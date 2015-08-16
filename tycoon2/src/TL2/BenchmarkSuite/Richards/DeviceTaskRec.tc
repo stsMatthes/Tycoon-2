@@ -1,7 +1,5 @@
 class DeviceTaskRec
 super TaskRec
-metaclass DeviceTaskRecClass(DeviceTaskRec)
-
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -21,33 +19,32 @@ metaclass DeviceTaskRecClass(DeviceTaskRec)
  * 
  * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
  *
- "Richards" benchmark: ported from C++ to TL-2 *)   
-   
-public
-
+ "Richards" benchmark: ported from C++ to TL-2 *)
+meta DeviceTaskRecClass(DeviceTaskRec)
+{
 pendingPackets :Queue(Packet)
 
-methods
-
 init() :Self
+  (* *)
 {
-  pendingPackets := Queue.new,
+  pendingPackets := Queue.new
   self
 }
 
 pending() :Packet
+  (* *)
 {
   pendingPackets[0]
 }
 
 setPending(p :Packet) :Void
+  (* *)
 {
   pendingPackets.addLast(p)
 }
 
 print() :Void
-{}  
+  (* *)
+{}
 
-
-;
-
+}

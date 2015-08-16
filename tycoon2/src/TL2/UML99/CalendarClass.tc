@@ -1,0 +1,14 @@
+class CalendarClass
+super ConcreteClass(Calendar)
+meta MetaClass
+{
+
+new(pim :PIM) @:Calendar
+{
+  instance @::= _new@
+  instance.pim := pim
+  instance._init
+  instance@
+}
+
+}

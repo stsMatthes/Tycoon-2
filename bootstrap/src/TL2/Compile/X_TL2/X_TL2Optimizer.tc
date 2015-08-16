@@ -107,7 +107,7 @@ visitFun(v :X_TL2CompiledFun) :Void
     tycoon.stdout << '\n'
   })
 
-  ;; selfSig hack for X_Tracer
+  ;; selfSig hack for Tracer
   ;; hack part one: ensure self is stored in the closure
   selfSig ::= v.freeValueIdes[0]
   assert({ selfSig.name = "self" })

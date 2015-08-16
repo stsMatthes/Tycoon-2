@@ -1,0 +1,14 @@
+class ContactsClass
+super ConcreteClass(Contacts)
+meta MetaClass
+{
+
+new(pim :PIM) @:Contacts
+{
+  instance @::= _new@
+  instance.pim := pim
+  instance._init
+  instance@
+}
+
+}

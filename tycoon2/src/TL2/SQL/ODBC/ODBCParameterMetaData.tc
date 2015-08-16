@@ -1,3 +1,5 @@
+class ODBCParameterMetaData
+super SQLParameterMetaData
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -28,59 +30,46 @@ Updates: (Date)		(Name)	(Description)
 				and ODBC-standard-parameters with integer-constants defined
 				in class ODBC
 *)
-
-class ODBCParameterMetaData
-
-super SQLParameterMetaData
-
-metaclass SimpleConcreteClass(ODBCParameterMetaData)
-
-public methods
-
-retrieveParameterMetaData(hstmt:Int32)
+meta SimpleConcreteClass(ODBCParameterMetaData)
 {
-  let pc = CShortHolder.new(),
-  (odbc.SQLNumParams(hstmt,pc.handle) = odbc.SQL_SUCCESS)
-  ? {_parameterCount:=pc.value}
-  : {pc.close(),
-     ODBCError.new(odbc.NULL,odbc.NULL,hstmt).raise},
-  pc.close(),
-  _parameterNulls := MutableArray.new(_parameterCount),
-  _parameterPrecisions := MutableArray.new(_parameterCount),
-  _parameterScales := MutableArray.new(_parameterCount),
-  _parameterTypes := MutableArray.new(_parameterCount),
-  let fSqlType = CShortHolder.new(),
-  let pcbColDef = CIntHolder.new(),
-  let pibScale = CShortHolder.new(),
-  let pfNullable = CShortHolder.new(),
-  for(0,_parameterCount-1, fun(i:Int)
+retrieveParameterMetaData(hstmt:Int32) :Void
+  (* *)
+{
+  pc ::= CShortHolder.new()
+  if( (odbc.SQLNumParams(hstmt,pc.handle) = odbc.SQL_SUCCESS)
+  then: {_parameterCount:=pc.value}
+  else: {pc.close()
+     ODBCError.new(odbc.NULL,odbc.NULL,hstmt).raise})
+  pc.close()
+  _parameterNulls := MutableArray.new(_parameterCount)
+  _parameterPrecisions := MutableArray.new(_parameterCount)
+  _parameterScales := MutableArray.new(_parameterCount)
+  _parameterTypes := MutableArray.new(_parameterCount)
+  fSqlType ::= CShortHolder.new()
+  pcbColDef ::= CIntHolder.new()
+  pibScale ::= CShortHolder.new()
+  pfNullable ::= CShortHolder.new()
+  for(0 to:_parameterCount-1 do: fun(i:Int)
     {
-      (odbc.SQLDescribeParam(hstmt,i+1,fSqlType.handle,pcbColDef.handle,
+      if( (odbc.SQLDescribeParam(hstmt,i+1,fSqlType.handle,pcbColDef.handle,
                              pibScale.handle,pfNullable.handle) = odbc.SQL_SUCCESS)
-      ? {_parameterTypes[i]:=fSqlType.value,
-         _parameterNulls[i]:=pfNullable.value,
-	 _parameterPrecisions[i]:=pcbColDef.value,
-	 _parameterScales[i]:= (_parameterTypes[i] = odbc.SQL_TIMESTAMP)
-	                       ? {odbc.timestampScale}
-	                       : {pibScale.value}
+      then: {_parameterTypes[i]:=fSqlType.value
+         _parameterNulls[i]:=pfNullable.value
+	 _parameterPrecisions[i]:=pcbColDef.value
+	 _parameterScales[i]:= if( (_parameterTypes[i] = odbc.SQL_TIMESTAMP)
+	                       then: {odbc.timestampScale}
+	                       else: {pibScale.value})
 	}
-      : {fSqlType.close(),
-         pcbColDef.close(),
-         pibScale.close(),
-         pfNullable.close(),
-	 ODBCError.new(odbc.NULL,odbc.NULL,hstmt).raise}
-    }),
-  fSqlType.close(),
-  pcbColDef.close(),
-  pibScale.close(),
+      else: {fSqlType.close()
+         pcbColDef.close()
+         pibScale.close()
+         pfNullable.close()
+	 ODBCError.new(odbc.NULL,odbc.NULL,hstmt).raise})
+    })
+  fSqlType.close()
+  pcbColDef.close()
+  pibScale.close()
   pfNullable.close()
 }
 
-;
-
-
-
-
-
-
-
+}

@@ -1,3 +1,5 @@
+class HttpAuthenticatedResource
+super HttpResourceDecorator
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -26,48 +28,63 @@
 
    Matthias Ernst 27.1.97
 *)
+meta SimpleConcreteClass(HttpAuthenticatedResource)
+{
+realm :ProtectionRealm
 
-class HttpAuthenticatedResource
-super HttpResourceDecorator
-metaclass SimpleConcreteClass(HttpAuthenticatedResource)
-
-
-public
-  realm :ProtectionRealm
-  
-methods
-
-  pathLookup(request :HttpRequest, arcs :List(String)) :HttpResource
-  {
-    realm.authenticates(request) ? {
+pathLookup(request :HttpRequest, arcs :List(String)) :HttpResource
+  (* *)
+{
+    if( realm.authenticates(request) then: {
       super.pathLookup(request, arcs)
-    } : {
+    } else: {
       self
-    }
+    })
   }
 
-  get(request :HttpRequest) :HttpResponse         { notAuthorized(request) }
-  put(request :HttpRequest) :HttpResponse         { notAuthorized(request) }
-  post(request :HttpRequest) :HttpResponse        { notAuthorized(request) }
-  options(request :HttpRequest) :HttpResponse     { notAuthorized(request) }
-  delete(request :HttpRequest) :HttpResponse      { notAuthorized(request) }
-  link(request :HttpRequest) :HttpResponse        { notAuthorized(request) }
-  unlink(request :HttpRequest) :HttpResponse      { notAuthorized(request) }
-  extended(request :HttpRequest) :HttpResponse    { notAuthorized(request) }
+get(request :HttpRequest) :HttpResponse
+  (* *)
+{ notAuthorized(request) }
 
-private methods
+put(request :HttpRequest) :HttpResponse
+  (* *)
+{ notAuthorized(request) }
 
-  notAuthorized(request :HttpRequest) :HttpResponse {
-    let r = newResponse(HttpResponse.UNAUTHORIZED),
-    r.WWWAuthenticates := realm.challenges(request.url),
+post(request :HttpRequest) :HttpResponse
+  (* *)
+{ notAuthorized(request) }
+
+options(request :HttpRequest) :HttpResponse
+  (* *)
+{ notAuthorized(request) }
+
+delete(request :HttpRequest) :HttpResponse
+  (* *)
+{ notAuthorized(request) }
+
+link(request :HttpRequest) :HttpResponse
+  (* *)
+{ notAuthorized(request) }
+
+unlink(request :HttpRequest) :HttpResponse
+  (* *)
+{ notAuthorized(request) }
+
+extended(request :HttpRequest) :HttpResponse
+  (* *)
+{ notAuthorized(request) }
+
+private
+
+notAuthorized(request :HttpRequest) :HttpResponse
+  (* *)
+{
+    r ::= newResponse(HttpResponse.UNAUTHORIZED)
+    r.WWWAuthenticates := realm.challenges(request.url)
     r.body = InputReader.new(
       "You are not authorized to access this esource.".reader
-    ),
+    )
     r
   }
-    
-  
-;
 
-  
-  
+}

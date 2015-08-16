@@ -1,8 +1,0 @@
-class MethodDictionaryPublic
-super TWL, KeyedContainer(Symbol, Method)
-metaclass AbstractClass
-public methods
-
-class_ :ClassPublic
-  deferred
-;

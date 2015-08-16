@@ -1,19 +1,18 @@
 class FTPClientClass
-
 super ConcreteClass(FTPClient)
-
-metaclass MetaClass
-
-public methods
-
+(**)
+meta MetaClass
+{
 new(server :IPAddress, user :String, password :String, verbose :Bool) :FTPClient
-{ let instance = _new,
-  instance.server := server,
-  instance.port := 21,
-  instance.user := user,
-  instance.password := password,
-  instance.verbose := verbose,
-  instance._init,
+  (* *)
+{ instance ::= _new
+  instance.server := server
+  instance.port := 21
+  instance.user := user
+  instance.password := password
+  instance.verbose := verbose
+  instance._init
   instance
 }
-;
+
+}

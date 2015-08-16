@@ -1,13 +1,8 @@
 class PersonalizeHttpState
-
 super PersonalizeHttp
-
-metaclass AbstractClass
-
-public
-
-methods
-
+(**)
+meta AbstractClass
+{
 noCookiesPlease(client :PersonalizeHttpClient) :Void
   (*
  * This file is part of the Tycoon-2 system.
@@ -29,15 +24,12 @@ noCookiesPlease(client :PersonalizeHttpClient) :Void
  * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
  *
  the client rejected a cookie.  take appropriate action. *)
-  deferred
+deferred
 
 personalizeHttp(client :PersonalizeHttpClient,
     request :HttpRequest,
     response :HttpResponse) :HttpResponse
   (* print the clients fingerprint onto the given response *)
-  deferred
-  
-;
+deferred
 
-
-
+}

@@ -1,3 +1,5 @@
+class SQLCursor
+super SQL
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -30,25 +32,17 @@ Updates: (Date)		(Name)	(Description)
 	                        "*** Binary Large Object ***" is returned. The binary
 				data can be retrieved using the getRaw-method.
 *)
-
-class SQLCursor
-
-super SQL
-
-metaclass AbstractClass
-
-public
-
+meta AbstractClass
+{
 metaData:SQLCursorMetaData
 
-methods
-
 open(hstmt:Int32):Void
+  (* *)
 {
-  _hstmt:=hstmt,
-  metaData:=_createCursorMetaData(hstmt),
-  _allocateDataArea(),
-  _allocateInfoDataArea,
+  _hstmt:=hstmt
+  metaData:=_createCursorMetaData(hstmt)
+  _allocateDataArea()
+  _allocateInfoDataArea
   _bindColumns
 }
 
@@ -57,141 +51,151 @@ close():Void
      is called automatically when the associated SQLStatement is closed
      or reexecuted *)
 {
-  _hstmt.isNotNil ?
+  if( _hstmt.isNotNil then:
   {
-    _unbindColumns(),
-    _hstmt:=nil,
-    for (0,_dataArea.size-1,fun (i:Int)
+    _unbindColumns()
+    _hstmt:=nil
+    for(0 to:_dataArea.size-1 do:fun (i:Int)
       {
-        _dataArea[i].close(),
+        _dataArea[i].close()
         _lengthDataArea[i].close()
-      }),
-    metaData:=nil,
-    _dataArea:=nil,
+      })
+    metaData:=nil
+    _dataArea:=nil
     _lengthDataArea:=nil
-  }
+  })
 }
 
-next():Bool deferred
-   (* fetches the next result row from the database,
-      answers true on success,
-              false if no further data was found
-    *)
+next():Bool
+  (* *)
+deferred
 
 getObject(n :Int):Object
-   (* answer the object at position n in the current result row,
+  (* fetches the next result row from the database,
+      answers true on success,
+              false if no further data was found
+    
+ answer the object at position n in the current result row,
       n >= 0,
       raises IndexOutOfBounds
     *)
 {
-  _isNull(n)
-  ? {let o:Object = nil}
-  : {_isDate(n) ? {let o:Object = _formatDate(n)} :{
-     _isBlob(n) ? {let o:Object = "*** Binary Large Object ***"}
-                : {let o:Object = _dataArea[n].value}}}
+  if( _isNull(n)
+  then: {o:Object := nil}
+  else: {if( _isDate(n) then: {o:Object := _formatDate(n)} else:{
+     if( _isBlob(n) then: {o:Object := "*** Binary Large Object ***"}
+                else: {o:Object := _dataArea[n].value})})})
 }
 
 getObjects():Array(Object)
-   (* answers an array of all objects in the current row *)
+  (* answers an array of all objects in the current row *)
 {
-  let a = MutableArray.new(metaData.columnCount()),
-  for(0,a.size-1,fun(i:Int){a[i]:=getObject(i)}),
+  a ::= MutableArray.new(metaData.columnCount())
+  for(0 to:a.size-1 do:fun(i:Int){a[i]:=getObject(i)})
   a
 }
 
 getInt(n :Int) :Int
-   (* answer the Int object at position n in the current result row,
+  (* answer the Int object at position n in the current result row,
       n >= 0,
       raises IndexOutOfBounds, CoerceError
     *)
 {
-  _isNull(n)
-  ? {let o:Int = nil}
-  : {_dataArea[n].intValue}
+  if( _isNull(n)
+  then: {o:Int := nil}
+  else: {_dataArea[n].intValue})
 }
 
 getString(n :Int) :String
   (*  answer the String object at position n in the current result row,
       n >= 0,
       raises IndexOutOfBounds, CoerceError
-   *) 
+   *)
 {
-  _isNull(n)
-  ? {let o:String = nil}
-  : {_dataArea[n].stringValue}
+  if( _isNull(n)
+  then: {o:String := nil}
+  else: {_dataArea[n].stringValue})
 }
 
 getDate(n :Int) :Date
   (*  answer the Date object at position n in the current result row,
       n >= 0,
       raises IndexOutOfBounds, CoerceError
-   *) 
+   *)
 {
-  _isNull(n)
-  ? {let o:Date = nil}
-  : {_formatDate(n)}
+  if( _isNull(n)
+  then: {o:Date := nil}
+  else: {_formatDate(n)})
 }
 
 getReal(n :Int) :Real
   (*  answer the Real object at position n in the current result row,
       n >= 0,
       raises IndexOutOfBounds, CoerceError
-   *) 
+   *)
 {
-  _isNull(n)
-  ? {let o:Real = nil}
-  : {_dataArea[n].realValue}
+  if( _isNull(n)
+  then: {o:Real := nil}
+  else: {_dataArea[n].realValue})
 }
 
 getRaw(n :Int, value:File):File
   (*  answer the binary object at position n in the current result row,
       n >= 0,
       raises IndexOutOfBounds, CoerceError
-   *) 
+   *)
 {
-  _isNull(n)
-  ? {let o:File = nil}
-  : {_retrieveRaw(n,value)}
+  if( _isNull(n)
+  then: {o:File := nil}
+  else: {_retrieveRaw(n,value)})
 }
 
 private
 
-_hstmt:Int32,
+_hstmt:Int32
 
-_dataArea:MutableArray(AnyCValueHolder),
+_dataArea:MutableArray(AnyCValueHolder)
 
 _lengthDataArea:MutableArray(AnyCValueHolder)
 
-methods
+_createCursorMetaData(hstmt:Int32):SQLCursorMetaData
+  (* *)
+deferred
 
-_createCursorMetaData(hstmt:Int32):SQLCursorMetaData deferred
+_allocateDataArea():Void
+  (* *)
+deferred
 
-_allocateDataArea():Void deferred
+_allocateInfoDataArea():Void
+  (* *)
+deferred
 
-_allocateInfoDataArea():Void deferred
+_bindColumns():Void
+  (* *)
+deferred
 
-_bindColumns():Void deferred
+_unbindColumns():Void
+  (* *)
+deferred
 
-_unbindColumns():Void deferred
+_isNull(column:Int):Bool
+  (* *)
+deferred
 
-_isNull(column:Int):Bool deferred
+_isDate(column:Int):Bool
+  (* *)
+deferred
 
-_isDate(column:Int):Bool deferred
+_isBlob(column:Int):Bool
+  (* *)
+deferred
 
-_isBlob(column:Int):Bool deferred
+_formatDate(column:Int):Date
+  (* *)
+deferred
 
-_formatDate(column:Int):Date deferred
+_retrieveRaw(column:Int, outputFile:File):File
+  (* *)
+deferred
 
-_retrieveRaw(column:Int, outputFile:File):File deferred
-
-;
-
-
-
-
-
-
-
-
-
-
+}

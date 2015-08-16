@@ -1,12 +1,7 @@
 (*
-DO load "../TWL/WWW/Html/Html.tyc";
+DO load "WWW/Html/Html.tyc";
 *)
 
-DO load "../TWL/WWW/Html/Html.tc";
-
-class HtmlGenerator metaclass AbstractClass;
-
-DO load "../TWL/WWW/Html/HtmlGeneratorClass.tc";
-DO load "../TWL/WWW/Html/HtmlGenerator.tc";
-
-
+tycoon.tl.loader.registerDirectory("WWW/Html");
+tycoon.tl.loader.update;
+tycoon.tl.typeChecker.check;

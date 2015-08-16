@@ -1,0 +1,68 @@
+<!doctype stml system>
+<stml processor=KoltarProcessor language='tycoon-1.0'>
+<head>
+<title> Du willst Dich eintragen? </title>
+</head>
+<body>
+
+<center><h1>Du willst Dich eintragen?</h1></center>
+
+<tycoon>
+  ich ::= formFields["ich"]
+  datum ::= Date.fromTime(Long.fromReader(formFields["datum"].reader))
+  row ::= application.db[datum]
+  ichSklave :KoltarSklave := nil
+</tycoon>
+
+<h3><tycoon> out << row.date.format("%d.%m (%a)") </tycoon></h3>
+
+<p> 
+<send receiver='application.sklaven' selector='do'>
+  <arg><fun param='sklave :KoltarSklave'>
+    <if true='sklave.name != ich'>
+       <tycoon>
+         out << sklave.name << ' '
+         dienst :KoltarDienst := row.werWas[sklave]
+	 out << dienst.erklaerung
+       </tycoon>
+	<BR>
+    <else>
+      <tycoon> ichSklave := sklave </tycoon>
+    </if>
+</send>
+
+<p>Und Du, <tycoon> out << ich </tycoon> ?
+
+<p>
+<form action="eintragen.stml" method=get>
+<input type=hidden name=ich value='`ich`'>
+<input type=hidden name=datum value='`datum.asTime.printString`'>
+<select name=dienst>
+<tycoon>
+  aktuellerDienst ::= row.werWas[ichSklave]
+</tycoon>
+<send receiver='application.dienste' selector='do'>
+  <arg><fun param='dienst :KoltarDienst'>
+    <if true='dienst == aktuellerDienst'>
+      <option value='`dienst.name`' selected><tycoon>
+	out << dienst.erklaerung
+      </tycoon></option>
+    <else>
+      <option value='`dienst.name`'><tycoon>
+	out << dienst.erklaerung
+      </tycoon></option>
+    </if>
+</send>
+</select>
+<input type="submit" value="Eintragen">
+</form>
+
+      <HR>
+      
+      <A HREF="http://www.sts.tu-harburg.de/~ax.wienberg"><I>Axel Wienberg</I></A>. Your <a href="mailto:2wienbe@informatik.uni-hamburg.de">feedback</A> is welcome!
+<!-- hhmts start -->
+Last modified: Tue Jun 23 16:53:30 MET DST 1998
+<!-- hhmts end -->
+
+</body>
+

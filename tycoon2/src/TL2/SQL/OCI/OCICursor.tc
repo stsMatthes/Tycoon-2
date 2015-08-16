@@ -1,3 +1,5 @@
+class OCICursor
+super SQLCursor
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -28,193 +30,183 @@ Updates: (Date)		(Name)	(Description)
 	 14-mar-1997	MS	replaced integers for return-, type- and
 				error-codes with named constants
 *)
-
-class OCICursor
-
-super SQLCursor
-
-metaclass SimpleConcreteClass(OCICursor)
-
-public
-
+meta SimpleConcreteClass(OCICursor)
+{
 hdbc:Int32
 
-methods
-
 close:Void
+  (* *)
 {
-  super.close,
-  for(0,_indp.size-1,fun(i:Int)
+  super.close
+  for(0 to:_indp.size-1 do:fun(i:Int)
     {
-      _indp[i].close,
+      _indp[i].close
       _rcode[i].close
     })
 }
 
 next:Bool
-   (* fetches the next result row from the database,
+  (* fetches the next result row from the database,
       answers true on success,
               false if no further data was found
     *)
 {
-  _hstmt.isNotNil ?
+  if( _hstmt.isNotNil then:
   {
-  oci.ofen(_hstmt,1) = 0 ? {true}
-                         : {let error = OCIError.new(hdbc,_hstmt),
-			     ((error.errorCode = oci.NO_MORE_ROWS)
-			   || {error.errorCode = oci.FETCH_OUT_OF_SEQUENCE})
-			   ? {false}
-			                                                         : {error.raise}}}
-  (*
-     no more rows (first unsuccesful fetch),
-     fetch out of sequence (further unsuccessful fetches)
-  *)
-  : {let n:Bool = nil}
+  if( oci.ofen(_hstmt,1) = 0 then: {true}
+                         else: {error ::= OCIError.new(hdbc,_hstmt)
+			     if( ((error.errorCode = oci.NO_MORE_ROWS)
+			   || error.errorCode = oci.FETCH_OUT_OF_SEQUENCE)
+			   then: {false}
+			                                                         else: {error.raise})})}
+  ;
+;     no more rows (first unsuccesful fetch),
+;     fetch out of sequence (further unsuccessful fetches)
+;  
+  else: {n:Bool := nil})
 }
 
 private
 
-_hstmt:Int32,
+_hstmt:Int32
 
-_indp:MutableArray(CShortHolder),
+_indp:MutableArray(CShortHolder)
 
 _rcode:MutableArray(CShortHolder)
 
-methods
-
 _createCursorMetaData(hstmt:Int32):OCICursorMetaData
+  (* *)
 {
-  let m = OCICursorMetaData.new(),
-  m.hdbc:=hdbc,
-  m.retrieveColumnData(hstmt),
+  m ::= OCICursorMetaData.new()
+  m.hdbc:=hdbc
+  m.retrieveColumnData(hstmt)
   m
 }
 
 _allocateDataArea:Void
+  (* *)
 {
-  _dataArea:=MutableArray.new(metaData.columnCount),
-  for (0,_dataArea.size-1,fun (i:Int)
+  _dataArea:=MutableArray.new(metaData.columnCount)
+  for(0 to:_dataArea.size-1 do:fun (i:Int)
     {
-      let t = metaData.sqlType(i),
-      (t=oci.NUMBER)
-      ? { ((metaData.scale(i) = 0) && {metaData.precision(i) <= 8})
-          ? {_dataArea[i]:=CIntHolder.new}
-	  : {_dataArea[i]:=CRealHolder.new}
-	} : {
-      (t=oci.LONGRAW)
-      ? {_dataArea[i]:=CRawStringHolder.new(oci.maxRawBuffer)}
-      : {_dataArea[i]:=CStringHolder.new(metaData.precision(i))}}
+      t ::= metaData.sqlType(i)
+      if( (t=oci.NUMBER)
+      then: { if( ((metaData.scale(i) = 0) && metaData.precision(i) <= 8)
+          then: {_dataArea[i]:=CIntHolder.new}
+	  else: {_dataArea[i]:=CRealHolder.new})
+	} else: {
+      if( (t=oci.LONGRAW)
+      then: {_dataArea[i]:=CRawStringHolder.new(oci.maxRawBuffer)}
+      else: {_dataArea[i]:=CStringHolder.new(metaData.precision(i))})})
     })
 
 }
 
 _allocateInfoDataArea():Void
+  (* *)
 {
-  _lengthDataArea:=MutableArray.new(metaData.columnCount),
-  _indp:=MutableArray.new(metaData.columnCount),
-  _rcode:=MutableArray.new(metaData.columnCount),
-  for (0,_lengthDataArea.size-1,fun (i:Int)
+  _lengthDataArea:=MutableArray.new(metaData.columnCount)
+  _indp:=MutableArray.new(metaData.columnCount)
+  _rcode:=MutableArray.new(metaData.columnCount)
+  for(0 to:_lengthDataArea.size-1 do:fun (i:Int)
     {
-	_lengthDataArea[i]:=CShortHolder.new,
-	_indp[i]:=CShortHolder.new,
-	_rcode[i]:=CShortHolder.new,
-	_rcode[i].setShortValue(oci.RETURNED_NULL) (* inital value of
-	                                              column is nil *)
+	_lengthDataArea[i]:=CShortHolder.new
+	_indp[i]:=CShortHolder.new
+	_rcode[i]:=CShortHolder.new
+	_rcode[i].setShortValue(oci.RETURNED_NULL) ; inital value of
+;	                                              column is nil 
     })
 }
 
 _bindColumns():Void
+  (* *)
 {
-  for(0,metaData.columnCount()-1, fun (i:Int)
+  for(0 to:metaData.columnCount()-1 do: fun (i:Int)
     {
-      let t = metaData.sqlType(i),
-      let bufl =
-        (t = oci.NUMBER)
-	? { ((metaData.scale(i) = 0) && {metaData.precision(i) <= 8})
-	    ? {4} (* Int *)
-	    : {8} (* Real *)
-	  } :{
-	(t = oci.LONGRAW) ? { oci.maxRawBuffer }         (* Binary data *) 
-                          : {metaData.precision(i)+1} }, (* NTS *)
-      let ftype =
-        (t = oci.NUMBER)
-	? { ((metaData.scale(i) = 0) && {metaData.precision(i) <= 8})
-	    ? {oci.fTypeCode[Int]}
-	    : {oci.fTypeCode[Real]}
-	  } :{
-	(t = oci.LONGRAW) ? {oci.fTypeCode[File]}
-                          : {oci.fTypeCode[String]}},
-      oci.odefin(_hstmt,i+1,_dataArea[i].handle,bufl,ftype,-1,
-                 _indp[i].handle,"",-1,-1,_lengthDataArea[i].handle,
+      t ::= metaData.sqlType(i)
+      bufl ::=
+        if( (t = oci.NUMBER)
+	then: { if( ((metaData.scale(i) = 0) && metaData.precision(i) <= 8)
+	    then: {4} ; Int 
+	    else: {8}) ; Real 
+	  } else:{
+	if( (t = oci.LONGRAW) then: { oci.maxRawBuffer }         ; Binary data 
+                          else: {metaData.precision(i)+1}) }) ; NTS 
+      ftype ::=
+        if( (t = oci.NUMBER)
+	then: { if( ((metaData.scale(i) = 0) && metaData.precision(i) <= 8)
+	    then: {oci.fTypeCode[Int]}
+	    else: {oci.fTypeCode[Real]})
+	  } else:{
+	if( (t = oci.LONGRAW) then: {oci.fTypeCode[File]}
+                          else: {oci.fTypeCode[String]})})
+      if( oci.odefin(_hstmt,i+1,_dataArea[i].handle,bufl,ftype,(-1),
+                 _indp[i].handle,"",(-1),(-1),_lengthDataArea[i].handle,
 		 _rcode[i].handle) != 0
-      ? {OCIError.new(hdbc,_hstmt).raise}
+      then: {OCIError.new(hdbc,_hstmt).raise})
      })
 }
 
 _unbindColumns():Void
+  (* *)
 {
   nil
 }
 
 _isNull(column:Int):Bool
+  (* *)
 {
   _rcode[column].value = oci.RETURNED_NULL
 }
 
 _isDate(column:Int):Bool
+  (* *)
 {
   metaData.sqlType(column) = oci.DATE
 }
 
 _isBlob(column:Int):Bool
+  (* *)
 {
   metaData.sqlType(column) = oci.LONGRAW
 }
 
 _formatDate(column:Int):Date
+  (* *)
 {
-  _isDate(column)
-    ? {Date.fromString(_dataArea[column].stringValue,"%Y-%m-%d %H:%M:%S")}
-    : {CoerceError.new(_dataArea[column].stringValue,Date).raise}
+  if( _isDate(column)
+    then: {Date.fromString(_dataArea[column].stringValue,"%Y-%m-%d %H:%M:%S")}
+    else: {CoerceError.new(_dataArea[column].stringValue,Date).raise})
 }
 
 _retrieveRaw(column:Int, outputFile:File):File
+  (* *)
 {
-  outputFile.openWrite,
-  let var offset = 0,
-  let currentLength = CIntHolder.new,
-  oci.oflng(_hstmt,column+1,_dataArea[column].handle,oci.maxRawBuffer,
+  outputFile.openWrite
+  offset ::= 0
+  currentLength ::= CIntHolder.new
+  if( oci.oflng(_hstmt,column+1,_dataArea[column].handle,oci.maxRawBuffer,
             oci.fTypeCode[File],currentLength.handle,offset) != 0
-    ? {
-        currentLength.close,
+    then: {
+        currentLength.close
 	OCIError.new(hdbc,_hstmt).raise
-      },
-  while({!(currentLength.value < oci.maxRawBuffer)}, {
-    let data = _dataArea[column].rawStringValue,
-    outputFile.writeBuffer(data,0,oci.maxRawBuffer),
-    offset := offset+oci.maxRawBuffer,
-    oci.oflng(_hstmt,column+1,_dataArea[column].handle,oci.maxRawBuffer,
+      })
+  while({!(currentLength.value < oci.maxRawBuffer)} do: {
+    data ::= _dataArea[column].rawStringValue
+    outputFile.writeBuffer(data,0,oci.maxRawBuffer)
+    offset := offset+oci.maxRawBuffer
+    if( oci.oflng(_hstmt,column+1,_dataArea[column].handle,oci.maxRawBuffer,
               oci.fTypeCode[File],currentLength.handle,offset) != 0
-      ? {
-          currentLength.close,
-	  OCIError.new(hdbc,_hstmt).raise}
+      then: {
+          currentLength.close
+	  OCIError.new(hdbc,_hstmt).raise})
 	}
-  ),
-  let data = _dataArea[column].rawStringValue,
-  outputFile.writeBuffer(data,0,currentLength.value),
-  outputFile.close,
-  currentLength.close,
+  )
+  data ::= _dataArea[column].rawStringValue
+  outputFile.writeBuffer(data,0,currentLength.value)
+  outputFile.close
+  currentLength.close
   outputFile
 }
 
-;
-
-
-
-
-
-
-
-
-
-
+}

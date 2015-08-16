@@ -1,3 +1,5 @@
+class SQLStatement
+super SQL
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -24,64 +26,58 @@ Author:  Michael Skusa
 Date:    27-Aug-1996
 Updates: (Date)	  (Name)	(Description)
 *)
-
-class SQLStatement
-
-super SQL
-
-metaclass AbstractClass
-
-public
-
+meta AbstractClass
+{
 parameterMetaData:SQLParameterMetaData
 
-methods
-
 open(hdbc:Int32, c:SQLConnection):Void
+  (* *)
 {
-  _open(hdbc),
-  _connection:=c,
-  _connection.addStatement(self),
-  parameterMetaData:=nil,
-  _parameterDataArea:=nil,
-  _parameterLengthDataArea:=nil,
-  _parameterNames:=MutableArray.new(0),
+  _open(hdbc)
+  _connection:=c
+  _connection.addStatement(self)
+  parameterMetaData:=nil
+  _parameterDataArea:=nil
+  _parameterLengthDataArea:=nil
+  _parameterNames:=MutableArray.new(0)
   _parameterClasses:=MutableArray.new(0)
 }
-  
-cancel:Void deferred
-  (* cancels and closes database-cursors *)
+
+cancel:Void
+  (* *)
+deferred
 
 close:Void
-  (* Closes cursor,
+  (* cancels and closes database-cursors 
+ Closes cursor,
      deallocates statement-handle,
      removes statement from the open-statement-list of
      the associated connection.
      Is called automatically when connection is being closed.
    *)
 {
- (_hstmt != nil) ? {!_connection.isClosing ?
-                    {_connection.removeStatement(self)},
-                    cancel,
-		    _freeParameterAreas,
-		    parameterMetaData:=nil,
-		    _parameterClasses:=nil,
-		    _parameterMaxLength:=nil,
-		    _parameterNames:=nil,
-		    _parameterClasses:=nil,
-		    _dropStatement,
-                    _hstmt:=nil}
+ if( (_hstmt != nil) then: {if( !_connection.isClosing then:
+                    {_connection.removeStatement(self)})
+                    cancel
+		    _freeParameterAreas
+		    parameterMetaData:=nil
+		    _parameterClasses:=nil
+		    _parameterMaxLength:=nil
+		    _parameterNames:=nil
+		    _parameterClasses:=nil
+		    _dropStatement
+                    _hstmt:=nil})
 }
 
-prepare(sql:String)
+prepare(sql:String) :Void
   (* Prepares sql-statement for use with execute *)
 {
-  cancel(),
-  _freeParameterAreas,
-  _prepare(sql),
-  parameterMetaData:=_createParameterMetaData(_hstmt),
-  _allocateParameterDataArea,
-  _allocateParameterLengthDataArea,
+  cancel()
+  _freeParameterAreas
+  _prepare(sql)
+  parameterMetaData:=_createParameterMetaData(_hstmt)
+  _allocateParameterDataArea
+  _allocateParameterLengthDataArea
   _bindParameters
 }
 
@@ -91,41 +87,52 @@ execute:Bool
              false if statement returns no result-set (e.g. insert, update)
    *)
 {
-   cancel(),
-   _execute(),
-   _cursor := _createCursor(_hstmt),
+   cancel()
+   _execute()
+   _cursor := _createCursor(_hstmt)
    _cursor.metaData.columnCount() != 0
-     (* >0 --> select-statement --> true *)
-     (* =0 --> insert,update,etc --> false *)
+     ; >0 --> select-statement --> true 
+     ; =0 --> insert,update,etc --> false 
 }
 
 defineParameterClasses(classes:MutableArray(Class),
                        identifier:MutableArray(String))
                        :MutableArray(String)
+  (* *)
 {
-  _parameterNames:=MutableArray.new(classes.size),
-  let result:MutableArray(String) = MutableArray.new(classes.size),
-  _parameterClasses:=MutableArray.new(classes.size),
-  _parameterMaxLength:=MutableArray.new(classes.size),
-  for(0,classes.size-1,fun(i:Int)
+  _parameterNames:=MutableArray.new(classes.size)
+  result:MutableArray(String) := MutableArray.new(classes.size)
+  _parameterClasses:=MutableArray.new(classes.size)
+  _parameterMaxLength:=MutableArray.new(classes.size)
+  for(0 to:classes.size-1 do:fun(i:Int)
   {
-    _parameterClasses[i]:=classes[i],
-    _parameterMaxLength[i]:=0,
-    result[i]:=_nativeParameter(identifier[i]),
+    _parameterClasses[i]:=classes[i]
+    _parameterMaxLength[i]:=0
+    result[i]:=_nativeParameter(identifier[i])
     _parameterNames[i]:=result[i]
-  }),
+  })
   result
 }
 
-setInt(parameterIndex:Int, value:Int):Int deferred
+setInt(parameterIndex:Int, value:Int):Int
+  (* *)
+deferred
 
-setReal(parameterIndex:Int, value:Real):Real deferred
+setReal(parameterIndex:Int, value:Real):Real
+  (* *)
+deferred
 
-setString(parameterIndex:Int, value:String):String deferred
+setString(parameterIndex:Int, value:String):String
+  (* *)
+deferred
 
-setDate(parameterIndex:Int,value:Date):Date deferred
+setDate(parameterIndex:Int,value:Date):Date
+  (* *)
+deferred
 
-setRaw(parameterIndex:Int, value:File):File deferred
+setRaw(parameterIndex:Int, value:File):File
+  (* *)
+deferred
 
 executeDirect(sql:String):Bool
   (* Executes sql-statement,
@@ -133,17 +140,19 @@ executeDirect(sql:String):Bool
              false if statement returns no result-set (e.g. insert, update)
    *)
 {
-   cancel,
-   _freeParameterAreas,
-   _executeDirect(sql),
-   _cursor := _createCursor(_hstmt),
-   parameterMetaData:=nil,
+   cancel
+   _freeParameterAreas
+   _executeDirect(sql)
+   _cursor := _createCursor(_hstmt)
+   parameterMetaData:=nil
    _cursor.metaData.columnCount != 0
-     (* >0 --> select-statement --> true *)
-     (* =0 --> insert,update,etc --> false *)
+     ; >0 --> select-statement --> true 
+     ; =0 --> insert,update,etc --> false 
 }
 
-getUpdateCount:Int deferred
+getUpdateCount:Int
+  (* *)
+deferred
 
 executeDirectUpdate(sql:String):Int
   (* Executes sql-statement and returns number of affected rows,
@@ -151,8 +160,8 @@ executeDirectUpdate(sql:String):Int
      raises ODBCError.
    *)
 {
-  !executeDirect(sql) ? {getUpdateCount}
-                      : {let n:Int = nil}
+  if( !executeDirect(sql) then: {getUpdateCount}
+                      else: {n:Int := nil})
 }
 
 getCursor:SQLCursor
@@ -170,72 +179,94 @@ executeDirectQuery(sql:String):SQLCursor
      raises ODBCError.
   *)
 {
-  executeDirect(sql) ? {getCursor}
-                     : {let n:SQLCursor = nil}
+  if( executeDirect(sql) then: {getCursor}
+                     else: {n:SQLCursor := nil})
 }
 
-setMaxLength(parameterIndex:Int,length:Int)
+setMaxLength(parameterIndex:Int,length:Int) :Void
+  (* *)
 { _parameterMaxLength[parameterIndex]:=length }
 
 private
 
-_hstmt:Int32,
+_hstmt:Int32
 
-_connection:SQLConnection,
+_connection:SQLConnection
 
-_cursor:SQLCursor,
+_cursor:SQLCursor
 
-_parameterClasses:MutableArray(Class),
+_parameterClasses:MutableArray(Class)
 
-_parameterNames:MutableArray(String),
+_parameterNames:MutableArray(String)
 
-_parameterMaxLength:MutableArray(Int),
+_parameterMaxLength:MutableArray(Int)
 
-_parameterDataArea:MutableArray(AnyCValueHolder),
+_parameterDataArea:MutableArray(AnyCValueHolder)
 
 _parameterLengthDataArea:MutableArray(AnyCValueHolder)
 
-methods
+_open(hdbc:Int32):Void
+  (* *)
+deferred
 
-_open(hdbc:Int32):Void deferred
+_createParameterMetaData(hstmt:Int32):SQLParameterMetaData
+  (* *)
+deferred
 
-_createParameterMetaData(hstmt:Int32):SQLParameterMetaData deferred
+_allocateParameterDataArea:Void
+  (* *)
+deferred
 
-_allocateParameterDataArea:Void deferred
+_allocateParameterLengthDataArea:Void
+  (* *)
+deferred
 
-_allocateParameterLengthDataArea:Void deferred
+_bindParameters:Void
+  (* *)
+deferred
 
-_bindParameters:Void deferred
-
-_nativeParameter(name:String):String deferred
+_nativeParameter(name:String):String
+  (* *)
+deferred
 
 _freeParameterAreas:Void
+  (* *)
 {
-  (_parameterDataArea.isNotNil & _parameterLengthDataArea.isNotNil) ?
+  if( (_parameterDataArea.isNotNil & _parameterLengthDataArea.isNotNil) then:
   {
-    for (0,_parameterDataArea.size-1,fun (i:Int)
+    for(0 to:_parameterDataArea.size-1 do:fun (i:Int)
       {
-        _unbindParameters,
-        _parameterDataArea[i].close,
+        _unbindParameters
+        _parameterDataArea[i].close
         _parameterLengthDataArea[i].close
-      }),
-    _parameterDataArea:=nil,
+      })
+    _parameterDataArea:=nil
     _parameterLengthDataArea:=nil
-  }
+  })
 }
 
-_dropStatement:Void deferred
+_dropStatement:Void
+  (* *)
+deferred
 
-_prepare(sql:String):Void deferred
+_prepare(sql:String):Void
+  (* *)
+deferred
 
-_execute:Void deferred
+_execute:Void
+  (* *)
+deferred
 
-_executeDirect(sql:String):Void deferred
+_executeDirect(sql:String):Void
+  (* *)
+deferred
 
-_unbindParameters:Void deferred
+_unbindParameters:Void
+  (* *)
+deferred
 
-_createCursor(_hstmt:Int32):SQLCursor deferred
-;
+_createCursor(_hstmt:Int32):SQLCursor
+  (* *)
+deferred
 
-
-
+}

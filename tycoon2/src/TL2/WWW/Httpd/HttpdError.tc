@@ -1,3 +1,5 @@
+class HttpdError
+super Exception, Http
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -22,24 +24,18 @@
   slot 'response' should be sent to client.
   09-Jan-1997 Andreas Gawecki
 *)
-
-class HttpdError
-super Exception, Http
-
-metaclass HttpdErrorClass
-
-public
-
+meta HttpdErrorClass
+{
 response: HttpResponse
 
-methods
-
-dump {
-  let out = tycoon.stdout,
-  out.writeln("Tycoon Web Server Error:"),
-  response.isNil
-    ? { response.printOn(out) }
-    : { response.emit(out) }
+dump :Void
+  (* *)
+{
+  out ::= tycoon.stdout
+  out.writeln("Tycoon Web Server Error:")
+  if( response.isNil
+    then: { response.printOn(out) }
+    else: { response.emit(out) })
 }
 
-;
+}

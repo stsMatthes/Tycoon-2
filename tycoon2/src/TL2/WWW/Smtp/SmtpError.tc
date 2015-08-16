@@ -1,4 +1,5 @@
 class SmtpError
+super Smtp, Exception
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -19,21 +20,19 @@ class SmtpError
  * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
  *
  an error occurred during communication with the Smtp server *)
+meta SmtpErrorClass()
 
-super Smtp, Exception
+{
+response :SmtpResponse
+  (* may be nil if no valid response was received *)
 
-public
-
-response :SmtpResponse  (* may be nil if no valid response was received *)
-
-methods
-
-printOn(out :Output) 
-  {
-    out << clazz.name << ": ",
-    response.isNil ?
-      { "invalid response" } :
-      { response.printOn(out) }        
+printOn(out :Output) :Void
+  (* *)
+{
+    out << clazz.name << ": "
+    if( response.isNil then:
+      { "invalid response" } else:
+      { response.printOn(out) })        
   }
 
-;
+}

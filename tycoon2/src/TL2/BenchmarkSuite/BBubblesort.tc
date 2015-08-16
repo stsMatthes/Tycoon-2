@@ -1,27 +1,31 @@
 class BBubblesort
 super BSort
-metaclass BSortClass(BBubblesort)
-
-private methods
+(**)
+meta BSortClass(BBubblesort)
+{
+private
 
 _sort(arr :MutableArray(Int), elem :Int) :Void
+  (* *)
 {
-  let top = elem - 1,
-  while({top > 0} , {
-    let i = 0,
-	while({i < top}, {
-	  arr[i] > arr[i + 1]
-	  ? { let t = arr[i],
-	      arr[i] := arr[i + 1],
-		  arr[i + 1] := t },
+  top ::= elem - 1
+  while({top > 0}  do: {
+    i ::= 0
+	while({i < top} do: {
+	  if( arr[i] > arr[i + 1]
+	  then: { t ::= arr[i]
+	      arr[i] := arr[i + 1]
+		  arr[i + 1] := t })
 	  i := i + 1
-	}),
+	})
 	top := top - 1
   })
 }
 
 _run() :Void
+  (* *)
 {
   _sort(_arr, _elem)
 }
-;
+
+}

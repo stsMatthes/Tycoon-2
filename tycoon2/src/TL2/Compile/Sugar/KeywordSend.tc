@@ -1,13 +1,5 @@
 class KeywordSend
 super Sugar
-metaclass KeywordSendClass
-public
-
-oldSelector :String,
-newSelector :String,
-nPositional :Int,
-nType :Int,
-
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -27,32 +19,43 @@ nType :Int,
  * 
  * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
  *
- the keywords corresponding to fixed positions in the old syntax *)
-keywords :Array(String)
-
-methods
-
-format(args :SugarArgsList, out :Output)
+ *)
+meta KeywordSendClass
 {
-  out<<newSelector<<args.openingParen,
+oldSelector :String
 
-  let nActualPositional =
-    args.elements.size - keywords.size,
-  assert nActualPositional <= nPositional + nType,
-  assert nActualPositional >= nPositional,
-  nActualPositional > 0
-  ? { out << args.elements[0],
-      for(1,nActualPositional-1,fun(i:Int) {
+newSelector :String
+
+nPositional :Int
+
+nType :Int
+
+keywords :Array(String)
+  (* the keywords corresponding to fixed positions in the old syntax *)
+
+format(args :SugarArgsList, out :Output) :Void
+  (* *)
+{
+  out<<newSelector<<args.openingParen
+
+  nActualPositional ::=
+    args.elements.size - keywords.size
+  assert({ nActualPositional <= nPositional + nType })
+  assert({ nActualPositional >= nPositional })
+  if( nActualPositional > 0
+  then: { out << args.elements[0]
+      for(1 to:nActualPositional-1 do:fun(i:Int) {
         out << args.commas[i-1] << args.elements[i]
-      }) },
-  for(nActualPositional, args.elements.size-1, fun(i:Int) {
-    let ws =
-      i=0
-      ? { "" }
-      : { let s = args.commas[i-1],
-          s.subString(1,s.size-1) },
+      }) })
+  for(nActualPositional to: args.elements.size-1 do: fun(i:Int) {
+    ws ::=
+      if( i=0
+      then: { "" }
+      else: { s ::= args.commas[i-1]
+          s.subString(1,s.size-1) })
     out << ' ' << keywords[i-nActualPositional] << ':' << ws << args.elements[i]
-  }),
+  })
   out<<args.closingParen
 }
-;
+
+}

@@ -22,15 +22,6 @@ super MutexHolder
 *)
 meta AbstractClass
 {
-private
-
-_exclusiveWaiting :Int
-
-_activeReaders :Int
-
-_readerLeaving :BroadcastingCondition
-
-_writerLeaving :BroadcastingCondition
 
 lockRead(T <: Void, statement :Fun():T) :T
   (* *)
@@ -63,13 +54,24 @@ lockWrite(T <: Void, statement :Fun():T) :T
   })
 }
 
+private
+
+_exclusiveWaiting :Int
+
+_activeReaders :Int
+
+_readerLeaving @:BroadcastingCondition
+
+_writerLeaving @:BroadcastingCondition
+
+
 _init :Void
   (* *)
 { super._init
   _exclusiveWaiting := 0
   _activeReaders := 0
-  _readerLeaving := BroadcastingCondition.new
-  _writerLeaving := BroadcastingCondition.new
+  _readerLeaving := BroadcastingCondition.new@
+  _writerLeaving := BroadcastingCondition.new@
   self
 }
 

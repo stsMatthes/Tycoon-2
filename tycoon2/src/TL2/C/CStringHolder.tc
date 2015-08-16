@@ -1,43 +1,47 @@
 class CStringHolder
-
 super CValueHolder(String)
-
-metaclass CStringHolderClass
-
-public methods
-
-valueClass():Class { String }
+(**)
+meta CStringHolderClass
+{
+valueClass():Class
+  (* *)
+{ String }
 
 value():String
-{ handle.isNotNil ? {tycoon.rts.tymem_peekString(handle,0)}
-                  : {let s:String = nil} }
+  (* *)
+{ if( handle.isNotNil then: {tycoon.tycoonOS.memory_peekString(handle,0)}
+                  else: {s:String := nil}) }
 
-stringValue():String { value() }
+stringValue():String
+  (* *)
+{ value() }
 
 "value:="(s:String):String
+  (* *)
 {
-  handle.isNotNil ?
+  if( handle.isNotNil then:
   {
-    s.size <= _length ? {tycoon.rts.tymem_pokeString(handle,0,s),
-                         tycoon.rts.tymem_peekString(handle,0)}
-                      : {KeyNotFoundError.new(s,_length+1).raise}
+    if( s.size <= _length then: {tycoon.tycoonOS.memory_pokeString(handle,0,s)
+                         tycoon.tycoonOS.memory_peekString(handle,0)}
+                      else: {KeyNotFoundError.new(s,_length+1).raise})
   }
-  : {nil}
+  else: {nil})
 }
 
-setStringValue(v:String):String { value:=v }
+setStringValue(v:String):String
+  (* *)
+{ value:=v }
 
 private
 
 _length:Int
 
-methods
-
-_allocate(length:Int)
+_allocate(length:Int) :Void
+  (* *)
 {
-  super._init,
-  super._allocate(length+1),
-  tycoon.rts.tymem_pokeString(handle,0,"")
+  super._init
+  super._allocate(length+1)
+  tycoon.tycoonOS.memory_pokeString(handle,0,"")
 }
 
-;
+}

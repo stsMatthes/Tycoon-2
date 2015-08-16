@@ -1,12 +1,10 @@
 class PersonalizeApplication(Client <:Object)
-
 super Personalize
-
-metaclass AbstractClass
-
-public
-
-clients :Dictionary(String, Client)  (*
+(**)
+meta AbstractClass
+{
+clients :Dictionary(String, Client)
+  (*
  * This file is part of the Tycoon-2 system.
  *
  * The Tycoon-2 system is free software; you can redistribute it and/or
@@ -27,51 +25,50 @@ clients :Dictionary(String, Client)  (*
  *
 ##Dictionary will become just an Interface*)
 
-methods
-
-newClient :Client 
+newClient :Client
+  (* *)
 {
-  let id = _newClientId,
-  let client = _newClient(id),
-  clients[id] := client,
+  id ::= _newClientId
+  client ::= _newClient(id)
+  clients[id] := client
   client
 }
 
 client(clientId :String) :Client
+  (* *)
 {
   clients.lookup(clientId, fun(client :Client) { client }, fun() { nil })
 }
 
 private
 
-_clientIdPrefix :String,
+_clientIdPrefix :String
+
 _magic :Int
 
-methods
-
 _init :Self
+  (* *)
 {
-  super._init,
-  _magic := 0,
+  super._init
+  _magic := 0
   self
 }
 
 _newClientId :String
+  (* *)
 {
-  _magic := _magic+1,
+  _magic := _magic+1
   _shuffle(_clientIdPrefix + _magic.printString)
 }
 
 _shuffle(preId :String) :String
+  (* *)
 {
   preId
 }
 
-_newClient(id :String) :Client 
+_newClient(id :String) :Client
   (* a factory method to create clients of the appropriate type *)
-  deferred
-;
-	
+deferred
 
-
-
+}

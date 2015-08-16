@@ -1,15 +1,19 @@
 class SgmlElementClass
 super ConcreteClass(SgmlElement)
-metaclass MetaClass
-public methods
+(**)
+meta MetaClass
+{
 new( name :String,
      contentType :SgmlContentType,
      defAttrVal :Dictionary(String, String)) :SgmlElement
+  (* *)
 {
-  let instance = _new,
-  instance.name := name,
-  instance.contentType := contentType,
-  instance.defAttrVal := defAttrVal,
+  instance ::= _new
+  instance.name := name
+  instance.contentType := contentType
+  instance.defAttrVal := defAttrVal
   instance._init
+  instance
 }
-;
+
+}

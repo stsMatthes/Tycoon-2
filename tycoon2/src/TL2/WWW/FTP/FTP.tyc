@@ -1,16 +1,3 @@
-(*;
-DO load "../TWL/WWW/FTP/FTP.tc";
-class FTPResponseClass metaclass MetaClass;
-DO load "../TWL/WWW/FTP/FTPResponse.tc";
-DO load "../TWL/WWW/FTP/FTPResponseClass.tc";
-class FTPErrorClass metaclass MetaClass;
-DO load "../TWL/WWW/FTP/FTPError.tc";
-DO load "../TWL/WWW/FTP/FTPErrorClass.tc";
-class FTPClientClass metaclass MetaClass;
-DO load "../TWL/WWW/FTP/FTPClient.tc";
-DO load "../TWL/WWW/FTP/FTPClientClass.tc";
-*)
-;
 tycoon.tl.loader.registerDirectory("WWW/FTP");
 
 tycoon.tl.loader.update;

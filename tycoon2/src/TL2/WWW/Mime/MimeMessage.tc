@@ -1,3 +1,5 @@
+class MimeMessage
+super Mime
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -26,141 +28,192 @@
 
 	Copyright 1997, Higher-Order GmbH, Hamburg
 	
-*)
 
-class MimeMessage
-
-super Mime
-
-public
-
-(* These need to be set and read
+ These need to be set and read
    depending on whether you generate a request
    or parse one *)
-   
-headers :MimeHeaderDictionary(MimeHeaderValue),
+meta MimeMessageClass()
+
+{
+headers :MimeHeaderDictionary(MimeHeaderValue)
+
 body :Input
 
-methods
-
-parser :MimeMessageParser(Self) { MimeMessageParser.new }
+parser :MimeMessageParser(Self)
+  (* *)
+{ MimeMessageParser.new }
 
 header(name :String) :MimeHeaderValue
+  (* *)
 {
   headers[name]
 }
 
-(* type inference at its best *)
 headerValue(name :String, T <:Object) :T
+  (* type inference at its best *)
 {
   header(name).valueAs(:T)
 }
 
-setHeader(name :String, value :MimeHeaderValue)
+setHeader(name :String, value :MimeHeaderValue) :Void
+  (* *)
 {
   headers[name] := value
 }
 
-setHeaderValue(name :String, T <: Object, clazz :MimeHeaderValueImplClass(T), value :T)
+setHeaderValue(name :String, T <: Object, clazz :MimeHeaderValueImplClass(T), value :T) :Void
+  (* *)
 {
-  value == nil ? {
+  if( value == nil then: {
     headers.removeKey(name)
-  } : {
+  } else: {
     setHeader(name, clazz.withValue(value))
-  }
+  })
 }
 
 hasHeader(name :String) :Bool
+  (* *)
 {
   headers.includesKey(name)
 }
 
-(* Mime 1.0 Body-Part Headers *)
+contentTypeString :String
+  (* Mime 1.0 Body-Part Headers *)
+{ "Content-Type" }
 
-contentTypeString :String { "Content-Type" }
-hasContentType :Bool { hasHeader(contentTypeString) }
-contentType :MediaType { headerValue(contentTypeString, :MediaType) }
-"contentType:="(ct :MediaType) { setHeaderValue(contentTypeString, MediaTypeHeader, ct) }
+hasContentType :Bool
+  (* *)
+{ hasHeader(contentTypeString) }
 
-contentTransferEncodingString :String { "Content-Transfer-Encoding" }
-hasContentTransferEncoding :Bool { hasHeader(contentTransferEncodingString) }
-contentTransferEncoding :String { headerValue(contentTransferEncodingString) }
-"contentTransferEncoding:="(code :String)
-  {setHeaderValue(contentTransferEncodingString, MimeToken, code)}
+contentType :MediaType
+  (* *)
+{ headerValue(contentTypeString, :MediaType) }
 
-mimeVersionString :String { "MIME-Version" }  
-hasMimeVersion :Bool { hasHeader(mimeVersionString) }
-mimeVersion :String { headerValue(mimeVersionString) }
-"mimeVersion:="(mv :String) { setHeaderValue(mimeVersionString, MimeString, mv) }
+"contentType:="(ct :MediaType) :Void
+  (* *)
+{ setHeaderValue(contentTypeString, MediaTypeHeader, ct) }
 
-contentIDString :String { "Content-Id" }
-hasContentID :Bool { hasHeader(contentIDString) }
-contentID :String { headerValue(contentIDString) }
-"contentID:="(cid :String) {setHeaderValue(contentIDString, MimeString, cid) }
+contentTransferEncodingString :String
+  (* *)
+{ "Content-Transfer-Encoding" }
 
-contentDescriptionString :String { "Content-Description" }
-hasContentDescription :Bool { hasHeader(contentDescriptionString) }
-contentDescription :String { headerValue(contentDescriptionString) }
-"contentDescription:="(cDescription :String) {setHeaderValue(contentDescriptionString, MimeString, cDescription) }
+hasContentTransferEncoding :Bool
+  (* *)
+{ hasHeader(contentTransferEncodingString) }
 
-(***********************
+contentTransferEncoding :String
+  (* *)
+{ headerValue(contentTransferEncodingString) }
+
+"contentTransferEncoding:="(code :String) :Void
+  (* *)
+{setHeaderValue(contentTransferEncodingString, MimeToken, code)}
+
+mimeVersionString :String
+  (* *)
+{ "MIME-Version" }
+
+hasMimeVersion :Bool
+  (* *)
+{ hasHeader(mimeVersionString) }
+
+mimeVersion :String
+  (* *)
+{ headerValue(mimeVersionString) }
+
+"mimeVersion:="(mv :String) :Void
+  (* *)
+{ setHeaderValue(mimeVersionString, MimeString, mv) }
+
+contentIDString :String
+  (* *)
+{ "Content-Id" }
+
+hasContentID :Bool
+  (* *)
+{ hasHeader(contentIDString) }
+
+contentID :String
+  (* *)
+{ headerValue(contentIDString) }
+
+"contentID:="(cid :String) :Void
+  (* *)
+{setHeaderValue(contentIDString, MimeString, cid) }
+
+contentDescriptionString :String
+  (* *)
+{ "Content-Description" }
+
+hasContentDescription :Bool
+  (* *)
+{ hasHeader(contentDescriptionString) }
+
+contentDescription :String
+  (* *)
+{ headerValue(contentDescriptionString) }
+
+"contentDescription:="(cDescription :String) :Void
+  (* *)
+{setHeaderValue(contentDescriptionString, MimeString, cDescription) }
+
+emit(out :Output) :Void
+  (***********************
   writing a Mime message
-***********************)
-emit(out :Output)
-  (* emit the headers and the body of the message, if any,
+**********************
+ emit the headers and the body of the message, if any,
      and close the body input stream (even if an exception
      occurs while writing to the output stream).
   *)
 {
   protect({
-    emitHeaders(out),
+    emitHeaders(out)
     emitBody(out)
   }, fun(){
-    body.isNotNil ? {
+    if( body.isNotNil then: {
       body.close
-    }
+    })
   })
 }
 
 private
 
-methods
-
 _init2(h :MimeHeaderDictionary(MimeHeaderValue), b :Input) :Self
+  (* *)
 {
-  headers := h,
-  body := b,
+  headers := h
+  body := b
 
-  super._init,
+  super._init
 
   self
 }
 
 _init :Void
+  (* *)
 {
   _init2(MimeHeaderDictionary.new, nil)
 }
 
-
-emitHeaders(out :Output)
+emitHeaders(out :Output) :Void
+  (* *)
 {
   headers.keysAndElementsDo(fun(name :String, value :MimeHeaderValue) {
     out << name << ": " << value.string << "\r\n"
-  }),
+  })
   out << "\r\n"  
 }
 
-emitBody(out :Output)
+emitBody(out :Output) :Void
   (* emit the body of the message, if any  *)
 {
-  body.isNotNil ? {
-    let buf = MutableString.new(1024),
-    let var n :Int = 0,
-    while({(n := body.readBuffer(buf, 0, buf.size)) > 0}, {
+  if( body.isNotNil then: {
+    buf ::= MutableString.new(1024)
+    n :Int := 0
+    while({(n := body.readBuffer(buf, 0, buf.size)) > 0} do: {
       out.writeBuffer(buf,0,n)
     })
-  }
+  })
 }
 
-
-;
+}

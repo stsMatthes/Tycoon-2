@@ -1,7 +1,5 @@
 class TaskStateClass(Instance <: TaskState)
 super ConcreteClass(Instance)
-metaclass MetaClass
-
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -21,17 +19,17 @@ metaclass MetaClass
  * 
  * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
  *
- "Richards" benchmark: ported from C++ to TL-2 *)   
-
-public methods
-
-create() :Instance
+ "Richards" benchmark: ported from C++ to TL-2 *)
+meta MetaClass
 {
-  let obj = _new,
-  obj.packetPending := false,
-  obj.taskWaiting   := false,
-  obj.taskHolding   := false,
+create() :Instance
+  (* *)
+{
+  obj ::= _new
+  obj.packetPending := false
+  obj.taskWaiting   := false
+  obj.taskHolding   := false
   obj
-}  
+}
 
-;
+}

@@ -1,14 +1,14 @@
 class ConcreteEncoderClass(Instance <: Encoder)
 super ConcreteClass(Instance)
-metaclass MetaClass
-
-public methods
-
-new(i :Input) :Instance
+(**)
+meta MetaClass
 {
-  let instance = _new,
-  instance._init1(i),
+new(i :Input) :Instance
+  (* *)
+{
+  instance ::= _new
+  instance._init1(i)
   instance
 }
 
-;
+}

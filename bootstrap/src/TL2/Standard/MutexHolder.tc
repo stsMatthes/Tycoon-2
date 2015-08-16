@@ -31,15 +31,14 @@ meta AbstractClass
 {
 private
 
-_mx :Mutex
+_mx @:Mutex
 
 _init :Void
   (* establish a weak reference to the receiver *)
 {
   super._init
-  _mx := Mutex.new
-  self
-  }
+  _mx := Mutex.new@
+}
 
 lock(T <:Void, statement :Fun():T) :T
   (* aquire the mutex, execute statement, release the mutex finally *)

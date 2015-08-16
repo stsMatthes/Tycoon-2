@@ -1,7 +1,6 @@
 class AnyCValueHolder
-
 super AbstractCValueHolder(Object,Nil)
-
-metaclass AbstractClass
-
-;
+(**)
+meta AbstractClass
+{
+}

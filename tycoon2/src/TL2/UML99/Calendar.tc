@@ -1,0 +1,24 @@
+class Calendar
+super UML99
+meta CalendarClass
+{
+byDate @:AtDictionary(Date, AtSet(Event))
+  (* events by date (not necessarily unique) *)
+
+insert(event @: Event) :Void
+{
+  byDate.memoize(event.date, {AtSet.new@})
+	.add(event@)
+}
+
+private
+
+pim :PIM
+
+_init :Void
+{
+  super._init
+  byDate := AtDictionary.new@
+}
+
+}

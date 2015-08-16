@@ -250,18 +250,25 @@ void tosThread_sleep(Word sec)
 
 /*
  * Per-thread signal handling for thread cancelation.
- * Not on Win32 plattforms, not on Linux because of linuxthreads
+ * Not on Win32 plattforms
 */
-#if !defined(rt_LIB_Win32_i386) && !defined(rt_LIB_Linux_i386)
+#if !defined(rt_LIB_Win32_i386)
 
+/**
+ * SIGUSR2 is used by linux thread library
+ **/
+#if !defined(rt_LIB_Linux_i386)
 static void handler_sigusr2()
 {
   return;
 }
+#endif
 
 static void initSignals(void)
 {
+#if !defined(rt_LIB_Linux_i386)
   struct sigaction sa;
+#endif
   sigset_t signalMask;
 
   /* block SIGPIPE and SIGVTALRM */
@@ -270,16 +277,19 @@ static void initSignals(void)
   sigaddset(&signalMask, SIGPROF);
   
   /* set main thread signal mask. inherited by all child threads */
-  #if defined(rt_LIB_HPUX_PARISC) && defined(tmthread_DRAFT_INTERFACE)
-      pthread_sigmask(SIG_BLOCK, &signalMask, NULL);
-  #endif
+  pthread_sigmask(SIG_BLOCK, &signalMask, NULL);
       
+/**
+ * SIGUSR2 is used by linux thread library
+ **/
+#if !defined(rt_LIB_Linux_i386)
   /* catch USR2 signal to interrupt blocking system calls (for cancellation) */
   sa.sa_handler = handler_sigusr2;
   sa.sa_flags = 0;
   sigemptyset(&sa.sa_mask);
   sigaddset(&sa.sa_mask, SIGUSR2);
   sigaction(SIGUSR2, &sa, NULL);
+#endif
   return;
 }
 
@@ -291,7 +301,7 @@ void tosThread_init()
 #ifdef rt_LIB_Solaris2_SPARC
   thr_setconcurrency(5);
 #endif
-#if !defined(rt_LIB_Win32_i386) && !defined(rt_LIB_Linux_i386)
+#if !defined(rt_LIB_Win32_i386)
   initSignals();
 #endif
 

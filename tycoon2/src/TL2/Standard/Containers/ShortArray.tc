@@ -42,6 +42,13 @@ size :Int
   (* *)
 builtin
 
+__copyFrom(original :Object, :IdDictionary(Object,Object)) :Void
+{
+  ;; Shorts cannot be subcomponents, so they will never be contained in mapping, so...
+  ;; ### ShortArray::replace should do memcpy!
+  replace(size,0,_typeCast(original,:Sequence(Int)),0)
+}
+
 private
 
 }

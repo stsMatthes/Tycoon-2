@@ -1,3 +1,5 @@
+class URL
+super WWW
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -45,359 +47,372 @@ Components are automatically decoded  ( URL.fromString("http://%8Bww/").host => 
 		                                        .arcs     => { "a", "b", "c" } 
   
 *)
+meta URLClass()
 
-class URL
-  super WWW
-
-public methods
-
-  scheme :String
-    (* answer the protocol scheme of the receiver *)
-  {
+{
+scheme :String
+  (* answer the protocol scheme of the receiver *)
+{
     _scheme
   }
 
-  host :String
-    (* answer the protocol scheme of the receiver *)
-  {
+host :String
+  (* answer the protocol scheme of the receiver *)
+{
     _host
   }
 
-  port :Int
-    (* answer the port of the receiver, or nil if absent *)
-  {
+port :Int
+  (* answer the port of the receiver, or nil if absent *)
+{
     _port
   }
 
-  isAbsolute :Bool {
+isAbsolute :Bool
+  (* *)
+{
     _isAbsolute
   }
 
-  isRelative :Bool {
+isRelative :Bool
+  (* *)
+{
     !_isAbsolute
   }
 
-  segments :List(String)
-    (* answer the path segments of the receiver *)
-  {
+segments :List(String)
+  (* answer the path segments of the receiver *)
+{
     _segments
   }
 
-  arcs :List(String)
-  {
+arcs :List(String)
+  (* *)
+{
     List.fromReader(segments.select(fun(s :String) { s != "" }))
   }
 
-  path :String
-    (* answer the path of the receiver *)
-  {
-    (isAbsolute ? { "/" } : { "" }) +
-    ( segments.size > 0 ? {
+path :String
+  (* answer the path of the receiver *)
+{
+    if( isAbsolute then: { "/" } else: { "" }) +
+    if( segments.size > 0 then: {
 	segments.fold(fun(segment :String) { segment }, fun(path :String, segment :String) { path + "/" + segment })
-      } : { "" } )
+      } else: { "" }) 
   }
 
-  parameters :Dictionary(String, List(String))
-  {
+parameters :Dictionary(String, List(String))
+  (* *)
+{
     _parameters
   }
 
-  query :String
-  {
+query :String
+  (* *)
+{
     _query
   }
 
-  queryDecoded :String
-  {
-    query.isNil ? { nil } : {
+queryDecoded :String
+  (* *)
+{
+    if( query.isNil then: { nil } else: {
       URL.decodeQuery(query)
-    }
+    })
   }
 
-  formFields :Dictionary(String, String)
-  {
-    query.isNil ? { nil } : {
+formFields :Dictionary(String, String)
+  (* *)
+{
+    if( query.isNil then: { nil } else: {
       URL.decodeFormFields(query)
-    }
+    })
   }
 
-  multiFormFields :Dictionary(String, List(String))
-  {
-    query.isNil ? { nil } : {
+multiFormFields :Dictionary(String, List(String))
+  (* *)
+{
+    if( query.isNil then: { nil } else: {
       URL.decodeMultiFormFields(query)
-    }
+    })
   }
 
-  fragment :String		     (* may be nil *)
-    (* answer the protocol scheme of the receiver *)
-  {
+fragment :String
+  (* may be nil 
+ answer the protocol scheme of the receiver *)
+{
     _fragment
   }
 
-
-  asString :String
-  {
+asString :String
+  (* *)
+{
     _schemeEncoded + _hostPortEncoded + _pathEncoded + _parametersEncoded + _queryEncoded + _fragmentEncoded
   }
 
-  "="(o :Object) :Bool
-  {
-    o."class" == self."class" && {
+"="(o :Object) :Bool
+  (* *)
+{
+    o."class" == self."class" && 
       _typeCast(o, :URL).asString = asString
-    }
+    
   }
-  
+
 private
 
-  _scheme :String,
-  _host :String,
-  _port :Int,
-  _isAbsolute :Bool,
-  _segments :List(String),
-  _parameters :Dictionary(String, List(String)),
-  _query :String,			   
-  _fragment :String
+_scheme :String
 
+_host :String
 
-methods
+_port :Int
 
-  _schemeEncoded :String
-  {
-    scheme = nil ? { "" } : { scheme + ":" }
+_isAbsolute :Bool
+
+_segments :List(String)
+
+_parameters :Dictionary(String, List(String))
+
+_query :String
+
+_fragment :String
+
+_schemeEncoded :String
+  (* *)
+{
+    if( scheme = nil then: { "" } else: { scheme + ":" })
   }
 
-
-  _hostPortEncoded :String
-  {
-    host = nil ? {
+_hostPortEncoded :String
+  (* *)
+{
+    if( host = nil then: {
       ""
-    } : {
+    } else: {
       "//" + URL.encode(host) +
-      ((port = nil) ? { "" } : { ":"+port.printString })
-    }
+      if( (port = nil) then: { "" } else: { ":"+port.printString })
+    })
   }
 
-  _pathEncoded :String
-  {
-    let netPath  = host != nil,
-    let absolute = isAbsolute | netPath,
+_pathEncoded :String
+  (* *)
+{
+    netPath  ::= host != nil
+    absolute ::= isAbsolute | netPath
 
-    ( absolute ? { "/" } : { "" } )
+    if( absolute then: { "/" } else: { "" }) 
       +
-    ( segments.size > 0 ? {
+    if( segments.size > 0 then: {
       segments.fold(fun(segment :String) { segment },
 	      fun(path :String, segment :String) {
 		    path + "/" + URL.encode(segment)
 		  }
 	     )
-    } : { "" } )
+    } else: { "" }) 
   }
 
-  _parametersEncoded :String
-  {
-    parameters.isNil ? { "" } : { URL.encodeMultiParameters(parameters) }
+_parametersEncoded :String
+  (* *)
+{
+    if( parameters.isNil then: { "" } else: { URL.encodeMultiParameters(parameters) })
   }
 
-
-  _queryEncoded :String
-  {
-    (* the query is already encoded *)
-    query = nil ? { "" } : { "?"+query }
+_queryEncoded :String
+  (* *)
+{
+    ; the query is already encoded 
+    if( query = nil then: { "" } else: { "?"+query })
   }
 
-  _fragmentEncoded :String
-  {
-    fragment = nil ? { "" } : { "#"+URL.encode(fragment) }
+_fragmentEncoded :String
+  (* *)
+{
+    if( fragment = nil then: { "" } else: { "#"+URL.encode(fragment) })
   }
 
+_fromString(s :String) :Void
+  (* Parsing/Initialization 
+ s is an encoded URL-String *)
+{
+    frag   ::= 0
+    scheme ::= 0
+    netloc ::= 0
+    query  ::= 0
+    param  ::= 0
+    path   ::= 0
 
+    ; Using the algorithm from RFC 1808 section 2.4 
 
-  (* Parsing/Initialization *)
+    ; locate the fragment 
+    frag := _locateFragment(s)
 
-  (* s is an encoded URL-String *)
-  _fromString(s :String)
-  {
-    let var frag   = 0,
-    let var scheme = 0,
-    let var netloc = 0,
-    let var query  = 0,
-    let var param  = 0,
-    let var path   = 0,
-
-    (* Using the algorithm from RFC 1808 section 2.4 *)
-
-    (* locate the fragment *)
-    frag := _locateFragment(s),
-
-    frag != nil ? fun() :Void {
+    if( frag != nil then: fun() :Void {
       _fragment := URL.decode(s.subString(frag+1, s.size-frag-1))
-    } : {
+    } else: {
       frag := s.size
-    },
+    })
 
 
-    (* then the scheme *)
-    scheme := _locateScheme(s),
+    ; then the scheme 
+    scheme := _locateScheme(s)
 
-    scheme != nil ? fun() :Void {
+    if( scheme != nil then: fun() :Void {
       _scheme := s.subString(0, scheme)
-    } : {
-      scheme := -1
-    },
+    } else: {
+      scheme := (-1
+    )})
 
-    (* then the netloc *)
-    netloc := _locateNetloc(s, scheme+1),
+    ; then the netloc 
+    netloc := _locateNetloc(s, scheme+1)
 
-    netloc != nil ? fun() :Void {
-      let port = _locatePort(s, scheme+3, netloc),
-      port != nil ? fun() :Void {
-	_host := URL.decode(s.subString(scheme+3, port - scheme - 3)),
+    if( netloc != nil then: fun() :Void {
+      port ::= _locatePort(s, scheme+3, netloc)
+      if( port != nil then: fun() :Void {
+	_host := URL.decode(s.subString(scheme+3, port - scheme - 3))
 	_port := URL.decode(s.subString(port+1, netloc - port-1)).asInt
-      } : {
+      } else: {
 	_host := URL.decode(s.subString(scheme+3, netloc - scheme - 3))
-      }
-    } : {
+      })
+    } else: {
       netloc := scheme+1
-    },
+    })
 
-    (* then the query string *)
-    query := _locateQuery(s, netloc, frag),
+    ; then the query string 
+    query := _locateQuery(s, netloc, frag)
 
-    query != nil ? fun() :Void {
+    if( query != nil then: fun() :Void {
       _query := s.subString(query+1, frag-query-1)
-    } : {
+    } else: {
       query := frag
-    },
+    })
 
-    let firstParam = _locateParam(s, netloc, query),
-    firstParam.isNotNil ? {
-      _parameters := URL.decodeMultiParameters(s.subString(firstParam, query-firstParam)),
-      query := firstParam (* ### to delimit path *)
-    },
+    firstParam ::= _locateParam(s, netloc, query)
+    if( firstParam.isNotNil then: {
+      _parameters := URL.decodeMultiParameters(s.subString(firstParam, query-firstParam))
+      query := firstParam ; ### to delimit path 
+    })
     
-    (* all remaining between
-       netloc (inclusive) and query (exclusive) is the path
-    *)
+    ; all remaining between
+;       netloc (inclusive) and query (exclusive) is the path
+;    
 
-    _segments := EmptyList.instance,
-    netloc < query ? {
-    netloc = query - 1 && { s[netloc] = '/' } ? fun() :Void {
+    _segments := EmptyList.instance
+    if( netloc < query then: {
+    if( netloc = query - 1 &&  s[netloc] = '/'  then: fun() :Void {
       _segments := List.with1("")
-    } : {
-      netloc < query && { s[query-1] = '/' } ? {
-	_segments := List.with1(""),
+    } else: {
+      if( netloc < query &&  s[query-1] = '/'  then: {
+	_segments := List.with1("")
 	query := query - 1
-      },
+      })
 
       while({
 	netloc <= query
-      }, {
-	path := _locatePath(s, netloc, query),
+      } do: {
+	path := _locatePath(s, netloc, query)
 
-	let segment = URL.decode(s.subString(path+1, query-path-1)),
-	_segments := List.cons(segment, _segments),
+	segment ::= URL.decode(s.subString(path+1, query-path-1))
+	_segments := List.cons(segment, _segments)
 
 	query := path
       })
-    }
-    },
+    })
+    })
 
-    _segments.size > 0 && { _segments[0] = "" } ? {
-      _segments := _segments.tail,
+    if( _segments.size > 0 &&  _segments[0] = ""  then: {
+      _segments := _segments.tail
       _isAbsolute := true
-    } : {
+    } else: {
       _isAbsolute := false
-    }
+    })
   }
 
-  (* All decoded *)
-  _init8(scheme :String,
+_init8(scheme :String,
        host :String,
        port :Int,
        isAbsolute :Bool,
        segments :List(String),
        parameters :Dictionary(String, List(String)),
        query :String,
-       fragment :String)
-  {
-    super._init,
+       fragment :String) :Void
+  (* All decoded *)
+{
+    super._init
 
-    _scheme := scheme,
-    _host   := host,
-    _port   := port,
-    _isAbsolute := isAbsolute,
-    _segments   := segments,
-    _parameters := parameters,
-    _query  := query,
+    _scheme := scheme
+    _host   := host
+    _port   := port
+    _isAbsolute := isAbsolute
+    _segments   := segments
+    _parameters := parameters
+    _query  := query
     _fragment := fragment
   }
 
-
-
-
+_locateFragment(s :String) :Int
   (* finding the components *)
-
-  _locateFragment(s :String) :Int
-  {
+{
     s.locate('#')
   }
 
-  _locateScheme(s :String) :Int
-  {
-    let notAllowed = fun(c :Char) {
+_locateScheme(s :String) :Int
+  (* *)
+{
+    notAllowed ::= fun(c :Char) {
       !(
-	 c.between('a', 'z') || {
-	 c.between('A', 'Z') } || {
-	 c.between('0', '9') } || {
-	 "+.-".includes(c) }
+	 c.between('a', 'z') || 
+	 c.between('A', 'Z')  || 
+	 c.between('0', '9')  || 
+	 "+.-".includes(c) 
       )
-    },
-
-    let colon = s.detectKey(notAllowed),
-
-    colon != nil && { s[colon] = ':' } ? { colon } : { nil }
-  }
-
-  _locateNetloc(s :String, start :Int) :Int
-  {
-    (start + 2 > s.size) ||
-    { s[start] != '/'   } ||
-    { s[start+1] != '/' } ? fun() :Int { nil } : {
-      let slash = s.locate1('/', start+2),
-
-      slash != nil ? { slash } : { s.size }
     }
+
+    colon ::= s.detectKey(notAllowed)
+
+    if( colon != nil &&  s[colon] = ':'  then: { colon } else: { nil })
   }
 
-  _locatePort(s :String, start :Int, end :Int) :Int
-  {
-    let colon = s.locate1(':', start),
+_locateNetloc(s :String, start :Int) :Int
+  (* *)
+{
+    if( (start + 2 > s.size) ||
+     s[start] != '/'    ||
+     s[start+1] != '/'  then: fun() :Int { nil } else: {
+      slash ::= s.locate1('/', start+2)
 
-    colon != nil && { colon < end } ? { colon } : { nil }
+      if( slash != nil then: { slash } else: { s.size })
+    })
   }
 
-  _locateQuery(s :String, start :Int, end :Int) :Int
-  {
-    let qm = s.locate1('?', start),
+_locatePort(s :String, start :Int, end :Int) :Int
+  (* *)
+{
+    colon ::= s.locate1(':', start)
 
-    qm != nil && { qm < end } ? { qm } : { nil }
+    if( colon != nil &&  colon < end  then: { colon } else: { nil })
   }
 
-  _locateParam(s :String, start :Int, end :Int) :Int
-  {
-    let semi = s.locate1(';', start),
+_locateQuery(s :String, start :Int, end :Int) :Int
+  (* *)
+{
+    qm ::= s.locate1('?', start)
 
-    semi != nil && { semi < end } ? { semi } : { nil }
+    if( qm != nil &&  qm < end  then: { qm } else: { nil })
   }
 
-  _locatePath(s :String, start :Int, end :Int) :Int
-  {
-    let slash = s.locateLast1('/', end),
+_locateParam(s :String, start :Int, end :Int) :Int
+  (* *)
+{
+    semi ::= s.locate1(';', start)
 
-    slash != nil && { slash >= start } ? { slash } : { start-1 }
+    if( semi != nil &&  semi < end  then: { semi } else: { nil })
   }
 
-;
+_locatePath(s :String, start :Int, end :Int) :Int
+  (* *)
+{
+    slash ::= s.locateLast1('/', end)
 
+    if( slash != nil &&  slash >= start  then: { slash } else: { start-1 })
+  }
 
-
+}

@@ -60,3 +60,46 @@ dir.resourceFactory := resourceFactory,
 dir["stop"] := HttpShutdownResource.new(tyhttpd);
 tyhttpd.serve;
 *)
+
+(*some tests;
+
+define tb :StmlTreeBuilder;
+define sgml_dir :String;
+define sgmlsParser :SgmlsParser;
+
+tb := StmlTreeBuilder.new;
+sgml_dir := tycoon.ansiC.getenv("SGML_DIR");
+sgmlsParser := SgmlsParser.new;
+sgmlsParser.additionalFiles := Array.with2(sgml_dir + "/html.decl", sgml_dir + "/doctype-stml");
+sgmlsParser.verbose := true;
+tb := StmlTreeBuilder.new, sgmlsParser.parse("../TWL/WWW/Stml/examples/tbo.tbo", tb);
+
+tb.tree;
+tb.tree.isStml;
+tb.tree.asStml.computeAllTypes;
+tb.tree.asStml.compileAll, true;
+tb.tree.asStml.compileAll;
+
+tb := StmlTreeBuilder.new, sgmlsParser.parse("../TWL/WWW/Stml/examples/numbers.tbo", tb);
+tb.tree.computeAllTypes;
+tb.tree.compileAll;
+
+DO load "../TWL/WWW/Stml/SimpleStmlApplication.tc";
+
+define sa :SimpleStmlApplication;
+sa := SimpleStmlApplication.new;
+define spro :Fun0(StmlProcessor(SimpleStmlApplication));
+let t = Timer.new(tycoon.cpuClock),
+t.start,
+spro := sa.compiler.compile(tycoon.hoxHome+"/src/TL2/WWW/Stml/examples/stml.stml", nil, ErrorLog.new),
+t.stop,
+t;
+spro.emitFun;
+spro := sa.compiler.compile(tycoon.hoxHome+"/src/TL2/WWW/Stml/examples/numbers.stml", nil, ErrorLog.new);
+let s = spro[],
+s.out := tycoon.stdout,
+s.process;
+*)
+
+
+

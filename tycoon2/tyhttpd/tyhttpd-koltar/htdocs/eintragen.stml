@@ -1,0 +1,40 @@
+<!doctype stml system>
+<stml processor=KoltarProcessor language='tycoon-1.0'>
+<head>
+<title> Du hast Dich eingetragen! </title>
+</head>
+<body>
+
+<h1>Du hast Dich eingetragen!</h1>
+
+<tycoon>
+  ichName ::= formFields["ich"]
+  datum ::= Date.fromTime(Long.fromReader(formFields["datum"].reader))
+  row ::= application.db[datum]
+  ichSklave :KoltarSklave := application.sklaveFromName(ichName)
+  dienstName ::= formFields["dienst"]
+  dienst :KoltarDienst := application.dienstFromName(dienstName)
+</tycoon>
+
+<table border="1">
+<tr><th>Datum</th><td><tycoon> out << row.date.format("%d.%m (%a)") </tycoon></td></tr>
+<tr><th>Name</th><td><tycoon> out << ichSklave.name </tycoon></td></tr>
+<tr><th>Dienst</th><td><tycoon> out << dienst.erklaerung </tycoon></td></tr>
+</table>
+
+<tycoon>
+  row.werWas[ichSklave] := dienst
+  application.saveit
+</tycoon>
+
+<p><A HREF='`"main.stml?ich="+ichName`'>Weiter!</A>
+
+      <HR>
+      
+      <A HREF="http://www.sts.tu-harburg.de/~ax.wienberg"><I>Axel Wienberg</I></A>. Your <a href="mailto:2wienbe@informatik.uni-hamburg.de">feedback</A> is welcome!
+<!-- hhmts start -->
+Last modified: Tue Jun 23 16:53:30 MET DST 1998
+<!-- hhmts end -->
+
+</body>
+

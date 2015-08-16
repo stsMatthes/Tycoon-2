@@ -1,0 +1,103 @@
+<!DOCTYPE stml system>
+<stml processor=HttpdAdminProcessor language='tycoon-1.0'>
+<script language=tycoon>
+  obj :Object := nil
+  if(formFields.includesKey("oid") then: {
+    obj := handleToObject(formFields["oid"])
+    historyVisit(obj)
+  })
+  classname ::= obj."class".name
+  objSuperComponent ::= if(obj.isNil then:{nil} else: {obj.superComponent})
+
+  printByValue ::= Set.fromSequence( #( "Nil", "Char", "Int", "Real", "True", "False", "MutableString", "String", "Symbol" ) )
+
+  shortName ::= fun(o:Object) {
+    className ::= o."class".name
+    result ::= if(className[0].isVowel then:{"an "} else:{"a "})+className
+    if( printByValue.includes(className) then: {
+      result := result + " ("+o.printString+")"
+    })
+    result
+  }
+
+  strout ::= StringBuilderOutput.new
+  escapeStr ::= fun(str :String) {
+    strout.clear
+    str.do(fun(c:Char) {
+      if( c == '/' || c == '\\' || c == ';' then: {
+        strout << '#' << c.asInt << '#'
+      } else: {
+        strout << c
+      })
+    })
+    strout.contents
+  }
+</script>
+<html>
+  <head>
+    <title><ref name=classname></ref></title>
+  </head>
+
+  <body>
+
+    <H1><ref name=classname></ref></h1>
+
+    <FORM ACTION="evalobj.stml">
+    <INPUT TYPE=TEXT NAME=expression>
+    <INPUT TYPE=HIDDEN NAME=oid value='`getHandle(obj)`'>
+    <INPUT TYPE=SUBMIT VALUE='Evaluate'>
+    <INPUT TYPE=SUBMIT NAME='Trace' VALUE='Trace'>
+    <if true='!history.isEmpty'>
+      <SELECT NAME='backto'>
+      <send receiver='history' selector='do'>
+        <arg><fun param='obj :Object'><OPTION VALUE='`getHandle(obj)`'><script language='tycoon'> out << shortName[obj] </script></OPTION>
+	</fun>
+      </send>
+      </SELECT>
+      <INPUT TYPE=SUBMIT NAME='back' VALUE='Back'>
+    </if>
+    <send selector="generateHiddenFields"></send>
+    </FORM>
+
+    <if true='objSuperComponent.isNotNil'>
+      <P>superComponent: <A HREF='`url("object.stml", #(#("oid",getHandle(objSuperComponent))))`'><script language='tycoon'> out << shortName[objSuperComponent] </script></A>
+    </if>
+
+    <applet code="TreeApp.class" archive="treectrl/applet.jar" width='100%' height=400 align=left>
+      <param name="baseURL" value='`"http://"+tyhttpd.host+":"+tyhttpd.port.printString+"/admin/"`'>  <!-- ### -->
+      <param name="expanded" value="true">
+      <param name="font" value="Helvetica-plain-12">
+      <param name="dotted" value="true">
+      <param name="showURL" value="true">
+      <param name="bgColor" value="white">
+      <param name="bgHighlight" value="black">
+      <param name="fgColor" value="darkgray">
+      <param name="textColor" value="black">
+      <param name="textHighlight" value="white">
+      <define name='fmtItem'><fun param='i :Int, s :String'>
+        <param name='`"item"+i.printString`' value='`s`'>
+      </define>
+      <script language='tycoon'>
+        itemNo ::= 1
+	putItem ::= fun(path :String, icon :String, link :String, status :String) {
+	  fmtItem[itemNo, path+";"+icon+";"+link+";"+status]
+	  itemNo := itemNo+1
+	}
+        recur :Fun(:String, :Object):Void := nil
+	recur := fun(path :String, o :Object):Void {
+	  subObjectsDo(o, fun(slotName :String, o :Object, isComponent :Bool) {
+	    objName ::= slotName+if(isComponent then:{": "} else:{": "})+shortName[o]  ;; ### use @= or @: ?
+	    newPath ::= path+escapeStr[objName]+"/"
+	    icon ::= if(!isComponent then: {"book.gif,o_book.gif"}
+				     else: {"folder.gif,o_folder.gif"})
+	    putItem[newPath, icon, url("object.stml", #(#("oid", getHandle(o)))), ""]
+	    if( isComponent then: {
+	      recur[newPath, o]
+	    })
+	  })
+	}
+	recur["", obj]
+      </script>
+    </applet>
+  </body>
+</HTML>

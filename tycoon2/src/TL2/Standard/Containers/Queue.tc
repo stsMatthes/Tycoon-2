@@ -143,7 +143,7 @@ removeAny :E
 
 private
 
-_elements :MutableArray(E)
+_elements @:MutableArray(E)
 
 _readPos :Int
 
@@ -164,14 +164,14 @@ _grow :Void
   (* *)
 {
   assert({ _readPos = _writePos })
-  newElements ::= MutableArray.new( 2 * _elements.size )
+  newElements @::= MutableArray.new( 2 * _elements.size )@
   left ::= _readPos
   right ::= _elements.size - left
   newElements.replace(right, 0, _elements, _readPos)
   newElements.replace(left, right, _elements, 0)
   _readPos := 0
   _writePos := _elements.size
-  _elements := newElements
+  _elements := newElements@
 }
 
 _locate(e :Object, startingAt :Int, before :Int) :Int

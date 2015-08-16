@@ -163,21 +163,24 @@ startPrinter :Void
 stopPrinter :Void
 {
   _stopPrinting := true
+  _msgPort.put(nil)
 }
 
 printLoop :Void
 {
   if(!_stopPrinting then: {
     event ::= _msgPort.get
-    out ::= StringBuilderOutput.new1(80)
-    out << "\nTrace: Thread="
-    event.thread.name.printOn(out)
-    out << " sender="
-    printBrief(event.sender, out)
-    out << " event: "
-    event.printOn(out)
-    ;; out << "\n"
-    tycoon.stdout << out.contents
+    if(event.isNotNil then: {
+      out ::= StringBuilderOutput.new1(80)
+      out << "\nTrace: Thread="
+      event.thread.name.printOn(out)
+      out << " sender="
+      printBrief(event.sender, out)
+      out << " event: "
+      event.printOn(out)
+      ;; out << "\n"
+      tycoon.stdout << out.contents
+    })
     printLoop
   } else: {
     tycoon.stdout << "Printing stopped\n"

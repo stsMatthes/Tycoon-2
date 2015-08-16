@@ -1,16 +1,15 @@
 class HttpCookieClass
 super ConcreteClass(HttpCookie)
-metaclass MetaClass
-
-public methods
-
-new(name :String, value :String) :HttpCookie
+(**)
+meta MetaClass
 {
-  let cookie = _new,
-  cookie._init2(name, value),
+new(name :String, value :String) :HttpCookie
+  (* *)
+{
+  cookie ::= _new
+  cookie._init2(name, value)
 
   cookie
 }
 
-;
-
+}

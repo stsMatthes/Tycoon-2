@@ -1,8 +1,8 @@
 class BPuzzleException
 super Exception
-metaclass SimpleConcreteClass(BPuzzleException)
+(**)
+meta SimpleConcreteClass(BPuzzleException)
+{
+val :Int
 
-public
-
-val :Bool
-;
+}

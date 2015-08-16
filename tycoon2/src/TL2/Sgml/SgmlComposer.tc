@@ -1,3 +1,5 @@
+class SgmlComposer(T <: Object)
+super Sgml
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -17,30 +19,29 @@
  * 
  * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
  *
- A class used by the TreeBuilder for storing trees under construction *)
+ A class used by the TreeBuilder for storing trees under construction 
+ position will be nil if sgmlTreeBuilder.interestedInPositions was false *)
+meta SgmlComposerClass(T)
+{
+position :SgmlPos
 
-class SgmlComposer(T <: Object)
-super Sgml
-metaclass SgmlComposerClass(T)
-public
+element :AbstractSgmlElement(T)
 
-(* position will be nil if sgmlTreeBuilder.interestedInPositions was false *)
-position :SgmlPos,
+attributes :Dictionary(String, String)
 
-element :AbstractSgmlElement(T),
-attributes :Dictionary(String, String),
 components :GapArray(T)
 
-methods
-
-add(e :T)
+add(e :T) :Void
+  (* *)
 { components.addLast(e) }
 
-private methods
+private
 
 _init :Void
-{ super._init,
-  components := GapArray.new0,
+  (* *)
+{ super._init
+  components := GapArray.new0
   self
 }
-;
+
+}

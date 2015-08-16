@@ -19,21 +19,22 @@
  *
  */
 /*
-  tosSocket.c 1.0 final  18-NOV-1998  Andre Willomat
+   $File: //depot/tycoon2/stsmain/bootstrap/src/tycoonOS/tosSocket.c $ $Revision: #3 $ $Date: 2003/10/02 $ Andreas Gawecki, Andre Willomat
 
-  Interface to Portable Tycoon-2 operating system (TycoonOS)
+   Interface to Portable Tycoon-2 operating system (TycoonOS)
 
-  We support IP (Internet Protocol) only.
+   We support IP (Internet Protocol) only.
 
-  All functions manipulating socket descriptors are wrapped to keep them
-  together in this place (may help porting), esp. those which may block
-  in system calls (may help porting threads).
+   All functions manipulating socket descriptors
+   are wrapped to keep them together in this place (may help porting), esp.
+   those which may block in system calls (may help porting threads).
 
-  If not stated otherwise, all functions must implement the semantics
-  of the 'corresponding'  POSIX functions, if any.
+   If not stated otherwise, all functions must implement the semantics
+   of the 'corresponding'  POSIX functions, if any.
 
-  Error handling: Unix style, i.e. all calls MUST set 'errno' in case of errors.
-  Assumption: error numbers are non-zero.
+   Error handling: Unix style, i.e. all calls MUST set 'errno' in case of errors.
+   Assumption: error numbers are non-zero.
+
 */
 
 

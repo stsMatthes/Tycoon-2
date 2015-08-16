@@ -1,3 +1,5 @@
+class ODBCStatement
+super SQLStatement
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -29,27 +31,20 @@ Updates: (Date)		(Name)	(Description)
 	                        Otherwise _execute fails if statement
 				contains TIMESTAMP-parameters.
 *)
-
-class ODBCStatement
-
-super SQLStatement
-
-metaclass SimpleConcreteClass(ODBCStatement)
-
-public methods
-
+meta SimpleConcreteClass(ODBCStatement)
+{
 cancel():Void
   (* Closes cursor,
      cancels odbc-cursor,
      raises ODBCError.
    *)
 {
-  _cursor.isNotNil ?
+  if( _cursor.isNotNil then:
   {
-    (odbc.SQLFreeStmt(_hstmt,odbc.SQL_CLOSE) = odbc.SQL_SUCCESS)
-    ? {_cursor.close}
-    : {ODBCError.new(odbc.NULL,odbc.NULL,_hstmt).raise}
-  }
+    if( (odbc.SQLFreeStmt(_hstmt,odbc.SQL_CLOSE) = odbc.SQL_SUCCESS)
+    then: {_cursor.close}
+    else: {ODBCError.new(odbc.NULL,odbc.NULL,_hstmt).raise})
+  })
 }
 
 getUpdateCount():Int
@@ -57,82 +52,87 @@ getUpdateCount():Int
      returns nil if _hstmt is nil
    *)
 {
-  _hstmt.isNotNil ?
+  if( _hstmt.isNotNil then:
   {
-  let n = CIntHolder.new(),
-  (odbc.SQLRowCount(_hstmt,n.handle) = 0)
-  ? {let count=n.value,
-     n.close(),
+  n ::= CIntHolder.new()
+  if( (odbc.SQLRowCount(_hstmt,n.handle) = 0)
+  then: {count::=n.value
+     n.close()
      count}
-  : {n.close(),
-     ODBCError.new(odbc.NULL,odbc.NULL,_hstmt).raise}
+  else: {n.close()
+     ODBCError.new(odbc.NULL,odbc.NULL,_hstmt).raise})
   }
-  : {let n:Int = nil}
+  else: {n:Int := nil})
 }
 
 setInt(parameterIndex:Int, value:Int):Int
+  (* *)
 {
-  value.isNil
-  ? {_parameterLengthDataArea[parameterIndex].setIntValue(odbc.SQL_NULL_DATA)}
-  : {
-      _parameterDataArea[parameterIndex].setIntValue(value),
+  if( value.isNil
+  then: {_parameterLengthDataArea[parameterIndex].setIntValue(odbc.SQL_NULL_DATA)}
+  else: {
+      _parameterDataArea[parameterIndex].setIntValue(value)
       _parameterLengthDataArea[parameterIndex].setIntValue(0)
-    },
+    })
   value
 }
 
 setReal(parameterIndex:Int, value:Real):Real
+  (* *)
 {
-  value.isNil
-  ? {_parameterLengthDataArea[parameterIndex].setIntValue(odbc.SQL_NULL_DATA)}
-  : {
-      _parameterDataArea[parameterIndex].setRealValue(value),
+  if( value.isNil
+  then: {_parameterLengthDataArea[parameterIndex].setIntValue(odbc.SQL_NULL_DATA)}
+  else: {
+      _parameterDataArea[parameterIndex].setRealValue(value)
       _parameterLengthDataArea[parameterIndex].setIntValue(0)
-    },
+    })
   value
 }
 
 setString(parameterIndex:Int, value:String):String
+  (* *)
 {
-  value.isNil
-  ? {_parameterLengthDataArea[parameterIndex].setIntValue(odbc.SQL_NULL_DATA)}
-  : {
-      _parameterDataArea[parameterIndex].setStringValue(value),
+  if( value.isNil
+  then: {_parameterLengthDataArea[parameterIndex].setIntValue(odbc.SQL_NULL_DATA)}
+  else: {
+      _parameterDataArea[parameterIndex].setStringValue(value)
       _parameterLengthDataArea[parameterIndex].setIntValue(odbc.SQL_NTS)
-    },
+    })
   value
 }
 
 setDate(parameterIndex:Int, value:Date):Date
+  (* *)
 {
-  value.isNil
-  ? {_parameterLengthDataArea[parameterIndex].setIntValue(odbc.SQL_NULL_DATA)}
-  : {
-      let type = parameterMetaData.getSqlType(parameterIndex),
-      let dbValue =
-        type = odbc.SQL_DATE
-          ? {value.format("%Y-%m-%d")} :{
-	type = odbc.SQL_TIME
-	  ? {value.format("%H:%M:%S")} :{
-	type = odbc.SQL_TIMESTAMP
-	  ? {value.format("%Y-%m-%d %H:%M:%S.000000")}
-	  : {""}}},
-      _parameterDataArea[parameterIndex].setStringValue(dbValue),
+  if( value.isNil
+  then: {_parameterLengthDataArea[parameterIndex].setIntValue(odbc.SQL_NULL_DATA)}
+  else: {
+      type ::= parameterMetaData.getSqlType(parameterIndex)
+      dbValue ::=
+        if( type = odbc.SQL_DATE
+          then: {value.format("%Y-%m-%d")} else:{
+	if( type = odbc.SQL_TIME
+	  then: {value.format("%H:%M:%S")} else:{
+	if( type = odbc.SQL_TIMESTAMP
+	  then: {value.format("%Y-%m-%d %H:%M:%S.000000")}
+	  else: {""})})})
+      _parameterDataArea[parameterIndex].setStringValue(dbValue)
       _parameterLengthDataArea[parameterIndex].setIntValue(odbc.SQL_NTS)
-   },
+   })
   value 
 }
 
 setRaw(parameterIndex:Int, value:File):File
+  (* *)
 {
-  value.isNil
-  ? {_parameterLengthDataArea[parameterIndex].setIntValue(odbc.SQL_NULL_DATA)}
-  : {
-     _rawData[parameterIndex]:=value,
-       (* inserts the RAW-data-file into a private dictionary. *) 
-     _parameterLengthDataArea[parameterIndex].setIntValue(odbc.SQL_DATA_AT_EXEC)},
-       (* this indicates, that the RAW-data will be inserted AFTER *)
-       (* SQLExec has been called                                  *)
+  if( value.isNil
+  then: {_parameterLengthDataArea[parameterIndex].setIntValue(odbc.SQL_NULL_DATA)}
+  else: {
+     _rawData[parameterIndex]:=value
+       ; inserts the RAW-data-file into a private dictionary. 
+     _parameterLengthDataArea[parameterIndex].setIntValue(odbc.SQL_DATA_AT_EXEC)})
+       ; this indicates, that the RAW-data will be inserted AFTER 
+       ; SQLExec has been called                                  
   value
 }
 
@@ -140,201 +140,212 @@ private
 
 _rawData:Dictionary(Int,File)
 
-methods
-
 _open(hdbc:Int32):Void
+  (* *)
 {
-  let h=CIntHolder.new(),
-  (odbc.SQLAllocStmt(hdbc,h.handle) = odbc.SQL_SUCCESS)
-  ? {_hstmt := h.value32,h.close}
-  : {
-     h.close,
+  h::=CIntHolder.new()
+  if( (odbc.SQLAllocStmt(hdbc,h.handle) = odbc.SQL_SUCCESS)
+  then: {_hstmt := h.value32
+	 h.close}
+  else: {
+     h.close
      ODBCError.new(odbc.NULL,hdbc,odbc.NULL).raise
-    }
+    })
 }
 
 _createParameterMetaData(hstmt:Int32):ODBCParameterMetaData
+  (* *)
 {
-  let m = ODBCParameterMetaData.new(),
-  m.retrieveParameterMetaData(hstmt),
+  m ::= ODBCParameterMetaData.new()
+  m.retrieveParameterMetaData(hstmt)
   m
 }
 
 _allocateParameterDataArea:Void
+  (* *)
 {
-  _parameterDataArea:=MutableArray.new(parameterMetaData.getParameterCount),
-  for (0,_parameterDataArea.size-1,fun (i:Int)
+  _parameterDataArea:=MutableArray.new(parameterMetaData.getParameterCount)
+  for(0 to:_parameterDataArea.size-1 do:fun (i:Int)
     {
-      _parameterClasses[i] = Int
-      ? {_parameterDataArea[i]:=CIntHolder.new} :{
-      _parameterClasses[i] = Real
-      ? {_parameterDataArea[i]:=CRealHolder.new} :{
-      _parameterClasses[i] = String
-      ? {setMaxLength(i,parameterMetaData.getPrecision(i)),
-         _parameterDataArea[i]:= CStringHolder.new(_parameterMaxLength[i])} :{
-      _parameterClasses[i] = Date
-      ? {setMaxLength(i,parameterMetaData.getPrecision(i) + parameterMetaData.getScale(i) + 1),
-         _parameterDataArea[i]:= CStringHolder.new(_parameterMaxLength[i])} :{
-      _parameterClasses[i] = File
-      ? {setMaxLength(i,0),
+      if( _parameterClasses[i] = Int
+      then: {_parameterDataArea[i]:=CIntHolder.new} else:{
+      if( _parameterClasses[i] = Real
+      then: {_parameterDataArea[i]:=CRealHolder.new} else:{
+      if( _parameterClasses[i] = String
+      then: {setMaxLength(i,parameterMetaData.getPrecision(i))
+         _parameterDataArea[i]:= CStringHolder.new(_parameterMaxLength[i])} else:{
+      if( _parameterClasses[i] = Date
+      then: {setMaxLength(i,parameterMetaData.getPrecision(i) + parameterMetaData.getScale(i) + 1)
+         _parameterDataArea[i]:= CStringHolder.new(_parameterMaxLength[i])} else:{
+      if( _parameterClasses[i] = File
+      then: {setMaxLength(i,0)
          _parameterDataArea[i]:= CRawStringHolder.new(_parameterMaxLength[i])}
-	   (* dummy-buffer. Data is passed via separate *)
-	   (* buffers at statement-execution-time.      *)
-      : {CoerceError.new("class not supported",_parameterClasses[i]).raise}}}}}
+	   ; dummy-buffer. Data is passed via separate 
+	   ; buffers at statement-execution-time.      
+      else: {CoerceError.new("class not supported",_parameterClasses[i]).raise})})})})})
     })
 }
 
-_allocateParameterLengthDataArea()
+_allocateParameterLengthDataArea() :Void
+  (* *)
 {
   _parameterLengthDataArea:=
-    MutableArray.new(parameterMetaData.getParameterCount),
-  for (0,parameterMetaData.getParameterCount-1,fun (i:Int)
+    MutableArray.new(parameterMetaData.getParameterCount)
+  for(0 to:parameterMetaData.getParameterCount-1 do:fun (i:Int)
     {
-	_parameterLengthDataArea[i]:=CIntHolder.new(),
+	_parameterLengthDataArea[i]:=CIntHolder.new()
 	_parameterLengthDataArea[i].setIntValue(odbc.SQL_NULL_DATA)
     })
 }
 
 _bindParameters:Void
+  (* *)
 {  
-  for(0,parameterMetaData.getParameterCount-1, fun (i:Int)
+  for(0 to:parameterMetaData.getParameterCount-1 do: fun (i:Int)
     {
-      let dataHandle = _parameterClasses[i]=File
-      ? {i.asInt32}
-      : {_parameterDataArea[i].handle},
-        (* For normal parameters the dataHandle is a handle for the      *)
-	(* buffer in which the parameter values are stored.              *)
-	(* For RAW-parameters the dataHandle is an application-defined   *)
-	(* pointer or number which is returned by SQLParamData at        *)
-	(* execution time. In this implementation the value for RAW-data *)
-	(* is the internal parameter-index, which is used by             *)
-	(* _putRawParameters.                                            *)
+      dataHandle ::= if( _parameterClasses[i]=File
+      then: {i.asInt32}
+      else: {_parameterDataArea[i].handle})
+        ; For normal parameters the dataHandle is a handle for the      
+	; buffer in which the parameter values are stored.              
+	; For RAW-parameters the dataHandle is an application-defined   
+	; pointer or number which is returned by SQLParamData at        
+	; execution time. In this implementation the value for RAW-data 
+	; is the internal parameter-index, which is used by             
+	; _putRawParameters.                                            
 	
-      let error = (odbc.SQLBindParameter(_hstmt,i+1,1,
+      error ::= (odbc.SQLBindParameter(_hstmt,i+1,1,
                      odbc.CTypeCode[_parameterClasses[i]],
 		     parameterMetaData.getSqlType(i),
 		     parameterMetaData.getPrecision(i),
 		     parameterMetaData.getScale(i),
 		     dataHandle,
 		     _parameterMaxLength[i]+1,
-		     _parameterLengthDataArea[i].handle) != odbc.SQL_SUCCESS),
-      error ? { let er = ODBCError.new(odbc.NULL,odbc.NULL,_hstmt),
-                _freeParameterAreas(),
-		er.raise }
+		     _parameterLengthDataArea[i].handle) != odbc.SQL_SUCCESS)
+      if( error then: { er ::= ODBCError.new(odbc.NULL,odbc.NULL,_hstmt)
+                _freeParameterAreas()
+		er.raise })
      })
 }
 
-_nativeParameter(name:String):String { "?" }
+_nativeParameter(name:String):String
+  (* *)
+{ "?" }
 
-_dropStatement()
+_dropStatement() :Void
+  (* *)
 {
   odbc.SQLFreeStmt(_hstmt,odbc.SQL_DROP)
 }
 
 _prepare(sql:String):Void
+  (* *)
 { 
-  (odbc.SQLPrepare(_hstmt,sql,odbc.SQL_NTS) != odbc.SQL_SUCCESS)
-  ? {ODBCError.new(odbc.NULL,odbc.NULL,_hstmt).raise}
+  if( (odbc.SQLPrepare(_hstmt,sql,odbc.SQL_NTS) != odbc.SQL_SUCCESS)
+  then: {ODBCError.new(odbc.NULL,odbc.NULL,_hstmt).raise})
 }
 
 _putRawParameters():Void
+  (* *)
 {
-  let var error = odbc.SQL_NEED_DATA,
-  let cBuffer = CRawStringHolder.new(odbc.rawBufferLength),
-  let pNumberBuffer = CIntHolder.new,
-  let stringBuffer = MutableString.new(odbc.rawBufferLength),
-  while({error = odbc.SQL_NEED_DATA},{
+  error ::= odbc.SQL_NEED_DATA
+  cBuffer ::= CRawStringHolder.new(odbc.rawBufferLength)
+  pNumberBuffer ::= CIntHolder.new
+  stringBuffer ::= MutableString.new(odbc.rawBufferLength)
+  while({error = odbc.SQL_NEED_DATA} do:{
 
-    error := odbc.SQLParamData(_hstmt,pNumberBuffer.handle),
-      (* retrieve parameter index of next RAW-Parameter,                *)
-      (* SQLParamData returns odbc.SQL_NEED_DATA if a RAW-parameter was *)
-      (* found, its index is stored in pNumberBuffer.                   *)
-      (* The value of pNumberBuffer was defined by _bindParameters.     *)
-      (* If no further RAW-parameter exists, SQLParamData returns 0     *)
+    error := odbc.SQLParamData(_hstmt,pNumberBuffer.handle)
+      ; retrieve parameter index of next RAW-Parameter,                
+      ; SQLParamData returns odbc.SQL_NEED_DATA if a RAW-parameter was 
+      ; found, its index is stored in pNumberBuffer.                   
+      ; The value of pNumberBuffer was defined by _bindParameters.     
+      ; If no further RAW-parameter exists, SQLParamData returns 0     
 
-    error = odbc.SQL_NEED_DATA
-     ? {
-         (* open the file, containing the RAW-data and transfer its          *)
-	 (* contents in pieces of size odbc.rawBufferLength to the database. *)
-	 let var length = odbc.rawBufferLength,
-	 _rawData.includesKey(pNumberBuffer.intValue)
-	 ? {
-	     (* Parameter was set by setRaw *)
-             let currentFile = _rawData[pNumberBuffer.intValue].openRead,
-	     let var length = odbc.rawBufferLength,
+    if( error = odbc.SQL_NEED_DATA
+     then: {
+         ; open the file, containing the RAW-data and transfer its          
+	 ; contents in pieces of size odbc.rawBufferLength to the database. 
+	 length ::= odbc.rawBufferLength
+	 if( _rawData.includesKey(pNumberBuffer.intValue)
+	 then: {
+	     ; Parameter was set by setRaw 
+             currentFile ::= _rawData[pNumberBuffer.intValue].openRead
+	     length ::= odbc.rawBufferLength
 	     until({length < odbc.rawBufferLength}, fun() {
 	       length:=
-	       currentFile.readBuffer(stringBuffer,0,odbc.rawBufferLength),
-	       cBuffer.setRawStringValue(stringBuffer),
-	       odbc.SQLPutData(_hstmt,cBuffer.handle,length) != odbc.SQL_SUCCESS
-	       ? {
-		   cBuffer.close,
-		   pNumberBuffer.close,
+	       currentFile.readBuffer(stringBuffer,0,odbc.rawBufferLength)
+	       cBuffer.setRawStringValue(stringBuffer)
+	       if( odbc.SQLPutData(_hstmt,cBuffer.handle,length) != odbc.SQL_SUCCESS
+	       then: {
+		   cBuffer.close
+		   pNumberBuffer.close
 		   ODBCError.new(odbc.NULL,odbc.NULL,_hstmt).raise
-	         }
-	      }), 
+	         })
+	      }) 
 	      currentFile.close
 	    }
-	: {  (* Parameter was not set -> insert NULL-Value into DB *)
-	     length := odbc.SQL_NULL_DATA,
-	     odbc.SQLPutData(_hstmt,cBuffer.handle,length) != odbc.SQL_SUCCESS
-	     ? { cBuffer.close,
-		 pNumberBuffer.close,
+	else: {  ; Parameter was not set -> insert NULL-Value into DB 
+	     length := odbc.SQL_NULL_DATA
+	     if( odbc.SQLPutData(_hstmt,cBuffer.handle,length) != odbc.SQL_SUCCESS
+	     then: { cBuffer.close
+		 pNumberBuffer.close
 		 ODBCError.new(odbc.NULL,odbc.NULL,_hstmt).raise
-	       }
-	   }  
+	       })
+	   })  
 	}
-      : { error != odbc.SQL_SUCCESS
-          ? {cBuffer.close, pNumberBuffer.close,
-	     ODBCError.new(odbc.NULL,odbc.NULL,_hstmt).raise}
-	}
-  }),
-  cBuffer.close,
+      else: { if( error != odbc.SQL_SUCCESS
+          then: {cBuffer.close pNumberBuffer.close
+	     ODBCError.new(odbc.NULL,odbc.NULL,_hstmt).raise})
+	})
+  })
+  cBuffer.close
   pNumberBuffer.close
 }
 
 _execute():Void
+  (* *)
 {
-  _hstmt.isNotNil ?
+  if( _hstmt.isNotNil then:
   {
-    let error = odbc.SQLExecute(_hstmt),
-    error != odbc.SQL_SUCCESS
-    ? { error = odbc.SQL_NEED_DATA
-          ? { _putRawParameters }
-          : {ODBCError.new(odbc.NULL,odbc.NULL,_hstmt).raise}
-      }
-   }
+    error ::= odbc.SQLExecute(_hstmt)
+    if( error != odbc.SQL_SUCCESS
+    then: { if( error = odbc.SQL_NEED_DATA
+          then: { _putRawParameters }
+          else: {ODBCError.new(odbc.NULL,odbc.NULL,_hstmt).raise})
+      })
+   })
 }
 
 _executeDirect(sql:String):Void
+  (* *)
 {
-   _hstmt.isNotNil ?
+   if( _hstmt.isNotNil then:
    {
-     (odbc.SQLExecDirect(_hstmt,sql,odbc.SQL_NTS) != odbc.SQL_SUCCESS)
-     ? {ODBCError.new(odbc.NULL,odbc.NULL,_hstmt).raise}
-   }
+     if( (odbc.SQLExecDirect(_hstmt,sql,odbc.SQL_NTS) != odbc.SQL_SUCCESS)
+     then: {ODBCError.new(odbc.NULL,odbc.NULL,_hstmt).raise})
+   })
 }
 
 _unbindParameters():Void
+  (* *)
 {
   odbc.SQLFreeStmt(_hstmt,odbc.SQL_RESET_PARAMS)
 }
 
 _createCursor(_hstmt:Int32):ODBCCursor
+  (* *)
 {
-  let c = ODBCCursor.new,
-  c.open(_hstmt),
+  c ::= ODBCCursor.new
+  c.open(_hstmt)
   c
 }
 
 _init:Self
+  (* *)
 {
-   super._init,
-   _rawData:=Dictionary.new,
+   super._init
+   _rawData:=Dictionary.new
    self
 }
 
-;
-
-
-
+}

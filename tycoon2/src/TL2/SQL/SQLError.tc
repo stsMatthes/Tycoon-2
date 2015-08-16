@@ -1,19 +1,18 @@
 class SQLError
-
 super Exception
-
-metaclass AbstractClass
-
-public
-
-errorCode:Int,
+(**)
+meta AbstractClass
+{
+errorCode:Int
 
 errorMessage:String
 
-methods
+isDuplicateKeyError:Bool
+  (* *)
+deferred
 
-isDuplicateKeyError:Bool deferred
+isConnectionFailedError :Bool
+  (* *)
+deferred
 
-isConnectionFailedError :Bool deferred
-
-;
+}

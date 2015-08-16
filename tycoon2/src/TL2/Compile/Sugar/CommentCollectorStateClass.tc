@@ -1,14 +1,16 @@
 class CommentCollectorStateClass
 super ConcreteClass(CommentCollectorState)
-metaclass MetaClass
-public methods
-
-new(commentOut :Output, otherOut :Output) :CommentCollectorState
+(**)
+meta MetaClass
 {
-  let instance = _new,
-  instance.commentOut := commentOut,
-  instance.otherOut := otherOut,
-  instance._init,
+new(commentOut :Output, otherOut :Output) :CommentCollectorState
+  (* *)
+{
+  instance ::= _new
+  instance.commentOut := commentOut
+  instance.otherOut := otherOut
+  instance._init
   instance
 }
-;
+
+}

@@ -1,51 +1,5 @@
-class HttpResource metaclass AbstractClass;
-class HttpResourceDecorator metaclass AbstractClass;
-class HttpDebugResource metaclass AbstractClass;
-class HttpDebugFilter metaclass AbstractClass;
-class HttpShutdownResource  metaclass AbstractClass;
-class HttpContainerResource  metaclass AbstractClass;
-class HttpDirectoryResource  metaclass AbstractClass;
-class HttpFileResource  metaclass AbstractClass;
-class HttpJumpResource metaclass AbstractClass;
-class HttpResourceFactory metaclass AbstractClass;
-class HttpResourceFactory metaclass AbstractClass;
-class MimeFactory metaclass AbstractClass;
-class BasicProtectionRealm metaclass AbstractClass;
+tycoon.tl.loader.registerDirectory("WWW/Httpd/HttpResources");
+tycoon.tl.loader.update;
+tycoon.tl.typeChecker.check;
 
-
-DO load "../TWL/WWW/Httpd/HttpResources/HttpResource.tc";
-DO load "../TWL/WWW/Httpd/HttpResources/HttpResourceDecorator.tc";
-DO load "../TWL/WWW/Httpd/HttpResources/HttpSimpleResourceDecoratorClass.tc";
-
-DO load "../TWL/WWW/Httpd/HttpResources/HttpRootResource.tc";
-DO load "../TWL/WWW/Httpd/HttpResources/HttpDebugResource.tc";
-
-DO load "../TWL/WWW/Httpd/HttpResources/HttpDebugFilterClass.tc";
-DO load "../TWL/WWW/Httpd/HttpResources/HttpDebugFilter.tc";
-
-DO load "../TWL/WWW/Httpd/HttpResources/HttpShutdownResourceClass.tc";
-DO load "../TWL/WWW/Httpd/HttpResources/HttpShutdownResource.tc";
-
-DO load "../TWL/WWW/Httpd/HttpResources/HttpContainerResource.tc";
-
-DO load "../TWL/WWW/Httpd/HttpResources/HttpDirectoryResourceClass.tc";
-DO load "../TWL/WWW/Httpd/HttpResources/HttpDirectoryResource.tc";
-
-DO load "../TWL/WWW/Httpd/HttpResources/HttpFileResourceClass.tc";
-DO load "../TWL/WWW/Httpd/HttpResources/HttpFileResource.tc";
-
-DO load "../TWL/WWW/Httpd/HttpResources/HttpJumpResourceClass.tc";
-DO load "../TWL/WWW/Httpd/HttpResources/HttpJumpResource.tc";
-
-DO load "../TWL/WWW/Httpd/HttpResources/HttpResourceFactory.tc";
-DO load "../TWL/WWW/Httpd/HttpResources/HttpFunResourceFactory.tc";
-DO load "../TWL/WWW/Httpd/HttpResources/MimeFactoryClass.tc";
-DO load "../TWL/WWW/Httpd/HttpResources/MimeFactory.tc";
-
-DO load "../TWL/WWW/Httpd/HttpResources/ProtectionRealm.tc";
-DO load "../TWL/WWW/Httpd/HttpResources/BasicProtectionRealmClass.tc";
-DO load "../TWL/WWW/Httpd/HttpResources/BasicProtectionRealm.tc";
-
-DO load "../TWL/WWW/Httpd/HttpResources/HttpAuthenticatedResource.tc";
-
-
+DO load "WWW/Httpd/HttpResources/Init.tyc";

@@ -133,25 +133,33 @@ free(:Int32) :Void
 extern "free"
 
 
-;
-; USE WITH CAUTION. The format string must contain exactly one 'printf' format specifier
-; of the correct type. Note that no array bounds checking is performed. C never does that.
-;
 
 sprintf_String(buffer :MutableString, fmt :String, value :String) :Void
-  (* %s *)
+  (* %s
+     USE WITH CAUTION. The format string must contain exactly one 'printf'
+     format specifier of the correct type. Note that no array bounds
+     checking is performed. C never does that. *)
 extern  "sprintf"
 
 sprintf_Real(buffer :MutableString, fmt :String, value :Real) :Void
-  (* %e *)
+  (* %e
+     USE WITH CAUTION. The format string must contain exactly one 'printf'
+     format specifier of the correct type. Note that no array bounds
+     checking is performed. C never does that. *)
 extern  "sprintf"
 
 sprintf_Int(buffer :MutableString, fmt :String, value :Int) :Void
-  (* %d *)
+  (* %d
+     USE WITH CAUTION. The format string must contain exactly one 'printf'
+     format specifier of the correct type. Note that no array bounds
+     checking is performed. C never does that. *)
 extern  "sprintf"
 
 sprintf_Int32(buffer :MutableString, fmt :String, value :Int32) :Void
-  (* %d *)
+  (* %d
+     USE WITH CAUTION. The format string must contain exactly one 'printf'
+     format specifier of the correct type. Note that no array bounds
+     checking is performed. C never does that. *)
 extern  "sprintf"
 
 strftime(buffer :MutableString, smax :Int, fmt :String, ptp :Int32) :Int

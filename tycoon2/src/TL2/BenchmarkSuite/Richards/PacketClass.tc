@@ -1,7 +1,5 @@
 class PacketClass(Instance <: Packet)
 super ConcreteClass(Instance)
-metaclass MetaClass
-
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -21,28 +19,29 @@ metaclass MetaClass
  * 
  * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
  *
- "Richards" benchmark: ported from C++ to TL-2 *)   
-
-public methods
-
-create(id :Int, kind :Int) :Instance
+ "Richards" benchmark: ported from C++ to TL-2 *)
+meta MetaClass
 {
-  let obj = _new,
-  obj.ident := id,
-  obj.kind := kind,
-  obj.datum := 1,
-  obj.data := MutableString.new(4),
-  for(0,obj.data.size-1,
+create(id :Int, kind :Int) :Instance
+  (* *)
+{
+  obj ::= _new
+  obj.ident := id
+  obj.kind := kind
+  obj.datum := 1
+  obj.data := MutableString.new(4)
+  for(0 to:obj.data.size-1 do:
     fun(i :Int)
     {
-      obj.data[i] := (0).asChar
-    }),
+      obj.data[i] := 0.asChar
+    })
   obj
 }
 
 new :Instance
+  (* *)
 {
   _new
 }
 
-;
+}

@@ -29,9 +29,9 @@ asByteArray :ByteArray
 
 private
 
-_newElements(initialCapacity :Int) :ByteArray
+_newElements(initialCapacity :Int) @:ByteArray
   (* *)
-{ ByteArray.new(initialCapacity) }
+{ ByteArray.new(initialCapacity)@ }
 
 _dontLeak( :Int,  :Int) :Void
   (* <n> elements of _elements starting at <at> have become inaccessible.

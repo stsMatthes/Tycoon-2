@@ -22,4 +22,6 @@ super Object
  cross tracer package
    tracing from TL2 to X_TL2   (goes the other way round with "X_") *)
 meta AbstractClass
-{ }
+{
+  __brand__Cross :Void { }
+}

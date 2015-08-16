@@ -1,3 +1,5 @@
+class EncoderClass
+super AbstractClass
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -22,61 +24,58 @@
 
   Matthias Ernst  20/1/97
 *)
-
-class EncoderClass
-super AbstractClass
-metaclass MetaClass
-
-public methods
-
-(* the MIME encoding mechanism header field is case insensitive
+meta MetaClass
+{
+encode(mechanism :String, r :Input) :Input
+  (* the MIME encoding mechanism header field is case insensitive
    may raise KeyNotFoundError, if no encoding with this name is available
 *)
-encode(mechanism :String, r :Input) :Input
 {
-  let m = toupper(mechanism),
-  let e = encoders[m],
+  m ::= toupper(mechanism)
+  e ::= encoders[m]
 
-  e = nil ? { r } : { e.new(r) }
-}  
-
-decode(mechanism :String, r :Input) :Input
-{
-  let m = toupper(mechanism),
-  let d = decoders[m],
-
-  d = nil ? { r } : { d.new(r) }
+  if( e = nil then: { r } else: { e.new(r) })
 }
 
-init
+decode(mechanism :String, r :Input) :Input
+  (* *)
 {
-  encoders := Dictionary.new,
+  m ::= toupper(mechanism)
+  d ::= decoders[m]
 
-  encoders["BASE64"] := Base64Encoder,
-  encoders["7BIT"]   := nil,
-  encoders["8BIT"]   := nil,
-  encoders["BINARY"] := nil,
-(*  encoders["QUOTED-PRINTABLE"] := QuotedPrintableEncoder, *)
+  if( d = nil then: { r } else: { d.new(r) })
+}
 
-  decoders := Dictionary.new,
+init :Void
+  (* *)
+{
+  encoders := Dictionary.new
 
-  decoders["BASE64"] := Base64Decoder,
-  decoders["7BIT"] := nil,
-  decoders["8BIT"] := nil,
+  encoders["BASE64"] := Base64Encoder
+  encoders["7BIT"]   := nil
+  encoders["8BIT"]   := nil
+  encoders["BINARY"] := nil
+;  encoders["QUOTED-PRINTABLE"] := QuotedPrintableEncoder, 
+
+  decoders := Dictionary.new
+
+  decoders["BASE64"] := Base64Decoder
+  decoders["7BIT"] := nil
+  decoders["8BIT"] := nil
   decoders["BINARY"] := nil
-(*  decoders["QUOTED-PRINTABLE"] := QuotedPrintableDecoder *)
+;  decoders["QUOTED-PRINTABLE"] := QuotedPrintableDecoder 
 }
 
 private
 
-encoders :Dictionary(String, ConcreteEncoderClass(Encoder)),
+encoders :Dictionary(String, ConcreteEncoderClass(Encoder))
+
 decoders :Dictionary(String, ConcreteEncoderClass(Encoder))
 
-methods
-
 toupper(s :String) :String
+  (* *)
 {
   String.fromReader(s.map(fun(c :Char) { c.asUpperCase }))
 }
-;
 
+}

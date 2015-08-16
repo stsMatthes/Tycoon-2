@@ -88,6 +88,17 @@ ensure self[k1] == old self[k2]
   self[k2] := temp@
 }
 
+giveByKey(k :K) @:E
+  (* Give the component element stored at key <k>. The key/value association
+     is removed. The keys of other elements remaining in the receiver may
+     change (eg. in DynSequence), and may re-occupy <k>.
+     If there is no element at key <k>, the receiver remains unchanged and
+     nil@ is returned. *)
+  require validKey(k)
+  ensure result == old lookup(k,fun(e:E){e},{nil})
+	 && (!includesKey(k) || self[k] !== result)
+{ self[k]@ }
+
 private
 
 }

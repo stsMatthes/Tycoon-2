@@ -21,10 +21,10 @@
 /*
   Copyright (c) 1996 Higher-Order GmbH, Hamburg. All rights reserved.
 
-  builtins.h 1.39 98/11/13 Marc Weikard
+  $File: //depot/tycoon2/stsmain/tycoon2/src/tm/builtins.h $ $Revision: #3 $ $Date: 2003/10/01 $ Marc Weikard
 
   Tycoon Virtual Machine Builtins
-
+  
 */
 
   /* */

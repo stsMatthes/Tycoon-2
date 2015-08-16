@@ -19,7 +19,7 @@
  *
  */
 /*
-  tosString.c 1.0 final  30-JUL-1998  Andre Willomat
+  $File: //depot/tycoon2/stsmain/bootstrap/src/tycoonOS/tosString.c $ $Revision: #3 $ $Date: 2003/10/02 $  Andreas Gawecki, Andre Willomat
 
   Interface to Portable Tycoon-2 operating system (TycoonOS)
 
@@ -72,33 +72,29 @@ int tosString_locateSubString(char *s, char *sub, int startingAt)
   return p ? p-s : -1;
 }
 
-
 int tosString_locateLastSubString(char *s, char *sub, int before)
 {
   int n = strlen(sub);
   int i = strlen(s)-n;
 
   if (i < 0)
-     return -1;
+    return -1;
 
   if (i > before)
-     i = before;
+    i = before;
 
   for(;i>=0;i--)
-     if (strncmp(s+i,sub,n) == 0)
-        break;
-
+    if (strncmp(s+i,sub,n) == 0)
+      break;
   return i;
 }
-
 
 int tosString_locateSomeChar(char *s, char *chars, int startingAt)
 {
   int i = strlen(s);
   if (i > startingAt)
-     i = startingAt;
-  if (i < 0)
-     i = 0;
+    i = startingAt;
+  if (i < 0) i = 0;
   return i + strcspn(s+i, chars);
 }
 
@@ -107,13 +103,12 @@ int tosString_locateSomeCharBefore(char *s, char *chars, int before)
 {
   int i = strlen(s);
   if (i > before)
-     i = before;
+    i = before;
   if (i < 0)
-     i = 0;
+    i = 0;
   for(;--i>=0;)
-     if (strchr(chars,s[i]))
-        break;
-
+    if (strchr(chars,s[i]))
+      break;
   return i;
 }
 

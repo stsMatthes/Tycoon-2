@@ -1,9 +1,6 @@
 class TspDescriptor
 super SystemTracer
-metaclass AbstractClass
-public methods
-
-layout :Int                 (*
+(*
  * This file is part of the Tycoon-2 system.
  *
  * The Tycoon-2 system is free software; you can redistribute it and/or
@@ -22,42 +19,78 @@ layout :Int                 (*
  * 
  * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
  *
- layout of store objects. -> tsp_Object in tsp.h *) 
-  deferred
+*)
+meta AbstractClass
+{
+layout :Int
+  (* layout of store objects. -> tsp_Object in tsp.h *)
+deferred
 
 format :String
   (* only meaningful for Struct. *)
 { nil }
-  
-(* possible values for <layout>. -> tsp_Object in tsp.h *)
 
-layoutStruct :Int	{ 0 }
-layoutWeakRef :Int	{ 1 }
-layoutArray :Int	{ 2 }   (* default case for tycoon objects *)
-layoutByteArray :Int	{ 3 }
-layoutShortArray :Int	{ 4 }
-layoutLongArray :Int	{ 5 }
-layoutThread :Int	{ 6 }
-layoutStack :Int	{ 7 }
+layoutStruct :Int
+  (* possible values for <layout>. -> tsp_Object in tsp.h *)
+{ 0 }
+
+layoutWeakRef :Int
+  (* *)
+{ 1 }
+
+layoutArray :Int
+  (* *)
+{ 2 }
+
+layoutByteArray :Int
+  (* default case for tycoon objects *)
+{ 3 }
+
+layoutShortArray :Int
+  (* *)
+{ 4 }
+
+layoutIntArray :Int
+  (* *)
+{ 5 }
+
+layoutLongArray :Int
+  (* *)
+{ 6 }
+
+layoutThread :Int
+  (* *)
+{ 7 }
+
+layoutStack :Int
+  (* *)
+{ 8 }
 
 isStruct :Bool
   (* Should the class manager generate CStruct access methods? *)
-{ false  (* redefined in Struct, for Struct and Thread *)
+{ false  ; redefined in Struct, for Struct and Thread 
 }
 
-(* size of <o> in bytes when written to <tracer> *)
-objectSize(o :Object, tracer :Tracer) :Int
-  deferred
+objectSize(o :Object) :Int
+  (* size of <o> in bytes *)
+deferred
 
-dumpInstance(o :Object, tracer :Tracer)
-  deferred
+dumpInstance(o :Object) :Void
+  (* *)
+deferred
 
-allocate(o :Object, tl2Class :TL2Class, tracer :Tracer) :Int
-  require o."class".name = tl2Class.name
+allocate(o :Object, tl2Class :TL2Class) :Int
+  (* *)
+require o."class".name = tl2Class.name
 {
-  let bytes = objectSize(o, tracer),
-  tracer.allocate(o, bytes, tl2Class.id, o.identityHash, {
-    dumpInstance(o, tracer)
+  bytes ::= objectSize(o)
+  _tracer.allocate(o, bytes, tl2Class.id, o.identityHash, {
+    dumpInstance(o)
   })
 }
-;
+
+private
+
+_tracer :Tracer
+
+}

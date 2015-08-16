@@ -1,12 +1,10 @@
 class HttpdAccessLog
-
 super Http
+(**)
+meta HttpdAccessLogClass()
 
-public
-
+{
 out :Output
-
-methods
 
 log(socket :StreamSocket, request :HttpRequest, response :HttpResponse) :Void
   (*
@@ -38,11 +36,11 @@ log(socket :StreamSocket, request :HttpRequest, response :HttpResponse) :Void
     << " HTTP/" << request.major << '.' << request.minor << "\" "
     << response.statusCode
     << ' '
-    << (response.hasContentLength
-          ? { let result :Object = response.contentLength}
-	  : { '-' })
-    << '\n',
+    << if( response.hasContentLength
+          then: { result :Object := response.contentLength}
+	  else: { '-' })
+    << '\n'
   out.flush
 }
-  
-;
+
+}

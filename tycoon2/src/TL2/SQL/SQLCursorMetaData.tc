@@ -1,3 +1,5 @@
+class SQLCursorMetaData
+super SQL
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -24,15 +26,8 @@ Author:  Michael Skusa
 Date:    16-Aug-1996
 Updates: (Date)	  (Name)	(Description)
 *)
-
-class SQLCursorMetaData
-
-super SQL
-
-metaclass AbstractClass
-
-public methods
-
+meta AbstractClass
+{
 columnCount():Int
   (* answers number of columns in associated result-set *)
 {
@@ -88,28 +83,22 @@ sqlType(n:Int):Int
   _types[n]
 }
 
-retrieveColumnData(hstmt:Int32):Void deferred
+retrieveColumnData(hstmt:Int32):Void
+  (* *)
+deferred
 
 private
 
-_columnCount:Int,
+_columnCount:Int
 
-_columnNames:MutableArray(String),
+_columnNames:MutableArray(String)
 
-_nulls:MutableArray(Bool),
+_nulls:MutableArray(Bool)
 
-_precisions:MutableArray(Int),
+_precisions:MutableArray(Int)
 
-_scales:MutableArray(Int),
+_scales:MutableArray(Int)
 
 _types:MutableArray(Int)
 
-
-;
-
-
-
-
-
-
-
+}

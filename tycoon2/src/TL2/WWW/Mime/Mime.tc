@@ -1,5 +1,6 @@
 class Mime
 super WWW
-metaclass AbstractClass
-;
-	
+(**)
+meta AbstractClass
+{
+}

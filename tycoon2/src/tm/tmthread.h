@@ -21,10 +21,10 @@
 /*
   Copyright (c) 1996 Higher-Order GmbH, Hamburg. All rights reserved.
 
-  tmthread.h 1.19 98/11/13 Andreas Gawecki, Marc Weikard
+  $File: //depot/tycoon2/stsmain/tycoon2/src/tm/tmthread.h $ $Revision: #3 $ $Date: 2003/10/01 $ Andreas Gawecki, Marc Weikard
 
   Tycoon Machine Threads
-
+  
 */
 
 #ifndef TMTHREAD_H
@@ -183,7 +183,7 @@ extern tyc_Thread *tmthread_fetchStoppedThread(tyc_Debugger *pDebugger);
 extern void tmthread_pushStack(tsp_OID);
 extern tsp_OID tmthread_popStack(void);
 
-/* cache locks */
+/* cache locks */ 
 extern void tmthread_cacheLock(void);
 extern void tmthread_cacheUnlock(void);
 

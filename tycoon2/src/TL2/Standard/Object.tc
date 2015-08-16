@@ -363,6 +363,13 @@ protect(T <: Void, statement :Fun():T, finally :Fun():Void) :T
   result
 }
 
+protect(T <: Void, statement :Fun()@:T, finally :Fun():Void) @:T
+{
+  result @:T := nil@
+  protect({ result := statement[]@ }, finally)
+  result@
+}
+
 "assert"(assertion :Fun():Bool) :Nil
   (* *)
 { if( !assertion[]

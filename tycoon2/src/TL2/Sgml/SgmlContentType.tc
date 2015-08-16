@@ -1,12 +1,19 @@
 class SgmlContentType
 super Sgml
-public
-name :String
-methods
-_brand_SgmlContentType { }
+(**)
+meta SgmlContentTypeClass()
 
-printOn(out :Output)
+{
+name :String
+
+_brand_SgmlContentType :Void
+  (* *)
+{ }
+
+printOn(out :Output) :Void
+  (* *)
 {
   out.writeString(name)
 }
-;
+
+}

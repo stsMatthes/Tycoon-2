@@ -1,12 +1,11 @@
 class HttpResource
-
 super Http
+(**)
+meta AbstractClass
+{
+parent :HttpContainerResource
 
-metaclass AbstractClass
-
-public
-
-parent :HttpContainerResource,  (*
+  (*
  * This file is part of the Tycoon-2 system.
  *
  * The Tycoon-2 system is free software; you can redistribute it and/or
@@ -26,11 +25,10 @@ parent :HttpContainerResource,  (*
  * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
  *
  the parent resource, or nil if root *)
-icon :String			(* HTML source for this resources icon *)
 
-methods
+icon :String
+  (* HTML source for this resources icon *)
 
-  
 contentLength :Int
   (* answer the content length of the resource, or nil if  *)
 {
@@ -44,6 +42,7 @@ lastModified :Long
 }
 
 newResponse(status :Int) :HttpResponse
+  (* *)
 {
   HttpResponse.new6(1, 1,
     status,
@@ -56,8 +55,8 @@ pathLookup(request :HttpRequest, arcs :List(String)) :HttpResource
   (* answer the target resource of the given request, with a path starting at
      the receiver and following the given arcs, or nil if not found. *)
 {
-  (* we are not a composite resource: *)
-  arcs.isEmpty ? { self } : { nil }
+  ; we are not a composite resource: 
+  if( arcs.isEmpty then: { self } else: { nil })
 }
 
 lookupDirectory(arcs :List(String)) :HttpDirectoryResource
@@ -67,10 +66,10 @@ lookupDirectory(arcs :List(String)) :HttpDirectoryResource
      Purpose: simplify server configuration.
   *)
 {
-  (* we are neither a directory resource nor a composite resource: *)
+  ; we are neither a directory resource nor a composite resource: 
   nil
 }
-     
+
 validate :Void
   (* validate any cached information. default: do nothing *)
 {
@@ -79,16 +78,16 @@ validate :Void
 asDirectoryContentsResource :HttpDirectoryContentsResource
   (* answer the receiver if it is a directory contents resource, or nil *)
 {
-  nil (* we are not a directory contents resource *)
+  nil ; we are not a directory contents resource 
 }
 
 asDirectoryResource :HttpDirectoryResource
   (* answer the receiver if it is a directory resource, or nil *)
 {
-  nil (* we are not a directory resource *)
+  nil ; we are not a directory resource 
 }
 
-reindex
+reindex :Void
   (* forget any automatically indexed child resources
      re-index at subsequent requests.
      But keep directory resources, propagate reindex down
@@ -121,22 +120,21 @@ process(request :HttpRequest) :HttpResponse
 
    *)
 {
-  validate,
-  preProcess(request),
-  let method = request.method,
-  let response =
-    method = "GET" ? { get(request) } : {
-    method = "HEAD" ? { head(request) } : {
-    method = "POST" ? { post(request) } : {
-    method = "OPTIONS" ? { options(request) } : {
-    method = "DELETE" ? { delete(request) } : {
-    method = "LINK" ? { link(request) } : {
-    method = "UNLINK" ? { unlink(request) } : {
+  validate
+  preProcess(request)
+  method ::= request.method
+  response ::=
+    if( method = "GET" then: { get(request) } else: {
+    if( method = "HEAD" then: { head(request) } else: {
+    if( method = "POST" then: { post(request) } else: {
+    if( method = "OPTIONS" then: { options(request) } else: {
+    if( method = "DELETE" then: { delete(request) } else: {
+    if( method = "LINK" then: { link(request) } else: {
+    if( method = "UNLINK" then: { unlink(request) } else: {
       extended(request)
-  }}}}}}},
+  })})})})})})})
   postProcess(request, response)
 }
-
 
 postProcess(request :HttpRequest, response :HttpResponse) :HttpResponse
   (* processing the given request is complete and yielded the given response.
@@ -147,39 +145,60 @@ postProcess(request :HttpRequest, response :HttpResponse) :HttpResponse
 }
 
 notImplemented(request :HttpRequest) :HttpResponse
+  (* *)
 {
   newResponse(HttpResponse.NOT_IMPLEMENTED)
 }
 
 head(request :HttpRequest) :HttpResponse
   (* default implementation: perform GET and remove body *)
-  {
-  let response = get(request),
-  response.body.close,
-  response.body := nil,
+{
+  response ::= get(request)
+  response.body.close
+  response.body := nil
   response
   }
 
-get(request :HttpRequest) :HttpResponse		{ notImplemented(request) }
-put(request :HttpRequest) :HttpResponse		{ notImplemented(request) }
-post(request :HttpRequest) :HttpResponse	{ notImplemented(request) }
-options(request :HttpRequest) :HttpResponse	{ notImplemented(request) }
-delete(request :HttpRequest) :HttpResponse	{ notImplemented(request) }
-link(request :HttpRequest) :HttpResponse	{ notImplemented(request) }
-unlink(request :HttpRequest) :HttpResponse	{ notImplemented(request) }
-extended(request :HttpRequest) :HttpResponse	{ notImplemented(request) }
+get(request :HttpRequest) :HttpResponse
+  (* *)
+{ notImplemented(request) }
+
+put(request :HttpRequest) :HttpResponse
+  (* *)
+{ notImplemented(request) }
+
+post(request :HttpRequest) :HttpResponse
+  (* *)
+{ notImplemented(request) }
+
+options(request :HttpRequest) :HttpResponse
+  (* *)
+{ notImplemented(request) }
+
+delete(request :HttpRequest) :HttpResponse
+  (* *)
+{ notImplemented(request) }
+
+link(request :HttpRequest) :HttpResponse
+  (* *)
+{ notImplemented(request) }
+
+unlink(request :HttpRequest) :HttpResponse
+  (* *)
+{ notImplemented(request) }
+
+extended(request :HttpRequest) :HttpResponse
+  (* *)
+{ notImplemented(request) }
 
 private
 
-methods
-
 _init :Void
+  (* *)
 {
-  super._init,
-  icon := "/hox-icons/unknown.gif",
+  super._init
+  icon := "/hox-icons/unknown.gif"
   self
 }
 
-;
-
-
+}

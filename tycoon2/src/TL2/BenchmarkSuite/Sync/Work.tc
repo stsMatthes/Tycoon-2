@@ -1,44 +1,44 @@
 class Work
 super Object
-metaclass SimpleConcreteClass(Work)
-
-public methods
-
-doWork() :Void
+(**)
+meta SimpleConcreteClass(Work)
 {
-  let arr = _arr,
-  let elem = _elem,
-  let top = elem - 1,
-  while({top > 0} , {
-    let i = 0,
-	while({i < top}, {
-	  arr[i] > arr[i + 1]
-	  ? { let t = arr[i],
-	      arr[i] := arr[i + 1],
-		  arr[i + 1] := t },
+doWork() :Void
+  (* *)
+{
+  arr ::= _arr
+  elem ::= _elem
+  top ::= elem - 1
+  while({top > 0}  do: {
+    i ::= 0
+	while({i < top} do: {
+	  if( arr[i] > arr[i + 1]
+	  then: { t ::= arr[i]
+	      arr[i] := arr[i + 1]
+		  arr[i + 1] := t })
 	  i := i + 1
-	}),
+	})
 	top := top - 1
   })
 }
 
-private 
+private
 
-_arr :MutableArray(Int),
+_arr :MutableArray(Int)
+
 _elem :Int
 
-methods
-
 _init :Self
+  (* *)
 {
-  let elem = 50,
-  _elem := elem,
-  let arr = MutableArray.new(_elem),
-  _arr := arr,
-  for(0, elem - 1, fun(i :Int) {
+  elem ::= 50
+  _elem := elem
+  arr ::= MutableArray.new(_elem)
+  _arr := arr
+  for(0 to: elem - 1 do: fun(i :Int) {
 	arr[i] := elem - i
-  }),
+  })
   self
 }
 
-;
+}

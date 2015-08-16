@@ -1,3 +1,5 @@
+class MimeHeaderDictionary(T <: Object)
+super Mime, Dictionary(String, T)
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -21,29 +23,32 @@
    Author: Matthias Ernst
    Date: 13.12.96
 *)
+meta SimpleConcreteClass(MimeHeaderDictionary(T))
+{
+private
 
-
-class MimeHeaderDictionary(T <: Object)
-super Mime, Dictionary(String, T)
-metaclass SimpleConcreteClass(MimeHeaderDictionary(T))
-
-private methods
-
-toupper(s :String) :String {
+toupper(s :String) :String
+  (* *)
+{
    s.asUpperCase
 }
 
-(* Mime header names are case insensitive *)
-_keyEqual(k1 :String, k2 :String) :Bool {
+_keyEqual(k1 :String, k2 :String) :Bool
+  (* Mime header names are case insensitive *)
+{
   super._keyEqual(toupper(k1), toupper(k2))
 }
 
-_keyHash(k :String) :Int {
+_keyHash(k :String) :Int
+  (* *)
+{
   super._keyHash(toupper(k))
 }
 
-_init :Void {
+_init :Void
+  (* *)
+{
   super._init1(0)
 }
 
-;
+}

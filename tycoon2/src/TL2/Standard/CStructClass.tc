@@ -28,4 +28,7 @@ _new :Instance
   (* *)
 builtin
 
+_new@ :Instance
+  (* This is the type of an instance of the receiver *)
+{ fetch(_new)@ }
 }

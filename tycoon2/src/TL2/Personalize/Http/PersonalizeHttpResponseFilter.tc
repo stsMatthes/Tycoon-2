@@ -1,17 +1,16 @@
 class PersonalizeHttpResponseFilter
-
 super PersonalizeHttp, HttpResourceDecorator
+(**)
+meta PersonalizeHttpResponseFilterClass()
 
-public
-
+{
 client :PersonalizeHttpClient
 
-methods
-
 get(request :HttpRequest) :HttpResponse
+  (* *)
 {
-  let response = resource.get(request),
+  response ::= resource.get(request)
   client.personalizeHttp(request, response)
 }
 
-;
+}

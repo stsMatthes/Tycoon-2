@@ -1,3 +1,5 @@
+class HttpMessage
+super MimeMessage
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -22,95 +24,170 @@
 
 	changed 23-Jul-97 -> super now MimeMessage
 *)
+meta HttpMessageClass()
 
-class HttpMessage
-super MimeMessage
-
-public
-methods
-
-parser :MimeMessageParser(Self) { HttpMessageParser.new }
-
-
-(* HTTP/1.1 'General headers' *)
-
-hasCacheControl :Bool { hasHeader("cache-control") }
-cacheControl :String { headerValue("cache-control") }
-"cacheControl:="(cc :String) { setHeaderValue("cache-control", MimeString, cc) }
-
-hasConnection :Bool { hasHeader("connection") }
-connection :List(String) { headerValue("connection") }
-"connection:="(c :List(String)) { setHeaderValue("connection", StringListHeader, c) }
-
-hasDate :Bool { hasHeader("date") }
-date :Date { headerValue("date") }
-"date:="(d :Date) { setHeaderValue("date", MimeDate, d) }
-
-hasExpires :Bool { hasHeader("date") }
-expires :Date { headerValue("expires") }
-"expires:="(d :Date) { setHeaderValue("expires", MimeDate, d) }
-
-hasForwarded :Bool { hasHeader("forwarded" ) }
-forwarded :List(String) { headerValue("forwarded") }
-"forwarded:="(f :List(String)) { setHeaderValue("forwarded", StringListHeader, f) }
-
-hasKeepAlive :Bool { hasHeader("keep-alive") }
-keepAlive :List(String) { headerValue("keep-alive") }
-"keepAlive:="(ka :List(String)) { setHeaderValue("keep-alive", StringListHeader, ka) }
-
-hasPragma :Bool { hasHeader("pragma") }
-pragma :List(String) { headerValue("pragma") }
-"pragma:="(p :List(String)) { setHeaderValue("pragma", StringListHeader, p) }
-
-hasUpgrade :Bool { hasHeader("upgrade") }
-upgrade :List(String) { headerValue("upgrade") }
-"upgrade:="(u :List(String)) { setHeaderValue("update", StringListHeader, u) }
-
-hasContentEncoding :Bool { hasHeader("content-encoding") }
-contentEncoding :String { headerValue("content-encoding") }
-"contentEncoding:="(e :String) { setHeaderValue("content-encoding", MimeToken, e) }
-
-hasTransferEncoding :Bool { hasHeader("transfer-encoding") }
-transferEncoding :String { headerValue("transfer-encoding") }
-"transferEncoding:="(e :String) { setHeaderValue("transfer-encoding", MimeToken, e) }
-
-
-encodeBody
 {
-  hasContentEncoding ? { body := Encoder.encode(contentEncoding, body) },
-  hasTransferEncoding ? { body := Encoder.encode(transferEncoding, body) }
+parser :MimeMessageParser(Self)
+  (* *)
+{ HttpMessageParser.new }
+
+hasCacheControl :Bool
+  (* HTTP/1.1 'General headers' *)
+{ hasHeader("cache-control") }
+
+cacheControl :String
+  (* *)
+{ headerValue("cache-control") }
+
+"cacheControl:="(cc :String) :Void
+  (* *)
+{ setHeaderValue("cache-control", MimeString, cc) }
+
+hasConnection :Bool
+  (* *)
+{ hasHeader("connection") }
+
+connection :List(String)
+  (* *)
+{ headerValue("connection") }
+
+"connection:="(c :List(String)) :Void
+  (* *)
+{ setHeaderValue("connection", StringListHeader, c) }
+
+hasDate :Bool
+  (* *)
+{ hasHeader("date") }
+
+date :Date
+  (* *)
+{ headerValue("date") }
+
+"date:="(d :Date) :Void
+  (* *)
+{ setHeaderValue("date", MimeDate, d) }
+
+hasExpires :Bool
+  (* *)
+{ hasHeader("date") }
+
+expires :Date
+  (* *)
+{ headerValue("expires") }
+
+"expires:="(d :Date) :Void
+  (* *)
+{ setHeaderValue("expires", MimeDate, d) }
+
+hasForwarded :Bool
+  (* *)
+{ hasHeader("forwarded" ) }
+
+forwarded :List(String)
+  (* *)
+{ headerValue("forwarded") }
+
+"forwarded:="(f :List(String)) :Void
+  (* *)
+{ setHeaderValue("forwarded", StringListHeader, f) }
+
+hasKeepAlive :Bool
+  (* *)
+{ hasHeader("keep-alive") }
+
+keepAlive :List(String)
+  (* *)
+{ headerValue("keep-alive") }
+
+"keepAlive:="(ka :List(String)) :Void
+  (* *)
+{ setHeaderValue("keep-alive", StringListHeader, ka) }
+
+hasPragma :Bool
+  (* *)
+{ hasHeader("pragma") }
+
+pragma :List(String)
+  (* *)
+{ headerValue("pragma") }
+
+"pragma:="(p :List(String)) :Void
+  (* *)
+{ setHeaderValue("pragma", StringListHeader, p) }
+
+hasUpgrade :Bool
+  (* *)
+{ hasHeader("upgrade") }
+
+upgrade :List(String)
+  (* *)
+{ headerValue("upgrade") }
+
+"upgrade:="(u :List(String)) :Void
+  (* *)
+{ setHeaderValue("update", StringListHeader, u) }
+
+hasContentEncoding :Bool
+  (* *)
+{ hasHeader("content-encoding") }
+
+contentEncoding :String
+  (* *)
+{ headerValue("content-encoding") }
+
+"contentEncoding:="(e :String) :Void
+  (* *)
+{ setHeaderValue("content-encoding", MimeToken, e) }
+
+hasTransferEncoding :Bool
+  (* *)
+{ hasHeader("transfer-encoding") }
+
+transferEncoding :String
+  (* *)
+{ headerValue("transfer-encoding") }
+
+"transferEncoding:="(e :String) :Void
+  (* *)
+{ setHeaderValue("transfer-encoding", MimeToken, e) }
+
+encodeBody :Void
+  (* *)
+{
+  if( hasContentEncoding then: { body := Encoder.encode(contentEncoding, body) })
+  if( hasTransferEncoding then: { body := Encoder.encode(transferEncoding, body) })
 }
 
-decodeBody
+decodeBody :Void
+  (* *)
 {
-  hasTransferEncoding ? { body := Encoder.decode(transferEncoding, body) },
-  hasContentEncoding ? { body := Encoder.decode(contentEncoding, body) }
+  if( hasTransferEncoding then: { body := Encoder.decode(transferEncoding, body) })
+  if( hasContentEncoding then: { body := Encoder.decode(contentEncoding, body) })
 }
 
 copy :Self
+  (* *)
 {
-  let c = shallowCopy,
-  (* ## typechecker *)
-  headers := _typeCast(headers.copy),
-  body    := _typeCast(body.copy),
+  c ::= shallowCopy
+  ; ## typechecker 
+  headers := _typeCast(headers.copy)
+  body    := _typeCast(body.copy)
 
   c
 }
 
-noCache
+noCache :Void
   (* add a header indicating that caching MUST NOT occur *)
 {
-  let nocache = "nocache",
-  hasPragma
-    ? { pragma := List.cons(nocache, pragma) }
-    : { pragma := List.with1(nocache) },
-  cacheControl := nocache,
-  (* expire now: *)
+  nocache ::= "nocache"
+  if( hasPragma
+    then: { pragma := List.cons(nocache, pragma) }
+    else: { pragma := List.with1(nocache) })
+  cacheControl := nocache
+  ; expire now: 
   headers["expires"] := HttpExpiresHeader.fromString("now")
 }
 
 private
-methods
 
-
-;
+}

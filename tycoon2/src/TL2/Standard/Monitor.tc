@@ -32,12 +32,10 @@ meta AbstractClass
 {
 private
 
-_monitorWaiters :Condition
-
+_monitorWaiters @:Condition
   (* threads waiting to enter the monitor *)
 
 _monitorNestingLevel :Int
-
   (* count of (re-)entrances *)
 
 _monitorOwner :Thread(Void)
@@ -47,16 +45,16 @@ _init :Void
   (* establish a weak reference to the receiver *)
 {
   super._init
-  _monitorWaiters := _createMonitorWaiters
+  _monitorWaiters := _createMonitorWaiters@
   _monitorNestingLevel := 0
   _monitorOwner := nil
   self
 }
 
-_createMonitorWaiters :Condition
+_createMonitorWaiters @:Condition
   (* *)
 {
-  Condition.new
+  Condition.new@
 }
 
 synchronize(T <:Void, statement :Fun():T) :T

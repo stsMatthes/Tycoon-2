@@ -21,10 +21,10 @@
 /*
   Copyright (c) 1996 Higher-Order GmbH, Hamburg. All rights reserved.
 
-  tyc.c 1.17 98/05/18 Marc Weikard
+  $File: //depot/tycoon2/stsmain/tycoon2/src/tm/tyc.c $ $Revision: #3 $ $Date: 2003/10/01 $ Marc Weikard
 
   Tycoon Objects
-
+  
 */
 
 #include <string.h>
@@ -118,4 +118,5 @@ tsp_OID * tyc_boxReal(Real value)
   ((tyc_Real*)pNew)->value = value;
   return pNew;
 }
+
 

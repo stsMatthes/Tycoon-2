@@ -1,5 +1,5 @@
 class TVMStack
-super MutableArray(Object)
+super Object
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -22,6 +22,9 @@ super MutableArray(Object)
 
   a runtime system stack
 
+  a variable-sized object that cannot be directly accessed from TL2.
+  (some elements are tagged tycoon objects, some are pointers into bytecode
+   arrays, and some are pointers inside the stack object)
 *)
 meta AbstractClass
 {

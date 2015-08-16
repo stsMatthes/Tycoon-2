@@ -19,7 +19,7 @@
  *
  */
 /*
-  tosProcess.h 1.0 final  12-AUG-1998  Andre Willomat
+  $File: //depot/tycoon2/stsmain/tycoon2/src/tycoonOS/tosProcess.c $ $Revision: #3 $ $Date: 2003/10/01 $ Andreas Gawecki, Andre Willomat
 
   Interface to Portable Tycoon-2 operating system (TycoonOS)
 

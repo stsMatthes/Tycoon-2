@@ -1,0 +1,269 @@
+<stml class='BMAdQuery'>  <!-- Default: TBOPage -->
+  
+<html>
+
+<title>
+SGML-basierte Programmierung dynamischer Seiten
+</title>
+
+<body>
+
+Eine Variable definieren, inkl. Initialisierung:
+
+  <let name=x>
+    <b>Dies ist fetter Text als Wert</b>
+  </let>
+
+  <let name=y>
+   Ein <a href="http://www.higher-order.de">Anker</a>
+   als Wert, plus dieser Text drumrum. 
+  </let>
+
+Eine Variable referenzieren:
+  <ref name=x>
+
+Konditional:
+
+  <if true="self.client.cookie.date < Date.now">
+    <p> ein absatz. x = <ref name=x>
+  <elseif true="a = b">
+    <if true="self.client.cookie.date < Date.now">
+       abcd
+    <elseif true="a = b">
+      efgh
+    <else>
+      ijkl
+    </if>
+    mnop
+    <!--
+    -->
+    <tycoon>
+      out.writeln("<b>asdfaf</" + "b>")
+      otherTbo.printOn(out, client, data)
+    </tycoon>
+  <else>
+    <p> nocheinandrer absatz
+  </if>
+
+Eine Funktion definieren:
+
+  <let name=f>
+    <fun param="a , b">    <!--fun param='a, b :%float'>  <proc ...-->
+
+     <!-- Typisierung ueber content-model?
+	  -> Parsing der DTD!
+      -->
+
+      <p>Eine Liste mit drei Variablen:
+      
+      <OL>
+	<LI> x (global): <ref name=x>
+	<LI> a (lokal): <ref name=a>
+	<LI> b (lokal): <ref name=b>
+      </OL>
+
+
+     
+      Zuweisung:
+      <assign name=x>
+	<em>Neuer Wert fuer x, in SGML berechnet!</em>
+      </assign>
+
+
+    <tycoon>
+      ...
+      out.writeln("Dynamischer Inhalt"),
+      ...
+    </tycoon>
+
+
+    </fun>
+  </let>
+
+Shortcut?:
+
+<!--
+  <defun name=f param='a, b'>
+    <OL>
+    ...
+  </defun>
+-->
+
+Eine Funktion aufrufen:
+
+  <apply name=f>
+    <arg>Aktueller Parameter fuer <em>a</em>
+    <arg name=b> Aktueller Parameter fuer <em>b</em>
+    <arg name=b></apply>
+
+
+  <apply name=tboRepeat>
+    <arg><fun param="newsFirstPara, newsText, newsImage">
+      bla bla
+      <b><ref name=newsFirstPara></b>
+      blib blurb
+  </apply>
+
+ same as:
+
+  <let name=f>
+    <fun param="newsFirstPara, newsText, newsImage">
+      bla bla
+      <b><ref name=newsFirstPara></b>
+      blib blurb
+  </let>
+  
+  <tycoon>
+     tboRepeat[f]
+  </tycoon>
+
+Nachrichten senden:
+
+  <send selector=tboRepeat receiver="self">
+  
+    <!-- tboRepeat(out :Output, f :Fun3(String, String, String, Void)) :Void  -->
+    
+    <!-- tboRepeat(f :Fun3(String, String, String, String)) :String  -->
+    
+    <arg><fun param="newsFirstPara, newsText, newsImage">
+      bla bla
+      <b><ref name=newsFirstPara></b>
+      blib blurb
+  </send>
+
+  <!--
+    <tbo.repeat>
+      bla bla
+      <b><tbo.firstPara></b>
+      blib blurb
+    </tbo.repeat>
+  -->
+  
+
+ same as:
+
+  <let name=f> <!-- :Fun3(String, String,String,String)  -->
+    <fun param="newsFirstPara, newsText, newsImage">
+      bla bla
+      <b><ref name=newsFirstPara></b>
+      blib blurb
+  </let>
+  
+
+  <tycoon>
+     self.tboRepeat(f)
+
+     
+     client.kfzQuery
+
+     (*
+        dpaClients[client].kfzQuery
+
+        xxxx[client].prop
+     *)
+     
+     client.prop
+
+     request
+     
+  </tycoon>
+
+ <!--
+  <send selector=tboRepeat>
+     <arg><fun param="news">
+       bla bla
+       <b><eval expr='news.firstParagraph'></b>
+       blib blurb
+   </send>
+  -->
+  
+ <send selector=tboRepeat>
+    <arg><fun param="news">
+      bla bla
+      <b><tycoon>news.firstParagraph</tycoon></b>
+      blib blurb
+  </send>
+  
+ 
+Tycoon-Code aufrufen:
+
+a) Ueber Backquotes:
+   
+   <font size="`client.preferredFontSize`">
+     Schrift in bevorzugter Schriftgroesse
+   </font>
+
+b) Ueber tycoon-Tag:
+
+  <tycoon>
+    (* Sichtbar sind hier:
+         - alle SGML-Bezeichner (x,f):
+	    'Normale' Bezeichner sind vom Typ String
+	    Funktionsbezeichner vom Typ FunN(T1,T2,..TN) :T
+  	    zunaechst Ti und T gleich 'String',
+	    wobei auch Higher-Order Funktions zugelassen werden koennten
+	 - self (Diese Seite, ein Exemplar der mit tbo.class angegebenen
+	   Klasse) und damit alle Methoden (inkl. Slots) dieser Klasse
+	 - in Tycoon-Tags vorher eingefuehrte Bezeichner (Nested Scoping)
+	 - Parameter der emit-Methode, welche den SGML-Ausstoss anschmeisst, z.B.
+	     out :Output
+	     request :HttpRequest   alle Http-Header, evtl. zzgl. wieterer
+				    Informationen (Form-Fiels etc)
+	     client		    Persistente Klienten-Information
+	 
+    *)
+
+    out.writeln("Dynamischer Inhalt,"),
+    out.writeln("gemischt mit statischen Elementen: " + x),
+    ...
+    x := "<b>neuer Inhalt von x, in Tycoon berechnet</" + "b>"
+	 
+  </tycoon>
+
+c) Ueber eval-Tag?
+
+  <!-- <eval expr='...'> -->
+  
+  shortcut fuer  <tycoon> ... </tycoon>
+
+d) Ueber Short References1?
+
+   {tycoon.date.printOn(out) }
+  
+  shortcut fuer  <tycoon> ... </tycoon>
+
+
+
+Vorteile der SGML-basierte Programmierung:
+
+  - Syntax-Ueberpruefung 
+  - 'Type Checking', d.h. Content Model Checking anhand der DTD optional
+    moeglich
+  - Verwendung von SGML-Strukturen innerhalb von Tyconn-Code einfach zu
+    realisieren: den Aufbau der Struktur uebernimmt der SGML-Parser
+    
+
+
+Nachteile:
+
+  - Wieder eine Programmiersprache mit eigener Syntax und Semantik
+    => Abbildung auf Tycoon-Code moeglichst einfach gestalten,
+       so dass entstehende Tycoon-Werkzeuge (Debugger!) auch
+       fuer SGML-'Programmcode' verfuegbar sind
+
+  - ?
+
+Entit&auml;ten: &auml;&ouml;&uuml;&Auml;&Ouml;&Uuml;&szlig;
+
+
+
+<input type=checkbox name=xxx value=vvv>
+<input type=checkbox name=xxx value=www checked>
+<input type=checkbox name=xxx value=vvv checked="checked">
+<input type=checkbox name=xxx value=vvv checked=checked>
+
+</body>  
+</html>  
+
+
+

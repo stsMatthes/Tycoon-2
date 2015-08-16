@@ -1,0 +1,74 @@
+<!-- Copyright (c) 1996, 1997 Higher-Order GmbH, Hamburg. All rights reserved.
+
+     stml-html4.dtd 1.0 97/08/28  Ingo Richtsmeier
+
+     Stml extensions for HTML4
+
+     adapted form stml-html-cougar.dtd
+-->     
+
+<!-- include STML entities: -->
+<!ENTITY % stml.en system "stml.en">
+%stml.en
+
+<!-- include HTML productions: -->
+<!ENTITY % html.dtd system "html4-stml.dtd">
+%html.dtd
+
+<!-- All HTML4.0 Elements -->
+<!ENTITY % html.body.any "#PCDATA 
+  | %font 
+  | %phrase 
+  | %special
+  | %formctrl
+  | %blocklevel
+  | AREA
+  | BASE
+  | CAPTION
+  | COL
+  | COLGROUP
+  | DD
+  | DEL
+  | DT
+  | FRAME
+  | FRAMESET
+  | HTML
+  | INS
+  | LEGEND
+  | LI
+  | LINK
+  | META
+  | OPTION
+  | PARAM
+  | STYLE
+  | TBODY
+  | TD
+  | TFOOT
+  | TH
+  | THEAD
+  | TITLE
+  | TR
+">
+ 
+<!--  BODY, HEAD, HTML, TBODY 
+
+      optional start tag, therefore will never be generated
+      within %base.any anyway
+
+	==> insert during "DTD Type Checking"??
+-->
+
+<!ENTITY % stml.any "((%html.body.any|(HEAD, BODY?)))*"
+  -- this allows sequences of HEAD, BODY, HEAD, BODY, P, HEAD, <P> ...,
+     for example. These will be rejected by the STML content type checker.
+     using "((%html.body.any)* |(HEAD, BODY?))"
+     here causes mixed content warnings.
+  -->
+
+
+<!ENTITY % stml.base.root "HTML" -- the root production of HTML --> 
+
+<!-- include STML productions: -->
+<!ENTITY % stml.prod system "stml.prod">
+%stml.prod
+

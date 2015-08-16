@@ -1,261 +1,273 @@
 class BPuzzle
 super Benchmark
-metaclass SimpleConcreteClass(BPuzzle)
-
-
+(**)
+meta SimpleConcreteClass(BPuzzle)
+{
 private
 
-pSize      :Int,
-classMax   :Int,
-typeMax    :Int,
-d          :Int,
-pieceCount :MutableArray(Int),
-pClass     :MutableArray(Int),
-pieceMax   :MutableArray(Int),
-puzzle     :MutableArray(Bool),
-p          :MutableArray(MutableArray(Bool)),
-n          :Int,
+pSize      :Int
+
+classMax   :Int
+
+typeMax    :Int
+
+d          :Int
+
+pieceCount :MutableArray(Int)
+
+pClass     :MutableArray(Int)
+
+pieceMax   :MutableArray(Int)
+
+puzzle     :MutableArray(Bool)
+
+p          :MutableArray(MutableArray(Bool))
+
+n          :Int
+
 count      :Int
 
-methods
-
 fit(i :Int, j :Int) :Bool
+  (* *)
 {
-  try({ for(0,pieceMax[i],fun(k :Int)
-            { p[i][k]
-	       ? { puzzle[j+k] ? {BPuzzleException.new.raise} }}),
-	true},
+  try({ for(0 to:pieceMax[i] do:fun(k :Int)
+            { if( p[i][k]
+	       then: { if( puzzle[j+k] then: {BPuzzleException.new.raise}) })})
+	true} else:
       fun(e :Exception)
          { false })
 }
 
-
 place(i :Int,j :Int) :Int
+  (* *)
 {
-   for(0, pieceMax[i],
+   for(0 to: pieceMax[i] do:
        fun(k :Int)
-         { p[i][k] ? { puzzle[j+k] := true }}),
-   pieceCount[pClass[i]] := pieceCount[pClass[i]] - 1,
-   try({ for(j, pSize,
-             fun(k :Int) { !puzzle[k] ? { let e = BPuzzleException.new,
-	                                  e.val := k,
-					  e.raise }}),
-	 0 },
+         { if( p[i][k] then: { puzzle[j+k] := true })})
+   pieceCount[pClass[i]] := pieceCount[pClass[i]] - 1
+   try({ for(j to: pSize do:
+             fun(k :Int) { if( !puzzle[k] then: { e ::= BPuzzleException.new
+	                                  e.val := k
+					  e.raise })})
+	 0 } else:
        fun(e :Exception)
-         { let ee = _typeCast(e, :BPuzzleException),
+         { ee ::= _typeCast(e, :BPuzzleException)
            ee.val 
          })
 }
 
 remove(i :Int,j :Int) :Void
+  (* *)
 {
-  for(0,pieceMax[i],
+  for(0 to:pieceMax[i] do:
       fun(k :Int)
-        { p[i][k] ? { puzzle[j+k] := false } }),
+        { if( p[i][k] then: { puzzle[j+k] := false }) })
   pieceCount[pClass[i]] := pieceCount[pClass[i]] + 1
 }
 
-
 trial(j :Int) :Bool
+  (* *)
 {
-  count := count + 1,
-  try({ for(0,typeMax,
+  count := count + 1
+  try({ for(0 to:typeMax do:
             fun(i :Int)
-	    {  pieceCount[pClass[i]] != 0
-	        ? { fit(i,j)
-		     ? { let k = place(i,j),
-		         trial(k) || { k == 0}
-			   ? { BPuzzleException.new.raise }
-			   : { remove(i,j) }
-		       }
-		   }
-	    }),
-	false },
+	    {  if( pieceCount[pClass[i]] != 0
+	        then: { if( fit(i,j)
+		     then: { k ::= place(i,j)
+		         if( trial(k) ||  k == 0
+			   then: { BPuzzleException.new.raise }
+			   else: { remove(i,j) })
+		       })
+		   })
+	    })
+	false } else:
 	fun(e :Exception)
 	  { true })
 }
 
-	 
 _setup() :Void
+  (* *)
 {
-  pSize := 511,
-  classMax := 3,
-  typeMax := 12,
-  d := 8,
-  pieceCount := MutableArray.new(classMax+1),
-  for(0,pieceCount.size-1,fun(i :Int) {pieceCount[i] := 0}),
-  pClass := MutableArray.new(typeMax+1),
-  for(0,pClass.size-1,fun(i :Int) {pClass[i] := 0}),
-  pieceMax := MutableArray.new(typeMax+1),
-  for(0,pieceMax.size-1,fun(i :Int) {pieceMax[i] := 0}),
-  puzzle := MutableArray.new(pSize+1),
-  for(0,puzzle.size-1,fun(i :Int) {puzzle[i] := false}),
-  p := MutableArray.new(typeMax+1),
-  for(0,p.size-1,
+  pSize := 511
+  classMax := 3
+  typeMax := 12
+  d := 8
+  pieceCount := MutableArray.new(classMax+1)
+  for(0 to:pieceCount.size-1 do:fun(i :Int) {pieceCount[i] := 0})
+  pClass := MutableArray.new(typeMax+1)
+  for(0 to:pClass.size-1 do:fun(i :Int) {pClass[i] := 0})
+  pieceMax := MutableArray.new(typeMax+1)
+  for(0 to:pieceMax.size-1 do:fun(i :Int) {pieceMax[i] := 0})
+  puzzle := MutableArray.new(pSize+1)
+  for(0 to:puzzle.size-1 do:fun(i :Int) {puzzle[i] := false})
+  p := MutableArray.new(typeMax+1)
+  for(0 to:p.size-1 do:
     fun(i :Int)
     {
-      let q = MutableArray.new(pSize+1),
-      for (0,q.size-1, fun(k :Int) {q[k] := false}),
+      q ::= MutableArray.new(pSize+1)
+      for(0 to:q.size-1 do: fun(k :Int) {q[k] := false})
       p[i] := q
-    }),
-  n := 0,
+    })
+  n := 0
   count := 0
 }
 
 _run() :Void
+  (* *)
 {
-  for(0,pSize,fun(i :Int) { puzzle[i] := true }),
-  for(1,5, fun(i :Int)
-    { for(1,5, fun(j :Int)
-	{  for(1,5,
+  for(0 to:pSize do:fun(i :Int) { puzzle[i] := true })
+  for(1 to:5 do: fun(i :Int)
+    { for(1 to:5 do: fun(j :Int)
+	{  for(1 to:5 do:
 	     fun(k :Int) { puzzle[i + (d*(j+(d*k)))] := false })
 	})
-     }),
+     })
      
-  for(0,pSize, fun(m :Int) { p[0][m] := false }),
-  for(1,typeMax, fun(i :Int)
-    { for(0,p[0].size-1,
+  for(0 to:pSize do: fun(m :Int) { p[0][m] := false })
+  for(1 to:typeMax do: fun(i :Int)
+    { for(0 to:p[0].size-1 do:
         fun(k :Int) { p[i][k] := p[0][k] })
-    }),
+    })
      
-  for(0,3, fun(i :Int)
-    { for(0,1, fun(j :Int)
-        { for(0,0, fun(k :Int) { p[0][i+(d*(j+(d*k)))] := true })
+  for(0 to:3 do: fun(i :Int)
+    { for(0 to:1 do: fun(j :Int)
+        { for(0 to:0 do: fun(k :Int) { p[0][i+(d*(j+(d*k)))] := true })
 	})
-    }),
+    })
 
-  pClass[0] := 0,
-  pieceMax[0] := 3 + (d * 1)  + (d * d * 0), (*
- * This file is part of the Tycoon-2 system.
- *
- * The Tycoon-2 system is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation (Version 2).
- *
- * The Tycoon-2 system is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty
- * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public
- * License along with the Tycoon-2 system; see the file LICENSE.
- * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
- * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
- * 
- * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
- *
- ? test constant folder ? *)
+  pClass[0] := 0
+  pieceMax[0] := 3 + (d * 1)  + (d * d * 0) ;
+; * This file is part of the Tycoon-2 system.
+; *
+; * The Tycoon-2 system is free software; you can redistribute it and/or
+; * modify it under the terms of the GNU General Public License
+; * as published by the Free Software Foundation (Version 2).
+; *
+; * The Tycoon-2 system is distributed in the hope that it will be useful,
+; * but WITHOUT ANY WARRANTY; without even the implied warranty
+; * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+; * See the GNU General Public License for more details.
+; * 
+; * You should have received a copy of the GNU General Public
+; * License along with the Tycoon-2 system; see the file LICENSE.
+; * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+; * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+; * 
+; * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+; *
+; ? test constant folder ? 
 
-  for(0,1,fun(i :Int)
-    { for(0,0,fun(j :Int)
-      { for(0,3,fun(k :Int) { p[1][i+(d*(j+(d*k)))] := true })
+  for(0 to:1 do:fun(i :Int)
+    { for(0 to:0 do:fun(j :Int)
+      { for(0 to:3 do:fun(k :Int) { p[1][i+(d*(j+(d*k)))] := true })
       })
-    }),
+    })
      
-  pClass[1] := 0,
-  pieceMax[1] := 1 + (d * 0) + (d * d * 3),
-  for(0,0, fun(i :Int)
-    { for(0,3, fun(j :Int)
-        { for(0,1, fun(k :Int) {p[2][i+(d*(j+(d*k)))] := true })
+  pClass[1] := 0
+  pieceMax[1] := 1 + (d * 0) + (d * d * 3)
+  for(0 to:0 do: fun(i :Int)
+    { for(0 to:3 do: fun(j :Int)
+        { for(0 to:1 do: fun(k :Int) {p[2][i+(d*(j+(d*k)))] := true })
 	})
-    }),
-  pClass[2] := 0,
-  pieceMax[2] := 0 + (d*3) + (d * d * 1),
-  for(0,1, fun(i :Int)
-    { for(0,3, fun(j :Int)
-        { for(0,0, fun(k :Int) { p[3][i+(d*(j+(d*k)))] := true })
+    })
+  pClass[2] := 0
+  pieceMax[2] := 0 + (d*3) + (d * d * 1)
+  for(0 to:1 do: fun(i :Int)
+    { for(0 to:3 do: fun(j :Int)
+        { for(0 to:0 do: fun(k :Int) { p[3][i+(d*(j+(d*k)))] := true })
 	})
-    }),
+    })
 
-  pClass[3] := 0,
-  pieceMax[3] := 1 + (d*3) + (d*d*0),
-  for(0,3, fun(i :Int)
-    { for(0,0, fun(j :Int)
-        { for(0,1, fun(k :Int) { p[4][i+(d*(j+(d*k)))] := true })
+  pClass[3] := 0
+  pieceMax[3] := 1 + (d*3) + (d*d*0)
+  for(0 to:3 do: fun(i :Int)
+    { for(0 to:0 do: fun(j :Int)
+        { for(0 to:1 do: fun(k :Int) { p[4][i+(d*(j+(d*k)))] := true })
 	})
-    }),
+    })
 
     
-  pClass[4] := 0,
-  pieceMax[4] := 3 + (d * 0 ) + (d*d*1),
-  for(0,0, fun(i :Int)
-    { for(0,1, fun(j :Int)
-        { for(0,3, fun(k :Int) { p[5][i+(d*(j+(d*k)))] := true })
+  pClass[4] := 0
+  pieceMax[4] := 3 + (d * 0 ) + (d*d*1)
+  for(0 to:0 do: fun(i :Int)
+    { for(0 to:1 do: fun(j :Int)
+        { for(0 to:3 do: fun(k :Int) { p[5][i+(d*(j+(d*k)))] := true })
 	})
-    }),
+    })
    
-  pClass[5] := 0,
-  pieceMax[5] := 0 + (d * 1) + (d*d*3),
-  for(0,2, fun(i :Int)
-    { for(0,0, fun(j :Int)
-        { for(0,0, fun(k :Int) { p[6][i+(d*(j+(d*k)))] := true })
+  pClass[5] := 0
+  pieceMax[5] := 0 + (d * 1) + (d*d*3)
+  for(0 to:2 do: fun(i :Int)
+    { for(0 to:0 do: fun(j :Int)
+        { for(0 to:0 do: fun(k :Int) { p[6][i+(d*(j+(d*k)))] := true })
 	})
-    }),
+    })
   
-  pClass[6] := 1,
-  pieceMax[6] := 2 + (d * 0) + (d*d*0),
-  for(0,0, fun(i :Int)
-    { for(0,2, fun(j :Int)
-        { for(0,0, fun(k :Int) { p[7][i+(d*(j+(d*k)))] := true })
+  pClass[6] := 1
+  pieceMax[6] := 2 + (d * 0) + (d*d*0)
+  for(0 to:0 do: fun(i :Int)
+    { for(0 to:2 do: fun(j :Int)
+        { for(0 to:0 do: fun(k :Int) { p[7][i+(d*(j+(d*k)))] := true })
 	})
-    }),
+    })
  
-  pClass[7] := 1,
-  pieceMax[7] := 0 + (d * 2) + (d*d*0),
-  for(0,0, fun(i :Int)
-    { for(0,0, fun(j :Int)
-        { for(0,2, fun(k :Int) { p[8][i+(d*(j+(d*k)))] := true })
+  pClass[7] := 1
+  pieceMax[7] := 0 + (d * 2) + (d*d*0)
+  for(0 to:0 do: fun(i :Int)
+    { for(0 to:0 do: fun(j :Int)
+        { for(0 to:2 do: fun(k :Int) { p[8][i+(d*(j+(d*k)))] := true })
 	})
-    }),
+    })
  
-  pClass[8] := 1,
-  pieceMax[8] := 0 + (d * 0) + (d*d*2),
-  for(0,1, fun(i :Int)
-    { for(0,1, fun(j :Int)
-        { for(0,0, fun(k :Int) { p[9][i+(d*(j+(d*k)))] := true })
+  pClass[8] := 1
+  pieceMax[8] := 0 + (d * 0) + (d*d*2)
+  for(0 to:1 do: fun(i :Int)
+    { for(0 to:1 do: fun(j :Int)
+        { for(0 to:0 do: fun(k :Int) { p[9][i+(d*(j+(d*k)))] := true })
 	})
-    }),
+    })
  
-  pClass[9] := 2,
-  pieceMax[9] := 1 + (d * 1) + (d*d*0),
-  for(0,1, fun(i :Int)
-    { for(0,0, fun(j :Int)
-        { for(0,1, fun(k :Int) { p[10][i+(d*(j+(d*k)))] := true })
+  pClass[9] := 2
+  pieceMax[9] := 1 + (d * 1) + (d*d*0)
+  for(0 to:1 do: fun(i :Int)
+    { for(0 to:0 do: fun(j :Int)
+        { for(0 to:1 do: fun(k :Int) { p[10][i+(d*(j+(d*k)))] := true })
 	})
-    }),
+    })
  
-  pClass[10] := 2,
-  pieceMax[10] := 1 + (d * 0) + (d*d*1),
-  for(0,0, fun(i :Int)
-    { for(0,1, fun(j :Int)
-        { for(0,1, fun(k :Int) { p[11][i+(d*(j+(d*k)))] := true })
+  pClass[10] := 2
+  pieceMax[10] := 1 + (d * 0) + (d*d*1)
+  for(0 to:0 do: fun(i :Int)
+    { for(0 to:1 do: fun(j :Int)
+        { for(0 to:1 do: fun(k :Int) { p[11][i+(d*(j+(d*k)))] := true })
 	})
-    }),
+    })
     
-  pClass[11] := 2,
-  pieceMax[11] := 0 + (d * 1) + (d*d*1),
-  for(0,1, fun(i :Int)
-    { for(0,1, fun(j :Int)
-        { for(0,1, fun(k :Int) { p[12][i+(d*(j+(d*k)))] := true })
+  pClass[11] := 2
+  pieceMax[11] := 0 + (d * 1) + (d*d*1)
+  for(0 to:1 do: fun(i :Int)
+    { for(0 to:1 do: fun(j :Int)
+        { for(0 to:1 do: fun(k :Int) { p[12][i+(d*(j+(d*k)))] := true })
 	})
-    }),
+    })
 
-  pClass[12] := 3,
-  pieceMax[12] := 1+(d*1)+(d*d*1),
-  pieceCount[0] := 13,
-  pieceCount[1] := 3,
-  pieceCount[2] := 1,
-  pieceCount[3] := 1,
-  let m = 1 + (d*(1+(d*1))),
-  count := 0,
-  fit(0,m)
-    ? { let n = place(0,m),
-        trial(n)
-	  ? { count != 2005
-	       ? { "\nError3 in Puzzle!\n".print }
+  pClass[12] := 3
+  pieceMax[12] := 1+(d*1)+(d*d*1)
+  pieceCount[0] := 13
+  pieceCount[1] := 3
+  pieceCount[2] := 1
+  pieceCount[3] := 1
+  m ::= 1 + (d*(1+(d*1)))
+  count := 0
+  if( fit(0,m)
+    then: { n ::= place(0,m)
+        if( trial(n)
+	  then: { if( count != 2005
+	       then: { "\nError3 in Puzzle!\n".print })
 	    }
-	  : { "\nError2 in Puzzle!\n".print }
+	  else: { "\nError2 in Puzzle!\n".print })
        }
-    :  { "\nError1 in Puzzle!\n".print }
+    else:  { "\nError1 in Puzzle!\n".print })
 }
-;
+
+}

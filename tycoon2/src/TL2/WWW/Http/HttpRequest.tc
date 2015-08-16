@@ -1,14 +1,19 @@
 class HttpRequest
 super HttpEntityMessage
+(**)
+meta HttpRequestClass()
 
-public
+{
+method :String
 
-method :String,
-uri    :String,
-major  :Int,
-minor  :Int,
+uri    :String
+
+major  :Int
+
+minor  :Int
+
 connectedAddress :IPAddress
-(*
+  (*
  * This file is part of the Tycoon-2 system.
  *
  * The Tycoon-2 system is free software; you can redistribute it and/or
@@ -31,9 +36,6 @@ connectedAddress :IPAddress
    If we use the CGI gateway, this is the local
    webserver. remoteAddress will always give the
    address of the `real' client *)
-  
-
-methods
 
 setContext(context :URL) :Void
   (* record the context of this request.
@@ -47,85 +49,142 @@ setContext(context :URL) :Void
 }
 
 url :URL
+  (* *)
 {
-  _url.isNil ? {
+  if( _url.isNil then: {
     _url := URL.fromString(uri)
-  },
+  })
   _url
 }
 
 parser :MimeMessageParser(Self)
+  (* *)
 {
   HttpRequestParser.new
 }
 
-hasAccept :Bool { hasHeader("Accept") }
-accept :List(HttpAccept) { headerValue("accept") }
-"accept:="(a :List(HttpAccept)) { setHeaderValue("accept", AcceptListHeader, a) }
+hasAccept :Bool
+  (* *)
+{ hasHeader("Accept") }
 
-hasIfModifiedSince :Bool { hasHeader("if-modified-since") }
-ifModifiedSince :Date { headerValue("if-modified-since") }
-"ifModifiedSince:="(d :Date) { setHeaderValue("if-modified-since", MimeDate, d) }
+accept :List(HttpAccept)
+  (* *)
+{ headerValue("accept") }
 
-hasCookies :Bool { hasHeader("Cookie") }
-cookies :List(HttpCookie) { headerValue("Cookie") }
-"cookies:="(c :List(HttpCookie)) { setHeaderValue("Cookie", HttpCookiesHeader, c) }
+"accept:="(a :List(HttpAccept)) :Void
+  (* *)
+{ setHeaderValue("accept", AcceptListHeader, a) }
 
-hasAuthorization :Bool { hasHeader("Authorization") }
-authorization :HttpCredentials { headerValue("Authorization") }
-"authorization:="(c :HttpCredentials) { setHeaderValue("Authorization", HttpCredentialsHeader, c) }
+hasIfModifiedSince :Bool
+  (* *)
+{ hasHeader("if-modified-since") }
 
-hasUserAgent :Bool { hasHeader("user-agent") }
-userAgent :List(HttpProduct) { headerValue("user-agent") }
-"userAgent:="(ua :List(HttpProduct)) { setHeaderValue("user-agent", HttpProductListHeader, ua) }
+ifModifiedSince :Date
+  (* *)
+{ headerValue("if-modified-since") }
 
-hasRemoteHost :Bool { hasHeader("x-cgi2tl-remote-host") }
-remoteHost :String { headerValue("x-cgi2tl-remote-host") }
-"remoteHost:="(rh :String) { setHeaderValue("x-cgi2tl-remote-host", MimeString, rh) }
+"ifModifiedSince:="(d :Date) :Void
+  (* *)
+{ setHeaderValue("if-modified-since", MimeDate, d) }
 
-hasRemoteAddress :Bool { true }
-remoteAddress :IPAddress {
-  !hasHeader("x-cgi2tl-remote-addr") ? {
-    connectedAddress
-  } : {
-    headerValue("x-cgi2tl-remote-addr")
-  }
-}
-"remoteAddress:="(a :IPAddress) { setHeaderValue("x-cgi2tl-remote-addr", IPAddressHeader, a) }
+hasCookies :Bool
+  (* *)
+{ hasHeader("Cookie") }
 
+cookies :List(HttpCookie)
+  (* *)
+{ headerValue("Cookie") }
 
-emit(out :Output)
+"cookies:="(c :List(HttpCookie)) :Void
+  (* *)
+{ setHeaderValue("Cookie", HttpCookiesHeader, c) }
+
+hasAuthorization :Bool
+  (* *)
+{ hasHeader("Authorization") }
+
+authorization :HttpCredentials
+  (* *)
+{ headerValue("Authorization") }
+
+"authorization:="(c :HttpCredentials) :Void
+  (* *)
+{ setHeaderValue("Authorization", HttpCredentialsHeader, c) }
+
+hasUserAgent :Bool
+  (* *)
+{ hasHeader("user-agent") }
+
+userAgent :List(HttpProduct)
+  (* *)
+{ headerValue("user-agent") }
+
+"userAgent:="(ua :List(HttpProduct)) :Void
+  (* *)
+{ setHeaderValue("user-agent", HttpProductListHeader, ua) }
+
+hasRemoteHost :Bool
+  (* *)
+{ hasHeader("x-cgi2tl-remote-host") }
+
+remoteHost :String
+  (* *)
+{ headerValue("x-cgi2tl-remote-host") }
+
+"remoteHost:="(rh :String) :Void
+  (* *)
+{ setHeaderValue("x-cgi2tl-remote-host", MimeString, rh) }
+
+hasRemoteAddress :Bool
+  (* *)
+{ true }
+
+remoteAddress :IPAddress
+  (* *)
 {
-  (* request line *)
-  out.writeString(method),
-  out.write(' '),
-  out.writeString(uri),
-  out.writeString(" HTTP/"),
-  major.printOn(out),
-  out.write('.'),
-  minor.printOn(out),
-  out.writeString("\r\n"),
+  if( !hasHeader("x-cgi2tl-remote-addr") then: {
+    connectedAddress
+  } else: {
+    headerValue("x-cgi2tl-remote-addr")
+  })
+}
+
+"remoteAddress:="(a :IPAddress) :Void
+  (* *)
+{ setHeaderValue("x-cgi2tl-remote-addr", IPAddressHeader, a) }
+
+emit(out :Output) :Void
+  (* *)
+{
+  ; request line 
+  out.writeString(method)
+  out.write(' ')
+  out.writeString(uri)
+  out.writeString(" HTTP/")
+  major.printOn(out)
+  out.write('.')
+  minor.printOn(out)
+  out.writeString("\r\n")
   super.emit(out)
 }
 
-private 
-
+private
 
 _url :URL
-
-methods
 
 _init6(m :String, u :String, ma :Int, mi :Int,
        h :MimeHeaderDictionary(MimeHeaderValue),
        b :Input) :Self
+  (* *)
 {
-  _init2(h, b),
+  _init2(h, b)
 
-  method := m,
-  uri    := u,
-  major  := ma,
-  minor  := mi,
+  method := m
+  uri    := u
+  major  := ma
+  minor  := mi
 
   self
 }
-;
+
+}

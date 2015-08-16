@@ -21,10 +21,10 @@
 /*
   Copyright (c) 1996 Higher-Order GmbH, Hamburg. All rights reserved.
 
-  static.h 1.23 98/05/18 Andreas Gawecki, Marc Weikard, Andre Willomat
+  $File: //depot/tycoon2/stsmain/tycoon2/src/tm/static.h $ $Revision: #3 $ $Date: 2003/10/01 $ Andreas Gawecki, Marc Weikard, Andre Willomat
 
   List of statically linked symbols
-
+  
   Add lines in the form
 
     LIB(lib,ext)
@@ -33,9 +33,9 @@
     ...
     SYM(symN)
     ENDLIB
-
+    
   for each symbol sym1..symN and library "lib.ext" you will reference from TYC.
-
+  
 */
 
 
@@ -84,7 +84,7 @@
   SYM(SQLTables)
   SYM(SQLTransact)
   ENDLIB
-
+  
 #endif
 
 #ifdef rt_LIB_OCI
@@ -92,7 +92,7 @@
   /* ORACLE V7 OCI */
 
   LIB(libocic,so)
-
+  
   SYM(orlon)
   SYM(olog)
   SYM(ologof)
@@ -114,9 +114,9 @@
   SYM(orol)
   SYM(ocon)
   SYM(ocof)
-
+  
   ENDLIB
-
+  
 #endif
 
 #ifdef rt_LIB_ERX
@@ -130,7 +130,7 @@
   SYM(ERXReset)
   SYM(ERXUnregister)
   ENDLIB
-
+  
   LIB(libsag,so)
   SYM(ccalc_call)
   SYM(ccalc_result)
@@ -391,4 +391,3 @@
   SYM(tmprofile_setResolution)
   SYM(tmprofile_setMode)
   ENDLIB
-

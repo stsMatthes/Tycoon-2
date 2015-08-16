@@ -1,0 +1,77 @@
+<!-- Copyright (c) 1996 Higher-Order GmbH, Hamburg. All rights reserved.
+
+     $RCSfile$ $Revision$ %D%  Andreas Gawecki, Axel Wienberg
+
+     Stml element declarations common to all STML DTDs.
+-->     
+
+     
+<!ELEMENT define - - %stml.any>
+<!ATTLIST define		       -- variable declaration --
+        name      CDATA   #REQUIRED    -- name of this variable --
+	type	  CDATA   #IMPLIED     -- type of this variable --
+        >
+
+<!ELEMENT ref - - ANY>
+<!ATTLIST ref
+        name      CDATA   #REQUIRED    -- name of referenced variable --
+        >
+
+<!ELEMENT assign - O %stml.any>
+<!ATTLIST assign
+        name      CDATA   #REQUIRED    -- name of assigned variable --
+        >
+
+<!ELEMENT if - - (%stml.any, elseif*, else?)>
+<!ATTLIST if
+        true      CDATA   #REQUIRED    -- predicate --
+        >
+
+<!ELEMENT elseif - O %stml.any> <!-- -(elseif | else) -->
+<!ATTLIST elseif
+        true      CDATA   #REQUIRED    -- predicate --
+        >
+
+<!ELEMENT else - O %stml.any> <!-- -(elseif | else)-->
+
+<!ELEMENT fun - O %stml.any>
+<!ATTLIST fun
+        param      CDATA   #IMPLIED    -- parameter list --
+	type	   CDATA   #IMPLIED    -- return type --
+        >
+	
+<!ELEMENT apply - - (arg*)>  <!-- warning: may include floating %stml -->
+<!ATTLIST apply
+        name      CDATA   #REQUIRED    -- name of function --
+        >
+
+<!ELEMENT send - - (arg*)>  <!-- warning: may include floating %stml -->
+<!ATTLIST send
+        selector      CDATA   #REQUIRED   -- method selector --
+        receiver      CDATA   'self'	  -- receiver expression, default: self --
+        >
+
+<!ELEMENT arg - O (%stml.any)>
+<!ATTLIST arg
+        name      CDATA   #IMPLIED    -- name of assigned variable --
+        >
+
+<!ELEMENT tycoon - - RCDATA>
+
+<!--
+  <!ENTITY starttycoon "<tycoon>" >
+  <!ENTITY endtycoon "</tycoon>" >
+  <!SHORTREF tycoonmap
+     "[" starttycoon
+     "]" endtycoon
+     >
+  <!USEMAP tycoonmap STML>   
+-->
+
+<!ELEMENT stml O O  (%stml.base.root) +(%stml)>
+<!ATTLIST stml
+    processor   CDATA   #IMPLIED     -- Tycoon Class used to process this document --
+    language    CDATA   'tycoon-0.9' -- syntax for embedded tycoon expressions: --
+				     -- tycoon-0.9 or tycoon-1.0 --
+				     -- warning: default is ignored by STML framework --
+    >

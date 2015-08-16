@@ -1,55 +1,65 @@
 class CRawStringHolder
-
 super CValueHolder(MutableString)
-
-metaclass CRawStringHolderClass
-
-public methods
-
-valueClass():Class { MutableString }
+(**)
+meta CRawStringHolderClass
+{
+valueClass():Class
+  (* *)
+{ MutableString }
 
 value():MutableString
+  (* *)
 {
-  handle.isNotNil
-    ? {let a = MutableString.new(_length),
-       for(0,_length-1,fun (i:Int)
-         {a[i]:=tycoon.rts.tymem_peekChar(handle,i)}),
+  if( handle.isNotNil
+    then: {a ::= MutableString.new(_length)
+       for(0 to:_length-1 do:fun (i:Int)
+         {a[i]:=tycoon.tycoonOS.memory_peekChar(handle,i)})
        a}
-    : {let a:MutableString = nil}
+    else: {a:MutableString := nil})
 }
 
-rawStringValue():MutableString{ value() }
+rawStringValue():MutableString
+  (* *)
+{ value() }
 
-stringValue():String { value.isNotNil ? {String.fromSequence(value())}
-                                      : {nil} }
+stringValue():String
+  (* *)
+{ if( value.isNotNil then: {String.fromSequence(value())}
+                                      else: {nil}) }
 
 "value:="(s:MutableString):MutableString
+  (* *)
 {
-  handle.isNotNil ?
+  if( handle.isNotNil then:
   {
-    s.size <= _length
-      ? {for(0,s.size-1,fun (i:Int)
-           {tycoon.rts.tymem_pokeChar(handle,i,s[i])}),
-	 for(s.size,_length-1,fun (i:Int)
-	   {tycoon.rts.tymem_pokeChar(handle,i,'\000')}),
+    if( s.size <= _length
+      then: {for(0 to:s.size-1 do:fun (i:Int)
+           {tycoon.tycoonOS.memory_pokeChar(handle,i,s[i])})
+	 for(s.size to:_length-1 do:fun (i:Int)
+	   {tycoon.tycoonOS.memory_pokeChar(handle,i,'\000')})
          value()}
-      : {KeyNotFoundError.new(s,_length+1).raise}
+      else: {KeyNotFoundError.new(s,_length+1).raise})
   }
-  : {nil}
+  else: {nil})
 }
 
-setStringValue(v:String):String { value:=MutableString.fromReader(v.reader),
+setStringValue(v:String):String
+  (* *)
+{ value:=MutableString.fromReader(v.reader)
                                   stringValue() }
 
-setRawStringValue(v:MutableString):MutableString { value:= v }
+setRawStringValue(v:MutableString):MutableString
+  (* *)
+{ value:= v }
 
 setFileValue(v:File):File
+  (* *)
 {
-   let contents = MutableString.new(v.contentSize.asInt),
-   v.openRead,
-   v.readBuffer(contents,0,v.contentSize.asInt),
-   v.close,
-   value:=contents,
+   contents ::= MutableString.new(v.contentSize.asInt)
+   v.openRead
+   v.readBuffer(contents,0,v.contentSize.asInt)
+   v.close
+   value:=contents
    v
 }
 
@@ -57,13 +67,12 @@ private
 
 _length:Int
 
-methods
-
-_allocate(length:Int)
+_allocate(length:Int) :Void
+  (* *)
 {
-  super._init,
-  super._allocate(length),
-  for(0,length-1,fun (i:Int) {tycoon.rts.tymem_pokeChar(handle,i,'\000')})
+  super._init
+  super._allocate(length)
+  for(0 to:length-1 do:fun (i:Int) {tycoon.tycoonOS.memory_pokeChar(handle,i,'\000')})
 }
 
-;
+}

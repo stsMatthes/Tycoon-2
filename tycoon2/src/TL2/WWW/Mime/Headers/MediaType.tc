@@ -1,3 +1,5 @@
+class MediaType
+super Mime
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -25,89 +27,79 @@
                   hasBoundary, boundary, "boundary:=", and hasCharset
 		insert pre- and post conditions
 *)
+meta MediaTypeClass()
 
-
-class MediaType
-super Mime
-
-public methods
-
+{
 type :String
+  (* case insensitive 
+ ------------------------------------------------------------ *)
+ensure result.isNotNil
 
-  ensure result.isNotNil
-(* case insensitive *)
-(* ------------------------------------------------------------ *)
+
   { _type }
 
-
 subtype :String
+  (* case insensitive 
+ ------------------------------------------------------------ *)
+ensure result.isNotNil
 
-  ensure result.isNotNil
-(* case insensitive *)
-(* ------------------------------------------------------------ *)
+
   { _subtype }
 
-
 parameters :MimeHeaderDictionary(String)
-(*  parameter names are case insensitive *)
-(* ------------------------------------------------------------ *)
-  { _parameters }
-
+  (*  parameter names are case insensitive 
+ ------------------------------------------------------------ *)
+{ _parameters }
 
 hasBoundary :Bool
-(* ------------------------------------------------------------ *)
-  { _parameters.includesKey(MediaType.boundaryName) }
-
+  (* ------------------------------------------------------------ *)
+{ _parameters.includesKey(MediaType.boundaryName) }
 
 boundary :String
-(* ------------------------------------------------------------ *)
-  { _parameters.lookup(MediaType.boundaryName,
+  (* ------------------------------------------------------------ *)
+{ _parameters.lookup(MediaType.boundaryName,
       fun(value :String){ value },
       fun(){ nil })
   }
 
-  
 "boundary:="(b :String) :Void
-
-  require b.isNotNil &
+  (* ------------------------------------------------------------ *)
+require b.isNotNil &
     b.size <= 70
-(* ------------------------------------------------------------ *)
+
   { _parameters[MediaType.boundaryName] := b }
 
-  
 hasCharset :Bool
-(* ------------------------------------------------------------ *)
-  { _parameters.includesKey(MediaType.charsetName) }
-  
+  (* ------------------------------------------------------------ *)
+{ _parameters.includesKey(MediaType.charsetName) }
 
-printOn(out :Output)
+printOn(out :Output) :Void
+  (* ------------------------------------------------------------ *)
+require out.isNotNil
 
-  require out.isNotNil
-(* ------------------------------------------------------------ *)
   {
-    out <<type << "/" << subtype,
-    _parameters.isNotNil ?
+    out <<type << "/" << subtype
+    if( _parameters.isNotNil then:
     { _parameters.keysAndElementsDo(
         fun(k :String, e:String) {out << "; " << k << "=" << e})
-    }
+    })
   }
 
- 
 private
 
-_type :String,
-_subtype :String,
+_type :String
+
+_subtype :String
+
 _parameters :MimeHeaderDictionary(String)
 
-methods
-
 _init2(t :String, s :String): Self
+  (* *)
 {
-  _type := t,
-  _subtype := s,
-  _parameters := MimeHeaderDictionary.new,
+  _type := t
+  _subtype := s
+  _parameters := MimeHeaderDictionary.new
   self
 }
 
-;
-  
+}

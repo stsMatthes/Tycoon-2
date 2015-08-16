@@ -1,0 +1,97 @@
+<!-- Copyright (c) 1996 Higher-Order GmbH, Hamburg. All rights reserved.
+
+     stml-html-3.2.dtd 1.3 97/04/02  Andreas Gawecki, Axel Wienberg
+
+     Stml extensions for HTML 3.2
+-->     
+
+<!-- include STML entities: -->
+<!ENTITY % stml.en system "stml.en">
+%stml.en
+
+<!-- include HTML productions: -->
+<!ENTITY % html.dtd system "html-3.2f-stml.dtd">
+%html.dtd
+
+<!ENTITY % html.body.any "#PCDATA
+  | %font 
+  | %phrase 
+  | %heading 
+  | A 
+  | APPLET 
+  | AREA 
+  | BASE 
+  | BASEFONT 
+  | BLOCKQUOTE 
+  | BR 
+  | DD 
+  | DIR 
+  | DL 
+  | DT 
+  | FONT 
+  | FORM 
+  | HR
+  | IMG 
+  | INPUT 
+  | ISINDEX 
+  | LI 
+  | LINK 
+  | LISTING 
+  | MAP 
+  | MENU 
+  | META 
+  | OL 
+  | OPTION 
+  | P 
+  | PLAINTEXT 
+  | PRE 
+  | SCRIPT 
+  | SELECT 
+  | STYLE 
+  | TEXTAREA 
+  | TITLE 
+  | UL 
+  | XMP 
+  | caption 
+  | center 
+  | param 
+  | table 
+  | td 
+  | th 
+  | tr
+">
+<!-- experimental tags (not in HTML 3.2 final!):
+| ADDRESSDIV 
+| FIELDSET
+| OBJECT
+| BDO 
+| col 
+| colgroup 
+| LABEL 
+| tfoot 
+| thead 
+| SPAN 
+ -->
+ 
+<!--  BODY, TEXTFLOW, HEAD, HTML, tbody 
+
+      optional start tag, therefore will never be generated
+      within %base.any anyway
+
+	==> insert during "DTD Type Checking"??
+-->
+
+<!ENTITY % stml.any "((%html.body.any|(HEAD, BODY?)))*"
+  -- this allows sequences of HEAD, BODY, HEAD, BODY, P, HEAD, <P> ...,
+     for example. These will be rejected by the STML content type checker.
+     using "((%html.body.any)* |(HEAD, BODY?))"
+     here causes mixed content warnings.
+  -->
+
+
+<!ENTITY % stml.base.root "HTML" -- the root production of HTML --> 
+
+<!-- include STML productions: -->
+<!ENTITY % stml.prod system "stml.prod">
+%stml.prod
+

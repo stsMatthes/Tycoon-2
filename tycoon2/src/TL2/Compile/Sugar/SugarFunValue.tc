@@ -1,26 +1,33 @@
 class SugarFunValue
 super SugarValue
-metaclass SugarFunValueClass
-public
+(**)
+meta SugarFunValueClass
+{
+srcFun :String
 
-srcFun :String,
-srcParenOpen :String,
-domain :String,
-srcParenClose :String,
-range :String,
+srcParenOpen :String
+
+domain :String
+
+srcParenClose :String
+
+range :String
+
 body :SugarList(SugarSequenceElement)
 
-methods
-
 asFun :SugarFunValue
+  (* *)
 { self }
 
 priority :Int
+  (* *)
 { SugarValue.atomicPriority }
 
-writeOn(out :Output)
+writeOn(out :Output) :Void
+  (* *)
 {
   out << srcFun << srcParenOpen << domain << srcParenClose
       << range << body
 }
-;
+
+}

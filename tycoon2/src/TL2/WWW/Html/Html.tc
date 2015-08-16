@@ -1,5 +1,6 @@
 class Html
 super WWW
-metaclass AbstractClass
-;
-	
+(**)
+meta AbstractClass
+{
+}

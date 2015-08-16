@@ -1,3 +1,5 @@
+class BasicProtectionRealm
+super ProtectionRealm
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -24,50 +26,49 @@
    A BasicProtectionRealm is protected by the Http Basic
    authentification scheme.
 *)
+meta BasicProtectionRealmClass()
 
-class BasicProtectionRealm
-super ProtectionRealm
-
-public methods
-
+{
+acl :Dictionary(String, String)
   (* user -> passwd *)
-  acl :Dictionary(String, String) { _acl }
+{ _acl }
 
+challenges(forURL :URL) :List(WWWAuthenticate)
   (* the challenges for an unauthenticated client *)
-  challenges(forURL :URL) :List(WWWAuthenticate)
-  {
+{
     List.with1(WWWAuthenticate.basic(name))
   }
 
+authenticates(request :HttpRequest) :Bool
   (* Does the included authentification authentify the client ? *)
-  authenticates(request :HttpRequest) :Bool
-  {
-    request.hasAuthorization && {
-      let cred = request.authorization,
+{
+    request.hasAuthorization && (
+      cred ::= request.authorization
 
-      tolower(cred.scheme) = "basic" && {
-        let user = cred.parameters["user"],
-	let passwd = cred.parameters["password"],
+      tolower(cred.scheme) = "basic" && (
+        user ::= cred.parameters["user"]
+	passwd ::= cred.parameters["password"]
 
-	acl.includesKey(user) && { acl[user] = passwd }
-      }
-    }
+	acl.includesKey(user) &&  acl[user] = passwd 
+      )
+    )
   }
-   
+
 private
 
-  _acl :Dictionary(String, String)
+_acl :Dictionary(String, String)
 
-methods
-
-  _init1(name :String)
-  {
-    super._init1(name),
+_init1(name :String) :Void
+  (* *)
+{
+    super._init1(name)
     _acl := Dictionary.new
   }
 
-  tolower(s :String) :String
-  {
+tolower(s :String) :String
+  (* *)
+{
     String.fromReader(s.map(fun(c :Char) { c.asLowerCase }))
   }
-;
+
+}

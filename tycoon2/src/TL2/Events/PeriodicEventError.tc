@@ -1,3 +1,5 @@
+class PeriodicEventError
+super Exception, Events
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -24,21 +26,14 @@ Updates: (Date)	  (Name)	(Description)
 
 an error occurred when creating an periodic event
 *)
-
-class PeriodicEventError
-super Events, Exception
-metaclass PeriodicEventErrorClass
-
-public 
-
+meta PeriodicEventErrorClass
+{
 msg :String
 
-methods
-
-printOn(out :Output)
-
-  require out.isNotNil
-(* ------------------------------------------------------------ *)  
+printOn(out :Output) :Void
+  (* ------------------------------------------------------------ *)
+require out.isNotNil
+  
   { out << msg }
 
-;
+}

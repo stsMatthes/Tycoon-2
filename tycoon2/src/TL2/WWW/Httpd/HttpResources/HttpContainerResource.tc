@@ -1,18 +1,21 @@
 class HttpContainerResource
-
 super HttpResource, MutableKeyedContainer(String, HttpResource)
+(**)
+meta AbstractClass
+{
+add(resource :HttpResource) :Void
+  (* *)
+deferred
 
-metaclass AbstractClass
+remove(resource :HttpResource) :Void
+  (* *)
+deferred
 
-public
+replace(olde :HttpResource, new :HttpResource) :Void
+  (* *)
+deferred
 
-methods
-
-add(resource :HttpResource) deferred
-remove(resource :HttpResource) :Void deferred
-replace(old :HttpResource, new :HttpResource) deferred
-
-reindex
+reindex :Void
   (*
  * This file is part of the Tycoon-2 system.
  *
@@ -44,18 +47,19 @@ reindex
 }
 
 pathLookup(request :HttpRequest, arcs :List(String)) :HttpResource
+  (* *)
 {
-  arcs.isEmpty ? { let result :HttpResource = self } : {
-    let name = arcs.head,
+  if( arcs.isEmpty then: { result :HttpResource := self } else: {
+    name ::= arcs.head
     lookup(name,
-      let ifPresent = fun(resource :HttpResource) {
+      fun(resource :HttpResource) {
         resource.pathLookup(request, arcs.tail)
 	},
-      let ifAbsent = fun() {
+      fun() {
         nil
 	}
      )
-   }  
+   })  
 }
 
 lookupDirectory(arcs :List(String)) :HttpDirectoryResource
@@ -65,19 +69,19 @@ lookupDirectory(arcs :List(String)) :HttpDirectoryResource
      Purpose: simplify server configuration.
   *)
 {
-  arcs.isEmpty
-   ? { asDirectoryResource }  
-   : {
-    let name = arcs.head,
+  if( arcs.isEmpty
+   then: { asDirectoryResource }  
+   else: {
+    name ::= arcs.head
     lookup(name,
-      let ifPresent = fun(resource :HttpResource) {
+      fun(resource :HttpResource) {
         resource.lookupDirectory(arcs.tail)
 	},
-      let ifAbsent = fun() {
+      fun() {
         nil
 	}
      )
-   }  
+   })  
 }
 
 newResource(dir :Directory, name :String) :HttpResource
@@ -85,19 +89,12 @@ newResource(dir :Directory, name :String) :HttpResource
      default is to ask the receiver's parent, or, if there is no parent resource,
      to delegate the task to the MimeFactory.
   *)
-
 {
-   parent.isNotNil ? { parent.newResource(dir, name) } : {
+   if( parent.isNotNil then: { parent.newResource(dir, name) } else: {
      MimeFactory.instance.newResource(dir, name)
-   }
+   })
 }
 
-
-  
 private
 
-methods
-
-;
-
-
+}

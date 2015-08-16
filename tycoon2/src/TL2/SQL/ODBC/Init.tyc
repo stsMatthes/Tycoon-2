@@ -1,0 +1,4 @@
+odbc:=ODBC.new;
+odbc.open;
+ODBCDriver.init;
+SQLDriverManager.instance.registerDriver(ODBCDriver.instance);

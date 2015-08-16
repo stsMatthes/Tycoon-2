@@ -1,3 +1,5 @@
+class MimeHeaderValue
+super Mime
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -23,39 +25,41 @@
    Date  : 9.12.96
    Changes : me   6.1.97   separate class+metaclass, name change
 
-*)
 
-
-(* Abstract Superclass of all header values
+ Abstract Superclass of all header values
    
    value can be retrieved as an Object (need that ?)
    get and set based on Strings
 *)
+meta AbstractClass
+{
+value: Object
+  (* *)
+deferred
 
-class MimeHeaderValue
-super Mime
-metaclass AbstractClass
+string: String
+  (* *)
+deferred
 
-public methods
+"string:="(:String) :Void
+  (* *)
+deferred
 
-value: Object deferred
-string: String deferred
-"string:="(:String) deferred
- 
-(* unsafe typecast *)
-valueAs(T <: Object) :T {
+valueAs(T <: Object) :T
+  (* unsafe typecast *)
+{
   _typeCast(value, :T)
 }
 
-printOn(o :Output) {
-  o.writeAll(self."class".name),
-  string != nil ? {
-    o.write('('),
-    string.printOn(o),
+printOn(o :Output) :Void
+  (* *)
+{
+  o.writeAll(self."class".name)
+  if( string != nil then: {
+    o.write('(')
+    string.printOn(o)
     o.write(')')
-  }
+  })
 }
 
-
-;
-
+}

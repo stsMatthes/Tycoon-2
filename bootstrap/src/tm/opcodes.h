@@ -21,10 +21,10 @@
 /*
   Copyright (c) 1996 Higher-Order GmbH, Hamburg. All rights reserved.
 
-  opcodes.h 1.14 98/06/02 Marc Weikard
+  $File: //depot/tycoon2/stsmain/bootstrap/src/tm/opcodes.h $ $Revision: #3 $ $Date: 2003/10/02 $ Marc Weikard
 
   Tycoon Virtual Machine Opcodes
-
+  
 */
 
 
@@ -37,10 +37,10 @@
   TVM_OP(send2,     2, -2)
   TVM_OP(send3,     2, -3)
   TVM_OP(send4,     2, -4)
-  TVM_OP(send5,     2, -5)
+  TVM_OP(send5,     2, -5)  
   TVM_OP(sendSuper, 2,  0 /*s*/)
   TVM_OP(sendTail,  2,  0 /*s*/)
-
+  
   /* load operands */
   TVM_OP(global,    1, 1)
   TVM_OP(literal8,  1, 1)
@@ -57,7 +57,7 @@
   TVM_OP(zero,      0, 1)
   TVM_OP(one,       0, 1)
   TVM_OP(two,       0, 1)
-
+  
   /* store operands */
   TVM_OP(storeLocal, 1, 0)
 
@@ -86,7 +86,7 @@
   /* syncronize threads */
   TVM_OP(sync, 0, 0)
 
-  /* illegal opcode */
+  /* illegal opcode */ 
   TVM_OP(terminateThread, 0, 0)
 
   /* special sends */
@@ -114,4 +114,3 @@
   TVM_OP(moveToCell,        0, -1)
   TVM_OP(componentPop,      0, -1)
   TVM_OP(componentAdjust,   0, 0)
-

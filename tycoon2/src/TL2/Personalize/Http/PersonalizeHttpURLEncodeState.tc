@@ -1,13 +1,8 @@
 class PersonalizeHttpURLEncodeState
-
 super PersonalizeHttpState
-
-metaclass SimpleConcreteClass(PersonalizeHttpURLEncodeState)
-
-public
-
-methods
-
+(**)
+meta SimpleConcreteClass(PersonalizeHttpURLEncodeState)
+{
 noCookiesPlease(client :PersonalizeHttpClient) :Void
   (*
  * This file is part of the Tycoon-2 system.
@@ -38,14 +33,13 @@ personalizeHttp(client :PersonalizeHttpClient,
   (* filter the resonse, decorate all URLs to this server with
      our client ID *)
 {
-  assert false, nil
-  (*## implement:
-  response.body :=
-    URLEncodeFilter.new(HttpPersonalizer.COOKIE_NAME,
-    client.id,
-    resonse.body)
-  *)
+  assert({ false }) nil
+  ;## implement:
+;  response.body :=
+;    URLEncodeFilter.new(HttpPersonalizer.COOKIE_NAME,
+;    client.id,
+;    resonse.body)
+;  
 }
 
-;
-
+}

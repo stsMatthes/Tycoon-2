@@ -49,13 +49,13 @@ private
 
 _readBuffer :Fun(:MutableString, :Int, :Int):Int
 
-_buf :MutableString
+_buf @:MutableString
 
 _init :Void
   (* *)
 {
   super._init
-  _buf := MutableString.new(1)
+  _buf := MutableString.new(1)@
   self
 }
 

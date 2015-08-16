@@ -1,15 +1,15 @@
 class HttpdAccessLogClass
 super ConcreteClass(HttpdAccessLog)
-metaclass MetaClass
-
-public methods
-
-new(out :Output): HttpdAccessLog
+(**)
+meta MetaClass
 {
-  let result = _new,
-  result._init,
-  result.out := out,
+new(out :Output): HttpdAccessLog
+  (* *)
+{
+  result ::= _new
+  result._init
+  result.out := out
   result
 }
-;
 
+}

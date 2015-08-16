@@ -1,3 +1,5 @@
+class SQL
+super Object
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -22,11 +24,6 @@
    Date   : 03-Sep-1996
    Purpose: Root of the SQL-class-hierarchy
 *)
-
-class SQL
-
-super Object
-
-metaclass AbstractClass
-
-;
+meta AbstractClass
+{
+}

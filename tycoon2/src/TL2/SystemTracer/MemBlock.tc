@@ -1,10 +1,6 @@
 class MemBlock
 super SystemTracer
-metaclass SimpleConcreteClass(MemBlock)
-public
-
-oid :Int,
-size :Int,  (*
+(*
  * This file is part of the Tycoon-2 system.
  *
  * The Tycoon-2 system is free software; you can redistribute it and/or
@@ -23,9 +19,19 @@ size :Int,  (*
  * 
  * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
  *
- in bytes *)
-hasch :Int,
-classId :Int,
-contents :Fun0(Void),
+*)
+{
+oid :Int
+
+size :Int
+  (* in bytes *)
+
+hasch :Int
+
+classId :Int
+
+contents :Fun():Void
+
 history :List(Object)
-;
+
+}

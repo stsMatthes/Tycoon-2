@@ -43,7 +43,7 @@ _new2(initialCapacity :Int, initialSize :Int) :Queue(E)
 {
   assert({ initialCapacity >= initialSize && initialSize >= 0 })
   instance ::= _new
-  instance._elements := MutableArray.new(1 + initialCapacity)
+  instance._elements := MutableArray.new(1 + initialCapacity)@
   instance._readPos := 0
   instance._writePos := initialSize
   instance._init

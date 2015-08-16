@@ -1,3 +1,9 @@
+bootstrap/bin/**
+bootstrap/lib/**
+tycoon2/bin/**
+tycoon2/lib/**
+contrib/Jam-2.2/bin.solaris/**
+
 # general C stuff:
 
 # Object files

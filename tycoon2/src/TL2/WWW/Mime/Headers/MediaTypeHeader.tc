@@ -1,42 +1,47 @@
 class MediaTypeHeader
 super MimeHeaderValueImpl(MediaType)
-metaclass MimeHeaderValueImplClass(MediaType)
+(**)
+meta MimeHeaderValueImplClass(MediaType)
+{
+private
 
-private methods
+parseValue(s :String) :MediaType
+  (* *)
+{
+  type :String := nil
+  subtype :String := nil
+  parser ::= MimeParser.new(s.reader)
 
-parseValue(s :String) :MediaType {
-  let var type :String = nil,
-  let var subtype :String = nil,
-  let parser = MimeParser.new(s.reader),
-
-  type := parser.nextToken,
-  parser.skip('/'),
-  subtype := parser.nextToken,
+  type := parser.nextToken
+  parser.skip('/')
+  subtype := parser.nextToken
 
   try({
-    parser.skiphws,
-    parser.skip(';'),
-    parser.skiphws,
-    let parameterName = parser.nextToken,
-    parser.skip('='),
-    let parameterValue = parser.nextWord,
+    parser.skiphws
+    parser.skip(';')
+    parser.skiphws
+    parameterName ::= parser.nextToken
+    parser.skip('=')
+    parameterValue ::= parser.nextWord
     MediaType.withParameter(type, subtype, parameterName, parameterValue)
-    },
+    } else:
     fun (e :Exception) {
       MediaType.new(type, subtype)
     }      
   )
 }
 
-unparseValue(t :MediaType) :String {
-  let out = StringBuilderOutput.new,
-  out << t.type + "/" + t.subtype,
-  t.parameters.isNotNil ?
+unparseValue(t :MediaType) :String
+  (* *)
+{
+  out ::= StringBuilderOutput.new
+  out << t.type + "/" + t.subtype
+  if( t.parameters.isNotNil then:
   {
     t.parameters.keysAndElementsDo(
       fun(k :String, e:String) {out << "; " << k << "=" << e})
-  },
+  })
   out.contents
 }
 
-;
+}

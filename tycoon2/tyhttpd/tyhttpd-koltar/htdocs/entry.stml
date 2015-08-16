@@ -1,0 +1,35 @@
+<!doctype stml system>
+<stml processor=KoltarProcessor language='tycoon-1.0'>
+<head>
+<title> Willkommen am Sklavenmarkt! </title>
+</head>
+<body>
+
+<center><h1>Willkommen am Sklavenmarkt!</h1></center>
+
+<center><img src='koltar.gif'></center>
+
+<p>Auch Du willst also Deine Fähigkeiten in den Dienst der feisten
+schwarzen Katze stellen?  Dann wähle Deinen Namen!
+
+<form action="main.stml" method=get>
+<table><tr><td//
+<send receiver='application.sklaven' selector='do'>
+  <arg><fun param='sklave :KoltarSklave'>
+    <td><input type="radio" name="ich" value='`sklave.name`'>  <tycoon>
+      out << sklave.name
+    </tycoon></td>
+</send>
+</tr></table>
+<p><input type="submit" value="Hinein!">
+</form>
+
+      <HR>
+      
+      <A HREF="http://www.sts.tu-harburg.de/~ax.wienberg"><I>Axel Wienberg</I></A>. Your <a href="mailto:2wienbe@informatik.uni-hamburg.de">feedback</A> is welcome!
+<!-- hhmts start -->
+Last modified: Tue Jun 23 16:52:51 MET DST 1998
+<!-- hhmts end -->
+
+</body>
+

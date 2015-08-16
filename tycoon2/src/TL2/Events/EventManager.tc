@@ -1,3 +1,5 @@
+class EventManager
+super Monitor, Events
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -28,119 +30,112 @@ Author:  Axel Wienberg, Gerd Bremer
 Date:    09-Oct-1997
 Updates: (Date)	  (Name)	(Description)
 *)
-
-class EventManager
-super Events, Monitor
-metaclass SingletonClass(EventManager)
-
-public methods	
-
+meta SingletonClass(EventManager)
+{
 start :Void
-(* start event manager *)
-(* ------------------------------------------------------------ *)
-  {
-    _eventLoopThread.isNil ||
-      { _eventLoopThread.state = Thread.STATE_TERMINATED }
-      ? { _eventLoopThread := Thread.new(fun()
+  (* start event manager 
+ ------------------------------------------------------------ *)
+{
+    if( _eventLoopThread.isNil ||
+       _eventLoopThread.state = Thread.STATE_TERMINATED 
+      then: { _eventLoopThread := Thread.new(fun()
 	   {
-	     tycoon.stdout.writeln("Starting event manager"),
-	     _abortEventLoop := false,
+	     tycoon.stdout.writeln("Starting event manager")
+	     _abortEventLoop := false
 	     synchronize({ _eventLoop })
 	   })}
-      : { tycoon.stdout.writeln("Event manager already running") }
-  }  
-
+      else: { tycoon.stdout.writeln("Event manager already running") })
+  }
 
 abort :Void
-(* abort event manager *)
-(* ------------------------------------------------------------ *)
-  { _abortEventLoop := true,
-      tycoon.stdout.writeln("Event manager stopped"),
+  (* abort event manager 
+ ------------------------------------------------------------ *)
+{ _abortEventLoop := true
+      tycoon.stdout.writeln("Event manager stopped")
     _eventQueueChanged.signal
   }
 
-
 add(e :Event) :Void
+  (* add an event into event queue 
+ ------------------------------------------------------------ *)
+require e.isNotNil
 
-  require e.isNotNil
-(* add an event into event queue *)
-(* ------------------------------------------------------------ *)  
+  
   {
     synchronize({
-      _eventQueue.add(e),
+      _eventQueue.add(e)
       _eventQueueChanged.signal
     })
   }
 
-
 remove(e :Event) :Void
+  (* remove an event from event queue 
+ ------------------------------------------------------------ *)
+require e.isNotNil
 
-  require e.isNotNil
-(* remove an event from event queue *)
-(* ------------------------------------------------------------ *)  
+  
   {
     synchronize({
-      _eventQueue.remove(e),
+      _eventQueue.remove(e)
       _eventQueueChanged.signal
     })
   }
 
 registeredEvents :List(Event)
-  {
+  (* *)
+{
     List.fromReader(_eventQueue.reader)
   }
 
 private
 
-_eventQueue :PriorityQueue(Event),
-_eventQueueChanged :Condition,
-_eventLoopThread :Thread(Void),
+_eventQueue :PriorityQueue(Event)
+
+_eventQueueChanged :Condition
+
+_eventLoopThread :Thread(Void)
+
 _abortEventLoop :Bool
 
-
-methods
-
 _eventLoop :Void
-(* ------------------------------------------------------------ *)
-  {
-    !_abortEventLoop ?
+  (* ------------------------------------------------------------ *)
+{
+    if( !_abortEventLoop then:
       {
-	_eventQueue.isEmpty ?
-	  { wait(_eventQueueChanged) } :  (* wait until event queue changed *)
+	if( _eventQueue.isEmpty then:
+	  { wait(_eventQueueChanged) } else:  ; wait until event queue changed 
 	  {
-	    let e = _eventQueue[0],  (* take first event from event queue *)
-	    timedWait(_eventQueueChanged, e.time)  (* wait until e.time or *)
-	  },                                       (* event queue changed *)
-	!_eventQueue.isEmpty ?  
+	    e ::= _eventQueue[0]  ; take first event from event queue 
+	    timedWait(_eventQueueChanged, e.time)  ; wait until e.time or 
+	  })                                       ; event queue changed 
+	if( !_eventQueue.isEmpty then:  
 	  {
-	    let e = _eventQueue[0],
-	    Date.now.asTime >= e.time ?
+	    e ::= _eventQueue[0]
+	    if( Date.now.asTime >= e.time then:
 	      {
-		e.remove(_eventQueue),  (* remove event from queue *)
-		e.thread := Thread.new(e.action)  (* take action *)
-	      } :
+		e.remove(_eventQueue)  ; remove event from queue 
+		e.thread := Thread.new(e.action)  ; take action 
+	      } else:
 	      {
-		(* spurious wakeups *)
+		; spurious wakeups 
 		nil
-	      }
-	  } :
+	      })
+	  } else:
 	  {
-	    (* event queue changed *)
+	    ; event queue changed 
 	    nil
-	  },
+	  })
 	_eventLoop
-      }
+      })
   }
 
-
-_init :Self
-(* ------------------------------------------------------------ *)
-  {
-    super._init,
-    _eventQueue := PriorityQueue.new,
-    _eventQueueChanged := Condition.new,
-    _abortEventLoop := false,
-    self
+_init :Void
+  (* ------------------------------------------------------------ *)
+{
+    super._init
+    _eventQueue := PriorityQueue.new
+    _eventQueueChanged := Condition.new
+    _abortEventLoop := false
   }
-  
-;
+
+}

@@ -1,3 +1,5 @@
+class MimeParser
+super Mime
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -22,157 +24,185 @@
 
   Author: Matthias Ernst 12/96
 *)
+meta MimeParserClass()
 
-class MimeParser
-super Mime
-
-public methods
-
-init(r :Reader(Char)) {
-  _r := r,
+{
+init(r :Reader(Char)) :Void
+  (* *)
+{
+  _r := r
   _char := _r.read
 }
 
-(* the next character in the input, NOT consuming *)
-char :Char {
+char :Char
+  (* the next character in the input, NOT consuming *)
+{
   _char
 }
 
-next :Char {
+next :Char
+  (* *)
+{
   _char := _r.read
 }
 
-reader :Reader(Char) {
+reader :Reader(Char)
+  (* *)
+{
   Reader.cons(_char, _r)
 }
 
-(* Added value *)
-
-skip(c :Char) {
-  char = c ? {
+skip(c :Char) :Void
+  (* Added value *)
+{
+  if( char = c then: {
     next
-  } : {
+  } else: {
     MimeParserError.new("Expected "+c.printString+", got "+char.printString).raise
-  }
+  })
 }
 
-(* horizontal whitespace *)
-skiphws {
+skiphws :Void
+  (* horizontal whitespace *)
+{
   while({
     char = ' ' | char = '\t'
-  }, {
+  } do: {
     next
   })
 }
 
-skipws {
+skipws :Void
+  (* *)
+{
   while({
     char = ' ' | char = '\t' | char = '\n' | char = '\r'
-  }, {
+  } do: {
     next
   })
 }
 
-(* HTTP *)
-nextToken :String {
-  let s = GapString.new(10),
+nextToken :String
+  (* HTTP *)
+{
+  s ::= GapString.new(10)
 
   while({
     char != nil &&
-    { isCHAR(char) } && { !isCTL(char) } && { !isTspecial(char) }
-  }, {
-    s.add(char),
+     isCHAR(char)  &&  !isCTL(char)  &&  !isTspecial(char) 
+  } do: {
+    s.add(char)
     next
-  }),
+  })
 
-  s.size = 0 ? { MimeParserError.new("No token").raise },
+  if( s.size = 0 then: { MimeParserError.new("No token").raise })
 
   s.asString
 }
 
-nextQuoted :String {
-  let s = GapString.new(10),
+nextQuoted :String
+  (* *)
+{
+  s ::= GapString.new(10)
 
-  skip('\"'),
-  s.add('\"'),
+  skip('\"')
+  s.add('\"')
   
   while({
     char != '\"'
-  }, {
-    char == nil ? { MimeParserError.new("Premature end of quoted string").raise },
-    char == '\\' ? {
-      s.add(char),
-      next,
-      char == nil ? { MimeParserError.new("Premature end of quoted string").raise },
-      s.add(char),
+  } do: {
+    if( char == nil then: { MimeParserError.new("Premature end of quoted string").raise })
+    if( char == '\\' then: {
+      s.add(char)
       next
-    },
+      if( char == nil then: { MimeParserError.new("Premature end of quoted string").raise })
+      s.add(char)
+      next
+    })
       
-    isCTL(char) ? { MimeParserError.new("CTL in quoted string").raise },
-    s.add(char),
+    if( isCTL(char) then: { MimeParserError.new("CTL in quoted string").raise })
+    s.add(char)
     next
-  }),
+  })
 
-  skip('\"'),
-  s.add('\"'),
+  skip('\"')
+  s.add('\"')
 
   s.asString
 }
 
-nextWord :String {
-  skipws,
+nextWord :String
+  (* *)
+{
+  skipws
 
-  char = '\"' ? { nextQuoted } : { nextToken }
+  if( char = '\"' then: { nextQuoted } else: { nextToken })
 }
 
-nextWordUnquoted :String {
-  skipws,
+nextWordUnquoted :String
+  (* *)
+{
+  skipws
 
-  char = '\"' ? { nextUnquoted } : { nextToken }
+  if( char = '\"' then: { nextUnquoted } else: { nextToken })
 }
 
-nextUnquoted :String {
-  let result = GapString.new(10),
+nextUnquoted :String
+  (* *)
+{
+  result ::= GapString.new(10)
   
-  skip('\"'),
-  let var break = false,
-  while({!break}, {
-    char = nil  ? { MimeParserError.new("Premature end of quote").raise } : {
-    char = '\"' ? { next, break := true, nil } : {
-    char = '\\' ? {
-      next,
-      char = nil ? { MimeParserError.new("Premature end of quote").raise },
-      result.add(char),
-      next, nil
-    } : { (* else *)
-    result.add(char),
-    next, nil
-    }}}}
-  ),
+  skip('\"')
+  break ::= false
+  while({!break} do: {
+    if( char = nil  then: { MimeParserError.new("Premature end of quote").raise } else: {
+    if( char = '\"' then: { next break := true nil } else: {
+    if( char = '\\' then: {
+      next
+      if( char = nil then: { MimeParserError.new("Premature end of quote").raise })
+      result.add(char)
+      next nil
+    } else: { ; else 
+    result.add(char)
+    next nil
+    })})})}
+  )
 
   result.asString
 }
 
 nextDigits :String
+  (* *)
 {
-  let digits = GapString.new(3),
-  while({isDIGIT(char)}, {
-    digits.add(char),
+  digits ::= GapString.new(3)
+  while({isDIGIT(char)} do: {
+    digits.add(char)
     next
-  }),
+  })
 
   digits.asString
 }
 
-(* see the HTTP-1.1 spec *)
-isCHAR(c :Char) :Bool { (c >= '\000') & (c <= '\127') }
-isCTL(c :Char) :Bool { ((c >= '\000') & (c <= '\031')) | (c = '\127') }
-isTspecial(c :Char) :Bool { "()<>@,;:\\\"/[]?={} \t".includes(c) }
-isDIGIT(c :Char) :Bool { (c >= '0') & (c <= '9') }
+isCHAR(c :Char) :Bool
+  (* see the HTTP-1.1 spec *)
+{ (c >= '\000') & (c <= '\127') }
+
+isCTL(c :Char) :Bool
+  (* *)
+{ ((c >= '\000') & (c <= '\031')) | (c = '\127') }
+
+isTspecial(c :Char) :Bool
+  (* *)
+{ "()<>@,;:\\\"/[]?={} \t".includes(c) }
+
+isDIGIT(c :Char) :Bool
+  (* *)
+{ (c >= '0') & (c <= '9') }
 
 private
 
-_r :Reader(Char),
+_r :Reader(Char)
+
 _char :Char
 
-;
+}

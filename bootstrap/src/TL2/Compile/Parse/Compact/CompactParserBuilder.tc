@@ -89,10 +89,10 @@ generate(D <: Object,
   ReentrantCompactParser.new(
 	start.n,
 	actionOffsets,
-	Array.fromSequence(terminalTable),
-	Array.fromSequence(actionTable),
+	terminalTable.as(Array),
+	actionTable.as(Array),
 	actions,
-	Array.fromSequence(gotoTable),
+	gotoTable.as(Array),
 	gram.eofTerminal.token)
 }
 

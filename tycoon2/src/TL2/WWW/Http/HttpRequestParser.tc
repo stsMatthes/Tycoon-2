@@ -1,22 +1,6 @@
 class HttpRequestParser(Request <: HttpRequest)
 super HttpMessageParser(Request)
-metaclass SimpleConcreteClass(HttpRequestParser(Request))
-
-public methods
-
-parse(from :Input, to :Request)
-{
-  let p = MimeParser.new(from),
-  let method = p.nextToken,
-
-  p.skip(' '),
-  let uri = GapString.new(20),
-  while({p.char != ' ' && {p.char != '\r'} && {p.char != '\n'} && {p.char != nil}}, {
-    uri.add(p.char),
-    p.next
-  }),
-
-  (*
+(*
  * This file is part of the Tycoon-2 system.
  *
  * The Tycoon-2 system is free software; you can redistribute it and/or
@@ -35,49 +19,65 @@ parse(from :Input, to :Request)
  * 
  * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
  *
- termination of the request line after the URI indicates HTTP/0.9 *)
-  p.char == '\r' || { p.char == '\n' } ? fun() :Void {
-    p.char == '\r' ? {
-      p.next, p.char != '\n' ? {
+*)
+meta SimpleConcreteClass(HttpRequestParser(Request))
+{
+parse(from :Input, to :Request) :Void
+  (* *)
+{
+  p ::= MimeParser.new(from)
+  method ::= p.nextToken
+
+  p.skip(' ')
+  uri ::= GapString.new(20)
+  while({p.char != ' ' && p.char != '\r' && p.char != '\n' && p.char != nil} do: {
+    uri.add(p.char)
+    p.next
+  })
+
+  ; termination of the request line after the URI indicates HTTP/0.9 
+  if( p.char == '\r' ||  p.char == '\n'  then: fun() :Void {
+    if( p.char == '\r' then: {
+      p.next if( p.char != '\n' then: {
         MimeParserError.new("Termination of request line").raise
-      }
-    },
+      })
+    })
 
-    to.major := 0,
+    to.major := 0
     to.minor := 9
-  } : {
-  p.char !== nil ? {
+  } else: {
+  if( p.char !== nil then: {
 
-    p.skip(' '),
-    p.skip('H'), p.skip('T'), p.skip('T'), p.skip('P'),
-    p.skip('/'),
-    let major = p.nextDigits,
-    p.skip('.'),
-    let minor = p.nextDigits,
+    p.skip(' ')
+    p.skip('H') p.skip('T') p.skip('T') p.skip('P')
+    p.skip('/')
+    major ::= p.nextDigits
+    p.skip('.')
+    minor ::= p.nextDigits
 
-    (* Care is necessary not to read too much characters *)
-    p.char = '\r' ? {
-      p.next,
-      p.char != '\n' ? {
+    ; Care is necessary not to read too much characters 
+    if( p.char = '\r' then: {
+      p.next
+      if( p.char != '\n' then: {
 	MimeParserError.new("Termination of request line").raise
-      }
-    } : {
-    p.char = '\n' ? {
-    } : {
+      })
+    } else: {
+    if( p.char = '\n' then: {
+    } else: {
       MimeParserError.new("Termination of request line").raise
-    }},
+    })})
 
-    to.major  := major.asInt,
-    to.minor  := minor.asInt,
+    to.major  := major.asInt
+    to.minor  := minor.asInt
 
     super.parse(from, to)
 
-  } : {
+  } else: {
     MimeParserError.new("Termination of request line").raise
-  }},
+  })})
   
-  to.method := method,
+  to.method := method
   to.uri    := uri.asString
 }
-  
-;
+
+}

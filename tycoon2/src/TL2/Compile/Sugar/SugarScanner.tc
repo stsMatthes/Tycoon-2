@@ -1,3 +1,5 @@
+class SugarScanner
+super UserScanner(Token(Object), Cell(Int))
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -17,8 +19,8 @@
  * 
  * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
  *
+
  just a type definition *)
-class SugarScanner
-super UserScanner(Token(Object), Cell(Int))
-metaclass AbstractClass
-;
+meta AbstractClass
+{
+}

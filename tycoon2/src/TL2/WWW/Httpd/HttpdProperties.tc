@@ -1,12 +1,11 @@
 class HttpdProperties
-
 super Http
+(**)
+meta SimpleConcreteClass(HttpdProperties)
+{
+home :String
 
-metaclass SimpleConcreteClass(HttpdProperties)
-
-public
-
-home :String,			(*
+  (*
  * This file is part of the Tycoon-2 system.
  *
  * The Tycoon-2 system is free software; you can redistribute it and/or
@@ -27,64 +26,81 @@ home :String,			(*
  *
  the home location containing config and log subdirs *)
 
-host :String,
-port :Int,
-user :String,
-group :String,
-documentRoot :String,
+host :String
+
+port :Int
+
+user :String
+
+group :String
+
+documentRoot :String
+
 url :URL
 
-methods
-
 path :String
+  (* *)
 {
   tycoon.os.fs.composePath(List.with3(home, "conf", "tyhttpd.conf"))
 }
 
-load
+load :Void
+  (* *)
 {
-  let properties = Properties.new,
-  properties.loadFromFile(path),
-  host := properties[PROP_HOST],
-  port := properties[PROP_PORT].asInt,
-  user := properties[PROP_USER],
-  group := properties[PROP_GROUP],
+  properties ::= Properties.new
+  properties.loadFromFile(path)
+  host := properties[PROP_HOST]
+  port := properties[PROP_PORT].asInt
+  user := properties[PROP_USER]
+  group := properties[PROP_GROUP]
   documentRoot := properties[PROP_DOCUMENT_ROOT]
 }
 
-save
+save :Void
+  (* *)
 {
-  let properties = Properties.new,
-  properties[PROP_HOST] := host,
-  properties[PROP_PORT] := port.printString,
-  properties[PROP_USER] := user,
-  properties[PROP_GROUP] := group,
-  properties[PROP_DOCUMENT_ROOT] := documentRoot,
+  properties ::= Properties.new
+  properties[PROP_HOST] := host
+  properties[PROP_PORT] := port.printString
+  properties[PROP_USER] := user
+  properties[PROP_GROUP] := group
+  properties[PROP_DOCUMENT_ROOT] := documentRoot
   properties.saveToFile(path)
 }
 
 private
 
-methods
-
 _init :Void
+  (* *)
 {
-  super._init,
-  host := "",
-  port := 0,
-  user := "",
-  group := "",
-  documentRoot := "",
-  url := URL.fromString(""),
+  super._init
+  host := ""
+  port := 0
+  user := ""
+  group := ""
+  documentRoot := ""
+  url := URL.fromString("")
   self
-}  
+}
 
-PROP_HOST :String { "Host" }
-PROP_PORT :String { "Port" }
-PROP_USER :String { "User" }
-PROP_GROUP :String { "Group" }
-PROP_DOCUMENT_ROOT :String   { "DocumentRoot" }
+PROP_HOST :String
+  (* *)
+{ "Host" }
 
-;
+PROP_PORT :String
+  (* *)
+{ "Port" }
 
+PROP_USER :String
+  (* *)
+{ "User" }
 
+PROP_GROUP :String
+  (* *)
+{ "Group" }
+
+PROP_DOCUMENT_ROOT :String
+  (* *)
+{ "DocumentRoot" }
+
+}

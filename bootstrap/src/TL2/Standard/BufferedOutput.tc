@@ -54,7 +54,7 @@ _needBuffer(n :Int) :Void
 _init :Void
   (* *)
 { super._init
-  _buffer := MutableString.new(_bufferSize)
+  _buffer := MutableString.new(_bufferSize)@
   _pos := 0
   self
 }

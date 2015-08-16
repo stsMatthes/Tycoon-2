@@ -1,17 +1,16 @@
 class PersonalizeHttpResponseFilterClass
-
 super ConcreteClass(PersonalizeHttpResponseFilter)
-
-metaclass MetaClass
-
-public methods
-
-new(resource :HttpResource, client :PersonalizeHttpClient) :PersonalizeHttpResponseFilter
+(**)
+meta MetaClass
 {
-  let instance =  _new._init,
-  instance.resource := resource,
-  instance.client := client,
+new(resource :HttpResource, client :PersonalizeHttpClient) :PersonalizeHttpResponseFilter
+  (* *)
+{
+  instance ::=  _new
+  instance._init
+  instance.resource := resource
+  instance.client := client
   instance
 }
-;
 
+}

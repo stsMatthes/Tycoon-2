@@ -21,12 +21,12 @@
 /*
   Copyright (c) 1996 Higher-Order GmbH, Hamburg. All rights reserved.
 
-  tsp.c 1.25 97/06/23 Andreas Gawecki, Marc Weikard
+  $File: //depot/tycoon2/stsmain/tycoon2/src/tm/tsp.c $ $Revision: #3 $ $Date: 2003/10/01 $ Andreas Gawecki, Marc Weikard
 
   Tycoon Store Protocol
 
   Extended 'Mostly-Copying Garbage Collection' algorithm by Joel F. Bartlett:
-
+  
     "Compacting Garbage Collection with Ambiguous Roots",
     DEC WRL Research Report, 1988.
 
@@ -70,7 +70,7 @@
 static tsp_OID tsp_new(tsp_ClassId classId, Word wSize);
 
 
-#define PAGE_SIZE ((Word)512)           /* the size of a logical page */
+#define PAGE_SIZE ((Word)512)		/* the size of a logical page */
 #define LOG_PAGE_SIZE 9
 
 
@@ -82,15 +82,15 @@ static tsp_OID tsp_new(tsp_ClassId classId, Word wSize);
 #define PTR_TO_PPAGE(p)  (PPAGE(PTR_TO_NPAGE(p)))
 
 typedef enum {
-  PageType_Object = 0,          /* Ordinary page containing objects */
-  PageType_Continued,           /* Page holding some part of a large object */
-  PageType_Foreign              /* This is not our page */
+  PageType_Object = 0,		/* Ordinary page containing objects */
+  PageType_Continued,		/* Page holding some part of a large object */
+  PageType_Foreign		/* This is not our page */
 } PageType;
-
+  
 typedef struct Page {
   PageType type;
-  Word nNext;                   /* link to next page # in gc queue */
-  Byte * pb;                    /* the virtual memory address of the page */
+  Word nNext;		        /* link to next page # in gc queue */
+  Byte * pb;	       	        /* the virtual memory address of the page */
   Byte * pbFree, * pbEnd;       /* address of unallocated space */
   Int age;
     /* the 'age' of the page. pages with age = store.age are in
@@ -100,13 +100,13 @@ typedef struct Page {
 
 static Page invalidPage = {PageType_Foreign, 0, NULL, NULL, NULL, 0};
 
-
+  
 typedef struct {
   /* a descriptor defines the layout of classIds. wSize, pzString
      and pzOffsets are only needed for classIds which represent a C structure;
      the entries are NULL in other cases */
   Word wSize;                   /* size of structure in bytes (worst case) */
-  tsp_Object wLayout;           /* layout of store objects */
+  tsp_Object wLayout;           /* layout of store objects */ 
   tsp_CType * pzString;         /* descriptor string */
   tsp_Offset * pzOffsets;       /* offset table for fast access */
 } Descriptor;
@@ -126,7 +126,7 @@ typedef struct {
 #define FILEBUFFER_SIZE (8 * 1024)
 
 #define INITIAL_PAGES (16384) /* initial amount of pages */
-#define MIN_ALLOC     (1024)  /* expand store by at least # pages */
+#define MIN_ALLOC     (1024)  /* expand store by at least # pages */ 
 #define MEMRESERVE    (8192)
 
 #define STOREHEADER_SIZE (16)
@@ -141,7 +141,7 @@ static Bool fSwap,         /* perform conversion from big to little endian */
 
 /* multiple architecture support: */
 
-/* byteorder: bigEndian (SPARC, PA-RISC), littleEndian (Intel 386) */
+/* byteorder: bigEndian (SPARC, PA-RISC), littleEndian (Intel 386) */ 
 typedef enum {
   bigEndian = 0,
   littleEndian
@@ -185,12 +185,12 @@ static ArchTable archTable[] = {
   {"Linux_i386",     littleEndian, alignTable_i386},
   {"HPUX_PARISC",    bigEndian,    alignTable_SPARC},
   {"Nextstep_i386",  littleEndian, alignTable_i386},
-  {"WinNT_i386",     littleEndian, alignTable_i386},
+  {"WinNT_i386",     littleEndian, alignTable_i386},  
   {"Win95_i386",     littleEndian, alignTable_i386},
   {"Win98_i386",     littleEndian, alignTable_i386},
   {NULL, 0, NULL}
 };
-
+  
 static AlignTable * pMaxAlignment = alignTable_SPARC;
 /* set to worst case in order to reserve enough memory on all architectures */
 
@@ -220,7 +220,7 @@ static ArchTable * lookupArch(String pszName)
     }
     pTable++;
   }
-  return NULL;
+  return NULL; 
 }
 
 static ArchTable * initArch()
@@ -243,13 +243,13 @@ typedef struct MemBlock{
   struct MemBlock * pNext;         /* link to next descriptor */
 } MemBlock;
 
-
+	    
 /* This structure is wrapped around the root seen by the user: */
 
 typedef struct {
 
   String szName;
-
+  
   tsp_OID pRoot;
 
   Word nFirstPage;                 /* # of first page */
@@ -259,24 +259,24 @@ typedef struct {
   Word nRealPages;                 /* Total # of usable pages */
   Word age;                        /* current age for pages (from space) */
   Word newAge;                     /* next age for pages (to space) */
-  Page * aPages;
+  Page * aPages;  
   Descriptor * aDescriptors;       /* The Descriptors defined so far */
   Word nDescriptors;
 
   tsp_WeakRef * aWeakRefs;
-
+  
   struct {
     Int nPage;
     Page * pPage;
     } current;                     /* Page in use */
-
+  
   struct {
     Word nHead;
     Word nTail;
     } queue;                       /* Queued pages during garbage collection */
 
   MemBlock * pBlock;               /* List of allocated memory blocks */
-
+  
   tsp_GcHandler gcHandler;
   tsp_EnumRootPtr enumRootPtr;
   tsp_EnumRootPtr enumAmbiguousRootPtr;
@@ -293,8 +293,8 @@ static Bool fCompacting = FALSE;   /* Flag if GC should copy large objects */
 typedef struct Header {
   tsp_OID superComponent;
   union {
-    Word wSize;              /* Object size in bytes */
-    tsp_OID pForward;        /* Forwarding pointer to relocated object */
+    Word wSize;		     /* Object size in bytes */
+    tsp_OID pForward;	     /* Forwarding pointer to relocated object */
     } u;
   Word bitfield;
 } Header;
@@ -305,38 +305,38 @@ typedef struct Header {
 #define PAGE_START_GAP \
 	      (ALIGN_UP_OBJECT(sizeof(Header)) - sizeof(Header))
 
-/* cannot use bitfields in header 'cause we must know where the bits are: */
-
+/* cannot use bitfields in header 'cause we must know where the bits are: */  
+  
 #define PHEADER(p)    ((Header *) ((Byte *)(p) - sizeof(Header)))
 #define PTR(pHeader)  ((tsp_OID) ((Byte *)(pHeader) + sizeof(Header)))
 
 /* fast classId access: no shifting */
-#define CLASSID_MASK            ((Word) 0x00000fff)
-#define HASH_MASK               ((Word) 0x03fff000)
+#define CLASSID_MASK		((Word) 0x00000fff)
+#define HASH_MASK		((Word) 0x03fff000)
 #define TRACED_BIT		((Word) 0x08000000)
-#define FORWARDED_BIT           ((Word) 0x10000000)
-#define WEAKREF_BIT             ((Word) 0x20000000)
+#define FORWARDED_BIT		((Word) 0x10000000)
+#define WEAKREF_BIT		((Word) 0x20000000)
 #define IMMUTABLE_BIT		((Word) 0x40000000)
 
 #define CLASSID(p)        (PHEADER(p)->bitfield & CLASSID_MASK)
 #define SET_CLASSID(p,f)  (PHEADER(p)->bitfield = \
-                            (PHEADER(p)->bitfield & ~CLASSID_MASK) | (f))
+			    (PHEADER(p)->bitfield & ~CLASSID_MASK) | (f))
 
 #define HASH(p)        ((PHEADER(p)->bitfield & HASH_MASK) >> 12)
 #define SET_HASH(p,h)  (PHEADER(p)->bitfield = ((PHEADER(p)->bitfield & ~HASH_MASK) \
-                         | (((h) << 12) & HASH_MASK)))
+		         | (((h) << 12) & HASH_MASK)))
 
 #define PFORWARD(p)        (PHEADER(p)->u.pForward)
 #define SET_PFORWARD(p,pf) (PHEADER(p)->u.pForward = (pf))
 
-#define IS_FORWARDED(p)    (PHEADER(p)->bitfield &  FORWARDED_BIT)
+#define IS_FORWARDED(p)	   (PHEADER(p)->bitfield &  FORWARDED_BIT)
 #define FLAG_FORWARDED(p)  (PHEADER(p)->bitfield |= FORWARDED_BIT)
 
-#define IS_WEAKREFED(p)    (PHEADER(p)->bitfield &  WEAKREF_BIT)
+#define IS_WEAKREFED(p)	   (PHEADER(p)->bitfield &  WEAKREF_BIT)
 #define FLAG_WEAKREFED(p)  (PHEADER(p)->bitfield |= WEAKREF_BIT)
 #define CLEAR_WEAKREFED(p) (PHEADER(p)->bitfield &= ~WEAKREF_BIT)
 
-#define SIZE(p)       (PHEADER(p)->u.wSize)
+#define SIZE(p)	      (PHEADER(p)->u.wSize)
 #define SET_SIZE(p,s) (PHEADER(p)->u.wSize = (s))
 
 #define SUPERCOMPONENT(p)	(PHEADER(p)->superComponent)
@@ -437,7 +437,7 @@ void tsp_init()
   assert(sizeof(Header) == 3 * sizeof(Word));  /*axe:where is this exploited?*/
   assert(sizeof(tsp_OID) == sizeof(Word));
   assert(TRUE == 1);
-
+  
   memset(&store,0,sizeof(Store));
   initArch();
 #ifdef HAS_MMAP
@@ -459,23 +459,23 @@ void tsp_setGcHandler(tsp_GcHandler gcHandler)
 {
   store.gcHandler = gcHandler;
 }
-
+  
 void tsp_setEnumRootPtr(tsp_EnumRootPtr enumRootPtr)
 {
   store.enumRootPtr = enumRootPtr;
 }
-
+  
 void tsp_setEnumAmbiguousRootPtr(tsp_EnumRootPtr enumAmbiguousRootPtr)
 {
   store.enumAmbiguousRootPtr = enumAmbiguousRootPtr;
 }
-
+  
 void tsp_setFinalizer(tsp_Finalizer finalizer)
 {
   store.finalizer = finalizer;
 }
 
-
+  
 static Word nextPage(Word nPage)
 {
   for(;;) {
@@ -496,11 +496,11 @@ static void enqueue(Word nPage)
   PPAGE(nPage)->nNext = 0;
   store.queue.nTail = nPage;
 }
-
+        
 static void visitPtr(tsp_OID * pp)
 {
   if(*pp) assert(PTR_TO_NPAGE(*pp) >= store.nFirstPage &&
-                 PTR_TO_NPAGE(*pp) <= store.nLastPage);
+		 PTR_TO_NPAGE(*pp) <= store.nLastPage);
   /* nothing to do if referring to nil */
   if (!*pp) {
     return;
@@ -531,8 +531,8 @@ static void visitPtr(tsp_OID * pp)
     /* scan for continued pages */
     while(nPage <= store.nLastPage) {
       if(PPAGE(nPage)->type != PageType_Continued ||
-         PPAGE(nPage)->age != store.age) {
-        break;
+	 PPAGE(nPage)->age != store.age) {
+	break;
       }
       store.nAllocatedPages++;
       PPAGE(nPage)->age = store.newAge;
@@ -551,15 +551,15 @@ static void visitPtr(tsp_OID * pp)
       FLAG_TRACED(pNew);
     memcpy(pNew, *pp, wSize);
     PFORWARD(*pp) = pNew;
-    FLAG_FORWARDED(*pp);
+    FLAG_FORWARDED(*pp);    
     *pp = pNew;
   }
 }
-
+  
 static void visitWeakRefPtr(tsp_OID * pp)
 {
   if(*pp) assert(PTR_TO_NPAGE(*pp) >= store.nFirstPage &&
-                 PTR_TO_NPAGE(*pp) <= store.nLastPage);
+		 PTR_TO_NPAGE(*pp) <= store.nLastPage);
 
   if (!*pp || PTR_TO_PPAGE(*pp)->age == store.newAge)
     return;
@@ -581,8 +581,8 @@ static void visitWeakRefPtr(tsp_OID * pp)
     /* scan for continued pages */
     while(nPage <= store.nLastPage) {
       if(PPAGE(nPage)->type != PageType_Continued ||
-         PPAGE(nPage)->age != store.age) {
-        break;
+	 PPAGE(nPage)->age != store.age) {
+	break;
       }
       store.nAllocatedPages++;
       PPAGE(nPage)->age = store.newAge;
@@ -603,14 +603,14 @@ static void visitWeakRefPtr(tsp_OID * pp)
       FLAG_TRACED(pNew);
     memcpy(pNew, *pp, wSize);
     PFORWARD(*pp) = pNew;
-    FLAG_FORWARDED(*pp);
+    FLAG_FORWARDED(*pp);    
     *pp = pNew;
     /* mark new object */
     FLAG_WEAKREFED(*pp);
   }
 }
 
-
+  
 static void promotePage(Word nPage)
 /* pages which have ambiguous references are 'promoted' to newAge
    (including all continued pages). a list of promoted pages is
@@ -633,15 +633,15 @@ static void promotePage(Word nPage)
     store.nAllocatedPages++;
     enqueue(nPage);
     /* scan up continued pages */
-    while(nUpPage <= store.nLastPage) {
+    while(nUpPage <= store.nLastPage) { 
       if(PPAGE(nUpPage)->type != PageType_Continued ||
-         PPAGE(nUpPage)->age != store.age) {
-        break;
+	 PPAGE(nUpPage)->age != store.age) {
+	break;
       }
       store.nAllocatedPages++;
       PPAGE(nUpPage)->age = store.newAge;
       nUpPage++;
-    }
+    }      
   }
 }
 
@@ -650,7 +650,7 @@ static void visitAmbiguousPtr(tsp_OID * pp)
 {
   promotePage(PTR_TO_NPAGE(*pp));
 }
-
+  
 static void visitArrayFields(register tsp_OID * pArray, Word nSlots)
 {
   tsp_OID * pp = pArray;
@@ -665,42 +665,42 @@ static void visitArrayFields(register tsp_OID * pArray, Word nSlots)
 
 static void visitPtrFields(tsp_OID p)
 {
-  Word wClassId = CLASSID(p);
+  Word wClassId = CLASSID(p); 
   switch(DESCRIPTOR(wClassId)->wLayout)
     {
     case tsp_Object_Struct:
       {
       register tsp_Offset * pOffset = DESCRIPTOR(wClassId)->pzOffsets;
       register tsp_CType * pszType  = DESCRIPTOR(wClassId)->pzString;
-      for(;;)
-        switch(*pszType++)
-          {
-          case 0:
-            return;
-          case tsp_Field_OID:
-            {
-            tsp_OID * pp = (tsp_OID*)((Byte*)p + (*pOffset++));
-            if(!tsp_IS_IMMEDIATE(*pp))
-              visitPtr(pp);
-            }
-            break;
-          default:
-            pOffset++;
-            break;
-          }
+      for(;;) 
+	switch(*pszType++)
+	  {
+	  case 0:
+	    return;
+	  case tsp_Field_OID:
+	    {
+	    tsp_OID * pp = (tsp_OID*)((Byte*)p + (*pOffset++));
+	    if(!tsp_IS_IMMEDIATE(*pp))
+	      visitPtr(pp);
+	    }
+	    break;
+	  default:
+	    pOffset++;
+	    break;
+	  }
       }
     case tsp_Object_WeakRef:
       /* weak reference node */
       {
       tsp_WeakRef * pWeakRef = p;
       if(!tsp_IS_IMMEDIATE(pWeakRef->p)) {
-        visitWeakRefPtr(&pWeakRef->p);
-        visitPtr((tsp_OID*)&pWeakRef->pPrev);
-        visitPtr((tsp_OID*)&pWeakRef->pNext);
-        visitPtr(&pWeakRef->pData);
+	visitWeakRefPtr(&pWeakRef->p);
+	visitPtr((tsp_OID*)&pWeakRef->pPrev);
+	visitPtr((tsp_OID*)&pWeakRef->pNext);
+	visitPtr(&pWeakRef->pData);
       }
       else {
-        visitArrayFields(p, SIZE(p) / sizeof(Word));
+	visitArrayFields(p, SIZE(p) / sizeof(Word));
       }
       }
       break;
@@ -726,11 +726,11 @@ static void visitPtrFields(tsp_OID p)
       break;
     case tsp_Object_Stack:
       /* collect stack object and associated thread object.
-         a stack always contains 2 fixed elements:
-         a pointer to the thread object and its (former) address */
+	 a stack always contains 2 fixed elements:
+	 a pointer to the thread object and its (former) address */
       {
       Int stackOffset;
-      tsp_OID * sp;
+      tsp_OID * sp;      
       tsp_OID * pStackEnd = (tsp_OID*)((Byte*)p + SIZE(p) - sizeof(tsp_OID));
       tyc_Thread * pThread;
       tyc_StackFrame * fp, ** oldfp;
@@ -750,34 +750,34 @@ static void visitPtrFields(tsp_OID p)
       fp = pThread->fp;
       /* loop through stack frames */
       while(fp) {
-        /* adjust frame pointer and old reference */
-        fp = (tyc_StackFrame*)((Byte*)fp + stackOffset);
-        *oldfp = fp;
-        /* adjust gap between sp and fp */
-        while((tsp_OID)sp < (tsp_OID)fp) {
-          if(!tsp_IS_IMMEDIATE(*sp))
-            visitPtr(sp);
-          sp++;
-        }
-        if(!tsp_IS_IMMEDIATE(fp->pReceiver))         /* tagged receiver */
-          visitPtr((tsp_OID*)&fp->pReceiver);
-        visitPtr((tsp_OID*)&fp->pCode);
-        /* adjust bytecode array and ip */
-        oldbp = fp->pByteCode;
-        visitPtr((tsp_OID*)&fp->pByteCode);
-        *oldip = *oldip + (fp->pByteCode - oldbp);
-        /* advance to next outdated reference */
-        oldfp = &fp->parent.fp;
-        oldip = &fp->parent.ip;
-        /* skip one frame and load new fp */
-        sp = (tsp_OID *)(fp + 1);
-        fp = *oldfp;
+	/* adjust frame pointer and old reference */
+	fp = (tyc_StackFrame*)((Byte*)fp + stackOffset);
+	*oldfp = fp;
+	/* adjust gap between sp and fp */
+	while((tsp_OID)sp < (tsp_OID)fp) {
+	  if(!tsp_IS_IMMEDIATE(*sp))
+	    visitPtr(sp);
+	  sp++;
+	}
+	if(!tsp_IS_IMMEDIATE(fp->pReceiver))         /* tagged receiver */
+	  visitPtr((tsp_OID*)&fp->pReceiver);
+	visitPtr((tsp_OID*)&fp->pCode);
+	/* adjust bytecode array and ip */
+	oldbp = fp->pByteCode;
+	visitPtr((tsp_OID*)&fp->pByteCode);
+	*oldip = *oldip + (fp->pByteCode - oldbp);
+	/* advance to next outdated reference */ 
+	oldfp = &fp->parent.fp;
+	oldip = &fp->parent.ip;
+	/* skip one frame and load new fp */
+	sp = (tsp_OID *)(fp + 1);
+	fp = *oldfp;
       }
       /* adjust gap between sp and fixed elements */
       while((tsp_OID)sp < (tsp_OID)pStackEnd) {
-        if(!tsp_IS_IMMEDIATE(*sp))
-          visitPtr(sp);
-        sp++;
+	if(!tsp_IS_IMMEDIATE(*sp))
+	  visitPtr(sp);
+	sp++;
       }
       }
       break;
@@ -805,7 +805,7 @@ static void scanPages()
       pb += ALIGN_UP_OBJECT(SIZE(pb)+sizeof(Header));
     }
     /* remove page from queue: */
-    store.queue.nHead = PPAGE(nPage)->nNext;
+    store.queue.nHead = PPAGE(nPage)->nNext;    
   }
 }
 
@@ -846,7 +846,7 @@ void tsp_gc(Bool fCompact)
   /* garbage collection is running */
   fGc++;
   fCompacting = fCompact;
-
+  
   /* advance space (see Bartlett paper for this peculiar constant): */
   store.newAge = (store.age+1) % 0xffff;
   /* prevent clash with age of pages allocated by moreCore(): */
@@ -858,22 +858,22 @@ void tsp_gc(Bool fCompact)
 
   /* no page available */
   store.current.pPage = &invalidPage;
-
+  
   /* promote pages pointed to by ambiguous roots: */
-  if (store.enumAmbiguousRootPtr)
+  if (store.enumAmbiguousRootPtr) 
     (*store.enumAmbiguousRootPtr)(visitAmbiguousPtr);
   /* copy objects pointed to by non-ambiguos roots: */
   visitPtr(&store.pRoot);
-  if (store.enumRootPtr)
+  if (store.enumRootPtr) 
     (*store.enumRootPtr)(visitPtr);
   /* copy first weakref node: */
   visitPtr((tsp_OID*)&store.aWeakRefs);
-
+  
   scanPages();
-
+  
   /* update/zap weak superComponent pointers */
   tsp_scanObjects(updateSuperComponent);
-  
+
   /* sweep and copy phase is complete at this point, switch to new space
      (and schedule WeakRefs) */
   store.age = store.newAge;
@@ -891,31 +891,31 @@ void tsp_gc(Bool fCompact)
     tsp_WeakRef ** ppScheduleRefs = &(tyc_pRoot->pFinalizer->pWeaks);
     while(pWeakRef) {
       if(IS_WEAKREFED(pWeakRef->p)) {
-        tsp_WeakRef * pFirstRef = *ppScheduleRefs;
-        tsp_WeakRef * pOldNext = pWeakRef->pNext;
-        tsp_WeakRef * pOldPred = pWeakRef->pPrev;
-        /* remove from weakref list */
-        if(pOldNext) {
-          pOldNext->pPrev = pOldPred;
-        }
-        if(pOldPred) {
-          pOldPred->pNext = pOldNext;
-        }
-        else {
-          store.aWeakRefs = pOldNext;
-        }
-        /* insert in scheduling list */
-        pWeakRef->pNext = pFirstRef;
-        pWeakRef->pPrev = NULL;
-        if(pFirstRef) {
-          pFirstRef->pPrev = pWeakRef;
-        }
-        *ppScheduleRefs = pWeakRef;
-        /* move to next weakref */
-        pWeakRef = pOldNext;
+	tsp_WeakRef * pFirstRef = *ppScheduleRefs;
+	tsp_WeakRef * pOldNext = pWeakRef->pNext;
+	tsp_WeakRef * pOldPred = pWeakRef->pPrev;
+	/* remove from weakref list */
+	if(pOldNext) {
+	  pOldNext->pPrev = pOldPred;
+	}
+	if(pOldPred) {
+	  pOldPred->pNext = pOldNext;
+	}
+	else {
+	  store.aWeakRefs = pOldNext;
+	}
+	/* insert in scheduling list */
+	pWeakRef->pNext = pFirstRef;
+	pWeakRef->pPrev = NULL;
+	if(pFirstRef) {
+	  pFirstRef->pPrev = pWeakRef;
+	}
+	*ppScheduleRefs = pWeakRef;	
+	/* move to next weakref */
+	pWeakRef = pOldNext;
       }
       else {
-        pWeakRef = pWeakRef->pNext;
+	pWeakRef = pWeakRef->pNext;
       }
     }
     /* finalize */
@@ -930,8 +930,8 @@ void tsp_gc(Bool fCompact)
   if(tmdebug_fShowObjectCount && tmdebug_fCountOnGc) {
     tmdebug_showObjectCount();
   }
-
-  /* release suspended threads */
+  
+  /* release suspended threads */ 
   tmthread_syncRelease();
 }
 
@@ -971,11 +971,11 @@ static void expandHeap(const Word n)
   Byte * p = moreCore(cb);
   Word nPage, nNewPage;
   assert(p);
-
+  
 #ifdef tsp_DEBUG
   printf("\n## Expand by %d Pages.  ",n);
 #endif
-
+  
   /* align on page boundary */
   p += PAGE_SIZE-1;
   p = (Byte *) ((Word)p & ~(PAGE_SIZE-1));
@@ -1014,7 +1014,7 @@ static void expandHeap(const Word n)
     }
     store.nPages = store.nLastPage - store.nFirstPage + 1;
     store.nRealPages += n;
-
+    
 #ifdef tsp_DEBUG
     printf("grow up ##\n\n");
 #endif
@@ -1022,7 +1022,7 @@ static void expandHeap(const Word n)
     if(tmdebug_fShowStoreGrow) {
       tmdebug_showStoreGrow(n, 1);
     }
-  }
+  } 
   /* allocated space is growing downward */
   else if(store.nFirstPage > nNewPage) {
     /* set range for initialization */
@@ -1054,10 +1054,10 @@ static void expandHeap(const Word n)
       memset(PPAGE(nPage), 0, sizeof(Page));
       PPAGE(nPage)->pb = NPAGE_TO_PTR(nPage);
       PPAGE(nPage)->pbEnd = NPAGE_TO_PTR(nPage) + PAGE_SIZE;
-    }
+    }      
     store.nPages = store.nLastPage - store.nFirstPage + 1;
     store.nRealPages += n;
-
+    
 #ifdef tsp_DEBUG
     printf("grow down ##\n\n");
 #endif
@@ -1075,10 +1075,10 @@ static void expandHeap(const Word n)
       memset(PPAGE(nPage), 0, sizeof(Page));
       PPAGE(nPage)->pb = NPAGE_TO_PTR(nPage);
       PPAGE(nPage)->pbEnd = NPAGE_TO_PTR(nPage) + PAGE_SIZE;
-    }
+    }      
     store.nPages = store.nLastPage - store.nFirstPage + 1;
     store.nRealPages += n;
-
+    
 #ifdef tsp_DEBUG
     printf("grow between ##\n\n");
 #endif
@@ -1092,7 +1092,7 @@ static void expandHeap(const Word n)
                  "TSP error: store expanded in unknown region!");
     tosError_ABORT();
   }
-
+  
   if(tmdebug_fShowObjectCount && !tmdebug_fCountOnGc) {
     tmdebug_showObjectCount();
   }
@@ -1103,7 +1103,7 @@ static void allocatePages(Int n)
 /* allocate n consecutive pages. set up store.current appropriately. */
 {
   Bool fLoop = FALSE; /* allocation loop after gc */
-
+  
   /* start gc if half or more pages are allocated */
   if(!fGc) {
     if (store.nAllocatedPages >= store.nRealPages / 2) {
@@ -1115,7 +1115,7 @@ static void allocatePages(Int n)
 #endif
 
       tsp_gc(FALSE);
-
+      
 #ifdef tsp_DEBUG
       tsp_storeStatus();
       fflush(stdout);
@@ -1125,77 +1125,77 @@ static void allocatePages(Int n)
       {
       Int wSpace = (store.nRealPages / 2) - store.nAllocatedPages;
       if(wSpace < MEMRESERVE) {
-        Word nReserve = 2 * (MEMRESERVE - wSpace);
-        expandHeap(max(nReserve, max(n, MIN_ALLOC)));
-        /* start allocation at first free page */
-        store.current.nPage = store.nLastPage;
-        store.current.pPage = &invalidPage;
+	Word nReserve = 2 * (MEMRESERVE - wSpace);
+	expandHeap(max(nReserve, max(n, MIN_ALLOC)));
+	/* start allocation at first free page */
+	store.current.nPage = store.nLastPage;
+	store.current.pPage = &invalidPage;	
       }
       }
     }
   }
-
+  
   for(;;) {
     /* try to find n consecutive pages among the currently free ones: */
     Word nPages = store.nPages;
     Word nPage = nextPage(store.current.nPage);  /* skip current page */
-    Word nFreeConsecutive = 0;
+    Word nFreeConsecutive = 0;    
 
     while (nPages--) {
       if (PPAGE(nPage)->age != store.age &&
           PPAGE(nPage)->age != store.newAge &&
           PPAGE(nPage)->type != PageType_Foreign)
-        {
-        if (nFreeConsecutive++ == 0)
-          store.current.nPage = nPage;
-        if (nFreeConsecutive == n) {
-          /* so we found them. move back to first free page: */
-          nPage = store.current.nPage ;
-          if (store.age != store.newAge)
-            /* gc is going on, remember page to scan later: */
-            enqueue(nPage);
-          {
-          Page * pPage = PPAGE(nPage);
-          store.current.pPage = pPage;
-          store.nAllocatedPages += n;
-          /* init first page */
-          pPage->type = PageType_Object;
-          pPage->age = store.newAge;
+	{
+	if (nFreeConsecutive++ == 0)
+	  store.current.nPage = nPage;
+	if (nFreeConsecutive == n) {
+	  /* so we found them. move back to first free page: */
+	  nPage = store.current.nPage ;
+	  if (store.age != store.newAge)
+	    /* gc is going on, remember page to scan later: */
+	    enqueue(nPage);
+	  {
+	  Page * pPage = PPAGE(nPage);
+	  store.current.pPage = pPage;
+	  store.nAllocatedPages += n;
+	  /* init first page */
+	  pPage->type = PageType_Object;
+	  pPage->age = store.newAge;
 	  pPage->pbFree = NPAGE_TO_PTR(nPage) + PAGE_START_GAP;
-          /* init continued pages */
-          while(--n) {
-            pPage++;                             /* consecutive pages! */
-            pPage->type = PageType_Continued;
-            pPage->age = store.newAge;
-            }
-          }
-          return;
-          }
-        }
+	  /* init continued pages */
+	  while(--n) {
+	    pPage++;                             /* consecutive pages! */
+	    pPage->type = PageType_Continued;
+	    pPage->age = store.newAge;
+	    }
+	  }
+	  return;
+	  }
+	}
       else
         nFreeConsecutive = 0;
 
       nPage++;
       if(nPage > store.nLastPage) {
-        nPage = store.nFirstPage;
-        nFreeConsecutive = 0;
+	nPage = store.nFirstPage;
+	nFreeConsecutive = 0;
       }
     }
-
+    
     /* so there are not n consecutive pages. if we have not already,
        perform gc and try again. otherwise, expand the heap. */
     if (fGc || fLoop)
       expandHeap(max(n, MIN_ALLOC)); /* there MUST be n consecutive pages! */
     else {
-
+    
 #ifdef tsp_DEBUG
       fflush(stdout);
       tsp_storeStatus();
       printf("\n-- Garbage Collection 2 --\n");
 #endif
 
-      tsp_gc(FALSE);            /* now there MAY be n consecutive pages... */
-
+      tsp_gc(FALSE);	        /* now there MAY be n consecutive pages... */
+      
 #ifdef tsp_DEBUG
       tsp_storeStatus();
       fflush(stdout);
@@ -1204,11 +1204,11 @@ static void allocatePages(Int n)
       {
       Int wSpace = (store.nRealPages / 2) - store.nAllocatedPages;
       if(wSpace < MEMRESERVE) {
-        Word nReserve = 2 * (MEMRESERVE - wSpace);
-        expandHeap(max(nReserve, max(n, MIN_ALLOC)));
-        /* start allocation at first free page */
-        store.current.nPage = store.nLastPage;
-        store.current.pPage = &invalidPage;
+	Word nReserve = 2 * (MEMRESERVE - wSpace);
+	expandHeap(max(nReserve, max(n, MIN_ALLOC)));
+	/* start allocation at first free page */
+	store.current.nPage = store.nLastPage;
+	store.current.pPage = &invalidPage;	
       }
       }
       fLoop = TRUE;     /* avoid endless gc if large objects are allocated */
@@ -1250,7 +1250,7 @@ tsp_OID tsp_newArray(tsp_ClassId classId, Word nElements)
 {
   tsp_OID pNew;
   assert((store.nDescriptors > classId) &&
-         (DESCRIPTOR(classId)->wLayout == tsp_Object_Array));
+	 (DESCRIPTOR(classId)->wLayout == tsp_Object_Array));
   tmthread_criticalLock();
   if(!fGc)
     tmthread_checkSyncRequest();
@@ -1263,7 +1263,7 @@ tsp_OID tsp_newByteArray(tsp_ClassId classId, Word nElements)
 {
   tsp_OID pNew;
   assert((store.nDescriptors > classId) &&
-         (DESCRIPTOR(classId)->wLayout == tsp_Object_ByteArray));
+	 (DESCRIPTOR(classId)->wLayout == tsp_Object_ByteArray));
   tmthread_criticalLock();
   if(!fGc)
     tmthread_checkSyncRequest();
@@ -1276,7 +1276,7 @@ tsp_OID tsp_newShortArray(tsp_ClassId classId, Word nElements)
 {
   tsp_OID pNew;
   assert((store.nDescriptors > classId) &&
-         (DESCRIPTOR(classId)->wLayout == tsp_Object_ShortArray));
+	 (DESCRIPTOR(classId)->wLayout == tsp_Object_ShortArray));
   tmthread_criticalLock();
   if(!fGc)
     tmthread_checkSyncRequest();
@@ -1289,7 +1289,7 @@ tsp_OID tsp_newIntArray(tsp_ClassId classId, Word nElements)
 {
   tsp_OID pNew;
   assert((store.nDescriptors > classId) &&
-         (DESCRIPTOR(classId)->wLayout == tsp_Object_IntArray));
+	 (DESCRIPTOR(classId)->wLayout == tsp_Object_IntArray));
   tmthread_criticalLock();
   if(!fGc)
     tmthread_checkSyncRequest();
@@ -1302,7 +1302,7 @@ tsp_OID tsp_newLongArray(tsp_ClassId classId, Word nElements)
 {
   tsp_OID pNew;
   assert((store.nDescriptors > classId) &&
-         (DESCRIPTOR(classId)->wLayout == tsp_Object_LongArray));
+	 (DESCRIPTOR(classId)->wLayout == tsp_Object_LongArray));
   tmthread_criticalLock();
   if(!fGc)
     tmthread_checkSyncRequest();
@@ -1315,7 +1315,7 @@ tsp_OID tsp_newStack(tsp_ClassId classId, Word nElements)
 {
   tsp_OID pNew;
   assert((store.nDescriptors > classId) &&
-         (DESCRIPTOR(classId)->wLayout == tsp_Object_Stack));
+	 (DESCRIPTOR(classId)->wLayout == tsp_Object_Stack));
   tmthread_criticalLock();
   if(!fGc)
     tmthread_checkSyncRequest();
@@ -1328,7 +1328,7 @@ tsp_OID tsp_newThread(tsp_ClassId classId)
 {
   tsp_OID pNew;
   assert((store.nDescriptors > classId) &&
-         (DESCRIPTOR(classId)->wLayout == tsp_Object_Thread));
+	 (DESCRIPTOR(classId)->wLayout == tsp_Object_Thread));
   tmthread_criticalLock();
   if(!fGc)
     tmthread_checkSyncRequest();
@@ -1341,7 +1341,7 @@ tsp_OID tsp_newStruct(tsp_ClassId classId)
 {
   tsp_OID pNew;
   assert((store.nDescriptors > classId) &&
-         (DESCRIPTOR(classId)->wLayout == tsp_Object_Struct));
+	 (DESCRIPTOR(classId)->wLayout == tsp_Object_Struct));
   tmthread_criticalLock();
   if(!fGc)
     tmthread_checkSyncRequest();
@@ -1354,7 +1354,7 @@ tsp_OID tsp_newWeakRef(tsp_ClassId classId)
 {
   tsp_OID pNew;
   assert((store.nDescriptors > classId) &&
-         (DESCRIPTOR(classId)->wLayout == tsp_Object_WeakRef));
+	 (DESCRIPTOR(classId)->wLayout == tsp_Object_WeakRef));
   tmthread_criticalLock();
   if(!fGc)
     tmthread_checkSyncRequest();
@@ -1362,7 +1362,6 @@ tsp_OID tsp_newWeakRef(tsp_ClassId classId)
   tmthread_criticalUnlock();
   return pNew;
 }
-
 
 tsp_OID tsp_newEmptyCopy(tsp_OID p)
 {
@@ -1386,7 +1385,7 @@ void tsp_resizeStack(void * p, Word minElements)
   tyc_StackFrame * fp;
   tsp_OID * pNew, * pOld;
   /* allocate space for larger stack */
-  wAdd = max(wSize, minElements * 100);
+  wAdd = max(wSize, minElements * 100); 
   tmthread_pushStack(pThread);
   tmthread_criticalLock();
   if(!fGc)
@@ -1428,10 +1427,10 @@ Word tsp_size(tsp_OID p)
   assert(p && !tsp_IS_IMMEDIATE(p));
   if (!IS_FORWARDED(p))
     return SIZE(p);
-  return SIZE(PFORWARD(p));
+  return SIZE(PFORWARD(p));  
 }
 
-tsp_ClassId tsp_classId(tsp_OID p)
+tsp_ClassId tsp_classId(tsp_OID p) 
 {
   assert(p && !tsp_IS_IMMEDIATE(p));
   return CLASSID(p);
@@ -1495,7 +1494,7 @@ tsp_CType tsp_getCType(tsp_OID p, Word i)
 {
   Word wClassId = CLASSID(p);
   assert(DESCRIPTOR(wClassId)->wLayout == tsp_Object_Struct ||
-         DESCRIPTOR(wClassId)->wLayout == tsp_Object_Thread);
+	 DESCRIPTOR(wClassId)->wLayout == tsp_Object_Thread);
   assert(i < strlen(DESCRIPTOR(wClassId)->pzString));
   return DESCRIPTOR(wClassId)->pzString[i];
 }
@@ -1505,7 +1504,7 @@ void * tsp_getCAddress(tsp_OID p, Word i)
 {
   Word wClassId = CLASSID(p);
   assert(DESCRIPTOR(wClassId)->wLayout == tsp_Object_Struct ||
-         DESCRIPTOR(wClassId)->wLayout == tsp_Object_Thread);
+	 DESCRIPTOR(wClassId)->wLayout == tsp_Object_Thread);
   assert(i < strlen(DESCRIPTOR(wClassId)->pzString));
   return (((char*)p) + DESCRIPTOR(wClassId)->pzOffsets[i]);
 }
@@ -1515,7 +1514,7 @@ Word tsp_getCSize(tsp_OID p)
 {
   Word wClassId = CLASSID(p);
   assert(DESCRIPTOR(wClassId)->wLayout == tsp_Object_Struct ||
-         DESCRIPTOR(wClassId)->wLayout == tsp_Object_Thread);
+	 DESCRIPTOR(wClassId)->wLayout == tsp_Object_Thread);
   return strlen(DESCRIPTOR(wClassId)->pzString);
 }
 
@@ -1524,7 +1523,7 @@ tsp_OID tsp_getCSlot(tsp_OID p, Word i)
   void * pAddress;
   Word wClassId = CLASSID(p);
   assert(DESCRIPTOR(wClassId)->wLayout == tsp_Object_Struct ||
-         DESCRIPTOR(wClassId)->wLayout == tsp_Object_Thread);
+	 DESCRIPTOR(wClassId)->wLayout == tsp_Object_Thread);
   assert(i < strlen(DESCRIPTOR(wClassId)->pzString));
   pAddress = ((char*)p) + DESCRIPTOR(wClassId)->pzOffsets[i];
   /* get slot with default conversion */
@@ -1550,7 +1549,7 @@ tsp_OID tsp_getCSlot(tsp_OID p, Word i)
                    "TSP error: illegal C-Type identifier");
       tosError_ABORT();
     }
-  }
+  } 
   return NULL;
 }
 
@@ -1651,23 +1650,23 @@ static int calcOffsets(tsp_ClassId wClassId)
   assert(pOffset && pszType);
   while((bType = *pszType++)) {
     pAlign = lookupAlign(bType, pHostArch->pAlignTable);
-    /* align to next boundary and save offset */
+    /* align to next boundary and save offset */ 
     iPosition = (iPosition + (pAlign->wAlign - 1)) & ~(pAlign->wAlign - 1);
     *pOffset++ = iPosition;
-    /* advance to next position */
+    /* advance to next position */ 
     iPosition += pAlign->nBytes;
     /* calculate size of structure (worst case) */
     pAlign = lookupAlign(bType, pMaxAlignment);
     nMaxBytes = (nMaxBytes + (pAlign->wAlign - 1)) & ~(pAlign->wAlign - 1);
-    nMaxBytes += pAlign->nBytes;
+    nMaxBytes += pAlign->nBytes;    
   }
-  /* terminate with 0 */
+  /* terminate with 0 */  
   *pOffset = 0;
   /* adjust size to object alignment */
   nMaxBytes = (nMaxBytes + (ALIGN_OBJECT-1)) & ~(Word)(ALIGN_OBJECT-1);
   return nMaxBytes;
 }
-
+  
 tsp_ClassId tsp_newClassId(tsp_Object wLayout, tsp_CType * pszDescriptor)
 {
   Word wClassId = store.nDescriptors++;
@@ -1681,7 +1680,7 @@ tsp_ClassId tsp_newClassId(tsp_Object wLayout, tsp_CType * pszDescriptor)
     /* offset list is terminated by 0 so allocate one additional item */
     DESCRIPTOR(wClassId)->pzString = tosString_strdup(pszDescriptor);
     DESCRIPTOR(wClassId)->pzOffsets = malloc((strlen(pszDescriptor)+1)
-                                              * sizeof(tsp_Offset));
+					      * sizeof(tsp_Offset));
     DESCRIPTOR(wClassId)->wSize = calcOffsets(wClassId);
   }
   return wClassId;
@@ -1755,7 +1754,7 @@ void tsp_allowGc(void)
 /* storefile layout
 
    execheader (64 Bytes):       b0-b63: invoke executable on unix systems
-
+   
    fileheader (16 Bytes):       b0-b15: hostname
 
    header (16 Words):               w0: magic number
@@ -1763,27 +1762,27 @@ void tsp_allowGc(void)
                                     w2: # first page saved
                                     w3: # last page saved
                                     w4: # used pages          nAllocatedPages
-                                    w5: # class descriptors   nDescriptors
-                                    w6: # saved pageblocks
-                                    w7: * root object
-                                    w8: * weak references
-                                w9-w15: unused
+			            w5: # class descriptors   nDescriptors
+				    w6: # saved pageblocks
+		                    w7: * root object
+				    w8: * weak references
+				w9-w15: unused
 
    descriptors (1 Word + var):      w0: object layout
-   (# class descriptors)                (w1-bZ only for C structs)
-                                    w1: # elements in descriptor string and
-                                        offset table
+   (# class descriptors)                (w1-bZ only for C structs) 
+				    w1: # elements in descriptor string and
+				        offset table
                                     w2: calculated size of struct
-                                 w3-wX: n (# elements) calculated offsets
-                                 bY-bZ: descriptor string of len n (# elements)
-                                       (0 appended up to next Word boundary)
-
+		                 w3-wX: n (# elements) calculated offsets
+		    	         bY-bZ: descriptor string of len n (# elements)
+			               (0 appended up to next Word boundary)
+				       
    pages (4 Words + n * 512 Bytes): w0: # page
    (# saved pageblocks)             w1: # pageblocks (1  = one object page
    (continued objects are saved                       >1 = obj + n*continued)
-    in one chunk)                   w2: filled       (for 1st page)
-                                    w3: _unused
-                               b0-b511: page
+    in one chunk)	            w2: filled       (for 1st page)     
+    		                    w3: _unused 
+			       b0-b511: page     
 */
 
 
@@ -1881,11 +1880,11 @@ static void adjustDescriptors(void)
 {
   Word wClassId, nMaxBytes;
   if(fRealign) {
-    /* look for C struct descriptors and adjust offset table */
+    /* look for C struct descriptors and adjust offset table */ 
     for(wClassId = 0; wClassId < store.nDescriptors; wClassId++) {
       if(DESCRIPTOR(wClassId)->wLayout == tsp_Object_Struct) {
-        nMaxBytes = calcOffsets(wClassId);
-        assert(nMaxBytes == DESCRIPTOR(wClassId)->wSize);
+	nMaxBytes = calcOffsets(wClassId);
+	assert(nMaxBytes == DESCRIPTOR(wClassId)->wSize);
       }
     }
   }
@@ -1912,32 +1911,32 @@ static Int restoreDescriptors(tosStdio_T * file)
     /* check if descriptor is defining a C struct */
     if(pTable->wLayout == tsp_Object_Struct) {
       if(readWords(file, &nFields, 1)) {
-        return tsp_ERROR_READ;
+	return tsp_ERROR_READ;
       }
       /* reserve memory for descriptor string and offset table */
       if((pTable->pzOffsets = malloc(nFields * sizeof(tsp_Offset))) == NULL) {
-        return tsp_ERROR_NOMEMORY;
+	return tsp_ERROR_NOMEMORY;
       }
       if((pTable->pzString = malloc(nFields * sizeof(tsp_CType))) == NULL) {
-        return tsp_ERROR_NOMEMORY;
+	return tsp_ERROR_NOMEMORY;
       }
-
+      
       /* convince SUN debugger (rui) */
       memset(pTable->pzOffsets, 0, nFields * sizeof(tsp_Offset));
       memset(pTable->pzString, 0, nFields * sizeof(tsp_CType));
       /* convince SUN debugger (rui) */
-
-      /* read size, descriptor string and offset table from file */
+      
+      /* read size, descriptor string and offset table from file */ 
       fErr  = readWords(file, &pTable->wSize, 1);
       fErr |= readWords(file,  pTable->pzOffsets, nFields);
       fErr |= readBytes(file,  pTable->pzString, nFields);
       /* advance to next word boundary */
       nFields %= ALIGN_WORD;
       if(nFields != 0) {
-        fErr |= readBytes(file, &wZero, ALIGN_WORD - nFields);
+	fErr |= readBytes(file, &wZero, ALIGN_WORD - nFields);
       }
       if(fErr) {
-        return tsp_ERROR_READ;
+	return tsp_ERROR_READ;
       }
     }
   }
@@ -1981,29 +1980,29 @@ static void realignStruct(tsp_OID p)
       iRead = (iRead + (pFrom->wAlign - 1)) & ~(pFrom->wAlign - 1);
       iWrite = (iWrite + (pTo->wAlign - 1)) & ~(pTo->wAlign - 1);
       if(nFrom == nTo) {
-        memcpy((Byte*)p + iWrite, (Byte*)m + iRead, nTo);
+	memcpy((Byte*)p + iWrite, (Byte*)m + iRead, nTo);
       }
       else {
-        if(nFrom > nTo) {
-          if(pStoreArch->wByteOrder == bigEndian) {
-            /* big endian: copy last n bytes */
-            memcpy((Byte*)p + iWrite, (Byte*)m + iRead + nFrom - nTo, nTo);
-          }
-          else {
-            /* little endian: copy first n bytes */
-            memcpy((Byte*)p + iWrite, (Byte*)m + iRead, nTo);
-          }
-        }
-        else {
-          if(pStoreArch->wByteOrder == bigEndian) {
-            /* big endian: copy to last n bytes */
-            memcpy((Byte*)p + iWrite + nTo - nFrom, (Byte*)m + iRead, nFrom);
-          }
-          else {
-            /* little endian: copy to first n bytes */
-            memcpy((Byte*)p + iWrite, (Byte*)m + iRead, nFrom);
-          }
-        }
+	if(nFrom > nTo) {
+	  if(pStoreArch->wByteOrder == bigEndian) {
+	    /* big endian: copy last n bytes */
+	    memcpy((Byte*)p + iWrite, (Byte*)m + iRead + nFrom - nTo, nTo);
+	  }
+	  else {
+	    /* little endian: copy first n bytes */
+	    memcpy((Byte*)p + iWrite, (Byte*)m + iRead, nTo);
+	  }
+	}
+	else {
+	  if(pStoreArch->wByteOrder == bigEndian) {
+	    /* big endian: copy to last n bytes */
+	    memcpy((Byte*)p + iWrite + nTo - nFrom, (Byte*)m + iRead, nFrom);
+	  }
+	  else {
+	    /* little endian: copy to first n bytes */
+	    memcpy((Byte*)p + iWrite, (Byte*)m + iRead, nFrom);
+	  }
+	}
       }
       iRead += nFrom, iWrite += nTo;
     }
@@ -2017,18 +2016,18 @@ static void realignStruct(tsp_OID p)
       AlignTable * pAlign = lookupAlign(bType, pHostArch->pAlignTable);
       switch(pAlign->nBytes) {
         case 1:
-          break;
+	  break;
         case 2:
-          swapShort((Byte*)p + *pOffset);
-          break;
+	  swapShort((Byte*)p + *pOffset);
+	  break;
         case 4:
-          swapWord((Byte*)p + *pOffset);
-          break;
+	  swapWord((Byte*)p + *pOffset);
+	  break;
         case 8:
-          swapDouble((Byte*)p + *pOffset);
-          break;
+	  swapDouble((Byte*)p + *pOffset);
+	  break;
         default:
-          tosError_ABORT();
+	  tosError_ABORT();
       }
       pOffset++;
     }
@@ -2069,7 +2068,7 @@ static void adjustArrayFields(tsp_OID * pArray, Word nSlots, Int nOffset)
 
 static void correctStack(tsp_OID p, Int nOffset)
 {
-  tsp_OID * sp;
+  tsp_OID * sp;      
   tsp_OID * pStackEnd = (tsp_OID*)((Byte*)p + SIZE(p) - sizeof(tsp_OID));
   tyc_Thread * pThread;
   tyc_StackFrame * fp;
@@ -2103,7 +2102,7 @@ static void correctStack(tsp_OID p, Int nOffset)
     /* skip to next frame */
     sp = (tsp_OID *)(fp + 1);
     fp = fp->parent.fp;
-  }
+  }      
   /* adjust gap between sp and fixed elements */
   while((tsp_OID)sp < (tsp_OID)pStackEnd) {
     adjustOid(sp, nOffset);
@@ -2122,47 +2121,47 @@ static void adjustPtrFields(tsp_OID p, Int nOffset)
       register tsp_CType * pszType = DESCRIPTOR(wClassId)->pzString;
       /* remap data if necessary */
       if(fSwap || fRealign) {
-        realignStruct(p);
+	realignStruct(p);
       }
       for(;;)
-        switch(*pszType++)
-          {
-          case 0:
-            return;
-          case tsp_Field_OID:
-            {
-            tsp_OID * pp = (tsp_OID*)((Byte*)p + (*pOffset++));
-            if(!tsp_IS_IMMEDIATE(*pp) && *pp != NULL)
-              *pp = (tsp_OID)((Word)*pp + nOffset);
-            }
-            break;
-          default:
-            pOffset++;
-            break;
-          }
+	switch(*pszType++)
+	  {
+	  case 0:
+	    return;
+	  case tsp_Field_OID:
+	    {
+	    tsp_OID * pp = (tsp_OID*)((Byte*)p + (*pOffset++));
+	    if(!tsp_IS_IMMEDIATE(*pp) && *pp != NULL)
+	      *pp = (tsp_OID)((Word)*pp + nOffset);
+	    }
+	    break;
+	  default:
+	    pOffset++;
+	    break;
+	  }
       }
     case tsp_Object_ShortArray:
       if(fSwap) {
-        Word n = SIZE(p) / sizeof(Short);
-        Short * pShort = (Short*)p;
-        while(n-- > 0)
-          swapShort(pShort++);
+	Word n = SIZE(p) / sizeof(Short);
+	Short * pShort = (Short*)p;
+	while(n-- > 0)
+	  swapShort(pShort++);
       }
       break;
     case tsp_Object_IntArray:
       if(fSwap) {
-        Word n = SIZE(p) / sizeof(Int);
-        Int * pInt = (Int*)p;
-        while(n-- > 0)
-          swapWord(pInt++);
+	Word n = SIZE(p) / sizeof(Int);
+	Int * pInt = (Int*)p;
+	while(n-- > 0)
+	  swapWord(pInt++);
       }
       break;
     case tsp_Object_LongArray:
       if(fSwap) {
-        Word n = SIZE(p) / sizeof(Long);
-        Long * pLong = (Long*)p;
-        while(n-- > 0)
-          swapDouble(pLong++);
+	Word n = SIZE(p) / sizeof(Long);
+	Long * pLong = (Long*)p;
+	while(n-- > 0)
+	  swapDouble(pLong++);
       }
       break;
     case tsp_Object_Thread:
@@ -2174,14 +2173,14 @@ static void adjustPtrFields(tsp_OID p, Int nOffset)
       pThread->pStackLimit = pThread->pStack + tmthread_MAX_STACKPEAK;
       /* swap flags if byteorder changed */
       if(fSwap) {
-        swapWord(&pThread->wFlags);
+	swapWord(&pThread->wFlags);
 	swapWord(&pThread->wLocalFlags);
       }
       /* visit OIDs values */
       adjustArrayFields((tsp_OID*)&(pThread->pNext), 12, nOffset);
       if(p > (tsp_OID)pThread->pStack && pThread->pStack != NULL) {
-        /* stack has been read already. ignore uninitialized thread objects */
-        correctStack(pThread->pStack, nOffset);
+	/* stack has been read already. ignore uninitialized thread objects */
+	correctStack(pThread->pStack, nOffset);
       }
       }
       break;
@@ -2192,8 +2191,8 @@ static void adjustPtrFields(tsp_OID p, Int nOffset)
       /* adjust pointer to thread */
       adjustPtr((tsp_OID*)pStackEnd, nOffset);
       if(p > (tsp_OID)*pStackEnd) {
-        /* thread has been read already */
-        correctStack(p, nOffset);
+	/* thread has been read already */
+	correctStack(p, nOffset);
       }
       }
       break;
@@ -2210,7 +2209,7 @@ static void adjustPtrFields(tsp_OID p, Int nOffset)
 
 
 static void adjustPage(Word nPage, Int nOffset)
-{
+{  
   /* Sweep across page and correct pointers, swap bytes and
      realign C structs if needed */
   Byte * p = NPAGE_TO_PTR(nPage);
@@ -2227,7 +2226,7 @@ static void adjustPage(Word nPage, Int nOffset)
       swapWord(&h->bitfield);
     }
     /* adjust object fields */
-    adjustPtrFields(p, nOffset);
+    adjustPtrFields(p, nOffset);    
     /* round up to next alignment boundary after next header */
     p += ALIGN_UP_OBJECT(SIZE(p)+sizeof(Header));
   }
@@ -2247,7 +2246,7 @@ static Int restorePages(tosStdio_T * file)
   /* print warning if saved range exceeds needed amount */
   if(nPages < nSavedRange) {
     fprintf(stderr,"TSP warning: reserved space exceeds needs by %d kb\n",
-            ((nSavedRange - nPages) * PAGE_SIZE) / 1024);
+	    ((nSavedRange - nPages) * PAGE_SIZE) / 1024);
   }
   nPages = max(nPages, nSavedRange);
   nBytes = (nPages + 1) * PAGE_SIZE - 1;
@@ -2302,7 +2301,7 @@ static Int restorePages(tosStdio_T * file)
     }
     }
     /* adjust pointer and data structures */
-    adjustPage(nAdjust, iAddressOffset);
+    adjustPage(nAdjust, iAddressOffset);    
   }
   assert(storeHeader.nUsedPages == nLoadedPages);
   /* restore root object */
@@ -2316,7 +2315,7 @@ static Int restorePages(tosStdio_T * file)
   /* no current page available */
   store.current.nPage = store.nLastPage;
   store.current.pPage = &invalidPage;
-
+  
   return tsp_OK;
 }
 
@@ -2438,7 +2437,7 @@ Int tsp_create(String szName)
   /* no current page available */
   store.current.nPage = store.nLastPage;
   store.current.pPage = &invalidPage;
-
+  
   return tsp_OK;
 }
 
@@ -2475,7 +2474,7 @@ static Int dumpClassIds(tosStdio_T * file)
       /* fill up to next word boundary */
       wSize %= ALIGN_WORD;
       if(wSize != 0) {
-        fErr |= writeBytes(file, &wZero, ALIGN_WORD - wSize);
+	fErr |= writeBytes(file, &wZero, ALIGN_WORD - wSize);
       }
     }
     if(fErr) {
@@ -2497,31 +2496,31 @@ static Int dumpPages(tosStdio_T * file)
     if(PPAGE(nPage)->age == store.age &&
        PPAGE(nPage)->type == PageType_Object)
       {
-        memset(&pageHeader, 0, sizeof(PageHeader));
-        /* remember # of first page saved */
-        if(fFirst) {
-          iFirst = nPage, fFirst = FALSE;
-        }
-        pageHeader.nFilled = PPAGE(nPage)->pbFree - PPAGE(nPage)->pb;
-        pageHeader.nBlocks = 1;
-        pageHeader.nPage = nPage++;
-        /* save continued pages in one chunk */
-        while(PPAGE(nPage)->age == store.age &&
-              PPAGE(nPage)->type == PageType_Continued)
-          {
-            pageHeader.nBlocks++;
-            nPage++;
-          }
-        fErr  = writeWords(file, &pageHeader, PAGEHEADER_SIZE);
-        fErr |= writeBytes(file, NPAGE_TO_PTR(pageHeader.nPage),
-                                 pageHeader.nBlocks * PAGE_SIZE);
-        if(fErr) {
-          return tsp_ERROR_WRITE;
-        }
-        /* remember # of last page saved */
-        iLast = nPage - 1;
-        nSavedPages += pageHeader.nBlocks;
-        nBlocks++;
+	memset(&pageHeader, 0, sizeof(PageHeader));
+	/* remember # of first page saved */
+	if(fFirst) {
+	  iFirst = nPage, fFirst = FALSE;
+	}
+	pageHeader.nFilled = PPAGE(nPage)->pbFree - PPAGE(nPage)->pb;
+	pageHeader.nBlocks = 1;
+	pageHeader.nPage = nPage++;
+	/* save continued pages in one chunk */
+	while(PPAGE(nPage)->age == store.age &&
+	      PPAGE(nPage)->type == PageType_Continued)
+	  {
+	    pageHeader.nBlocks++;
+	    nPage++;
+	  }
+	fErr  = writeWords(file, &pageHeader, PAGEHEADER_SIZE);
+	fErr |= writeBytes(file, NPAGE_TO_PTR(pageHeader.nPage),
+			         pageHeader.nBlocks * PAGE_SIZE);
+	if(fErr) {
+	  return tsp_ERROR_WRITE;
+	}
+	/* remember # of last page saved */
+	iLast = nPage - 1;
+	nSavedPages += pageHeader.nBlocks;
+	nBlocks++;
       }
     else {
       nPage++;
@@ -2545,7 +2544,7 @@ static Int saveStore(tosStdio_T * file)
   strncpy(execHeader, execString, EXECSTRING_SIZE);
   if(writeBytes(file, execHeader, EXECSTRING_SIZE)) {
     return tsp_ERROR_WRITE;
-  }
+  }  
   /* write OS identifier */
   strncpy(thisOS, tosSystem_getName(), tosSystem_NAME_SIZE);
   if(writeBytes(file, thisOS, tosSystem_NAME_SIZE)) {
@@ -2677,7 +2676,7 @@ Int tsp_rollback(void)
     free(pOld);
   }
   /* reopen store */
-  return tsp_open(name);
+  return tsp_open(name); 
 }
 
 
@@ -2725,61 +2724,61 @@ static void printRec(tsp_OID p, Int depth)
       register tsp_Offset * pOffset = DESCRIPTOR(wClassId)->pzOffsets;
       register tsp_CType * pszType = DESCRIPTOR(wClassId)->pzString;
       for(;;) {
-        tsp_OID * pp = (tsp_OID*)((Byte*)p + (*pOffset++));
-        switch(*pszType++)
-          {
-          case 0:
-            printf("}");
-            fflush(stdout);
-            return;
-          case tsp_Field_Char:
-            printf("%c ", *(signed char*)pp);
-            break;
-          case tsp_Field_UChar:
-            printf("%c ", *(unsigned char*)pp);
-            break;
-          case tsp_Field_Short:
-            printf("%d ", *(signed short*)pp);
-            break;
-          case tsp_Field_UShort:
-            printf("%du ", *(unsigned short*)pp);
-            break;
-          case tsp_Field_Int:
-            printf("%d ", *(signed int*)pp);
-            break;
-          case tsp_Field_UInt:
-            printf("%du ", *(unsigned int*)pp);
-            break;
-          case tsp_Field_Long:
-            printf("%ld ", *(signed long*)pp);
-            break;
-          case tsp_Field_ULong:
-            printf("%lu ", *(unsigned long*)pp);
-            break;
-          case tsp_Field_LongLong:
-            printf("%ld|%ld ", *(unsigned long*)pp, *(unsigned long*)(pp + 1));
-            break;
-          case tsp_Field_Float:
-            printf("%f ", *(float*)pp);
-            break;
-          case tsp_Field_Double:
-            printf("%f ", *(double*)pp);
-            break;
-          case tsp_Field_OID:
-            if(tsp_IS_IMMEDIATE(*pp)) {
-              printf("%d ", tyc_UNTAG_INT(*pp));
-            }
-            else if(tyc_IS_NIL(*pp)) {
-              printf("nil ");
-            }
-            else {
-              printRec(*pp, depth - 1);
-            }
-            break;
-          default:
+	tsp_OID * pp = (tsp_OID*)((Byte*)p + (*pOffset++));
+	switch(*pszType++)
+	  {
+	  case 0:
+	    printf("}");
+	    fflush(stdout);
+	    return;
+	  case tsp_Field_Char:
+	    printf("%c ", *(signed char*)pp);
+	    break;
+	  case tsp_Field_UChar:
+	    printf("%c ", *(unsigned char*)pp);
+	    break;
+	  case tsp_Field_Short:
+	    printf("%d ", *(signed short*)pp);
+	    break;
+	  case tsp_Field_UShort:
+	    printf("%du ", *(unsigned short*)pp);
+	    break;
+	  case tsp_Field_Int:
+	    printf("%d ", *(signed int*)pp);
+	    break;
+	  case tsp_Field_UInt:
+	    printf("%du ", *(unsigned int*)pp);
+	    break;
+	  case tsp_Field_Long:
+	    printf("%ld ", *(signed long*)pp);
+	    break;
+	  case tsp_Field_ULong: 
+	    printf("%lu ", *(unsigned long*)pp);
+	    break;
+	  case tsp_Field_LongLong:
+	    printf("%ld|%ld ", *(unsigned long*)pp, *(unsigned long*)(pp + 1));
+	    break;
+	  case tsp_Field_Float:
+	    printf("%f ", *(float*)pp);
+	    break;
+	  case tsp_Field_Double:
+	    printf("%f ", *(double*)pp);
+	    break;
+	  case tsp_Field_OID:
+	    if(tsp_IS_IMMEDIATE(*pp)) {
+	      printf("%d ", tyc_UNTAG_INT(*pp));
+	    }
+	    else if(tyc_IS_NIL(*pp)) {
+	      printf("nil ");
+	    }
+	    else {
+	      printRec(*pp, depth - 1);
+	    }
+	    break;
+	  default:
             tosError_ABORT();
-            break;
-          }
+	    break;
+	  }
       }
       }
     case tsp_Object_Array:
@@ -2787,19 +2786,19 @@ static void printRec(tsp_OID p, Int depth)
       Int i;
       tsp_OID * pp = p;
       for(i = 0; i < (SIZE(p) / sizeof(tsp_OID)); i++, pp++) {
-        if(i == objWidth) {
-          printf("...");
-          goto recEnd;
-        }
-        if(tsp_IS_IMMEDIATE(*pp)) {
-          printf("%d ", tyc_UNTAG_INT(*pp));
-        }
-        else if(tyc_IS_NIL(*pp)) {
-          printf("nil ");
-        }
-        else {
-          printRec(*pp, depth - 1);
-        }
+	if(i == objWidth) {
+	  printf("...");
+	  goto recEnd;
+	}
+	if(tsp_IS_IMMEDIATE(*pp)) {
+	  printf("%d ", tyc_UNTAG_INT(*pp));
+	}
+	else if(tyc_IS_NIL(*pp)) {
+	  printf("nil ");
+	}
+	else {
+	  printRec(*pp, depth - 1);
+	}
       }
       }
       break;
@@ -2808,17 +2807,17 @@ static void printRec(tsp_OID p, Int depth)
       Int i;
       Byte * pp = p;
       if(wClassId == tyc_ClassId_String || wClassId == tyc_ClassId_Symbol ||
-         wClassId == tyc_ClassId_MutableString) {
-        printf("\"%s\" ", pp);
+	 wClassId == tyc_ClassId_MutableString) {
+	printf("\"%s\" ", pp);
       }
       else {
-        for(i = 0; i < (SIZE(p) / sizeof(Byte)); i++, pp++) {
-          if(i == objWidth) {
-            printf("...");
-            goto recEnd;
-          }
-          printf("%d ", *pp);
-        }
+	for(i = 0; i < (SIZE(p) / sizeof(Byte)); i++, pp++) {
+	  if(i == objWidth) {
+	    printf("...");
+	    goto recEnd;
+	  }
+	  printf("%d ", *pp);
+	}
       }
       }
       break;
@@ -2827,11 +2826,11 @@ static void printRec(tsp_OID p, Int depth)
       Int i;
       Short * pp = p;
       for(i = 0; i < (SIZE(p) / sizeof(Short)); i++, pp++) {
-        if(i == objWidth) {
-          printf("...");
-          goto recEnd;
-        }
-        printf("%d ", *pp);
+	if(i == objWidth) {
+	  printf("...");
+	  goto recEnd;
+	}
+	printf("%d ", *pp);
       }
       }
       break;
@@ -2877,8 +2876,8 @@ void tsp_scanObjects(void (*pFun)(tsp_OID))
       p += ALIGN_UP_OBJECT(sizeof(Header));
       /* scan all objects within page */
       while(p < pp) {
-        /* don't test objects with size 0 at end of page (<) */
-        pFun(p);
+	/* don't test objects with size 0 at end of page (<) */
+	pFun(p);
 	/* round up to next alignment boundary after next header */
 	p += ALIGN_UP_OBJECT(SIZE(p) + sizeof(Header));
       }
@@ -2913,7 +2912,7 @@ void showStoreStruct(void)
 void showWeakRef(tsp_WeakRef * p)
 {
   printf("Object:: ClassId: %d  Size: %d\n",
-         CLASSID(p), SIZE(p));
+	 CLASSID(p), SIZE(p));
 }
 
 void showObjects(Word nPage)
@@ -2923,7 +2922,7 @@ void showObjects(Word nPage)
   while(p <= pp) {
     /* show objects with size 0 at end of page (<=) */
     printf("Object:: ClassId: %d  Size: %d  At: %d 0x%x\n",
-           CLASSID(p), SIZE(p), (Word)p - (Word)NPAGE_TO_PTR(nPage), (Word)p);
+	   CLASSID(p), SIZE(p), (Word)p - (Word)NPAGE_TO_PTR(nPage), (Word)p);
     p += ALIGN_UP_OBJECT(SIZE(p) + sizeof(Header));
   }
 }
@@ -2956,7 +2955,7 @@ void showPages(void)
 void showLayout(Word nPage)
 {
   Int n = min(GROUP_NPAGES, store.nLastPage - nPage);
-  Int nAlloc = 0, nCont = 0, nFree = 0, nForeign = 0;
+  Int nAlloc = 0, nCont = 0, nFree = 0, nForeign = 0;  
   for(;n > 0; n--, nPage++) {
     if(PPAGE(nPage)->type == PageType_Foreign) {
       nForeign++; continue;
@@ -3006,9 +3005,9 @@ void tsp_storeStatus()
     nAlloc++;
   }
   printf("Total: %d  Real: %d  First: %d  Last: %d\n",
-         store.nPages, store.nRealPages, store.nFirstPage, store.nLastPage);
+	 store.nPages, store.nRealPages, store.nFirstPage, store.nLastPage);
   printf("Allocated: %d  Continued: %d  Free: %d  Foreign: %d\n",
-         nAlloc, nCont, nFree, nForeign);
+	 nAlloc, nCont, nFree, nForeign); 
   assert((nForeign + store.nRealPages) == store.nPages);
   assert((nCont + nAlloc) == store.nAllocatedPages);
   assert((nFree + nAlloc + nCont) == store.nRealPages);
@@ -3031,32 +3030,32 @@ static void integrityRec(tsp_OID p, Int depth)
       register tsp_Offset * pOffset = DESCRIPTOR(wClassId)->pzOffsets;
       register tsp_CType * pszType = DESCRIPTOR(wClassId)->pzString;
       for(;;) {
-        tsp_OID * pp = (tsp_OID*)((Byte*)p + (*pOffset++));
-        switch(*pszType++)
-          {
-          case 0:
-            return;
-          case tsp_Field_Char:
-          case tsp_Field_UChar:
-          case tsp_Field_Short:
-          case tsp_Field_UShort:
-          case tsp_Field_Int:
-          case tsp_Field_UInt:
-          case tsp_Field_Long:
-          case tsp_Field_ULong:
-          case tsp_Field_LongLong:
-          case tsp_Field_Float:
-          case tsp_Field_Double:
-            break;
-          case tsp_Field_OID:
-            if(!tsp_IS_IMMEDIATE(*pp) && depth > 0) {
-              if(*pp)
-                integrityRec(*pp, depth - 1);
-            }
-            break;
-          default:
+	tsp_OID * pp = (tsp_OID*)((Byte*)p + (*pOffset++));
+	switch(*pszType++)
+	  {
+	  case 0:
+	    return;
+	  case tsp_Field_Char:
+	  case tsp_Field_UChar:
+	  case tsp_Field_Short:
+	  case tsp_Field_UShort:
+	  case tsp_Field_Int:
+	  case tsp_Field_UInt:
+	  case tsp_Field_Long:
+	  case tsp_Field_ULong: 
+	  case tsp_Field_LongLong:
+	  case tsp_Field_Float:
+	  case tsp_Field_Double:
+	    break;
+	  case tsp_Field_OID:
+	    if(!tsp_IS_IMMEDIATE(*pp) && depth > 0) {
+	      if(*pp)
+		integrityRec(*pp, depth - 1);
+	    }
+	    break;
+	  default:
             tosError_ABORT();
-          }
+	  }
       }
       }
     case tsp_Object_Array:
@@ -3064,10 +3063,10 @@ static void integrityRec(tsp_OID p, Int depth)
       Int i;
       tsp_OID * pp = p;
       for(i = 0; i < (SIZE(p) / sizeof(tsp_OID)); i++, pp++) {
-        if(!tsp_IS_IMMEDIATE(*pp) && depth > 0) {
-          if(*pp)
-            integrityRec(*pp, depth - 1);
-        }
+	if(!tsp_IS_IMMEDIATE(*pp) && depth > 0) {
+	  if(*pp)
+	    integrityRec(*pp, depth - 1);
+	}
       }
       }
       break;
@@ -3141,7 +3140,7 @@ static tsp_OID    * translationTable = NULL;
 typedef enum {
 
   #include "classids.h"
-
+  
   boot_ClassId_nPredefined
 } boot_ClassId;
 #undef TYC_CLASSID
@@ -3175,30 +3174,30 @@ static void replaceNumbers(tsp_OID p)
       register tsp_Offset * pOffset = DESCRIPTOR(wClassId)->pzOffsets;
       register tsp_CType * pszType = DESCRIPTOR(wClassId)->pzString;
       for(;;)
-        switch(*pszType++)
-          {
-          case 0:
-            return;
-          case tsp_Field_OID:
-            {
-            tsp_OID * pp = (tsp_OID*)((Byte*)p + (*pOffset++));
-            if(!tsp_IS_IMMEDIATE(*pp) && *pp != NULL)
-              *pp = translationTable[((Word)(*pp)) >> 2];
-            }
-            break;
-          default:
-            pOffset++;
-            break;
-          }
+	switch(*pszType++)
+	  {
+	  case 0:
+	    return;
+	  case tsp_Field_OID:
+	    {
+	    tsp_OID * pp = (tsp_OID*)((Byte*)p + (*pOffset++));
+	    if(!tsp_IS_IMMEDIATE(*pp) && *pp != NULL)
+	      *pp = translationTable[((Word)(*pp)) >> 2];
+	    }
+	    break;
+	  default:
+	    pOffset++;
+	    break;
+	  }
       }
     case tsp_Object_Array:
       {
       tsp_OID * pp = p;
       pp += SIZE(p) / sizeof(Word);
       while (pp != p) {
-        pp--;
-        if(!tsp_IS_IMMEDIATE(*pp) && *pp != NULL)
-          *pp = translationTable[((Word)(*pp)) >> 2];
+	pp--;
+	if(!tsp_IS_IMMEDIATE(*pp) && *pp != NULL)
+	  *pp = translationTable[((Word)(*pp)) >> 2];
       }
       }
       break;
@@ -3223,8 +3222,8 @@ static void sweep()
       p += ALIGN_UP_OBJECT(sizeof(Header));
       /* adjust all objects within page */
       while(p < pp) {
-        /* don't visit objects with size 0 at end of page (<) */
-        replaceNumbers(p);
+	/* don't visit objects with size 0 at end of page (<) */
+	replaceNumbers(p);    
 	/* round up to next alignment boundary after next header */
 	p += ALIGN_UP_OBJECT(SIZE(p) + sizeof(Header));
       }
@@ -3240,19 +3239,19 @@ static tsp_OID createNew(Word wClassId, Word wSize)
     switch(definedClasses[wClassId].wObjectType)
       {
       case tsp_Object_Struct:
-        pNew = tsp_newStruct(wClassId);
-        assert(SIZE(pNew) >= wSize);         /* size is n * ALIGN_OBJECT */
-        assert(CLASSID(pNew) == wClassId);
-        return pNew;
+	pNew = tsp_newStruct(wClassId);
+	assert(SIZE(pNew) >= wSize);         /* size is n * ALIGN_OBJECT */
+	assert(CLASSID(pNew) == wClassId);
+	return pNew;
       case tsp_Object_Array:
-        pNew = tsp_newArray(wClassId, wSize / sizeof(tsp_OID));
-        break;
+	pNew = tsp_newArray(wClassId, wSize / sizeof(tsp_OID));
+	break;
       case tsp_Object_ByteArray:
-        pNew = tsp_newByteArray(wClassId, wSize / sizeof(Byte));
-        break;
+	pNew = tsp_newByteArray(wClassId, wSize / sizeof(Byte));
+	break;
       case tsp_Object_ShortArray:
-        pNew = tsp_newShortArray(wClassId, wSize / sizeof(Short));
-        break;
+	pNew = tsp_newShortArray(wClassId, wSize / sizeof(Short));
+	break;
       /* none of these object types should be dumped */
       case tsp_Object_IntArray:
       case tsp_Object_LongArray:
@@ -3260,9 +3259,9 @@ static tsp_OID createNew(Word wClassId, Word wSize)
       case tsp_Object_Stack:
       case tsp_Object_WeakRef:
       default:
-        pNew = NULL;
-        fprintf(stderr,"\nTSP error: unsupported object type %d.\n",
-                definedClasses[wClassId].wObjectType);
+	pNew = NULL;
+	fprintf(stderr,"\nTSP error: unsupported object type %d.\n",
+		definedClasses[wClassId].wObjectType);
         tosError_ABORT();
       }
   }
@@ -3318,7 +3317,7 @@ static void registerClassIds(Word nIds)
   /* register predefined ids */
   for(i = 0; i < boot_ClassId_nPredefined; i++) {
     n = tsp_newClassId(definedClasses[i].wObjectType,
-                       definedClasses[i].pDescriptor);
+		       definedClasses[i].pDescriptor);
     assert(n == i);
   }
   /* register generic ids */

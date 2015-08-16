@@ -1,14 +1,14 @@
 class HttpProductClass
-  super ConcreteClass(HttpProduct)
-  metaclass MetaClass
-
-public methods
-
-  new(product :String, version :String) :HttpProduct
-  {
-    let p = _new,
-    p.init2(product, version),
+super ConcreteClass(HttpProduct)
+(**)
+meta MetaClass
+{
+new(product :String, version :String) :HttpProduct
+  (* *)
+{
+    p ::= _new
+    p.init2(product, version)
     p
   }
 
-;
+}

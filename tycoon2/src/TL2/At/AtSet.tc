@@ -52,7 +52,7 @@ clear :Void
   _changed  
 }
 
-remove(e :Object) @:E
+give(e :Object) @:E
   (* *)
 ensure !includes(e)
 {
@@ -112,12 +112,12 @@ private
 
 _elements @:AtArray(E)
 
-_equalityHash :Int
+;;_equalityHash :Int
 
 _changed :Void
   (* the abstract state of the set has changed *)
 {
-  _equalityHash := nil
+  ;;_equalityHash := nil
 }
 
 _init1(initialSize :Int) :Void

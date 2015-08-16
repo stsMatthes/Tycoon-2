@@ -2,6 +2,9 @@
     tycoon2 -bootstrap dump
 *)
 
+(* make the paths in the class loader relative again
+   (expect lots of "moved" messages) *)
+
 tycoon.tl.loader.registerDirectory("Standard");
 tycoon.tl.loader.registerDirectory("Standard/Containers");
 tycoon.tl.loader.registerFile("Util/Util.tc");
@@ -25,15 +28,24 @@ tycoon.tl.loader.unregisterClass("X_TL2MetaClass");
 tycoon.tl.loader.registerClassFile("Class", "Compile/X_TL2/X_TL2Class.tc");
 tycoon.tl.loader.registerClassFile("MetaClass", "Compile/X_TL2/X_TL2MetaClass.tc");
 tycoon.tl.loader.registerClassFile("Root", "Compile/X_TL2/X_TL2Root.tc");
+
 tycoon.tl.loader.update;
 
-tycoon.tl.typeChecker.ignore(ThreadClass);
-tycoon.tl.typeChecker.ignore(WeakRefClass);
+(* type check everything *)
 
 tycoon.tl.typeChecker.maxDepth := tycoon.tl.typeChecker.maxDepth.max(75000);
 
 tycoon.tl.typeChecker.check;
 tycoon.tl.typeChecker.finalize;
+
+(* alternatively, assume all classes are typechecked: *)
+(*
+Array.fromContainer(tycoon.tl.typeChecker.agenda).do(
+  fun(c :X_TL2ClassPublic) {
+    tycoon.tl.typeChecker.ignore(c)
+  }
+);
+*)
 
 tycoon.commit(
       (* ifCommitted *) {

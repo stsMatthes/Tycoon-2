@@ -21,7 +21,7 @@
 /*
   Copyright (c) 1996 Higher-Order GmbH, Hamburg. All rights reserved.
 
-  rtdll.h 1.7 98/05/18 Andreas Gawecki, Marc Weikard
+  $File: //depot/tycoon2/stsmain/tycoon2/src/tm/rtdll.h $ $Revision: #3 $ $Date: 2003/10/01 $ Andreas Gawecki, Marc Weikard
 
   Dynamic Link Library Support
 */
@@ -40,7 +40,7 @@ typedef void * rtdll_T;
 
 void rtdll_begin(rtstatic_Lib * pStaticLibs);
 
-extern rtdll_T rtdll_open(char * pszPath);
+extern rtdll_T rtdll_open(char * pszPath);	
   /* open a DLL, return a handle. Returns NULL on failiure. */
 
 extern Int rtdll_close(void * hDLL);
@@ -59,4 +59,5 @@ extern void rtdll_end(void);
 #endif
 
 #endif
+
 

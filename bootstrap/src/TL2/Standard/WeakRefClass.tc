@@ -1,5 +1,5 @@
-class WeakRefClass(T <:Object)
-super ConcreteClass(WeakRef(T))
+class WeakRefClass(T <:Object,Instance<:WeakRef(T))
+super ConcreteClass(Instance)
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -22,7 +22,7 @@ super ConcreteClass(WeakRef(T))
 *)
 meta MetaClass
 {
-new(target :T, finalizer :Fun(:T):Void) :WeakRef(T)
+new(target :T, finalizer :Fun(:T):Void) :Instance
   (* *)
 {
   wr ::= _new
@@ -34,7 +34,7 @@ new(target :T, finalizer :Fun(:T):Void) :WeakRef(T)
 
 private
 
-_new :WeakRef(T)
+_new :Instance
   (* *)
 builtin
 

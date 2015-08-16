@@ -1,3 +1,5 @@
+class Event
+super Ordered(Event), Events
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -25,74 +27,54 @@ Date:    09-Oct-1997
 Updates: (Date)	  (Name)	(Description)
          11-Nov-1997 GB  bugfix in require value in method remove
 *)
-
-class Event
-super Events, Ordered(Event)
-metaclass EventClass
-
-public methods
-
+meta EventClass
+{
 time :Long
-(* ------------------------------------------------------------ *)  
-  { _time }
+  (* ------------------------------------------------------------ *)
+{ _time }
 
-  
-action :Fun0(Void)
-(* ------------------------------------------------------------ *)  
-  { _action }
+action :Fun():Void
+  (* ------------------------------------------------------------ *)
+{ _action }
 
-  
 thread :Thread(Void)
-(* ------------------------------------------------------------ *)  
-  { _thread }
+  (* ------------------------------------------------------------ *)
+{ _thread }
 
-  
 "thread:="(thread :Thread(Void)) :Void
-
-  require thread.isNotNil
-(* ------------------------------------------------------------ *)  
+  (* ------------------------------------------------------------ *)
+require thread.isNotNil
+  
   {
-    _thread := thread,
+    _thread := thread
     nil
   }
 
-  
 order(e :Event) :Int
-
-  require e.isNotNil
-(* ------------------------------------------------------------ *)  
+  (* ------------------------------------------------------------ *)
+require e.isNotNil
+  
   { time.order(e.time) }
 
-
 remove(eventQueue :PriorityQueue(Event)) :Void
-
-  require eventQueue.isNotNil &
+  (* ------------------------------------------------------------ *)
+require eventQueue.isNotNil &
     eventQueue[0] == self
-(* ------------------------------------------------------------ *)
+
   { eventQueue.removeFirst }
-  
 
 printOn(out :Output) :Void
+  (* ------------------------------------------------------------ *)
+require out.isNotNil
 
-  require out.isNotNil
-(* ------------------------------------------------------------ *)
   { out << "an event at: " << Date.fromTime(_time) }
 
-  
 private
 
-  _time :Long,
-  _action :Fun0(Void),
-  _thread :Thread(Void)
+_time :Long
 
-methods
+_action :Fun():Void
 
-_init :Self
-(* ------------------------------------------------------------ *)  
-  {
-    super._init,
-    self
-  }
+_thread :Thread(Void)
 
-
-;
+}

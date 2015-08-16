@@ -1,4 +1,6 @@
 class PersonalizeStml
 super Personalize
-metaclass AbstractClass
-;
+(**)
+meta AbstractClass
+{
+}

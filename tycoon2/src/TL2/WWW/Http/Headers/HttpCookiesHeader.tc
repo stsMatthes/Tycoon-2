@@ -1,45 +1,49 @@
 class HttpCookiesHeader
 super MimeHeaderValueImpl(List(HttpCookie))
-metaclass MimeHeaderValueImplClass(List(HttpCookie))
-
-private methods
+(**)
+meta MimeHeaderValueImplClass(List(HttpCookie))
+{
+private
 
 parseValue(s :String) :List(HttpCookie)
+  (* *)
 {
-  let var cookies :List(HttpCookie) = EmptyList.new,
+  cookies :List(HttpCookie) := EmptyList.new
   
-  let var index = 0,
-  while({ index < s.size }, {
-    index := skipws(s, index),
-    let assign = s.locate1('=', index),
-    assign = nil ? { MimeParserError.new("HttpCookies: No value: "+s).raise },
+  index ::= 0
+  while({ index < s.size } do: {
+    index := skipws(s, index)
+    assign ::= s.locate1('=', index)
+    if( assign = nil then: { MimeParserError.new("HttpCookies: No value: "+s).raise })
 
-    let name = s.subString(index, assign-index),
+    name ::= s.subString(index, assign-index)
 
-    let var semi = s.locate1(';', assign+1),
-    semi = nil ? { semi := s.size },
+    semi ::= s.locate1(';', assign+1)
+    if( semi = nil then: { semi := s.size })
 
-    let value = s.subString(assign+1, semi-assign-1),
+    value ::= s.subString(assign+1, semi-assign-1)
 
-    cookies := List.cons(HttpCookie.new(name, value), cookies),
+    cookies := List.cons(HttpCookie.new(name, value), cookies)
 
     index := semi+1
-  }),
+  })
 
   cookies
 }
 
 unparseValue(c :List(HttpCookie)) :String
+  (* *)
 {
-  let result = c.fold(
+  result ::= c.fold(
 	       fun(cookie :HttpCookie) { cookie.name + "=" + cookie.value },
 	       fun(s :String, c :String) { s + ";" + c }
-	       ),
+	       )
 
-  result = nil ? { "" } : { result }	       
+  if( result = nil then: { "" } else: { result })	       
 }
 
-(*
+skipws(s :String, start :Int) :Int
+  (*
  * This file is part of the Tycoon-2 system.
  *
  * The Tycoon-2 system is free software; you can redistribute it and/or
@@ -59,15 +63,12 @@ unparseValue(c :List(HttpCookie)) :String
  * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
  *
  the index of the first character >= start in s, that is not a whitespace, or s.size *)
-skipws(s :String, start :Int) :Int
 {
-  let var result = start,
-  while({ result < s.size && { s[result] = ' ' | s[result] = '\t' }},
-        { result := result + 1 }),
+  result ::= start
+  while({ result < s.size &&  s[result] = ' ' | s[result] = '\t' } do:
+        { result := result + 1 })
 
   result
 }
 
-;
-
-  
+}

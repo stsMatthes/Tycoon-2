@@ -23,5 +23,5 @@ super Object
    tracing from X_TL2 to TL2   (goes the other way round with "X_") *)
 meta AbstractClass
 {
-  __brand_X_Cross :Void { }
+  __brand__X_Cross :Void { }
 }

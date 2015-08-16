@@ -1,30 +1,39 @@
 class SgmlLeaf
 super SgmlComponent
-public
-position :SgmlPos,
+(**)
+meta SgmlLeafClass()
+
+{
+position :SgmlPos
+
 data :String
-methods
 
 components :Sequence(SgmlComponent)
+  (* *)
 { Array.with0 }
 
 case( T <: Void,
-      :Fun1(SgmlComposite, T),
-      ifLeaf :Fun1(SgmlLeaf, T)) :T
+      :Fun(:SgmlComposite):T,
+      ifLeaf :Fun(:SgmlLeaf):T) :T
+  (* *)
 { ifLeaf[self] }
 
-printOnGenerator(out :SgmlGenerator)
+printOnGenerator(out :SgmlGenerator) :Void
+  (* *)
 { out.writeString(data) }
 
-lookupComposite( :Dictionary(String, Fun1(SgmlComposite, Void)))
+lookupComposite( :Dictionary(String, Fun(:SgmlComposite):Void)) :Void
+  (* *)
 {}
 
 substitute(
   Context <: Object,
   :Context,
-  :Dictionary(String, Fun2(Context, SgmlComposite, Array(SgmlComponent)))
+  :Dictionary(String, Fun(:Context, :SgmlComposite):Array(SgmlComponent))
 ) :Array(SgmlComponent)
+  (* *)
 {
   Array.with1(self)
 }
-;
+
+}

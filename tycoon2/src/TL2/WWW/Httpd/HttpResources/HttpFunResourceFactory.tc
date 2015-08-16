@@ -1,5 +1,5 @@
 class HttpFunResourceFactory
-
+super HttpResourceFactory
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -20,37 +20,27 @@ class HttpFunResourceFactory
  * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
  *
  my instances provide a flexible mapping of file extenstions to HTTP resources *)
-
-super HttpResourceFactory
-
-metaclass SimpleConcreteClass(HttpFunResourceFactory)
-
-public
-
-generators :Dictionary(String, Fun1(File, HttpFileResource)) 
-
-methods
+meta SimpleConcreteClass(HttpFunResourceFactory)
+{
+generators :Dictionary(String, Fun(:File):HttpFileResource)
 
 newFileResource(file :File) :HttpResource
   (* create a new file resource with the given name in the given directory *)
 {
-  let ext = fs.pathExtension(file.path),
+  ext ::= fs.pathExtension(file.path)
   generators.lookup(ext,
-    fun(gen :Fun1(File, HttpFileResource)) { gen[file] },
-    fun() { nil } (* let another resource factory do the job *)
+    fun(gen :Fun(:File):HttpFileResource) { gen[file] },
+    fun() { nil } ; let another resource factory do the job 
   )
 }
 
 private
 
-methods
-
 _init :Void
+  (* *)
 {
-  generators := Dictionary.new,
+  generators := Dictionary.new
   super._init
 }
 
-;
-
-
+}

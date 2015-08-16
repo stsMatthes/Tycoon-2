@@ -1,16 +1,18 @@
 class AbstractHttpdClass(Instance <:Httpd)
 super ConcreteClass(Instance)
-metaclass MetaClass
-public methods
-
-new :Instance
+(**)
+meta MetaClass
 {
-  let server = _new,
-  server._init,
+new :Instance
+  (* *)
+{
+  server ::= _new
+  server._init
   server
 }
 
-(*
+DATE_FORMAT :String
+  (*
  * This file is part of the Tycoon-2 system.
  *
  * The Tycoon-2 system is free software; you can redistribute it and/or
@@ -29,19 +31,24 @@ new :Instance
  * 
  * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
  *
- Property Names: *)
-
-DATE_FORMAT :String
-  (* answer the format string for log file time stamps,
+ Property Names: 
+ answer the format string for log file time stamps,
      suitable as an argument to Date::format
    *)
 {
   "%d/%b/%Y:%H:%M:%S +0100"
 }
 
-anyHost :String { "*" }
+anyHost :String
+  (* *)
+{ "*" }
 
-EXIT_USAGE :Int { 1 }
-EXIT_BAD_CONFIGURATION :Int { 2 }
+EXIT_USAGE :Int
+  (* *)
+{ 1 }
 
-;
+EXIT_BAD_CONFIGURATION :Int
+  (* *)
+{ 2 }
+
+}

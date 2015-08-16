@@ -1,3 +1,5 @@
+class MimeParserErrorClass
+super ConcreteClass(MimeParserError)
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -22,18 +24,14 @@
 
   Author: Matthias Ernst 12/96
 *)
-
-class MimeParserErrorClass
-super ConcreteClass(MimeParserError)
-metaclass MetaClass
-
-public methods
-
-new(msg :String): MimeParserError
+meta MetaClass
 {
-  let result = _new,
-  result.message := msg,
+new(msg :String): MimeParserError
+  (* *)
+{
+  result ::= _new
+  result.message := msg
   result
 }
-;
 
+}

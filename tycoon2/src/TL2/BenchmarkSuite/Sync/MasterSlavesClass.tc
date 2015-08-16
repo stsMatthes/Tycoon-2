@@ -1,15 +1,17 @@
 class MasterSlavesClass
 super ConcreteClass(MasterSlaves)
-metaclass MetaClass
-
-public methods
-
-new4(m :Int, s:Int, wpm :Int, debug :Bool) :MasterSlaves
+(**)
+meta MetaClass
 {
-  let i = _new,
-  i._m := m,
-  i._s := s,
-  i._wpm := wpm,
-  i._debug := debug,
+new4(m :Int, s:Int, wpm :Int, debug :Bool) :MasterSlaves
+  (* *)
+{
+  i ::= _new
+  i._m := m
+  i._s := s
+  i._wpm := wpm
+  i._debug := debug
   i
+}
+
 }

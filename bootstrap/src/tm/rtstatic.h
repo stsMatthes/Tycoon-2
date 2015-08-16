@@ -21,7 +21,7 @@
 /*
   Copyright (c) 1996 Higher-Order GmbH, Hamburg. All rights reserved.
 
-  rtstatic.h 1.3 98/05/18 Andreas Gawecki
+  $File: //depot/tycoon2/stsmain/bootstrap/src/tm/rtstatic.h $ $Revision: #3 $ $Date: 2003/10/02 $ Andreas Gawecki
 
   Support Dynamic Lookup in Statically Linked Objects
 
@@ -39,12 +39,12 @@ typedef struct rtstatic_Sym {
   char * pszSym;
   void * pValue;
 } rtstatic_Sym;
-
+  
 typedef struct rtstatic_Lib {
   char * pszName;
   rtstatic_Sym * aSyms;
 } rtstatic_Lib;
-
+  
 extern rtstatic_Lib rtstatic_aStaticLibs[];
 
 
@@ -53,4 +53,11 @@ extern rtstatic_Lib rtstatic_aStaticLibs[];
 #endif
 
 #endif
+
+
+
+
+
+
+
 

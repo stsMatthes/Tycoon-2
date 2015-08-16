@@ -1,3 +1,5 @@
+class EventClass
+super ConcreteClass(Event), Events
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -22,23 +24,19 @@ Author:  Axel Wienberg, Gerd Bremer
 Date:    09-Oct-1997
 Updates: (Date)	  (Name)	(Description)
 *)
-
-class EventClass
-super Events, ConcreteClass(Event)
-metaclass MetaClass
-
-public methods
-
-new(time :Long, action :Fun0(Void)) :Event
-
-  require time.isNotNil &
+meta MetaClass
+{
+new(time :Long, action :Fun():Void) :Event
+  (* ------------------------------------------------------------ *)
+require time.isNotNil &
     action.isNotNil
-(* ------------------------------------------------------------ *)    
+    
   {
-    let instance = _new,
-    instance._time := time,
-    instance._action := action,
+    instance ::= _new
+    instance._time := time
+    instance._action := action
     instance._init
+    instance
   }
 
-;
+}

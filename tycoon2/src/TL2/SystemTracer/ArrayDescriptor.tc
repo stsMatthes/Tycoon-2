@@ -1,14 +1,5 @@
 class ArrayDescriptor
 super AbstractArrayDescriptor
-metaclass SingletonClass(ArrayDescriptor)
-public methods
-
-layout :Int
-{ layoutArray }
-
-elementFmt :Char
-{ 'o' }
-
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -28,35 +19,49 @@ elementFmt :Char
  * 
  * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
  *
- only for speed *)
-objectSize(o :Object, tracer :Tracer) :Int
+*)
+meta TspDescriptorClass(ArrayDescriptor)
+{
+layout :Int
+  (* *)
+{ layoutArray }
+
+elementFmt :Char
+  (* *)
+{ 'o' }
+
+objectSize(o :Object) :Int
+  (* only for speed *)
 { o.__basicSize * 4 }
 
-(* only for speed *)
-dumpInstance(o :Object, tracer :Tracer)
+dumpInstance(o :Object) :Void
+  (* only for speed *)
 {
-  for(0,o.__basicSize-1,fun(i:Int){
+  tracer ::= _tracer
+  for(0 to:o.__basicSize-1 do:fun(i:Int){
     tracer.dumpOID(o.__basicAt(i))
   })
 }
 
-allocate(o :Object, tl2Class :TL2Class, tracer :Tracer) :Int
-  require o."class".name = tl2Class.name
+allocate(o :Object, tl2Class :TL2Class) :Int
+  (* *)
+require o."class".name = tl2Class.name
 {
-  o.__basicSize != tl2Class.instanceSize
-  ? { o."class" !== Array
-      && { o."class" !== MutableArray
-           && { o."class" !== TVMStack
-	        && { (* FunN: only after bootstrap *)
-		     let name = o."class".name,  
+  if( o.__basicSize != tl2Class.instanceSize
+  then: { if( o."class" !== Array
+      && ( o."class" !== MutableArray
+           && ( o."class" !== TVMStack
+	        && ( ; FunN: only after bootstrap 
+		     name ::= o."class".name  
 		     name.size != 4
-		     || { name.subString(0,3) != "Fun"
-		          || { !name[3].isDigit }}}}}
-      ? { tycoon.stdout <<
+		     || ( name.subString(0,3) != "Fun"
+		          ||  !name[3].isDigit ))))
+      then: { tycoon.stdout <<
 	   "object size mismatch: "<<o."class".name<<": found "
 	    <<o.__basicSize<<" slots, expected "<<tl2Class.instanceSize<<'\n'
-	    <<"History: ",
-	  tracer.showHistory}},
-  super.allocate(o,tl2Class,tracer)
+	    <<"History: "
+	  _tracer.showHistory})})
+  super.allocate(o,tl2Class)
 }
-;
+
+}

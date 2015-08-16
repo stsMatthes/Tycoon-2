@@ -73,6 +73,14 @@ withLock(T <:Void, statement :Fun():T) :T
     { unlock })
 }
 
+withLock(T <:Void, statement :Fun()@:T) @:T
+  (* aquire the receiver, execute statement, release the receiver finally *)
+{
+  lock
+  protect(statement,
+    { unlock })@
+}
+
 
 private
 

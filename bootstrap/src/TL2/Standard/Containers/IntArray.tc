@@ -41,6 +41,21 @@ size :Int
   (* *)
 builtin
 
+__deepHollowCopy(mapping: IdDictionary(Object, Object)) :Void
+  (* recursively allocate hollow copies for all transitive components,
+     and set mapping[original] := hollow copy.
+     Helper method for componentCopy. *)
+{
+  mapping[self] := __hollowCopy
+}
+
+__copyFrom(original :Object, :IdDictionary(Object,Object)) :Void
+{
+  ;; Ints cannot be subcomponents, so they will never be contained in mapping, so...
+  ;; ### IntArray::replace should do memcpy!
+  replace(size,0,_typeCast(original,:Sequence(Int)),0)
+}
+
 private
 
 }

@@ -1,19 +1,23 @@
 class CommentCollectorState
 super Sugar
-metaclass CommentCollectorStateClass
-public
+(**)
+meta CommentCollectorStateClass
+{
+commentOut :Output
 
-commentOut :Output,
-otherOut :Output,
-nesting :Int,
+otherOut :Output
+
+nesting :Int
+
 nComments :Int
 
-private methods
+private
 
 _init :Void
-{ super._init,
-  nesting := 0,
-  nComments := 0,
-  self
+  (* *)
+{ super._init
+  nesting := 0
+  nComments := 0
 }
-;
+
+}

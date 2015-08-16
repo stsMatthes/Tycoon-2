@@ -1,3 +1,5 @@
+class Events
+super Object
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -22,10 +24,6 @@ Author:  Axel Wienberg, Gerd Bremer
 Date:    09-Oct-1997
 Updates: (Date)	  (Name)	(Description)
 *)
-
-class Events
-super Object
-metaclass MetaClass
-
-;
-
+meta MetaClass
+{
+}

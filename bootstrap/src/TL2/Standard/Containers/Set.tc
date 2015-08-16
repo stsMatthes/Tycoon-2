@@ -108,22 +108,22 @@ size
 copy :Self
   (* *)
 { c ::= shallowCopy
-  ; _elements := _elements.copy, 
-  _elements := _typeCast(_elements.copy, :MutableArray(E))
-  ; ### type checker bug 
+  _elements := _elements.componentCopy@
+  ; _elements := fetch(_typeCast(_elements.copy, :MutableArray(E)))@
+  ; ### type checker bug ??
   c
 }
 
 private
 
-_elements :MutableArray(E)
+_elements @:MutableArray(E)
 
-_equalityHash :Int
+; _equalityHash :Int
 
 _changed :Void
   (* the abstract state of the set has changed *)
 {
-  _equalityHash := nil
+  ;; _equalityHash := nil
 }
 
 _init1(initialSize :Int) :Void
@@ -131,7 +131,7 @@ _init1(initialSize :Int) :Void
 {
   n ::= 2
   while({n <= initialSize} do:{n := 2*n })
-  _elements := MutableArray.new(n)
+  _elements := MutableArray.new(n)@
   _elementCount := 0
   _init
 }

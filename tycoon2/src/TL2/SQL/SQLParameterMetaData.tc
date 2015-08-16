@@ -1,3 +1,5 @@
+class SQLParameterMetaData
+super SQL
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -24,15 +26,8 @@ Author:  Michael Skusa
 Date:    16-Aug-1996
 Updates: (Date)	  (Name)	(Description)
 *)
-
-class SQLParameterMetaData
-
-super SQL
-
-metaclass AbstractClass
-
-public methods
-
+meta AbstractClass
+{
 getParameterCount():Int
   (* answers number of parameters in associated statement *)
 {
@@ -79,26 +74,20 @@ getSqlType(n:Int):Int
   _parameterTypes[n]
 }
 
-retrieveParameterData(hstmt:Int32):Void deferred
+retrieveParameterData(hstmt:Int32):Void
+  (* *)
+deferred
 
 private
 
-_parameterCount:Int,
+_parameterCount:Int
 
-_parameterNulls:MutableArray(Int),
+_parameterNulls:MutableArray(Int)
 
-_parameterPrecisions:MutableArray(Int),
+_parameterPrecisions:MutableArray(Int)
 
-_parameterScales:MutableArray(Int),
+_parameterScales:MutableArray(Int)
 
 _parameterTypes:MutableArray(Int)
 
-
-;
-
-
-
-
-
-
-
+}

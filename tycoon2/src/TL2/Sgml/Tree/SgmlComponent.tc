@@ -1,9 +1,10 @@
 class SgmlComponent
 super Sgml
-metaclass AbstractClass
-public methods
-
-(*
+(**)
+meta AbstractClass
+{
+position :SgmlPos
+  (*
  * This file is part of the Tycoon-2 system.
  *
  * The Tycoon-2 system is free software; you can redistribute it and/or
@@ -23,18 +24,20 @@ public methods
  * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
  *
  position will be nil if sgmlTreeBuilder.interestedInPositions was false *)
-position :SgmlPos
-  deferred
+deferred
 
 components :Sequence(SgmlComponent)
-  deferred
+  (* *)
+deferred
 
 case( T <: Void,
-      ifComposite :Fun1(SgmlComposite, T),
-      ifLeaf :Fun1(SgmlLeaf, T)) :T
-  deferred
+      ifComposite :Fun(:SgmlComposite):T,
+      ifLeaf :Fun(:SgmlLeaf):T) :T
+  (* *)
+deferred
 
 isComposite :Bool
+  (* *)
 { case(
     fun(:SgmlComposite){ true },
     fun(:SgmlLeaf){ false }
@@ -42,34 +45,39 @@ isComposite :Bool
 }
 
 isLeaf :Bool
+  (* *)
 { !isComposite }
 
 asComposite :SgmlComposite
+  (* *)
 { case(
     fun(c:SgmlComposite){ c },
     fun(:SgmlLeaf){ nil }
   )
 }
 
-printOn(out :Output)
+printOn(out :Output) :Void
+  (* *)
 { printOnGenerator(SgmlGenerator.new(out)) }
 
-printOnGenerator(out :SgmlGenerator)
-  deferred
+printOnGenerator(out :SgmlGenerator) :Void
+  (* *)
+deferred
 
-(* looks in the whole tree for composites with the element names are
+lookupComposite( :Dictionary(String, Fun(:SgmlComposite):Void)) :Void
+  (* looks in the whole tree for composites with the element names are
    element of the dictionary. If found the corresponding function is
    evaluated *)
-lookupComposite( :Dictionary(String, Fun1(SgmlComposite, Void)))
-  deferred
+deferred
 
 substitute(
   Context <: Object,
   context :Context,
   dict :Dictionary(String,
-                   Fun2(Context, SgmlComposite,
-		        Array(SgmlComponent))
+                   Fun(:Context, :SgmlComposite):Array(SgmlComponent)
 		  )
   ) :Array(SgmlComponent)
-  deferred
-;
+  (* *)
+deferred
+
+}

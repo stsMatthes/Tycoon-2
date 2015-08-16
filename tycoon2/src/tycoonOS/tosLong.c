@@ -19,7 +19,7 @@
  *
  */
 /*
-  tosLong.c 1.0 final  16-OCT-1998  Andre Willomat
+  $File: //depot/tycoon2/stsmain/tycoon2/src/tycoonOS/tosLong.c $ $Revision: #3 $ $Date: 2003/10/01 $  Andre Willomat
 
   Interface to Portable Tycoon-2 operating system (TycoonOS)
 

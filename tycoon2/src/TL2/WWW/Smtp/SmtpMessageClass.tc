@@ -1,3 +1,5 @@
+class SmtpMessageClass
+super ConcreteClass(SmtpMessage)
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -23,141 +25,131 @@ Date:    30-Sep-1997
 Updates: (Date)	  (Name)	(Description)
 
 *)
-
-class SmtpMessageClass
-
-super ConcreteClass(SmtpMessage)
-
-metaclass MetaClass
-
-public methods
-
+meta MetaClass
+{
 new :SmtpMessage
+  (* message without headers 
+ ------------------------------------------------------------ *)
+{ new2(MimeHeaderDictionary.new, nil) }
 
-(* message without headers *)  
-(* ------------------------------------------------------------ *)  
-  { new2(MimeHeaderDictionary.new, nil) }
-
-  
 new2(headers :MimeHeaderDictionary(MimeHeaderValue),
      body    :Input) :SmtpMessage
-     
-  require headers.isNotNil
-(* ------------------------------------------------------------ *)  
+  (* ------------------------------------------------------------ *)
+require headers.isNotNil
+  
   { _new._init2(headers, body) }
-
 
 newMultipartMixed(headers :MimeHeaderDictionary(MimeHeaderValue),
 	          bodyParts :List(MimeMessage),
 	          boundary :String) :SmtpMessage
-	     
-  require headers.isNotNil &
+  (* ------------------------------------------------------------ *)
+require headers.isNotNil &
         bodyParts.isNotNil &
 	    boundary.isNotNil
-(* ------------------------------------------------------------ *)
+
   {    
-    let body = multipartBodyFromList(boundary, bodyParts),
-    let new = new2(headers, body),
-    new.contentType := MediaType.withBoundary(MediaType.MULTIPART_MIXED, boundary),
+    body ::= multipartBodyFromList(boundary, bodyParts)
+    new ::= new2(headers, body)
+    new.contentType := MediaType.withBoundary(MediaType.MULTIPART_MIXED, boundary)
     new
   }
 
-  
 newGifImage(path :String) :SmtpMessage
-
-  require path.isNotNil
-(* create MIME message out of gif image,
+  (* create MIME message out of gif image,
    set relevant headers
-*)  
-(* ------------------------------------------------------------ *)
+
+ ------------------------------------------------------------ *)
+require path.isNotNil
+  
+
   {
-    let file = File.new(path),
-    file.exists ? 
+    file ::= File.new(path)
+    if( file.exists then: 
       {
-        let instance = new,
-	(* setting the right headers and body *)
-	instance.mimeVersion := "1.0",
-	instance.contentType := MediaType.IMAGE_GIF,
-        instance.contentTransferEncoding := MimeMessage.codeBase64,
-	instance.body := Base64Encoder.new(file.openRead),
+        instance ::= new
+	; setting the right headers and body 
+	instance.mimeVersion := "1.0"
+	instance.contentType := MediaType.IMAGE_GIF
+        instance.contentTransferEncoding := MimeMessage.codeBase64
+	instance.body := Base64Encoder.new(file.openRead)
 	
-(* ## old	
-	let in = BufferedInput.new(file.openRead, 512),	
-	let var length = 54,
-	let var line = in.readString(length),
-	let var contentPart = "", (* ## what a mess *)
-	while({ line.size > 0 },
-	  {
-	    (* ## is there a more elegant solution ? *)
-	    let contentLine = String.fromReader(Base64Encoder.new(StringInput.new(line)).reader),
-	    contentPart := contentPart + contentLine,
-	    line := in.readString(length)
-	  }),
-	instance.body := StringInput.new(contentPart),
-	in.close,
-*)	
+; ## old	
+;	let in = BufferedInput.new(file.openRead, 512),	
+;	let var length = 54,
+;	let var line = in.readString(length),
+;	let var contentPart = "", ; ## what a mess 
+;	while({ line.size > 0 },
+;	  {
+;	    ; ## is there a more elegant solution ? 
+;	    let contentLine = String.fromReader(Base64Encoder.new(StringInput.new(line)).reader),
+;	    contentPart := contentPart + contentLine,
+;	    line := in.readString(length)
+;	  }),
+;	instance.body := StringInput.new(contentPart),
+;	in.close,
+;
 	instance
-      } :
-      { nil (* ## error *) }
+      } else:
+      { nil ; ## error 
+})
   }
 
-
 newHtmlText(html :String) :SmtpMessage
-
-  require html.isNotNil
-(* ------------------------------------------------------------ *)  
+  (* ------------------------------------------------------------ *)
+require html.isNotNil
+  
   {
-    let instance = new,
-    instance.mimeVersion := "1.0",
-    instance.contentType := MediaType.TEXT_HTML,
-    instance.contentTransferEncoding := MimeMessage.code7Bit,
-    (* #### Kodierung fehlt *)
-    instance.body := StringInput.new(html),
+    instance ::= new
+    instance.mimeVersion := "1.0"
+    instance.contentType := MediaType.TEXT_HTML
+    instance.contentTransferEncoding := MimeMessage.code7Bit
+    ; #### Kodierung fehlt 
+    instance.body := StringInput.new(html)
     instance
   }
 
-
 init :Void
-(* ------------------------------------------------------------ *)    
-  {
-    MimeHeaderRegistry.instance.registerHeader("From", MimeString),
-    MimeHeaderRegistry.instance.registerHeader("To", MimeString),
-    MimeHeaderRegistry.instance.registerHeader("Subject", MimeString),
-    MimeHeaderRegistry.instance.registerHeader("Message-Id", MimeString),
-    MimeHeaderRegistry.instance.registerHeader("Cc", MimeString),
+  (* ------------------------------------------------------------ *)
+{
+    MimeHeaderRegistry.instance.registerHeader("From", MimeString)
+    MimeHeaderRegistry.instance.registerHeader("To", MimeString)
+    MimeHeaderRegistry.instance.registerHeader("Subject", MimeString)
+    MimeHeaderRegistry.instance.registerHeader("Message-Id", MimeString)
+    MimeHeaderRegistry.instance.registerHeader("Cc", MimeString)
     MimeHeaderRegistry.instance.registerHeader("Bcc", MimeString)
   }
 
-  
 multipartBodyFromList(boundary :String, bodyParts :List(MimeMessage)) :Input
-
-  require boundary.isNotNil &
+  (* built multipart message body from list of body parts 
+ ------------------------------------------------------------ *)
+require boundary.isNotNil &
     bodyParts.isNotNil
-(* built multipart message body from list of body parts *)
-(* ------------------------------------------------------------ *)    
+
+    
   {
-    let result = GapString.new0,
-    boundary.isNotNil ?
+    result ::= GapString.new0
+    if( boundary.isNotNil then:
       {
         bodyParts.do(fun(bodyPart :MimeMessage)
 	  {
-	    result.addAll("\r\n--"),
-	    result.addAll(boundary),
-	    result.addAll("\r\n"),
-	    let out = StringBuilderOutput.new,
-	    bodyPart.emit(out),
-	    result.addAll(out.contents),
+	    result.addAll("\r\n--")
+	    result.addAll(boundary)
 	    result.addAll("\r\n")
-	  }),
-	!bodyParts.isEmpty ?
+	    out ::= StringBuilderOutput.new
+	    bodyPart.emit(out)
+	    result.addAll(out.contents)
+	    result.addAll("\r\n")
+	  })
+	if( !bodyParts.isEmpty then:
 	  {
-	    result.addAll("\r\n--"),
-	    result.addAll(boundary),
+	    result.addAll("\r\n--")
+	    result.addAll(boundary)
 	    result.addAll("--\r\n")
-	  },
+	  })
 	StringInput.new(result.asString)
-      } :
-      { nil (* ## internal error *) }    
+      } else:
+      { nil ; ## internal error 
+})    
   }
-  
-;
+
+}

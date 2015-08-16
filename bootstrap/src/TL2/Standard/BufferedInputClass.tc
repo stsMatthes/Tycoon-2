@@ -34,7 +34,7 @@ new(in :Input, bufferCapacity :Int) :BufferedInput
 {
   instance ::= _new
   instance._in := in
-  instance._buffer := MutableString.new(bufferCapacity)
+  instance._buffer := MutableString.new(bufferCapacity)@
   instance._init
   instance
   }

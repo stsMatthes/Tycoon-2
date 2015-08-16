@@ -1,3 +1,5 @@
+class ODBC
+super DLL
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -31,214 +33,326 @@ Updates: (Date)		(Name)	(Description)
 
 	 24-Oct-1997    MS      added visitLinux-Method
 *)
-
-class ODBC
-
-super DLL
-
-metaclass SimpleConcreteClass(ODBC)
-
-public
-
+meta SimpleConcreteClass(ODBC)
+{
 CTypeCode:Dictionary(Class,Int)
 
-methods
-
 visitSunOS5(sunOS5:SunOS5) :String
+  (* *)
 {
  "libodbc.so"
 }
 
 visitLinux(linux:Linux) :String
+  (* *)
 {
  "libodbc.so"
 }
 
-(* Some ODBC-constants *)
+SQL_NTS:Int
+  (* Some ODBC-constants 
+ special length values *)
+{ (-3 )}
 
-(* special length values *)
+SQL_DATA_AT_EXEC:Int
+  (* *)
+{ (-2 )}
 
-SQL_NTS:Int           { -3 }
-SQL_DATA_AT_EXEC:Int  { -2 }
-SQL_NULL_DATA:Int     { -1 }
+SQL_NULL_DATA:Int
+  (* *)
+{ (-1 )}
 
-(* return codes *)
+SQL_SUCCESS:Int
+  (* return codes *)
+{   0 }
 
-SQL_SUCCESS:Int	          {   0 }
-SQL_SUCCESS_WITH_INFO:Int {   1 }
-SQL_NEED_DATA:Int         {  99 }
-SQL_NO_DATA_FOUND:Int     { 100 }
+SQL_SUCCESS_WITH_INFO:Int
+  (* *)
+{   1 }
 
-(* FreeStmt defines *)
+SQL_NEED_DATA:Int
+  (* *)
+{  99 }
 
-SQL_CLOSE:Int	      { 0 }
-SQL_DROP:Int	      { 1 }
-SQL_UNBIND:Int	      { 2 }
-SQL_RESET_PARAMS:Int  { 3 }
+SQL_NO_DATA_FOUND:Int
+  (* *)
+{ 100 }
 
-(* SQL-type-codes *)
+SQL_CLOSE:Int
+  (* FreeStmt defines *)
+{ 0 }
 
-SQL_LONGVARBINARY:Int { -4 }
-SQL_LONGVARCHAR:Int   { -1 }
-SQL_CHAR:Int	      {  1 }
-SQL_NUMERIC:Int	      {  2 }
-SQL_DECIMAL:Int	      {  3 }
-SQL_INTEGER:Int	      {  4 }
-SQL_SMALLINT:Int      {  5 }
-SQL_FLOAT:Int	      {  6 }
-SQL_REAL:Int	      {  7 }
-SQL_DOUBLE:Int	      {  8 }
-SQL_DATE:Int	      {  9 }
-SQL_TIME:Int	      { 10 }
-SQL_TIMESTAMP:Int     { 11 }
-SQL_VARCHAR:Int	      { 12 }
+SQL_DROP:Int
+  (* *)
+{ 1 }
 
-NULL:Int32           {_NULL}
+SQL_UNBIND:Int
+  (* *)
+{ 2 }
 
-timestampScale:Int { 6 } (* ADABAS-ODBC-Driver does not return correct
+SQL_RESET_PARAMS:Int
+  (* *)
+{ 3 }
+
+SQL_LONGVARBINARY:Int
+  (* SQL-type-codes *)
+{ (-4 )}
+
+SQL_LONGVARCHAR:Int
+  (* *)
+{ (-1 )}
+
+SQL_CHAR:Int
+  (* *)
+{  1 }
+
+SQL_NUMERIC:Int
+  (* *)
+{  2 }
+
+SQL_DECIMAL:Int
+  (* *)
+{  3 }
+
+SQL_INTEGER:Int
+  (* *)
+{  4 }
+
+SQL_SMALLINT:Int
+  (* *)
+{  5 }
+
+SQL_FLOAT:Int
+  (* *)
+{  6 }
+
+SQL_REAL:Int
+  (* *)
+{  7 }
+
+SQL_DOUBLE:Int
+  (* *)
+{  8 }
+
+SQL_DATE:Int
+  (* *)
+{  9 }
+
+SQL_TIME:Int
+  (* *)
+{ 10 }
+
+SQL_TIMESTAMP:Int
+  (* *)
+{ 11 }
+
+SQL_VARCHAR:Int
+  (* *)
+{ 12 }
+
+NULL:Int32
+  (* *)
+{_NULL}
+
+timestampScale:Int
+  (* *)
+{ 6 }
+
+rawBufferLength():Int
+  (* ADABAS-ODBC-Driver does not return correct
                             scale of SQL-type timestamp. *)
+{ 32767 }
 
-rawBufferLength():Int { 32767 } (* Standard length of C-Buffer for Raw-Data *)
-			    
-(* ODBC-Standard-Functions, see ODBC-Reference for detailed parameter-
-   description. *)
+SQLAllocEnv(phenv:Int32):Int
+  (* Standard length of C-Buffer for Raw-Data 
+ ODBC-Standard-Functions, see ODBC-Reference for detailed parameter-
+   description. 
+ Connecting to a Data Source *)
+extern "SQLAllocEnv"
 
-(* Connecting to a Data Source *)
-
-SQLAllocEnv(phenv:Int32):Int extern
-
-SQLAllocConnect(phenv:Int32, phdbc:Int32):Int extern
+SQLAllocConnect(phenv:Int32, phdbc:Int32):Int
+  (* *)
+extern "SQLAllocConnect"
 
 SQLConnect(hdbc:Int32, szDSN:String,     cbDSN:Int,
                        szUID:String,     cbUID:Int,
-		       szAuthStr:String, cbAuthStr:Int):Int extern
+		       szAuthStr:String, cbAuthStr:Int):Int
+  (* *)
+extern "SQLConnect"
 
-(* Terminating a Connection *)
+SQLDisconnect(hdbc:Int32):Int
+  (* Terminating a Connection *)
+extern "SQLDisconnect"
 
-SQLDisconnect(hdbc:Int32):Int extern
+SQLFreeConnect(hdbc:Int32):Int
+  (* *)
+extern "SQLFreeConnect"
 
-SQLFreeConnect(hdbc:Int32):Int extern
+SQLFreeEnv(henv:Int32):Int
+  (* *)
+extern "SQLFreeEnv"
 
-SQLFreeEnv(henv:Int32):Int extern
+SQLSetConnectOption(hdbc:Int32, fOption:Int, vParam:Int):Int
+  (* Setting Driver Options *)
+extern "SQLSetConnectOption"
 
-(* Setting Driver Options *)
+SQLAllocStmt(hdbc:Int32, phstmt:Int32):Int
+  (* Preparing Requests *)
+extern "SQLAllocStmt"
 
-SQLSetConnectOption(hdbc:Int32, fOption:Int, vParam:Int):Int extern
+SQLPrepare(hstmt:Int32, szSqlStr:String, cbSqlStr:Int):Int
+  (* *)
+extern "SQLPrepare"
 
-(* Preparing Requests *)
+SQLGetCursorName(hstmt:Int32, szCursor:Int32, cbCursorMax:Int,pcbCursor:Int32):Int
+  (* *)
+extern "SQLGetCursorName"
 
-SQLAllocStmt(hdbc:Int32, phstmt:Int32):Int extern
+SQLSetCursorName(hstmt:Int32, szCursor:String, cbCursor:Int):Int
+  (* *)
+extern "SQLSetCursorName"
 
-SQLPrepare(hstmt:Int32, szSqlStr:String, cbSqlStr:Int):Int extern
+SQLSetScrollOptions(hstmt:Int32, fConcurrency:Int, crowKeyset:Int,crowRowset:Int):Int
+  (* *)
+extern "SQLSetScrollOptions"
 
-SQLGetCursorName(hstmt:Int32, szCursor:Int32, cbCursorMax:Int,pcbCursor:Int32):Int extern
+SQLExecute(hstmt:Int32):Int
+  (* Submitting Requests *)
+extern "SQLExecute"
 
-SQLSetCursorName(hstmt:Int32, szCursor:String, cbCursor:Int):Int extern
-
-SQLSetScrollOptions(hstmt:Int32, fConcurrency:Int, crowKeyset:Int,crowRowset:Int):Int extern
-
-(* Submitting Requests *)
-
-SQLExecute(hstmt:Int32):Int extern
-
-SQLExecDirect(hstmt:Int32, szSqlStr:String, cbSqlStr:Int):Int extern
+SQLExecDirect(hstmt:Int32, szSqlStr:String, cbSqlStr:Int):Int
+  (* *)
+extern "SQLExecDirect"
 
 SQLNativeSql (hdbc:Int32, szSqlStrIn:String, cbSqlStrIn:Int,
               szSqlStr:Int32, cbSqlStrMax:Int,
-	      pcbSqlStr:Int32):Int extern
-
-(* Retrieving Results and Information about Results *)
+	      pcbSqlStr:Int32):Int
+  (* *)
+extern "SQLNativeSql"
 
 SQLBindCol(hstmt:Int32, icol:Int, fCType:Int, rgbValue:Int32, cbValueMax:Int,
-           pcbValue:Int32):Int extern
+           pcbValue:Int32):Int
+  (* Retrieving Results and Information about Results *)
+extern "SQLBindCol"
 
-SQLRowCount(hstmt:Int32, pcrow:Int32):Int extern
+SQLRowCount(hstmt:Int32, pcrow:Int32):Int
+  (* *)
+extern "SQLRowCount"
 
-SQLNumResultCols(hstmt:Int32, pccol:Int32):Int extern
+SQLNumResultCols(hstmt:Int32, pccol:Int32):Int
+  (* *)
+extern "SQLNumResultCols"
 
 SQLDescribeCol(hstmt:Int32, icol:Int, szColName:Int32, cbColNameMax:Int,
                pcbColName:Int32, pfSqlType:Int32,pcbColDef:Int32,
-	       pibScale:Int32,pfNullable:Int32):Int extern
+	       pibScale:Int32,pfNullable:Int32):Int
+  (* *)
+extern "SQLDescribeCol"
 
 SQLColAttributes(hstmt:Int32, icol:Int, fDescType:Int, rgbDesc:Int32,
                  cbDescMax:Int, pcbDesc:Int32,
-		 pfDesc:Int32):Int extern
-		 
-SQLFetch(hstmt:Int32):Int extern
+		 pfDesc:Int32):Int
+  (* *)
+extern "SQLColAttributes"
+
+SQLFetch(hstmt:Int32):Int
+  (* *)
+extern "SQLFetch"
 
 SQLExtendedFetch(hstmt:Int32, fFetchType:Int, irow:Int,
-                 pcrow:Int32, rgfRowStatus:Int32):Int extern
+                 pcrow:Int32, rgfRowStatus:Int32):Int
+  (* *)
+extern "SQLExtendedFetch"
 
-SQLParamData(hstmt:Int32, prgbValue:Int32):Int extern
+SQLParamData(hstmt:Int32, prgbValue:Int32):Int
+  (* *)
+extern "SQLParamData"
 
-SQLPutData(hstmt:Int32, rgbValue:Int32, cbValue:Int):Int extern
+SQLPutData(hstmt:Int32, rgbValue:Int32, cbValue:Int):Int
+  (* *)
+extern "SQLPutData"
 
 SQLGetData(hstmt:Int32, icol:Int, fCType:Int, rgbValue:Int32,
-           cbValueMax:Int, pcbValue:Int32):Int extern
+           cbValueMax:Int, pcbValue:Int32):Int
+  (* *)
+extern "SQLGetData"
 
-SQLSetPos(hstmt:Int32, irow:Int, fOption:Int, fLock:Int):Int extern
+SQLSetPos(hstmt:Int32, irow:Int, fOption:Int, fLock:Int):Int
+  (* *)
+extern "SQLSetPos"
 
-SQLMoreResults(hstmt:Int32):Int extern
+SQLMoreResults(hstmt:Int32):Int
+  (* *)
+extern "SQLMoreResults"
 
 sqlError(henv:Int32, hdbc:Int32, hstmt:Int32, szSqlState:Int32,
 	 pfNativeError:Int32, szErrorMsg:Int32,
-	 cbErrorMsgMax:Int,pcbErrorMsg:Int32):Int extern "C" "SQLError"
+	 cbErrorMsgMax:Int,pcbErrorMsg:Int32):Int
+  (* *)
+extern  "SQLError"
 
 SQLTables(hstmt:Int32, szTableQualifier:String, cbTableQualifier:Int,
                      szTableOwner:String, cbTableOwner:Int,
 		     szTableName:String, cbTableName:Int,
-		     szTableType:String, cbTableType:Int):Int extern
+		     szTableType:String, cbTableType:Int):Int
+  (* *)
+extern "SQLTables"
 
-(* Handling parameters *)
-
-SQLNumParams(hstmt:Int32, pcpar:Int32):Int extern
+SQLNumParams(hstmt:Int32, pcpar:Int32):Int
+  (* Handling parameters *)
+extern "SQLNumParams"
 
 SQLDescribeParam(hstmt:Int32, ipar:Int, pfSqlType :Int32, pcbColDef:Int32,
-                 pibScale:Int32, pfNullable:Int32):Int extern
+                 pibScale:Int32, pfNullable:Int32):Int
+  (* *)
+extern "SQLDescribeParam"
 
 SQLBindParameter(hstmt:Int32, ipar:Int, fParamType:Int, fCType:Int,
                  fSqlType:Int, cbColDef:Int, ibScale:Int, rgbValue:Int32,
-		 cbValueMax:Int, pcbValue:Int32):Int extern
+		 cbValueMax:Int, pcbValue:Int32):Int
+  (* *)
+extern "SQLBindParameter"
 
+SQLFreeStmt(hstmt:Int32, fOption:Int):Int
+  (* Terminating a Statement *)
+extern "SQLFreeStmt"
 
-(* Terminating a Statement *)
+SQLCancel(hstmt:Int32):Int
+  (* *)
+extern "SQLCancel"
 
-SQLFreeStmt(hstmt:Int32, fOption:Int):Int extern
-
-SQLCancel(hstmt:Int32):Int extern
-
-SQLTransact(henv:Int32, hdbc:Int32, fType:Int):Int extern
-
-(* Information about Data Sources *)
+SQLTransact(henv:Int32, hdbc:Int32, fType:Int):Int
+  (* *)
+extern "SQLTransact"
 
 SQLGetInfo(hdbc:Int32, fInfoType:Int, rgbInfoValue:Int32,
-           cbInfoValueMax:Int, pcbInfoValue:Int32):Int extern
+           cbInfoValueMax:Int, pcbInfoValue:Int32):Int
+  (* Information about Data Sources *)
+extern "SQLGetInfo"
 
-SQLGetFunctions(hdbc:Int32, fFunction:Int, pfExists:Int32):Int extern
+SQLGetFunctions(hdbc:Int32, fFunction:Int, pfExists:Int32):Int
+  (* *)
+extern "SQLGetFunctions"
 
-SQLGetTypeInfo(hstmt:Int32, fSqlType:Int):Int extern
+SQLGetTypeInfo(hstmt:Int32, fSqlType:Int):Int
+  (* *)
+extern "SQLGetTypeInfo"
 
 private
 
 _NULL:Int32
 
-methods
-
-_init:Self
+_init:Void
+  (* *)
 {
-  super._init,
-  CTypeCode := Dictionary.new,
-  CTypeCode[Int] := 4,
-  CTypeCode[Real] := 8,
-  CTypeCode[String] := 1,
-  CTypeCode[Date] := 1,
-  CTypeCode[File] := -2,
-  _NULL := tycoon.rts.tymem_IntToInt32(0),
-  self
+  super._init
+  CTypeCode := Dictionary.new
+  CTypeCode[Int] := 4
+  CTypeCode[Real] := 8
+  CTypeCode[String] := 1
+  CTypeCode[Date] := 1
+  CTypeCode[File] := (-2)
+  _NULL := tycoon.tycoonOS.memory_IntToInt32(0)
 }
 
-;
-
-
-
-
+}

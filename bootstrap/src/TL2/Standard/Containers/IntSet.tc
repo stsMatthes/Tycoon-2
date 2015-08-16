@@ -240,16 +240,15 @@ size :Int
 
 copy :Self
   (* *)
-{ c ::= shallowCopy
-  _bits := _bits.copy
-  c
+{
+  ref(componentCopy@)
 }
 
 private
 
 _size :Int
 
-_bits :IntArray
+_bits @:IntArray
 
 ifIntSet(x :Object, T <: Void, ifSame :Fun(:IntSet):T, else :Fun():T) :T
   (* *)
@@ -288,10 +287,10 @@ ensure _bits.size >= n
   s ::= _bits.size
   if( s < n
   then: { newSize ::= n.max((s*3+1)/2)
-      newBits ::= IntArray.new(newSize)
+      newBits @::= IntArray.new(newSize)@
       newBits.replace(s, 0, _bits, 0)
       ; newBits.fill(newSize-s, s, 0), 
-      _bits := newBits })
+      _bits := newBits@ })
 }
 
 intervalAll(from :Int, to :Int, pred :Fun(:Int):Bool) :Bool

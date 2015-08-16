@@ -1,14 +1,15 @@
 class HtmlGeneratorClass
 super ConcreteClass(HtmlGenerator)
-metaclass MetaClass
-public methods
-
+(**)
+meta MetaClass
+{
 new(out :Output) :HtmlGenerator
-  {
-  let instance = _new,
-  instance._init,
-  instance._out := out,
+  (* *)
+{
+  instance ::= _new
+  instance._init
+  instance._out := out
   instance
   }
-;
 
+}

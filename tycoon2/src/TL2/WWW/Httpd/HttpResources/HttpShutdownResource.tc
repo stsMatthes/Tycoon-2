@@ -1,25 +1,19 @@
 class HttpShutdownResource
-
 super HttpResource
+(**)
+meta HttpShutdownResourceClass()
 
-public
-
+{
 httpd :Httpd
 
-methods
-
 get(request :HttpRequest) :HttpResponse
+  (* *)
 {
-   let response = httpd.shutdown(request),
-   response.noCache,
+   response ::= httpd.shutdown(request)
+   response.noCache
    response
 }
 
- 
 private
 
-methods
-
-;
-
-
+}

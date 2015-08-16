@@ -1,25 +1,25 @@
 class HttpdTestWorker
-
 super SimpleHttpClient(HttpRequest, HttpResponse)
+(**)
+meta SimpleConcreteClass(HttpdTestWorker)
+{
+n :Int
 
-metaclass SimpleConcreteClass(HttpdTestWorker)
+connection :Input
 
-public
+uri :String
 
-n :Int,
-connection :Input,
-uri :String,
-manager :HttpdTest,
+manager :HttpdTest
+
 verbose :Bool
 
-methods
-
-wait
+wait :Void
+  (* *)
 {
   manager.wait
 }
 
-pick
+pick :Void
   (*
  * This file is part of the Tycoon-2 system.
  *
@@ -41,60 +41,62 @@ pick
  *
  choose some uri at random *)
 {
-  let i = (manager.random.read.xor(n * 127)).abs % manager.uriList.size,
+  i ::= manager.random.read.asInt.xor(n * 127).abs % manager.uriList.size
   uri := manager.uriList[i]
 }
 
-fetch
+fetch :Void
+  (* *)
 {
-  let req = HttpRequest.new6(
+  req ::= HttpRequest.new6(
     "GET", uri, 1, 1,
     MimeHeaderDictionary.new,
-    InputReader.new(EmptyReader.new)),
+    InputReader.new(EmptyReader.new))
   request(manager.server, manager.port, req,
     fun(in :Input) {
-      connection := in,
-      let var line = in.readln,
-      while({line.isNotNil}, {
+      connection := in
+      line ::= in.readln
+      while({line.isNotNil} do: {
         line := in.readln
-      }),
+      })
       nil
     },
     fun(response :HttpResponse) {
-      (*handle(response)*)
+      ;handle(response)
     }
   )
 }
 
-fork
+fork :Void
+  (* *)
 {
   Thread.new(fun() {
-    while ({!manager.stop}, {
-      verbose ? { tycoon.stdout << "Thread " << n << ": waiting...\n" },
-      wait,
-      pick,
-      verbose ? { tycoon.stdout << "Thread " << n << ": fetching " << uri << "\n" },
-      try({ fetch }, fun(e :Exception) {
-        verbose ? { tycoon.stdout << "Thread " << n << ": exception: " << e << "\n"}
+    while({!manager.stop} do: {
+      if( verbose then: { tycoon.stdout << "Thread " << n << ": waiting...\n" })
+      wait
+      pick
+      if( verbose then: { tycoon.stdout << "Thread " << n << ": fetching " << uri << "\n" })
+      try({ fetch } else: fun(e :Exception) {
+        if( verbose then: { tycoon.stdout << "Thread " << n << ": exception: " << e << "\n"})
       })
     })
   })
 }
 
-interrupt
+interrupt :Void
+  (* *)
 {
   connection.close
 }
 
 private
 
-methods
-
 _init :Self
+  (* *)
 {
-  super._init,
-  verbose := false,
+  super._init
+  verbose := false
   self
 }
 
-;
+}

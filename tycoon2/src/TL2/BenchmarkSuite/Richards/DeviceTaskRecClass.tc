@@ -1,11 +1,12 @@
 class DeviceTaskRecClass(Instance <: DeviceTaskRec)
 super ConcreteClass(Instance)
-metaclass MetaClass
-
-public methods
-
+(**)
+meta MetaClass
+{
 new :Instance
+  (* *)
 {
   _new.init
 }
-;
+
+}

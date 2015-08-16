@@ -27,6 +27,8 @@ BUILDMODE    = rt ;
 #TMDEBUG_TEST = ON ;
 #TVM_DEBUG = ON ;
 #TSP_DEBUG = ON ;
+TVM_TRACE = ON ;
+ASSERTIONS = ON ;
 BOOTSTRAP = ON ;
 
 
@@ -76,7 +78,7 @@ switch $(OS)
   }
 
   case LINUX : {
-    HOX_CC_FLAGS   = -Drt_LIB_Linux_i386 -Wall -pipe -fno-builtin -D_REENTRANT -D_GNU_SOURCE -DHAS_MAP ;
+    HOX_CC_FLAGS   = -Drt_LIB_Linux_i386 -Wall -pipe -fno-builtin -D_REENTRANT -D_GNU_SOURCE -DHAS_MMAP ;
     HOX_COMPILER   = GCC ;
     HOX_LINK_FLAGS = -i -lpthread -ldl -lm ;
     HOX_COPT_FLAGS = -O2 -fomit-frame-pointer ;
@@ -140,6 +142,8 @@ if $(BUILDMODE) = rt {
 if $(TMDEBUG_TEST) = ON { HOX_CC_FLAGS += -Dtmdebug_TEST ; }
 if $(TVM_DEBUG)    = ON { HOX_CC_FLAGS += -Dtvm_DEBUG ;    }
 if $(TSP_DEBUG)    = ON { HOX_CC_FLAGS += -Dtsp_DEBUG ;    }
+if $(TVM_TRACE)    = ON { HOX_CC_FLAGS += -Dtvm_TRACE ;    }
+if ! $(ASSERTIONS) = ON { HOX_CC_FLAGS += -DNDEBUG ;       }
 if $(BOOTSTRAP)    = ON { HOX_CC_FLAGS += -DBOOTSTRAP ;    }
 
 if $(BUILDMODE) = debug {

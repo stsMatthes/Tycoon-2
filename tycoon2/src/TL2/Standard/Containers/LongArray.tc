@@ -41,6 +41,13 @@ size :Int
   (* *)
 builtin
 
+__copyFrom(original :Object, :IdDictionary(Object,Object)) :Void
+{
+  ;; Longs cannot be subcomponents, so they will never be contained in mapping, so...
+  ;; ### LongArray::replace should do memcpy!
+  replace(size,0,_typeCast(original,:Sequence(Long)),0)
+}
+
 private
 
 }

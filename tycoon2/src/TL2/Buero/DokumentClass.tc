@@ -1,0 +1,14 @@
+class DokumentClass
+super ConcreteClass(Dokument)
+meta MetaClass
+{
+
+new(text :String) @:Dokument
+{
+  instance@ ::= _new@
+  instance.text := text.componentCopy@
+  instance._init
+  instance@
+}
+
+}

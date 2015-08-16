@@ -1,19 +1,18 @@
 class HandlerTCBClass(Instance <: HandlerTCB)
 super TaskControlBlockClass(Instance)
-metaclass MetaClass
-
-public methods
-
+(**)
+meta MetaClass
+{
 createTCB(id :Int,
        prio :Int,
        workQueue :Queue(Packet),
        initialState :TaskState,
        privateData :HandlerTaskRec) :Instance
+  (* *)
 {
-  let obj = create(id,prio,workQueue,initialState),
-  obj.handle := privateData,
+  obj ::= create(id,prio,workQueue,initialState)
+  obj.handle := privateData
   obj
-}  
+}
 
-
-;
+}

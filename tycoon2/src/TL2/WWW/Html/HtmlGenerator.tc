@@ -1,3 +1,5 @@
+class HtmlGenerator
+super Html, SgmlGenerator
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -29,211 +31,228 @@ to replace special characters with entity references...
 
 ##enhance (waiting for optional parameters...sooon Bart)
 *)
+meta HtmlGeneratorClass()
 
-class HtmlGenerator
-
-super Html, SgmlGenerator
-
-public
-
-methods
-
-allowBreak
+{
+allowBreak :Void
   (* indicate that this is a goot place for a line break.
      ## enhance with quality factor *)
-  {
-  _preformatted == 0 ? { nl }
+{
+  if( _preformatted == 0 then: { nl })
   }
-
 
 validName(name :String) :Bool
+  (* *)
 {
-  (* this implements the relevant part of the HTML SGML-Declaration:
-	 NAMING   LCNMSTRT ""
-		  UCNMSTRT ""
-		  LCNMCHAR ".-"
-		  UCNMCHAR ".-"
-	 NAMELEN  72  *)
+  ; this implements the relevant part of the HTML SGML-Declaration:
+;	 NAMING   LCNMSTRT ""
+;		  UCNMSTRT ""
+;		  LCNMCHAR ".-"
+;		  UCNMCHAR ".-"
+;	 NAMELEN  72  
 
   !name.isEmpty
-  && { name.size <= 72
-  && { name[0].isAlpha
-  && { name.all(fun(c:Char){
-	 c.isAlphaNumeric || { c = '.' || { c = '-' } }
-       }) } } }
+  && ( name.size <= 72
+  && ( name[0].isAlpha
+  &&  name.all(fun(c:Char){
+	 c.isAlphaNumeric || ( c = '.' ||  c = '-'  )
+       })  ) )
 }
 
-urlAttr(name :String, value :String)
+urlAttr(name :String, value :String) :Void
   (* URL attribute: if value is not nil, write 'name="value"'
      to the output stream. *)
-  {
-  value !== nil ? { attr(name, value) }
+{
+  if( value !== nil then: { attr(name, value) })
   }
 
-
-a(href :String, target :String, contents :Fun0(Void))
+a(href :String, target :String, contents :Fun():Void) :Void
   (* write an HMTL anchor element.
      body is called to write the contents of the anchor. *)
-  {
-  let tag = "A",
-  beginStartTag(tag),
-  href.isNotNil ? { urlAttr("HREF", href) },
-  target.isNotNil ? { attr("TARGET", target) },
-  endStartTag,
-  contents[],
-  endTag(tag),
+{
+  tag ::= "A"
+  beginStartTag(tag)
+  if( href.isNotNil then: { urlAttr("HREF", href) })
+  if( target.isNotNil then: { attr("TARGET", target) })
+  endStartTag
+  contents[]
+  endTag(tag)
   nl
   }
 
-base(href :String)
-  {
-  beginStartTag("BASE"),
-  urlAttr("HREF", href),
-  endStartTag,
+base(href :String) :Void
+  (* *)
+{
+  beginStartTag("BASE")
+  urlAttr("HREF", href)
+  endStartTag
   nl
   }
 
-address(contents :Fun0(Void))
-  {
+address(contents :Fun():Void) :Void
+  (* *)
+{
   _h("ADDRESS", contents)
   }
 
-b(contents :Fun0(Void))
-  {
+b(contents :Fun():Void) :Void
+  (* *)
+{
   _b("B", contents)
   }
 
-blockquote(contents :Fun0(Void))
-  {
+blockquote(contents :Fun():Void) :Void
+  (* *)
+{
   _h("BLOCKQUOTE", contents)
   }
 
-body(contents :Fun0(Void))
-  {
-  _h("BODY", contents),
+body(contents :Fun():Void) :Void
+  (* *)
+{
+  _h("BODY", contents)
   nl
   }
 
-br
-  {
-  allowBreak,
-  startTag("BR"),
+br :Void
+  (* *)
+{
+  allowBreak
+  startTag("BR")
   nl
   }
 
-cite(contents :Fun0(Void))
-  {
+cite(contents :Fun():Void) :Void
+  (* *)
+{
   _h("CITE", contents)
   }
 
-cmd(contents :Fun0(Void))
-  {
+cmd(contents :Fun():Void) :Void
+  (* *)
+{
   _b("CMD", contents)
   }
 
-code(contents :Fun0(Void))
-  {
+code(contents :Fun():Void) :Void
+  (* *)
+{
   _h("CODE", contents)
   }
 
-dd(contents :Fun0(Void))
-  {
+dd(contents :Fun():Void) :Void
+  (* *)
+{
   _p("DD", contents)
   }
 
-dir(contents :Fun0(Void))
-  {
+dir(contents :Fun():Void) :Void
+  (* *)
+{
   _h("DIR", contents)
   }
 
-dt(contents :Fun0(Void))
-  {
+dt(contents :Fun():Void) :Void
+  (* *)
+{
   _p("DT", contents)
   }
 
-em(contents :Fun0(Void))
-  {
+em(contents :Fun():Void) :Void
+  (* *)
+{
   _b("EM", contents)
   }
 
-form(action :String, contents :Fun0(Void))
-  {
-  let tag = "FORM",
-  beginStartTag(tag),
-  urlAttr("ACTION", action),
-  attr("METHOD", "GET"), 
-  endStartTag,
-  nl,
-  contents[],
-  endTag(tag),
+form(action :String, contents :Fun():Void) :Void
+  (* *)
+{
+  tag ::= "FORM"
+  beginStartTag(tag)
+  urlAttr("ACTION", action)
+  attr("METHOD", "GET") 
+  endStartTag
+  nl
+  contents[]
+  endTag(tag)
   nl
   }
 
-h1(contents :Fun0(Void))
-  {
+h1(contents :Fun():Void) :Void
+  (* *)
+{
   _h("H1", contents)
   }
 
-h2(contents :Fun0(Void))
-  {
+h2(contents :Fun():Void) :Void
+  (* *)
+{
   _h("H2", contents)
   }
 
-h3(contents :Fun0(Void))
-  {
+h3(contents :Fun():Void) :Void
+  (* *)
+{
   _h("H3", contents)
   }
 
-h4(contents :Fun0(Void))
-  {
+h4(contents :Fun():Void) :Void
+  (* *)
+{
   _h("H4", contents)
   }
 
-h5(contents :Fun0(Void))
-  {
+h5(contents :Fun():Void) :Void
+  (* *)
+{
   _h("H5", contents)
   }
 
-h6(contents :Fun0(Void))
-  {
+h6(contents :Fun():Void) :Void
+  (* *)
+{
   _h("H6", contents)
   }
 
-head(contents :Fun0(Void))
-  {
+head(contents :Fun():Void) :Void
+  (* *)
+{
   _h("HEAD", contents)
   }
 
-hr
-  {
-  allowBreak,
-  startTag("HR"),
+hr :Void
+  (* *)
+{
+  allowBreak
+  startTag("HR")
   nl
   }
 
-html(contents :Fun0(Void))
-  {
-  _h("HTML", contents),
+html(contents :Fun():Void) :Void
+  (* *)
+{
+  _h("HTML", contents)
   nl
   }
 
-
-i(contents :Fun0(Void))
-  {
+i(contents :Fun():Void) :Void
+  (* *)
+{
   _b("I", contents)
   }
 
-img(src :String, align :String, alt :String, border :Int, isMap :Bool, seeThru :Bool)
-  {
-  let tag = "IMG",
-  beginStartTag(tag),
-  urlAttr("SRC", src),
-  align.isNotNil ? { tokenAttr("ALIGN", align) },
-  attr("ALT", alt),
-  intAttr("BORDER", border),
-  flagAttr("ISMAP", isMap),
-  flagAttr("SEETHRU", seeThru),
-  endStartTag,
+img(src :String, align :String, alt :String, border :Int, isMap :Bool, seeThru :Bool) :Void
+  (* *)
+{
+  tag ::= "IMG"
+  beginStartTag(tag)
+  urlAttr("SRC", src)
+  if( align.isNotNil then: { tokenAttr("ALIGN", align) })
+  attr("ALT", alt)
+  intAttr("BORDER", border)
+  flagAttr("ISMAP", isMap)
+  flagAttr("SEETHRU", seeThru)
+  endStartTag
   nl  
   }
 
@@ -243,222 +262,248 @@ input(type :String, name:String, value :String,
     disabled :Bool,
     maxLength :Int,
     min :Int,
-    size :Int)	   
-  {
-  let tag = "INPUT",
-  beginStartTag(tag),
-  align !== nil ? {tokenAttr("ALIGN", align)},
-  flagAttr("CHECKED", checked),
-  flagAttr("DISABLED", disabled),
-  intAttr("MAXLENGTH", maxLength),
-  intAttr("MIN", min),
-  attr("NAME", name), 
-  intAttr("SIZE", size),
-  tokenAttr("TYPE", type),
-  attr("VALUE", value),
-  endStartTag,
+    size :Int) :Void
+  (* *)
+{
+  tag ::= "INPUT"
+  beginStartTag(tag)
+  if( align !== nil then: {tokenAttr("ALIGN", align)})
+  flagAttr("CHECKED", checked)
+  flagAttr("DISABLED", disabled)
+  intAttr("MAXLENGTH", maxLength)
+  intAttr("MIN", min)
+  attr("NAME", name) 
+  intAttr("SIZE", size)
+  tokenAttr("TYPE", type)
+  attr("VALUE", value)
+  endStartTag
   nl
   }
 
 checkbox(name:String, value :String,
     align :String,
     checked :Bool,
-    disabled :Bool)	   
-  {
+    disabled :Bool) :Void
+  (* *)
+{
   input("checkbox", name, value,
     align, checked, disabled, nil, nil, nil) 
   }
 
-font(size :String, color :String, contents :Fun0(Void))
-  {
-  beginStartTag("FONT"),
-  attr("SIZE", size),
-  attr("COLOR", color),
-  endStartTag,
-  contents[],
+font(size :String, color :String, contents :Fun():Void) :Void
+  (* *)
+{
+  beginStartTag("FONT")
+  attr("SIZE", size)
+  attr("COLOR", color)
+  endStartTag
+  contents[]
   endTag("FONT")
   }
 
-kbd(contents :Fun0(Void))
-  {
+kbd(contents :Fun():Void) :Void
+  (* *)
+{
   _b("KBD", contents)
   }
 
-li(compact :Bool, contents :Fun0(Void))
-  {
+li(compact :Bool, contents :Fun():Void) :Void
+  (* *)
+{
   _li("LI", compact, contents)
   }
 
-listing(contents :Fun0(Void))
-  {
+listing(contents :Fun():Void) :Void
+  (* *)
+{
   _h("LISTING", contents)
   }
 
-menu(contents :Fun0(Void))
-  {
+menu(contents :Fun():Void) :Void
+  (* *)
+{
   _h("MENU", contents)
   }
 
-ol(compact :Bool, contents :Fun0(Void))
-  {
+ol(compact :Bool, contents :Fun():Void) :Void
+  (* *)
+{
   _li("OL", compact, contents)
   }
 
-option(value :String, selected :Bool)
-  {
-  nl,
-  let tag = "OPTION",
-  beginStartTag(tag),
-  attr("VALUE", value),
-  flagAttr("SELECTED", selected),
+option(value :String, selected :Bool) :Void
+  (* *)
+{
+  nl
+  tag ::= "OPTION"
+  beginStartTag(tag)
+  attr("VALUE", value)
+  flagAttr("SELECTED", selected)
   endStartTag
   }
 
-p(contents :Fun0(Void))
-  {
-  _p("P", contents),
-  endTag("P"),
+p(contents :Fun():Void) :Void
+  (* *)
+{
+  _p("P", contents)
+  endTag("P")
   nl
   }
 
-pre(contents :Fun0(Void))
-  {
+pre(contents :Fun():Void) :Void
+  (* *)
+{
   _h("PRE", fun() {
-    _preformatted := _preformatted+1,
-    contents[],
+    _preformatted := _preformatted+1
+    contents[]
     _preformatted := _preformatted-1
     })
   }
 
-quote(contents :Fun0(Void))
-  {
+quote(contents :Fun():Void) :Void
+  (* *)
+{
   _b("QUOTE", contents)
   }
 
-select(multiple :Bool, name :String, size :Int)
-  {
-  beginStartTag("SELECT"),
-  flagAttr("MULTIPLE", multiple),
-  attr("NAME", name),
-  intAttr("SIZE", size),
+select(multiple :Bool, name :String, size :Int) :Void
+  (* *)
+{
+  beginStartTag("SELECT")
+  flagAttr("MULTIPLE", multiple)
+  attr("NAME", name)
+  intAttr("SIZE", size)
   endStartTag
   }
 
-strong(contents :Fun0(Void))
-  {
+strong(contents :Fun():Void) :Void
+  (* *)
+{
   _b("STRONG", contents)
   }
 
-table(border :Bool, contents :Fun0(Void))
-  {
-  let tag = "TABLE",
-  beginStartTag(tag),
-  flagAttr("BORDER", border),
-  endStartTag,
-  contents[],
+table(border :Bool, contents :Fun():Void) :Void
+  (* *)
+{
+  tag ::= "TABLE"
+  beginStartTag(tag)
+  flagAttr("BORDER", border)
+  endStartTag
+  contents[]
   endTag(tag)
   }
 
-td(align :String, colspan :Int, rowspan :Int, contents :Fun0(Void))
-  {
+td(align :String, colspan :Int, rowspan :Int, contents :Fun():Void) :Void
+  (* *)
+{
   _td("TD", align, colspan, rowspan, contents)
   }
 
-th(align :String, colspan :Int, rowspan :Int, contents :Fun0(Void))
-  {
+th(align :String, colspan :Int, rowspan :Int, contents :Fun():Void) :Void
+  (* *)
+{
   _td("TH", align, colspan, rowspan, contents)
   }
 
-title(contents :Fun0(Void))
-  {
-  let tag = "TITLE",
-  beginStartTag(tag),
-  endStartTag,
-  contents[],
-  endTag(tag),
+title(contents :Fun():Void) :Void
+  (* *)
+{
+  tag ::= "TITLE"
+  beginStartTag(tag)
+  endStartTag
+  contents[]
+  endTag(tag)
   nl
   }
 
-tr(contents :Fun0(Void))
-  {
+tr(contents :Fun():Void) :Void
+  (* *)
+{
   _p("TR", contents)
   }
 
-tt(contents :Fun0(Void))
-  {
+tt(contents :Fun():Void) :Void
+  (* *)
+{
   _b("TT", contents)
   }
 
-ul(compact :Bool, contents :Fun0(Void))
-  {
+ul(compact :Bool, contents :Fun():Void) :Void
+  (* *)
+{
   _li("UL", compact, contents)
   }
 
-(* details of the HTML Stml declaration *)
-
-(* maximum allowed name length.
-   Corresponds to the NAMELEN attribute in the Sgml declaration`s SYNTAX section *)
 nameLen :Int
+  (* details of the HTML Stml declaration 
+ maximum allowed name length.
+   Corresponds to the NAMELEN attribute in the Sgml declaration`s SYNTAX section *)
 { 72 }
 
-(* nameChars is default *)
+nameChars :String
+  (* set of additional characters that may appear in names.
+     uses default *)
+{ super.nameChars }
 
 private
 
-_preformatted :Int (* nesting level of <pre> *)
+_preformatted :Int
+  (* nesting level of <pre> *)
 
-methods
-
-_init :Self
+_init :Void
+  (* *)
 {
-  _preformatted := 0,
   super._init
+  _preformatted := 0
 }
 
 _td(tag :String, align :String, colspan :Int, rowspan :Int,
-    contents :Fun0(Void))
-  {
-  allowBreak,
-  beginStartTag(tag),
-  align.isNotNil ? { tokenAttr("ALIGN", align) },
-  intAttr("COLSPAN", colspan),
-  intAttr("ROWSPAN", rowspan),
-  endStartTag,
-  contents[],
+    contents :Fun():Void) :Void
+  (* *)
+{
+  allowBreak
+  beginStartTag(tag)
+  if( align.isNotNil then: { tokenAttr("ALIGN", align) })
+  intAttr("COLSPAN", colspan)
+  intAttr("ROWSPAN", rowspan)
+  endStartTag
+  contents[]
   endTag(tag)
   }
 
-_li(tag :String, compact :Bool, contents :Fun0(Void))
-  {
-  allowBreak,
-  beginStartTag(tag),
-  flagAttr("COMPACT", compact),
-  endStartTag,
-  contents[],
+_li(tag :String, compact :Bool, contents :Fun():Void) :Void
+  (* *)
+{
+  allowBreak
+  beginStartTag(tag)
+  flagAttr("COMPACT", compact)
+  endStartTag
+  contents[]
   endTag(tag)
   }
 
-_b(tag :String, contents :Fun0(Void))
-  {
-  beginStartTag(tag),
-  endStartTag,
-  contents[],
+_b(tag :String, contents :Fun():Void) :Void
+  (* *)
+{
+  beginStartTag(tag)
+  endStartTag
+  contents[]
   endTag(tag)
   }
 
-_h(tag :String, contents :Fun0(Void))
-  {
-  allowBreak,
+_h(tag :String, contents :Fun():Void) :Void
+  (* *)
+{
+  allowBreak
   _b(tag, contents)
   }
 
-_p(tag :String, contents :Fun0(Void))
-  {
-  allowBreak,
-  startTag(tag),
+_p(tag :String, contents :Fun():Void) :Void
+  (* *)
+{
+  allowBreak
+  startTag(tag)
   contents[]
   }
 
-;
-
-
+}

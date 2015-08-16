@@ -1,7 +1,5 @@
 class SgmlComposite
 super SgmlComponent
-public
-
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -22,13 +20,18 @@ public
  * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
  *
  positions will be nil if sgmlTreeBuilder.interestedInPositions was false *)
-startPosition :SgmlPos,
-endPosition :SgmlPos,
-element :SgmlElement,
-attributes :Dictionary(String, String),
-components :Array(SgmlComponent)
+meta SgmlCompositeClass()
 
-methods
+{
+startPosition :SgmlPos
+
+endPosition :SgmlPos
+
+element :SgmlElement
+
+attributes :Dictionary(String, String)
+
+components :Array(SgmlComponent)
 
 defaultedAttribute(name :String) :String
   (* return the value specified for attribute <name>, or the default
@@ -41,63 +44,65 @@ defaultedAttribute(name :String) :String
 }
 
 case( T <: Void,
-      ifComposite :Fun1(SgmlComposite, T),
-      :Fun1(SgmlLeaf, T)) :T
+      ifComposite :Fun(:SgmlComposite):T,
+      :Fun(:SgmlLeaf):T) :T
+  (* *)
 { ifComposite[self] }
 
-printOnGenerator(out :SgmlGenerator)
-{ out.startElement(element.name, attributes),
-  !components.isEmpty ? {
-    element.contentType == SgmlContentType.element
-     ? { out.nl,
+printOnGenerator(out :SgmlGenerator) :Void
+  (* *)
+{ out.startElement(element.name, attributes)
+  if( !components.isEmpty then: {
+    if( element.contentType == SgmlContentType.element
+     then: { out.nl
 	 components.do(fun(o:SgmlComponent){
-	   o.printOnGenerator(out),
+	   o.printOnGenerator(out)
 	   out.nl
 	 })
        }
-     : { components.do(fun(o:SgmlComponent){
+     else: { components.do(fun(o:SgmlComponent){
 	   o.printOnGenerator(out)
 	 })
-       }
-  },
-  element.contentType !== SgmlContentType.empty ? {
+       })
+  })
+  if( element.contentType !== SgmlContentType.empty then: {
     out.endTag(element.name)
-  }
+  })
 }
 
-  
-lookupComposite(dict :Dictionary(String, Fun1(SgmlComposite, Void)))
+lookupComposite(dict :Dictionary(String, Fun(:SgmlComposite):Void)) :Void
+  (* *)
 { 
-  dict.lookup(element.name, fun( op :Fun1(SgmlComposite, Void)) {
+  dict.lookup(element.name, fun( op :Fun(:SgmlComposite):Void) {
     op[self]
-  }, {}),
+  }, {})
   components.do(fun(comp :SgmlComponent) {
     comp.lookupComposite(dict)
   })
 }
 
-
 substitute(
   Context <: Object,
   context :Context,
   dict :Dictionary(String,
-                   Fun2(Context, SgmlComposite,
-		        Array(SgmlComponent))
+                   Fun(:Context, :SgmlComposite):Array(SgmlComponent)
 		  )
   ) :Array(SgmlComponent)
-  {
+  (* *)
+{
   dict.lookup(element.name,
-    fun(op :Fun2(Context, SgmlComposite, Array(SgmlComponent)))
+    fun(op :Fun(:Context, :SgmlComposite):Array(SgmlComponent))
       { op[context, self] },
     fun()
-      { let newComponents = GapArray.new0,
+      { newComponents ::= GapArray.new0
 	components.do(fun(comp :SgmlComponent) {
-	  let newCo = comp.substitute(context, dict),
-	  newCo.isNotNil ? { newComponents.addLastAll(newCo) }
-	}),
-	let co = copy,
-	co.components := newComponents.asArray,
+	  newCo ::= comp.substitute(context, dict)
+	  if( newCo.isNotNil then: { newComponents.addLastAll(newCo) })
+	})
+	co ::= copy
+	co.components := newComponents.asArray
 	Array.with1(co)
       })
   }
-;
+
+}

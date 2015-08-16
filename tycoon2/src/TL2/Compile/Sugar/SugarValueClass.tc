@@ -1,10 +1,6 @@
 class SugarValueClass
 super ConcreteClass(SugarValue)
-metaclass MetaClass
-public methods
-
-new(priority :Int, writeMeOn :Fun1(Output, Void)) :SugarValue
-  (*
+(*
  * This file is part of the Tycoon-2 system.
  *
  * The Tycoon-2 system is free software; you can redistribute it and/or
@@ -23,16 +19,22 @@ new(priority :Int, writeMeOn :Fun1(Output, Void)) :SugarValue
  * 
  * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
  *
- create a value with given priority.  writeMeOn implements SugarValue::writeOn.
+ *)
+meta MetaClass
+{
+new(priority :Int, writeMeOn :Fun(:Output):Void) :SugarValue
+  (* create a value with given priority.  writeMeOn implements SugarValue::writeOn.
    *)
 {
-  let instance = _new,
-  instance.priority := priority,
-  instance.writeMeOn := writeMeOn,
-  instance._init,
+  instance ::= _new
+  instance.priority := priority
+  instance.writeMeOn := writeMeOn
+  instance._init
   instance
 }
 
 atomicPriority :Int
+  (* *)
 { 1000 }
-;
+
+}

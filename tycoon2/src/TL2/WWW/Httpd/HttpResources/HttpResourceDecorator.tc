@@ -1,14 +1,9 @@
 class HttpResourceDecorator
-
 super HttpResource
-
-metaclass AbstractClass
-
-public
-
+(**)
+meta AbstractClass
+{
 resource :HttpResource
-
-methods
 
 install :Self
   (*
@@ -35,9 +30,9 @@ install :Self
      answer the receiver.
   *)
 {
-  resource.parent.isNotNil ? {
+  if( resource.parent.isNotNil then: {
     resource.parent.replace(resource, self)
-  },
+  })
   self
 }
 
@@ -47,50 +42,88 @@ uninstall :HttpResource
      answer the child resource.
   *)
 {
-  parent.isNotNil ? {
+  if( parent.isNotNil then: {
     parent.replace(self, resource)
-  },
+  })
   resource
 }
 
+contentLength :Int
+  (* *)
+{ resource.contentLength }
 
-contentLength :Int { resource.contentLength }
-lastModified :Long { resource.lastModified }
-validate :Void { resource.validate }
+lastModified :Long
+  (* *)
+{ resource.lastModified }
 
-reindex
+validate :Void
+  (* *)
+{ resource.validate }
+
+reindex :Void
+  (* *)
 {
   resource.reindex
 }
 
 pathLookup(request :HttpRequest, arcs :List(String)) :HttpResource
+  (* *)
 {
   resource.pathLookup(request, arcs)
 }
 
 lookupDirectory(arcs :List(String)) :HttpDirectoryResource
+  (* *)
 {
   resource.lookupDirectory(arcs)
 }
 
 preProcess(request :HttpRequest) :Void
+  (* *)
 {
   resource.preProcess(request)
 }
-  
+
 postProcess(request :HttpRequest, response :HttpResponse) :HttpResponse
+  (* *)
 {
   resource.postProcess(request, response)
 }
-  
-head(request :HttpRequest) :HttpResponse      { resource.head(request) }
-get(request :HttpRequest) :HttpResponse	      { resource.get(request) }
-put(request :HttpRequest) :HttpResponse	      { resource.put(request) }
-post(request :HttpRequest) :HttpResponse      { resource.post(request) }
-options(request :HttpRequest) :HttpResponse   { resource.options(request) }
-delete(request :HttpRequest) :HttpResponse    { resource.delete(request) }
-link(request :HttpRequest) :HttpResponse      { resource.link(request) }
-unlink(request :HttpRequest) :HttpResponse    { resource.unlink(request) }
-extended(request :HttpRequest) :HttpResponse  { resource.extended(request) }
 
-;
+head(request :HttpRequest) :HttpResponse
+  (* *)
+{ resource.head(request) }
+
+get(request :HttpRequest) :HttpResponse
+  (* *)
+{ resource.get(request) }
+
+put(request :HttpRequest) :HttpResponse
+  (* *)
+{ resource.put(request) }
+
+post(request :HttpRequest) :HttpResponse
+  (* *)
+{ resource.post(request) }
+
+options(request :HttpRequest) :HttpResponse
+  (* *)
+{ resource.options(request) }
+
+delete(request :HttpRequest) :HttpResponse
+  (* *)
+{ resource.delete(request) }
+
+link(request :HttpRequest) :HttpResponse
+  (* *)
+{ resource.link(request) }
+
+unlink(request :HttpRequest) :HttpResponse
+  (* *)
+{ resource.unlink(request) }
+
+extended(request :HttpRequest) :HttpResponse
+  (* *)
+{ resource.extended(request) }
+
+}

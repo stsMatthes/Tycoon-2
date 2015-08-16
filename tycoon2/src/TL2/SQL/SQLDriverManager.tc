@@ -1,3 +1,5 @@
+class SQLDriverManager
+super SQL
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -24,17 +26,8 @@ Author:  Michael Skusa
 Date:    30-Apr-1997
 Updates: (Date)	  (Name)	(Description)
 *)
-
-class SQLDriverManager
-
-super SQL
-
-metaclass SingletonClass(SQLDriverManager)
-
-public
-
-methods
-
+meta SingletonClass(SQLDriverManager)
+{
 connect(url:URL):SQLConnection
   (*
      - checks, whether url identifies a data-source,
@@ -50,13 +43,13 @@ connect(url:URL):SQLConnection
        SQLConnection.tc and their subclasses
    *)
 {
-  url.scheme = "tysql"
-  ? {
-      let driver = driver(url),
-      driver.isNotNil ? {driver.connect(url)}
-                      : {nil}
+  if( url.scheme = "tysql"
+  then: {
+      driver ::= driver(url)
+      if( driver.isNotNil then: {driver.connect(url)}
+                      else: {nil})
     }
-  : { nil }
+  else: { nil })
 }
 
 registerDriver(driver:SQLDriver):SQLDriver
@@ -65,7 +58,7 @@ registerDriver(driver:SQLDriver):SQLDriver
       while loading a new SQLDriver.
   *)
 {
-  _drivers.add(driver),
+  _drivers.add(driver)
   driver
 }
 
@@ -90,18 +83,17 @@ driver(url:URL):SQLDriver
 {
    _drivers.detect(fun (driver:SQLDriver) { driver.acceptsURL(url) })
 }
- 
+
 private
 
 _drivers:Set(SQLDriver)
 
-methods
-
 _init():Self
+  (* *)
 {
-  super._init,
-  _drivers:=Set.new,
+  super._init
+  _drivers:=Set.new
   self
 }
 
-;
+}

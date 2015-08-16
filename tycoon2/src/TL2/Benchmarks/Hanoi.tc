@@ -1,3 +1,5 @@
+class Hanoi
+super Object
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -19,36 +21,37 @@
  *
 
     Hanoi.new.test(18);
-*)
-class Hanoi
-(* Towers of hanoi *)
-super Object
-metaclass SimpleConcreteClass(Hanoi)
-public methods
 
-test(level:Int)
+ Towers of hanoi *)
+meta SimpleConcreteClass(Hanoi)
 {
-  let t =
+test(level:Int) :Void
+  (* *)
+{
+  t ::=
     Timer.new(tycoon.cpuClock).time({
       moveDiscs(level, "A", "B", "C")
-    }),
+    })
   tycoon.stdout
    << "Calls: " << (1<<level) << "\n"
-   << "Time:  " << t     << "\n",
+   << "Time:  " << t     << "\n"
   nil
 }
 
-moveDiscs(level :Int, from :String, via :String, to :String)
+moveDiscs(level :Int, from :String, via :String, to :String) :Void
+  (* *)
 {
-  level == 1
-  ? { moveDisc(from, to) }
-  : { moveDiscs(level-1, from, to, via),
-      moveDisc(from, to),
-      moveDiscs(level-1, via, from, to) }
+  if( level == 1
+  then: { moveDisc(from, to) }
+  else: { moveDiscs(level-1, from, to, via)
+      moveDisc(from, to)
+      moveDiscs(level-1, via, from, to) })
 }
 
-moveDisc(from :String, to :String)
+moveDisc(from :String, to :String) :Void
+  (* *)
 {
-  (*tycoon.stdout << "Moving disc from "<<from<<" to "<<to<<"\n"*)
+  ;tycoon.stdout << "Moving disc from "<<from<<" to "<<to<<"\n"
 }
-;
+
+}

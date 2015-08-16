@@ -1,3 +1,5 @@
+class MediaTypeClass
+super ConcreteClass(MediaType)
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -21,85 +23,97 @@
       update: GB 01-Oct-1997
 		insert pre- and post conditions
 *)
-
-class MediaTypeClass
-super ConcreteClass(MediaType)
-metaclass MetaClass
-
-public methods
-
+meta MetaClass
+{
 new(type :String, subtype :String) :MediaType
-
-  require type.isNotNil &
+  (* ------------------------------------------------------------ *)
+require type.isNotNil &
     subtype.isNotNil
-(* ------------------------------------------------------------ *)
+
   {
-    let instance = _new,
-    instance._init2(type, subtype),
+    instance ::= _new
+    instance._init2(type, subtype)
     instance
   }
-
 
 withParameter(type :String, subtype :String, parameterName :String,
               parameterValue :String) :MediaType
-
-  require type.isNotNil &
+  (* ------------------------------------------------------------ *)
+require type.isNotNil &
     subtype.isNotNil &
       parameterName.isNotNil &
         parameterValue.isNotNil
-(* ------------------------------------------------------------ *)
+
   {	      
-    let instance = _new,
-    instance._init2(type, subtype),
-    instance._parameters[parameterName] := parameterValue,
+    instance ::= _new
+    instance._init2(type, subtype)
+    instance._parameters[parameterName] := parameterValue
     instance
   }
-
 
 boundaryName :String
-(* ------------------------------------------------------------ *)
-  { "boundary" }
+  (* ------------------------------------------------------------ *)
+{ "boundary" }
 
-  
 withBoundary(mt :MediaType, boundary :String) :MediaType
-(* ------------------------------------------------------------ *)
-  {
-    let instance = withParameter(mt.type, mt.subtype, boundaryName, boundary),
+  (* ------------------------------------------------------------ *)
+{
+    instance ::= withParameter(mt.type, mt.subtype, boundaryName, boundary)
     instance
   }
 
-  
 charsetName :String
-(* ------------------------------------------------------------ *)
-  { "charset" }
+  (* ------------------------------------------------------------ *)
+{ "charset" }
 
-  
 withCharset(mt :MediaType, charset :String) :MediaType
-
-  require mt.isNotNil &
+  (* ------------------------------------------------------------ *)
+require mt.isNotNil &
     charset.isNotNil
-(* ------------------------------------------------------------ *)
+
   {
-    let instance = withParameter(mt.type, mt.subtype, charsetName, charset),
+    instance ::= withParameter(mt.type, mt.subtype, charsetName, charset)
     instance
   }
 
-(*## make slots: *)
+TEXT_PLAIN				:MediaType
+  (*## make slots: *)
+{ new("text", "plain") }
 
-TEXT_PLAIN				:MediaType { new("text", "plain") }
-TEXT_HTML				:MediaType { new("text", "html") }
+TEXT_HTML				:MediaType
+  (* *)
+{ new("text", "html") }
 
-IMAGE_GIF				:MediaType { new("image", "gif") }
-IMAGE_JPEG				:MediaType { new("image", "jpeg") }
+IMAGE_GIF				:MediaType
+  (* *)
+{ new("image", "gif") }
 
-APPLICATION_POSTSCRIPT			:MediaType { new("application", "postscript") }
-APPLICATION_X_WWW_FORM_URLENCODED	:MediaType { new("application", "x-www-form-urlencoded") }
-APPLICATION_X_JAVA_AGENT		:MediaType { new("application", "x-java-agent") }
+IMAGE_JPEG				:MediaType
+  (* *)
+{ new("image", "jpeg") }
 
-MULTIPART_FORM_DATA			:MediaType { new("multipart", "form-data") }
-MULTIPART_MIXED				:MediaType { new("multipart", "mixed") }
-MESSAGE_HTTP				:MediaType { new("message", "http") }
+APPLICATION_POSTSCRIPT			:MediaType
+  (* *)
+{ new("application", "postscript") }
 
-;
+APPLICATION_X_WWW_FORM_URLENCODED	:MediaType
+  (* *)
+{ new("application", "x-www-form-urlencoded") }
 
-  
+APPLICATION_X_JAVA_AGENT		:MediaType
+  (* *)
+{ new("application", "x-java-agent") }
+
+MULTIPART_FORM_DATA			:MediaType
+  (* *)
+{ new("multipart", "form-data") }
+
+MULTIPART_MIXED				:MediaType
+  (* *)
+{ new("multipart", "mixed") }
+
+MESSAGE_HTTP				:MediaType
+  (* *)
+{ new("message", "http") }
+
+}

@@ -20,9 +20,8 @@ super ConcreteClass(IdSet(E))
  * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
  *
 *)
-metaclass MetaClass
-public methods
-
+meta MetaClass
+{
 new :IdSet(E)
   (* *)
 {
@@ -32,9 +31,9 @@ new :IdSet(E)
 new1(initialCapacity :Int) :IdSet(E)
   (* *)
 {
-  let i = _new,
-  i._init1(initialCapacity),
+  i ::= _new
+  i._init1(initialCapacity)
   i
 }
 
-;
+}

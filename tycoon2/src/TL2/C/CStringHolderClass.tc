@@ -1,18 +1,15 @@
 class CStringHolderClass
-
 super ConcreteClass(CStringHolder)
-
-metaclass MetaClass
-
-public methods
-
-new(length:Int):CStringHolder
+(**)
+meta MetaClass
 {
-  let s = _new(),
-  s._length := length,
-  s._allocate(length),
+new(length:Int):CStringHolder
+  (* *)
+{
+  s ::= _new()
+  s._length := length
+  s._allocate(length)
   s
 }
 
-;
-
+}

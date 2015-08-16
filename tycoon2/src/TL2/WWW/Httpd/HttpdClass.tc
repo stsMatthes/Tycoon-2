@@ -1,3 +1,5 @@
+class HttpdClass
+super AbstractHttpdClass(Httpd)
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -25,14 +27,6 @@ Date:    09-Jan-1997
 Updates: (Date)	  (Name)	(Description)
 
 *)
-
-class HttpdClass
-
-super AbstractHttpdClass(Httpd)
-
-metaclass MetaClass
-
-public methods
-
-;
-
+meta MetaClass
+{
+}

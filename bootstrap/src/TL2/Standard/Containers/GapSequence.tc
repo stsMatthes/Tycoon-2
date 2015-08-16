@@ -145,14 +145,10 @@ insertSubSequence(seq :Sequence(E), start :Int, n :Int, at :Int) :Void
 }
 
 copy :Self
-  (* *)
+  (*  *)
 {
-  c ::= shallowCopy
-  ; copy our data structures to avoid aliassing 
-  ; _elements := _elements.copy, 
-; ### type checker bug 
-  _elements := _typeCast(_elements.copy, :Seq)
-  c
+  ;; ### if the gap sequence contained itself, the copy will contain itself - not the original gap sequence!
+  ref(componentCopy@)
 }
 
 add(e :E) :Void
@@ -201,7 +197,7 @@ validKey(k:Int) :Bool
 
 private
 
-_elements :Seq
+_elements @:Seq
 
 _gapStart :Int
 
@@ -211,7 +207,7 @@ _init2(initialSize :Int, initialCapacity :Int) :Void
   (* *)
   require initialCapacity >= initialSize
 {
-  _elements := _newElements(initialCapacity)
+  _elements := _newElements(initialCapacity)@
   _gapStart := initialSize
   _gapSize := initialCapacity - initialSize
   self
@@ -219,7 +215,17 @@ _init2(initialSize :Int, initialCapacity :Int) :Void
 
 _newElements(initialCapacity :Int) :Seq
   (* *)
-deferred
+{ 
+  ;; subclass needs to override _newElements or _newElements@
+  ref(_newElements(initialCapacity)@)
+}
+
+_newElements(initialCapacity :Int) @:Seq
+  (* *)
+{
+  ;; subclass needs to override _newElements or _newElements@
+  fetch(_newElements(initialCapacity))@
+}
 
 _dontLeak(n :Int, at :Int) :Void
   (* <n> elements of _elements starting at <at> have become inaccessible.
@@ -257,10 +263,10 @@ _grow(minGap :Int) :Void
   (* *)
 {
   delta ::= _elements.size.max(5).max(minGap-_gapSize)
-  newElements ::= _newElements(_elements.size+delta)
+  newElements @::= _newElements(_elements.size+delta)@
   newElements.replace(_gapStart,0,_elements,0)
   newElements.replace(size-_gapStart, _gapEnd+delta, _elements, _gapEnd)
-  _elements := newElements
+  _elements := newElements@
   _gapSize := _gapSize+delta
   assert({ _gapSize >= minGap })
 }

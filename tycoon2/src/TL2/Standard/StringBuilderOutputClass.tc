@@ -22,20 +22,33 @@ super ConcreteClass(StringBuilderOutput)
 *)
 meta MetaClass
 {
+new @:StringBuilderOutput
+  (* *)
+{
+  new1(1024)@
+}
+
+new1(minimumChunkSize :Int) @:StringBuilderOutput
+  (* *)
+require minimumChunkSize > 0
+{
+  instance @::= _new@
+  instance.minimumChunkSize := minimumChunkSize
+  instance._init
+  instance@
+}
+
 new :StringBuilderOutput
   (* *)
 {
-  new1(1024)
+  ref(new@)
 }
 
 new1(minimumChunkSize :Int) :StringBuilderOutput
   (* *)
 require minimumChunkSize > 0
 {
-  instance ::= _new
-  instance.minimumChunkSize := minimumChunkSize
-  instance._init
-  instance
+  ref(new1(minimumChunkSize)@)
 }
 
 }

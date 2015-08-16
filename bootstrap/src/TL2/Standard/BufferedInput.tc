@@ -31,7 +31,7 @@ meta BufferedInputClass()
 {
 private
 
-_buffer :MutableString
+_buffer @:MutableString
 
 _bufferSize :Int
 

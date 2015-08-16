@@ -1,10 +1,11 @@
 class HttpEntityMessage
 super HttpMessage
+(**)
+meta HttpEntityMessageClass()
 
-public
-methods
-
-(*
+{
+hasContentEncoding :Bool
+  (*
  * This file is part of the Tycoon-2 system.
  *
  * The Tycoon-2 system is free software; you can redistribute it and/or
@@ -24,34 +25,55 @@ methods
  * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
  *
  HTTP/1.1 'Entity headers' *)
+{ hasHeader("content-encoding") }
 
-hasContentEncoding :Bool { hasHeader("content-encoding") }
-contentEncoding :String { headerValue("content-encoding") }
-"contentEncoding:="(ce :String) { setHeaderValue("content-encoding", MimeString, ce) }
+contentEncoding :String
+  (* *)
+{ headerValue("content-encoding") }
 
-hasContentLength :Bool { hasHeader("content-length") }
-contentLength :Int { headerValue("content-length") }
-"contentLength:="(cl :Int) { setHeaderValue("content-length", MimeInt, cl) }
+"contentEncoding:="(ce :String) :Void
+  (* *)
+{ setHeaderValue("content-encoding", MimeString, ce) }
 
-hasLastModified :Bool { hasHeader("last-modified") }
-lastModified :Date { headerValue("last-modified") }
-"lastModified:="(lm :Date) { setHeaderValue("last-modified", MimeDate, lm) }
+hasContentLength :Bool
+  (* *)
+{ hasHeader("content-length") }
 
-withOutput(contentType :MediaType, statement :Fun1(Output,Void)) :Self
+contentLength :Int
+  (* *)
+{ headerValue("content-length") }
+
+"contentLength:="(cl :Int) :Void
+  (* *)
+{ setHeaderValue("content-length", MimeInt, cl) }
+
+hasLastModified :Bool
+  (* *)
+{ hasHeader("last-modified") }
+
+lastModified :Date
+  (* *)
+{ headerValue("last-modified") }
+
+"lastModified:="(lm :Date) :Void
+  (* *)
+{ setHeaderValue("last-modified", MimeDate, lm) }
+
+withOutput(contentType :MediaType, statement :Fun(:Output):Void) :Self
   (* call statement with an output buffer and
      set the receivers content and header fields accordingly
    *)
 {
-   let out = StringBuilderOutput.new1(1000),
-   statement[out],
-   let buf = out.contents,
-   contentLength := buf.size,
-   self.contentType := contentType,
-   body := StringInput.new(buf),
+   out ::= StringBuilderOutput.new1(1000)
+   statement[out]
+   buf ::= out.contents
+   contentLength := buf.size
+   self.contentType := contentType
+   body := StringInput.new(buf)
    self
 }
 
-withHtmlGenerator(statement :Fun1(HtmlGenerator,Void)) :Self
+withHtmlGenerator(statement :Fun(:HtmlGenerator):Void) :Self
   (* execute statement with a newly created HtmlGenerator object and
      set the receivers content and header fields accordingly
    *)
@@ -60,4 +82,5 @@ withHtmlGenerator(statement :Fun1(HtmlGenerator,Void)) :Self
     statement[HtmlGenerator.new(o)]
   })
 }
-;
+
+}

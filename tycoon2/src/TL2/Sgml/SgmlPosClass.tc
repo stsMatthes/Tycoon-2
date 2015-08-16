@@ -1,14 +1,16 @@
 class SgmlPosClass
 super ConcreteClass(SgmlPos)
-metaclass MetaClass
-public methods
-
-new(path :String, line :Int) :SgmlPos
+(**)
+meta MetaClass
 {
-  let instance = _new,
-  instance.path := path,
-  instance._line := line,
-  instance._init,
+new(path :String, line :Int) :SgmlPos
+  (* *)
+{
+  instance ::= _new
+  instance.path := path
+  instance._line := line
+  instance._init
   instance
 }
-;
+
+}

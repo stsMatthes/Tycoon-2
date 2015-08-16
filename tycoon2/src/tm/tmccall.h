@@ -21,10 +21,10 @@
 /*
   Copyright (c) 1996 Higher-Order GmbH, Hamburg. All rights reserved.
 
-  tmccall.h 1.3 98/05/18 Marc Weikard
+  $File: //depot/tycoon2/stsmain/tycoon2/src/tm/tmccall.h $ $Revision: #3 $ $Date: 2003/10/01 $ Marc Weikard
 
   CCall Interface
-
+  
 */
 
 #ifndef TMCCALL_H

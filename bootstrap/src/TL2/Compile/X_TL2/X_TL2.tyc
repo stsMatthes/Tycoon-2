@@ -1,3 +1,7 @@
+(* installation of the store descriptors must be done
+   before the classes are registered or loaded for the first time
+   (no way to change this later) *)
+
 DO load "Compile/X_TL2/X_Descriptors.tyc";
 
 tycoon.tl.loader.registerDirectory("Compile/X_TL2");

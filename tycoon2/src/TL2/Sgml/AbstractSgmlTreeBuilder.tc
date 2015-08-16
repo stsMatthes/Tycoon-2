@@ -1,3 +1,5 @@
+class AbstractSgmlTreeBuilder(T <: Object)
+super SgmlOutput
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -28,43 +30,41 @@ Usage:
   SgmlsParser::parse, and fetch the produced tree from tb.tree. Before a new
   run, call tb.reset.
 *)
+meta AbstractClass
+{
+interestedInPosition :Bool
 
-class AbstractSgmlTreeBuilder(T <: Object)
-super SgmlOutput
-metaclass AbstractClass
-public
+interestedInComments :Bool
 
-interestedInPosition :Bool,
-interestedInComments :Bool,
-path :String,
-lineNumber :Int,
+path :String
+
+lineNumber :Int
 
 tree :T
 
-methods
-
-reset
+reset :Void
+  (* *)
 {
-  composers.clear,
-  elements.clear,
-  addApplicationElements,
+  composers.clear
+  elements.clear
+  addApplicationElements
   tree := nil
 }
 
-(* SgmlOutput protocol *)
-
-(* Generic identifier <id> has content type <contentType>.
+defineElement( id :String, contentType :SgmlContentType,
+		   defaultAttributeValues :Dictionary(String, String)) :Void
+  (* SgmlOutput protocol 
+ Generic identifier <id> has content type <contentType>.
    defaultAttributeValues contains an entry for each attribute with a default
    value. *)
-defineElement( id :String, contentType :SgmlContentType,
-		   defaultAttributeValues :Dictionary(String, String))
-{ !elements.includesKey(id)
-  ? { (* not registered during init *)
-      addElement( defaultElement(id, contentType, defaultAttributeValues) ) }
+{ if( !elements.includesKey(id)
+  then: { ; not registered during init 
+      addElement( defaultElement(id, contentType, defaultAttributeValues) ) })
 }
 
-startElement(gi :String, attributes :Dictionary(String, String))
-{ flushBuf,
+startElement(gi :String, attributes :Dictionary(String, String)) :Void
+  (* *)
+{ flushBuf
   composers.addFirst(
     SgmlComposer.new(
       elements[gi],
@@ -72,105 +72,112 @@ startElement(gi :String, attributes :Dictionary(String, String))
       attributes))
 }
 
-endElement(gi :String)
-{ assert !composers.isEmpty,
-  flushBuf,
-  let composer = composers.removeFirst,
-  assert composer.element.name = gi,
-  let x =
+endElement(gi :String) :Void
+  (* *)
+{ assert({ !composers.isEmpty })
+  flushBuf
+  composer ::= composers.removeFirst
+  assert({ composer.element.name = gi })
+  x ::=
     composer.element.build(
-      let startPosition = composer.position,
-      let endPosition   = position,
+      composer.position,
+      position,
       composer.attributes,
-      composer.components),
-  !composers.isEmpty
-  ? { composers[0].add(x) }
-  : { tree := x }
+      composer.components)
+  if( !composers.isEmpty
+  then: { composers[0].add(x) }
+  else: { tree := x })
 }
 
-comment(c :String)
-{ flushBuf,
+comment(c :String) :Void
+  (* *)
+{ flushBuf
   composers[0].add(makeComment(position, c))
 }
 
-write(c :Char)
+write(c :Char) :Void
+  (* *)
 {
-  interestedInPosition
-  ? { dataPosition.isNil
-      ? { dataPosition := position },
-      c == '\n'
-      ? { lineNumber := lineNumber + 1 } },
+  if( interestedInPosition
+  then: { if( dataPosition.isNil
+      then: { dataPosition := position })
+      if( c == '\n'
+      then: { lineNumber := lineNumber + 1 }) })
   dataBuf.write(c)
 }
 
-writeBuffer(buffer :String, start :Int, n :Int)
+writeBuffer(buffer :String, start :Int, n :Int) :Void
+  (* *)
 {
-  interestedInPosition
-  ? { dataPosition.isNil
-      ? { dataPosition := position },
+  if( interestedInPosition
+  then: { if( dataPosition.isNil
+      then: { dataPosition := position })
       lineNumber := lineNumber +
-        buffer.subSequenceReader(start,n).occurrencesOf('\n') },
+        buffer.subSequenceReader(start,n).occurrencesOf('\n') })
   dataBuf.writeBuffer(buffer, start, n)
 }
 
 private
 
-elements :Dictionary(String, AbstractSgmlElement(T)),
+elements :Dictionary(String, AbstractSgmlElement(T))
 
-dataBuf :StringBuilderOutput,
-dataPosition :SgmlPos,
+dataBuf :StringBuilderOutput
+
+dataPosition :SgmlPos
 
 composers :Stack(SgmlComposer(T))
 
-methods
-
 position :SgmlPos
-{ interestedInPosition
-  ? { SgmlPos.new(path, lineNumber) }
-  : { nil }
+  (* *)
+{ if( interestedInPosition
+  then: { SgmlPos.new(path, lineNumber) }
+  else: { nil })
 }
 
-addElement(element :AbstractSgmlElement(T))
+addElement(element :AbstractSgmlElement(T)) :Void
+  (* *)
 { elements[element.name] := element }
 
-(* call <addElement> for all application-specific non-default elements *)
-addApplicationElements
+addApplicationElements :Void
+  (* call <addElement> for all application-specific non-default elements *)
 { }
 
-(* create an SgmlElement that has no special meaning to the application.
-   SgmlElements with special meaning should be registered via addElement
-   in method addApplicationElements, which is called on initialization and reset. *)
 defaultElement( gi :String, contentType :SgmlContentType,
 	        defaultAttributes :Dictionary(String, String)) :AbstractSgmlElement(T)
-  deferred
+  (* create an SgmlElement that has no special meaning to the application.
+   SgmlElements with special meaning should be registered via addElement
+   in method addApplicationElements, which is called on initialization and reset. *)
+deferred
 
-(* construct a leaf for the tree from character data *)
 makeLeaf(position :SgmlPos, value :String) :T
-  deferred
+  (* construct a leaf for the tree from character data *)
+deferred
 
-(* construct a comment leaf for the tree from character data *)
 makeComment(position :SgmlPos, value :String) :T
-  deferred
+  (* construct a comment leaf for the tree from character data *)
+deferred
 
 _init :Void
-{ super._init,
-  dataBuf := StringBuilderOutput.new,
-  composers := Stack.new,
-  elements := Dictionary.new,
-  interestedInPosition := false,
-  interestedInComments := false,
-  addApplicationElements,
+  (* *)
+{ super._init
+  dataBuf := StringBuilderOutput.new
+  composers := Stack.new
+  elements := Dictionary.new
+  interestedInPosition := false
+  interestedInComments := false
+  addApplicationElements
   self
 }
 
-flushBuf
+flushBuf :Void
+  (* *)
 {
-  let data = dataBuf.contents,
-  !data.isEmpty ? {
-    composers[0].add(makeLeaf(dataPosition, data)),
-    dataPosition := nil,
+  data ::= dataBuf.contents
+  if( !data.isEmpty then: {
+    composers[0].add(makeLeaf(dataPosition, data))
+    dataPosition := nil
     dataBuf.clear
-  }
+  })
 }
-;
 
+}

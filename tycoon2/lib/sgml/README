@@ -1,0 +1,16 @@
+29-May-1997 AG
+
+Dateien in diesem Verzeichnis:
+
+  CATALOG	  SGML entity catalog, e.g. mapping PUBLIC identifiers -> system identifiers
+  doctype-xxx	  Dokumenten-Typ-Definition fuer xxx
+  html.decl	  SGML-Deklarationen fuer html (max. Namenslaenge etc.)
+  stml.dtd	  Structured Tycoon Markup Language Dokument Type Definition
+
+Environment (wird vom def_hox_{sh,csh} gesetzt):
+
+  export SGML_CATALOG_FILES=CATALOG:{HOX_HOME}/lib/sgml/CATALOG:${SGML_CATALOG_FILES}
+
+Aufruf des SGML Parsers:
+
+  nsgmls -D /local/tw/agawecki/twl/hox/lib/sgml/ -c catalog html.decl doctype-stml  stml.stml>nsgml.out

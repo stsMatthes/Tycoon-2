@@ -1,14 +1,5 @@
 class SugarMain
 super Sugar, Filter
-metaclass SimpleConcreteClass(SugarMain)
-public
-
-terminals: SugarTerminals,
-scanner :ReentrantSugarScanner,
-parser :AbstractParser(String),
-
-sugarGram :SugarGram,
-
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -28,47 +19,62 @@ sugarGram :SugarGram,
  * 
  * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
  *
- for development: *)
-grammar :Grammar(String),
-parserBuilder :ParserGen(ReentrantCompactParser)
-
-methods
-
-filter(input :Input, output :Output)
+ *)
+meta SimpleConcreteClass(SugarMain)
 {
-  let tokenStream = scanner.scan(input),
-  let string =
+terminals: SugarTerminals
+
+scanner :ReentrantSugarScanner
+
+parser :AbstractParser(String)
+
+sugarGram :SugarGram
+  (* for development *)
+
+grammar :Grammar(String)
+  (* for development *)
+
+parserBuilder :ParserGen(ReentrantCompactParser)
+  (* for development *)
+
+filter(input :Input, output :Output) :Void
+  (* *)
+{
+  tokenStream ::= scanner.scan(input)
+  string ::=
     parser.parse(tokenStream,
 	    fun(tok :Token(Object)) {
 	      tycoon.stdout << "Parse error on "<<tok<<"\n"
-	    }),
+	    })
   output.writeString(string)
 }
 
-
-newParser
+newParser :Void
+  (* *)
 {
-  let grammar = SugarGram.new(terminals),
-  (*###*) sugarGram := grammar,
-  (*###*) self.grammar := sugarGram.gram,
-  let parserBuilder =
-    ParserGen(:ReentrantCompactParser).new(CompactParserBuilder.new),
-  (*###*) self.parserBuilder := parserBuilder,
+  grammar ::= SugarGram.new(terminals)
+  sugarGram := grammar  ;; for development
+  self.grammar := sugarGram.gram  ;; for development
+  parserBuilder ::=
+    ParserGen(:ReentrantCompactParser).new(CompactParserBuilder.new)
+  self.parserBuilder := parserBuilder  ;; for development
   parser := parserBuilder.generate(grammar.gram)
 }
 
-newScanner
+newScanner :Void
+  (* *)
 {
   scanner := ReentrantSugarScanner.new(terminals)
 }
 
-private methods
+private
 
 _init :Void
-{ super._init,
-  terminals := SugarTerminals.new,
-  newParser,
-  newScanner,
-  self
+  (* *)
+{ super._init
+  terminals := SugarTerminals.new
+  newParser
+  newScanner
 }
-;
+
+}

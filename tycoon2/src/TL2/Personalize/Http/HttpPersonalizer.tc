@@ -1,25 +1,23 @@
 class HttpPersonalizer(Client <:PersonalizeHttpClient,
   Application <:PersonalizeApplication(Client))
-
 super PersonalizeHttp, HttpResourceDecorator
+(**)
+meta HttpPersonalizerClass(Client , Application )
 
-public
-
+{
 application :Application
 
-methods
-
 pathLookup(request :HttpRequest, arcs :List(String)) :HttpResource
+  (* *)
 {
-  let resource = resource.pathLookup(request, arcs),
-  resource.isNil ? { resource } : {
-    let client = client(request),
-    client.isNil
-      ? { clientNotFound(request, resource) }
-      : { PersonalizeHttpResponseFilter.new(resource, client) }
-  }
+  resource ::= resource.pathLookup(request, arcs)
+  if( resource.isNil then: { resource } else: {
+    client ::= client(request)
+    if( client.isNil
+      then: { clientNotFound(request, resource) }
+      else: { PersonalizeHttpResponseFilter.new(resource, client) })
+  })
 }
-
 
 clientNotFound(request :HttpRequest, resource :HttpResource) :HttpResource
   (*
@@ -54,9 +52,9 @@ clientNotFound(request :HttpRequest, resource :HttpResource) :HttpResource
      This behaviour may be implemented by storing the given request
      (and resource) within a newly created client object which, as a first step,
      interviews the client agent.     
-   *)     
+   *)
 {
-  let client = application.newClient,
+  client ::= application.newClient
   PersonalizeHttpResponseFilter.new(resource, client)
 }
 
@@ -66,44 +64,39 @@ client(request :HttpRequest) :Client
      answer nil if no client id can be found
    *)
 {
-   let var id :String = nil,
-   let var client :Client = nil,
+   id :String := nil
+   client :Client := nil
    
-   (* cookie? *)
-   request.hasCookies ? {
-      let cookie = request.cookies.detect(fun(cookie :HttpCookie) {
+   ; cookie? 
+   if( request.hasCookies then: {
+      cookie ::= request.cookies.detect(fun(cookie :HttpCookie) {
         cookie.name = HttpPersonalizer.COOKIE_NAME
-      }),
-      cookie.isNotNil ? {
-        id := cookie.value,
+      })
+      if( cookie.isNotNil then: {
+        id := cookie.value
 	client := application.client(id)
-      }
-    },
+      })
+    })
    
-    id.isNil ? {
-      (* urlencoded? ##implement*)
+    if( id.isNil then: {
+      ; urlencoded? ##implement
       
-      id.isNotNil ? {
-        client := application.client(id),
+      if( id.isNotNil then: {
+        client := application.client(id)
 	client.noCookiesPlease
-      }
-    },
+      })
+    })
     
    client
 }
 
 private
 
-methods
-
 _init :Self
+  (* *)
 {
-  super._init,
+  super._init
   self
 }
 
-;
-
-
-
-
+}

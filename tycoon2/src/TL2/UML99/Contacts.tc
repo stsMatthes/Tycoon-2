@@ -1,0 +1,44 @@
+class Contacts
+super UML99
+meta ContactsClass
+{
+
+insert(name :String, birthdate :Date) :Void
+{
+  p @::= Person.new(name, birthdate)@
+
+  eve @::=
+    RecurringItem.new( birthdate,
+		       name+"\'s birthday",
+		       { p.birthday })@
+
+  ;; create empty set if first person with that birthdate
+  ;; add person to the set
+  byBirthdate.memoize(birthdate, { Set.new@ })
+	     .add(p)
+
+  ;; we assume names are unique
+  byName[name] := p@
+
+  pim.insertEvent(eve@)
+}
+
+private
+
+byName @:AtDictionary(String, Person)
+  (* primary index: persons by name *)
+
+byBirthdate @:AtDictionary(Date, Set(Person))
+  (* secondary index: persons by birthdate (not necessarily unique) *)
+
+pim :PIM
+  (* our mediator, for managing birthday events *)
+
+_init :Void
+{
+  super._init
+  assert({ pim.isNotNil })
+  byName := AtDictionary.new@
+  byBirthdate := AtDictionary.new@
+}
+}

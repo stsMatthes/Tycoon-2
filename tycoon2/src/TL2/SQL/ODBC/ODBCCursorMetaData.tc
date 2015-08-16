@@ -1,3 +1,5 @@
+class ODBCCursorMetaData
+super SQLCursorMetaData
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -30,70 +32,57 @@ Updates: (Date)		(Name)	(Description)
 				and ODBC-standard-parameters with integer-constants defined
 				in class ODBC
 *)
-
-class ODBCCursorMetaData
-
-super SQLCursorMetaData
-
-metaclass SimpleConcreteClass(ODBCCursorMetaData)
-
-public methods
-
-retrieveColumnData(hstmt:Int32)
+meta SimpleConcreteClass(ODBCCursorMetaData)
 {
-  let rc = CShortHolder.new(),
-  (odbc.SQLNumResultCols(hstmt,rc.handle) = odbc.SQL_SUCCESS)
-  ? {_columnCount:=rc.value}
-  : {rc.close(),
-     ODBCError.new(odbc.NULL,odbc.NULL,hstmt).raise},
-  rc.close(),
-  _columnNames := MutableArray.new(_columnCount),
-  _nulls := MutableArray.new(_columnCount),
-  _precisions := MutableArray.new(_columnCount),
-  _scales := MutableArray.new(_columnCount),
-  _types := MutableArray.new(_columnCount),
-  let szColName = CStringHolder.new(100),
-  let pcbColName = CShortHolder.new(),
-  let fSqlType = CShortHolder.new(),
-  let cbColDef = CIntHolder.new(),
-  let pibScale = CShortHolder.new(),
-  let pfNullable = CShortHolder.new(),
-  for(0,_columnCount-1, fun(i:Int)
+retrieveColumnData(hstmt:Int32) :Void
+  (* *)
+{
+  rc ::= CShortHolder.new()
+  if( (odbc.SQLNumResultCols(hstmt,rc.handle) = odbc.SQL_SUCCESS)
+  then: {_columnCount:=rc.value}
+  else: {rc.close()
+     ODBCError.new(odbc.NULL,odbc.NULL,hstmt).raise})
+  rc.close()
+  _columnNames := MutableArray.new(_columnCount)
+  _nulls := MutableArray.new(_columnCount)
+  _precisions := MutableArray.new(_columnCount)
+  _scales := MutableArray.new(_columnCount)
+  _types := MutableArray.new(_columnCount)
+  szColName ::= CStringHolder.new(100)
+  pcbColName ::= CShortHolder.new()
+  fSqlType ::= CShortHolder.new()
+  cbColDef ::= CIntHolder.new()
+  pibScale ::= CShortHolder.new()
+  pfNullable ::= CShortHolder.new()
+  for(0 to:_columnCount-1 do: fun(i:Int)
     {
-      (odbc.SQLDescribeCol(hstmt,i+1,szColName.handle,100,pcbColName.handle,
+      if( (odbc.SQLDescribeCol(hstmt,i+1,szColName.handle,100,pcbColName.handle,
                            fSqlType.handle,cbColDef.handle,pibScale.handle,
 			   pfNullable.handle) = odbc.SQL_SUCCESS)
-      ? {_columnNames[i]:=szColName.value,
-         _types[i]:=fSqlType.value,
-         _nulls[i]:=( pfNullable.value == 1 ), (* this value is not          *)
-					       (* retrieved correctly by the *)
-					       (* ADABAS D-ODBC-Driver       *)
-	 _precisions[i]:= cbColDef.value, 
-	 _scales[i]:= (_types[i] = odbc.SQL_TIMESTAMP)
-	              ? {odbc.timestampScale}
-	              : {pibScale.value}
+      then: {_columnNames[i]:=szColName.value
+         _types[i]:=fSqlType.value
+         _nulls[i]:=( pfNullable.value == 1 ) ; this value is not          
+					       ; retrieved correctly by the 
+					       ; ADABAS D-ODBC-Driver       
+	 _precisions[i]:= cbColDef.value 
+	 _scales[i]:= if( (_types[i] = odbc.SQL_TIMESTAMP)
+	              then: {odbc.timestampScale}
+	              else: {pibScale.value})
 	 }
-      : {szColName.close,
-         pcbColName.close,
-         fSqlType.close,
-         cbColDef.close,
-         pibScale.close,
-         pfNullable.close,
-	 ODBCError.new(odbc.NULL,odbc.NULL,hstmt).raise}
-    }),
-  szColName.close,
-  pcbColName.close,
-  fSqlType.close,
-  cbColDef.close,
-  pibScale.close,
+      else: {szColName.close
+         pcbColName.close
+         fSqlType.close
+         cbColDef.close
+         pibScale.close
+         pfNullable.close
+	 ODBCError.new(odbc.NULL,odbc.NULL,hstmt).raise})
+    })
+  szColName.close
+  pcbColName.close
+  fSqlType.close
+  cbColDef.close
+  pibScale.close
   pfNullable.close
 }
 
-;
-
-
-
-
-
-
-
+}

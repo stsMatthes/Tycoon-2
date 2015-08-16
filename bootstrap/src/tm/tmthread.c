@@ -21,10 +21,10 @@
 /*
   Copyright (c) 1996 Higher-Order GmbH, Hamburg. All rights reserved.
 
-  tmthread.c 1.34 98/11/13 Marc Weikard
+  $File: //depot/tycoon2/stsmain/bootstrap/src/tm/tmthread.c $ $Revision: #3 $ $Date: 2003/10/02 $ Marc Weikard
 
   Tycoon Virtual Machine
-
+  
 */
 
 #include <stdio.h>
@@ -115,7 +115,7 @@ typedef struct ThreadDescriptor {
   tyc_Thread * pThread;
   SaveStack * pSaveStack;
   /* link fields */
-  struct ThreadDescriptor * pNext, * pPrev;
+  struct ThreadDescriptor * pNext, * pPrev; 
 } ThreadDescriptor;
 
 static ThreadDescriptor * pDescriptorList = NULL;
@@ -177,7 +177,7 @@ void tmthread_init(void)
 
   /* threads are restarted after system initialization is finished */
   nThreads = 0;
-  pDescriptorList = NULL;
+  pDescriptorList = NULL; 
   tsp_setFinalizer(tmthread_finalizer);
 }
 
@@ -194,7 +194,7 @@ void tmthread_enumRootPtr(tsp_VisitPtr visitRootPtr)
 }
 
 void tmthread_enumAmbiguousRootPtr(tsp_VisitPtr visitAmbiguousPtr)
-/* enumerate ambiguous roots for blocking ccalls */
+/* enumerate ambiguous roots for blocking ccalls */ 
 {
   ThreadDescriptor * pDescriptor = pDescriptorList;
   while(pDescriptor) {
@@ -317,7 +317,7 @@ void tmthread_syncRequest(void)
   }
   assert(nRunners > 0);
   nRunners --;
-
+  
   while(nRunners > 0) {
     tosCondition_wait(&cvSync, &mxAlloc);
   }
@@ -469,7 +469,7 @@ static void * profileTimer(void * p)
   /* start timer */
   virtualTimerOn();
   /* wait until sample was taken and restore timer */
-  while(TRUE) {
+  while(TRUE) {  
     Bool fRestartLoop = FALSE;
     while(!fRestartLoop) {
       tosMutex_lock(&mxSample);
@@ -587,7 +587,7 @@ static tyc_Thread * allocStoreData(tyc_Thread * pThread)
   tyc_Fun * pFun;
   tyc_Stack pStack;
   tyc_ByteArray pBarrierCode;
-
+  
   /* create store objects */
   tmthread_pushStack(pThread);
   pBarrierCode = tsp_newByteArray(tyc_ClassId_ByteArray, 4);
@@ -611,7 +611,7 @@ static tyc_Thread * allocStoreData(tyc_Thread * pThread)
   *--sp = pFun;
   /* initialize frame */
   sp -= sizeof(tyc_StackFrame) / sizeof(tsp_OID);
-  pFrame = (tyc_StackFrame*)sp;
+  pFrame = (tyc_StackFrame*)sp;  
   pFrame->parent.ip = pBarrierCode;
   pFrame->parent.fp = pBarrierFrame;
   pFrame->pReceiver = (void**)pFun;
@@ -631,7 +631,7 @@ static ThreadDescriptor * allocMemData(tyc_Thread * pThread)
   void * pJumpBuffer;
   ThreadDescriptor * pDescriptor;
   SaveStack * pSaveStack;
-
+  
   /* create new thread descriptor */
   pDescriptor = malloc(sizeof(ThreadDescriptor));   /* thread descriptor */
   pJumpBuffer = malloc(sizeof(jmp_buf));            /* jmp_buf for setjmp */
@@ -678,7 +678,7 @@ static tosThread_FUNC_DECL restartThread(ThreadDescriptor * pDescriptor)
   tyc_Thread * pThread;
   tsp_WeakRef * pWeakRef;
   Bool fSuccess;
-
+  
   /* set thread specific data */
   fSuccess = tosTLS_setValue(descriptorKey, pDescriptor);
   assert(fSuccess == 0);
@@ -694,7 +694,7 @@ static tosThread_FUNC_DECL restartThread(ThreadDescriptor * pDescriptor)
       }
     }
     pWeakRef = pWeakRef->pNext;
-  }
+  }  
   /* syncronize with other threads */
   tmthread_criticalLock();
   nResyncing--;

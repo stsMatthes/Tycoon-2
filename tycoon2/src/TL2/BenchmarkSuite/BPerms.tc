@@ -1,18 +1,16 @@
 class BPerms
 super Benchmark
-metaclass SimpleConcreteClass(BPerms)
-
-
+(**)
+meta SimpleConcreteClass(BPerms)
+{
 private
 
-permArray :MutableArray(Int),
+permArray :MutableArray(Int)
+
 permCount :Int
 
-
-methods
-
 permSwap(i :Int, j :Int) :Void
-(*
+  (*
  * This file is part of the Tycoon-2 system.
  *
  * The Tycoon-2 system is free software; you can redistribute it and/or
@@ -32,50 +30,52 @@ permSwap(i :Int, j :Int) :Void
  * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
  *
  Exchange elements at index i and j. *)
-  {
-  let temp = permArray[i],
-  permArray[i] := permArray[j],
+{
+  temp ::= permArray[i]
+  permArray[i] := permArray[j]
   permArray[j] := temp 
   }
 
-
 permute(n :Int) :Void
+  (* *)
 {
- permCount := permCount + 1,
- n != 1
-   ? { permute(n - 1),
-       let var k = n - 1,
-       while( { k >= 1},
-              { permSwap(n,k),
-	        permute(n - 1),
-		permSwap(n,k),
+ permCount := permCount + 1
+ if( n != 1
+   then: { permute(n - 1)
+       k ::= n - 1
+       while( { k >= 1} do:
+              { permSwap(n,k)
+	        permute(n - 1)
+		permSwap(n,k)
 		k := k - 1 })
-      }
+      })
 }
 
-
 permInit() :Void
+  (* *)
 {
-  for (1, 7,
+  for(1 to: 7 do:
     fun(i :Int)
     { permArray[i] := i - 1 })
 }
 
-
 _setup() :Void
+  (* *)
 {
 }
 
 _run() :Void
+  (* *)
 {
-  permCount := 0,
-  permArray := MutableArray.new(10),
-  for(1,5,
+  permCount := 0
+  permArray := MutableArray.new(10)
+  for(1 to:5 do:
     fun(i :Int)
-    { permInit(),
-      permute(7) }),
-  permCount != 43300
-     ? { "Error in permutations\n".print }
-     : { "Permutations completed\n".print }
-}     
-;
+    { permInit()
+      permute(7) })
+  if( permCount != 43300
+     then: { "Error in permutations\n".print }
+     else: { "Permutations completed\n".print })
+}
+
+}

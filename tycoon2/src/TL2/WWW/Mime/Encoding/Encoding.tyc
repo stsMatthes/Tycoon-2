@@ -1,17 +1,8 @@
-DO load "../TWL/WWW/Mime/Encoding/Encoding.tc";
+(*
+DO load "WWW/Mime/Encoding/Encoding.tyc";
+*)
+tycoon.tl.loader.registerDirectory("WWW/Mime/Encoding");
+tycoon.tl.loader.update;
+tycoon.tl.typeChecker.check;
 
-class EncoderClass metaclass MetaClass;
-DO load "../TWL/WWW/Mime/Encoding/Encoder.tc";
-DO load "../TWL/WWW/Mime/Encoding/ConcreteEncoderClass.tc";
-DO load "../TWL/WWW/Mime/Encoding/EncoderClass.tc";
-
-DO load "../TWL/WWW/Mime/Encoding/Base64Encoder.tc";
-DO load "../TWL/WWW/Mime/Encoding/Base64Decoder.tc";
-
-
-(* init *)
-
-Encoder.init;
-
-
-
+DO load "WWW/Mime/Encoding/Init.tyc";

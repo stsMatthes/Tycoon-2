@@ -1,29 +1,28 @@
 class OCIError
-
 super SQLError
-
-metaclass OCIErrorClass
-
-public methods
-
+(**)
+meta OCIErrorClass
+{
 isDuplicateKeyError:Bool
+  (* *)
 {
   errorCode == 1
 }
 
 isConnectionFailedError :Bool
+  (* *)
 {
   errorCode == 12203 | errorCode == 12224 | errorCode == 12500
     | errorCode == 12571
-}    
+}
 
-printOn(out :Output)
+printOn(out :Output) :Void
+  (* *)
 {
-  super.printOn(out),
-  out.writeAll(", Error-Code: "),
-  errorCode.printOn(out),
+  super.printOn(out)
+  out.writeAll(", Error-Code: ")
+  errorCode.printOn(out)
   out.writeAll(", Error-Message: "+errorMessage)
 }
 
-;
-
+}

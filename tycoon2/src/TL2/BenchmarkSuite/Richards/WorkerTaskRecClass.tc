@@ -1,11 +1,12 @@
 class WorkerTaskRecClass(Instance <: WorkerTaskRec)
 super ConcreteClass(Instance)
-metaclass MetaClass
-
-public methods
-
+(**)
+meta MetaClass
+{
 new :Instance
+  (* *)
 {
   _new.init
 }
-;
+
+}

@@ -19,13 +19,13 @@
  *
  */
 /*
-  tosStdio.c 1.0 final  06-OCT-1998  Andre Willomat
+  $File: //depot/tycoon2/stsmain/bootstrap/src/tycoonOS/tosStdio.c $ $Revision: #3 $ $Date: 2003/10/02 $ Hubertus Koehler, Andreas Gawecki, Andre Willomat
 
   Interface to Portable Tycoon-2 operating system (TycoonOS)
 
   Standard file I/O for TSP / TVM.
 
-  You can also use <stdio.h>, but than you can go into trouble
+  You can also use <stdio.h>, but than you can get into trouble
   whith future filename-conventions or default open-modes.
 */
 

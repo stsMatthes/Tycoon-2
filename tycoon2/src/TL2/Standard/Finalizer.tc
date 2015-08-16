@@ -51,35 +51,33 @@ launchRunner :Void
      Called during system startup after the Finalizer has been registered in
      the root object *)
 {
-  _runner := Thread.new(fun(){ run })
+  _runner := Thread.new(fun(){ run })@
   _runner.name := "Finalizer"
 }
 
 private
 
-_cv :Condition
-
+_cv @:Condition
   (* the condition signaled by the Tycoon engine *)
 
 _weaks :WeakRef(Object)
+  (* this slot is manipulated exclusively by the Tycoon engine *)
 
-  (* this slot is manipulated exclusively my the Tycoon engine *)
-
-_runner :Thread(Void)
+_runner @:Thread(Void)
 
 _running :Bool
 
   (* true iff finalizer thread is active *)
 
-_idle :Condition
+_idle @:Condition
   (* signaled if finalizer thread is finished *)
 
 _init :Void
   (* establish a weak reference to the receiver *)
 {
   super._init
-  _cv := Condition.new
-  _idle := Condition.new
+  _cv := Condition.new@
+  _idle := Condition.new@
   _running := false
   
   self
@@ -113,7 +111,6 @@ runFinalizers(weaks :WeakRef(Object)) :Void
     try({ wr.finalize } else:
       fun(e :Exception) {
         if( tycoon.debug then: { tycoon.stdout.writeln("Exception while running finalizer: " + e.printString) })
-	nil
       })
     wr := wr.next
   })

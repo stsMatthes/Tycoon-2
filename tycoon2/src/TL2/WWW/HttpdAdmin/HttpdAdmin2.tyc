@@ -6,9 +6,13 @@ tycoon.tl.typeChecker.check;
 DO load "Util/Util2.tyc";
 DO load "WWW/Stml/Stml2.tyc";
 
+tycoon.tl.loader.registerDirectory("Debug");
+tycoon.tl.loader.registerDirectory("Compile/TL2/Tools");
 tycoon.tl.loader.registerDirectory("WWW/HttpdAdmin");
 
 tycoon.tl.loader.update;
+tycoon.tl.typeChecker.check;
+tycoon.tl.topLevel.file("Debug/Init.tyc");
 
 (*
 tycoon.saveSystem;

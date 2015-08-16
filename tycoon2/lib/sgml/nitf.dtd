@@ -1,0 +1,718 @@
+<!-- This is the NITF DTD
+ <!DOCTYPE NITF PUBLIC "-//IPTC-NAA//DTD NITF 1.0F//EN" > -->
+
+<!ENTITY % head.html "TITLE?, BANNER?, BASE?, META?">
+<!ENTITY % head.docdata "(IIM, NONIIM)?, ANPA89-3.WIREHEAD?, 
+IPTC7901.WIREHEAD?">
+<!ENTITY % head.links "LINK*, LINKPOOL?">
+<!ENTITY % body.head "HEDLINE?, NOTE*, COPYRITE?, BYLINE*, DATELINE?">
+<!ENTITY % heading "H1 | H2 | H3 | H4 | H5 | H6 | H7 | H8">
+<!ENTITY % list "OL | UL | DL">
+<!ENTITY % block "BLOCK">
+<!ENTITY % epub.block "HR">
+<!ENTITY % inline.content "CHRON | EVENT | LOCATION | MAILADDR | MONEY | NUM 
+| ORG | PERSON">
+<!ENTITY % misc "A | BR | CLINK | EM | LANG | Q">
+<!ENTITY % inline "%inline.content; | %misc;">
+<!ENTITY % text "#PCDATA | %inline;">
+<!ENTITY % block.content "P | TABLE | FIG | IMG | PHOTO | AUDIO | VIDEO | 
+%list; | BQ | FN | NOTE | PRE | HR">
+<!ENTITY % bodytext "%heading; | %block; | %list; | %epub.block; | %text; | 
+P">
+<!ENTITY % body.content "%bodytext;">
+<!ENTITY % body.end "TAGLINE?, ADDRESS?">
+<!ENTITY % banner.content "%body.content;">
+<!ENTITY % name.content "NAME.PREFIX | NAME.GIVEN | NAME.MIDDLE | NAME.FAMILY 
+| NAME.SUFFIX">
+<!ENTITY % A.content "(%text;)+">
+<!-- # -->
+<!-- 0 -->
+<!ELEMENT NITF - - (HEAD, BODY) -- News Industry Text Format Instance -->
+<!-- 1 -->
+<!ELEMENT HEAD - - ((%head.html;), (%head.docdata;), (%head.links;)?) -- 
+Document Header Information -->
+<!ELEMENT BODY - - ((%body.head;)?, (%body.content;)*, (%body.end;)) -- 
+Document Body -->
+<!-- 2 -->
+<!ELEMENT TITLE - - (#PCDATA) -- Story Title -->
+<!ELEMENT BANNER - - (%banner.content;)+ -- Non Scrolling Text Area -->
+<!ELEMENT BASE - o EMPTY -- Reference context for URLs -->
+<!ELEMENT META - o EMPTY -- Environment Data -->
+<!ELEMENT IIM - - (DS*) -- IIM Record 2 Data Container -->
+<!ELEMENT NONIIM - - (LOCATION, NID*) -- IIM style data provided in a non IIM 
+format -->
+<!ELEMENT LINK - o EMPTY -- Link Attriubtes -->
+<!ELEMENT LINKPOOL - o (NMLIST | NAMELOC | DATALOC | TREELOC)* -- Hytime 
+linkpool -->
+<!ELEMENT HEDLINE - - (HL1, HL2*) -- Container for head line and subheads -->
+<!ELEMENT NOTE - - (%body.content;)+ -- Document admonishment -->
+<!ELEMENT COPYRITE - - (COPYRITE.YEAR, COPYRITE.HOLDER) -- Container for 
+copyright information -->
+<!ELEMENT BYLINE - - ((PERSON, BYTTL?) | BYTAG) -- Container for byline 
+information -->
+<!ELEMENT DATELINE - - (LOCATION, STORY.DATE?) -- Container for dateline 
+information -->
+<!ELEMENT TAGLINE - - (%text;) -- Tagline -->
+<!ELEMENT ADDRESS - - (#PCDATA) -- Address of document author -->
+<!-- 3 -->
+<!ELEMENT DS - - (#PCDATA) -- IIM Record 2 dataset information --><!-- Record 
+2 Only -->
+<!ELEMENT COPYRITE.YEAR - - (#PCDATA) -- Copyright year -->
+<!ELEMENT COPYRITE.HOLDER - - (#PCDATA) -- Copyright holder -->
+<!ELEMENT NID - o EMPTY -- Non-IIM data element -->
+<!ELEMENT ANPA89-3.WIREHEAD - o EMPTY -- ANPA/NAA 89-3 (1312) header 
+information -->
+<!ELEMENT IPTC7901.WIREHEAD - o EMPTY -- IPTC 7901 header information -->
+<!ELEMENT NMLIST - - (#PCDATA) -- Hytime nmlist -->
+<!ELEMENT NAMELOC - - (NMLIST)* -- Hytime nameloc -->
+<!ELEMENT DATALOC - o (DIMLIST) -- Hytime dataloc -->
+<!ELEMENT TREELOC - - (MARKLIST*) -- Hytime treeloc -->
+<!ELEMENT (HL1 | HL2) - - (#PCDATA | %inline;) -- Headline 1 -- -- Headline 2 
+(Subhead) -->
+<!ELEMENT (H1 | H2 | H3 | H4 | H5 | H6 | H7 | H8) - - (#PCDATA | %inline;)* -- First to eigth level header -->
+<!ELEMENT P - o (%text;)+ -- Paragraph -->
+<!ELEMENT BLOCK - - (%block.content;)* -- Body grouping agent -->
+<!ELEMENT TABLE - - (CAPTION?, (COL* | COLGROUP*), THEAD?, TFOOT?, TBODY+) -- 
+Table of data -->
+<!ELEMENT FIG - - (FIG.CAPTION?, FIG.PRODUCER?, FIG.DATA) -- Figure -->
+<!ELEMENT IMG - - (IMG.CAPTION?, IMG.PRODUCER?, IMG.DATA) -- Image -->
+<!ELEMENT PHOTO - - (PHOTO.CAPTION?, PHOTO.PRODUCER?, PHOTO.DATA) -- 
+Photograph -->
+<!ELEMENT AUDIO - - (AUDIO.CAPTION?, AUDIO.PRODUCER?, AUDIO.DATA) -- Audio 
+information -->
+<!ELEMENT VIDEO - - (VIDEO.CAPTION?, VIDEO.PRODUCER?, VIDEO.DATA) -- Video 
+information -->
+<!ELEMENT PRE - - (#PCDATA) -- Preformatted information -->
+<!ELEMENT BQ - - ((%heading; | %block;)+, CREDIT?)* -- Block quote -->
+<!ELEMENT FN - - (%body.content;)+ -- Footnote -->
+<!ELEMENT (OL | UL) - - (LH?, LI+) -- Ordered, Unordered List -->
+<!ELEMENT DL - - (LH?, (DT?, DD)+) -- Definition List -->
+<!ELEMENT PERSON - - (#PCDATA | %name.content;)* -- Human individual -->
+<!ELEMENT BYTTL - - (#PCDATA) -- Byline title -->
+<!ELEMENT BYTAG - - (#PCDATA) -- Byline tag -- >
+<!ELEMENT STORY.DATE - - (#PCDATA) -- Date of story -->
+<!ELEMENT HR - o EMPTY -- Horizontal rule -->
+<!-- 4 -->
+<!ELEMENT DIMLIST - - (#PCDATA) -- Hytime ? -->
+<!ELEMENT MARKLIST o o (#PCDATA) -- Hytime treeloc marklist -->
+<!ELEMENT (MONEY | CHRON | EVENT) - - (#PCDATA) -- Monetary item -- -- Date & 
+Time -- -- An event -->
+<!ELEMENT ORG - - (ORGID|#PCDATA)* -- Organization -->
+<!ELEMENT LOCATION - - (SUBLOCATION| CITY | STATE | REGION | COUNTRY | 
+#PCDATA)* -- Significant place -->
+<!ELEMENT MAILADDR - - (ADDRESSEE, DELIVERY.POINT?, (POSTCODE | 
+DELIVERY.OFFICE | REGION | COUNTRY)*) -- Mailing address -->
+<!ELEMENT NUM - - (#PCDATA | FRAC | SUB | SUP)* -- Numeric data -->
+<!ELEMENT A - - %A.content -- Anchor for Hypertext links -->
+<!ELEMENT BR - o EMPTY -- Forced Line Break -->
+<!ELEMENT CLINK - - (#PCDATA) -- Context Link -->
+<!ELEMENT EM - - (#PCDATA) -- Emphasis -->
+<!ELEMENT LANG - - (%text;)+ -- Language Identifier -->
+<!ELEMENT Q - - (%text;)+ -- Quote -->
+<!ELEMENT FIG.CAPTION - - (CAPTION) -- Text describing figure -->
+<!ELEMENT FIG.PRODUCER - - (BYLINE)+ -- Byline of figure producer -->
+<!ELEMENT FIG.DATA - - (%body.content;)+ -- Actual figure -->
+<!ELEMENT IMG.CAPTION - - (CAPTION) -- Text describing image -->
+<!ELEMENT IMG.PRODUCER - - (BYLINE)+ -- Byline of image producer -->
+<!ELEMENT IMG.DATA - o EMPTY -- Actual image -->
+<!ELEMENT PHOTO.CAPTION - - (CAPTION) -- Text describing photo -->
+<!ELEMENT PHOTO.PRODUCER - - (BYLINE)+ -- Byline of photo producer -->
+<!ELEMENT PHOTO.DATA - o EMPTY -- Actual photo -->
+<!ELEMENT AUDIO.CAPTION - - (CAPTION) -- Text describing audio -->
+<!ELEMENT AUDIO.PRODUCER - - (BYLINE)+ -- Byline of audio producer -->
+<!ELEMENT AUDIO.DATA - o EMPTY -- Actual audio -->
+<!ELEMENT VIDEO.CAPTION - - (CAPTION) -- Text describing video -->
+<!ELEMENT VIDEO.PRODUCER - - (BYLINE)+ -- Byline of video producer -->
+<!ELEMENT VIDEO.DATA - o EMPTY -- Actual video -->
+<!ELEMENT CREDIT - - (%text;) -- Information provider -->
+<!ELEMENT (NAME.PREFIX | NAME.GIVEN | NAME.MIDDLE | NAME.FAMILY | 
+NAME.SUFFIX) - - (#PCDATA) -- Name prefix -- -- Given name -- -- Middle name/
+initial -- -- Family name -- -- Name suffix -->
+<!ELEMENT COL - o EMPTY -- Column -->
+<!ELEMENT COLGROUP - o (COL+) -- Column group -->
+<!ELEMENT THEAD - o (TR+) -- Table heading -->
+<!ELEMENT TFOOT - o (TR+) -- Table footer -->
+<!ELEMENT TBODY o o (TR+) -- Table body -->
+<!ELEMENT LH - o (%text;) -- List header -->
+<!ELEMENT LI - o (%block;) -- List item -->
+<!ELEMENT DT - o (%text;) -- Definition term -->
+<!ELEMENT DD - o (%block;)* -- Definition definition -->
+<!-- 5 -->
+<!ELEMENT CAPTION - - (%text;) -- Text for caption -->
+<!ELEMENT (SUBLOCATION | CITY | STATE) - - (%text;) -- Named region within 
+CITY or STATE -- -- City/Town/Village/etc. -- -- State/Province/Region -->
+<!ELEMENT ORGID - o EMPTY -- External identification for organization -->
+<!ELEMENT TR - o (TH | TD)+ -- Table row -->
+<!ELEMENT ADDRESSEE - o (PERSON, FUNCTION?, CARE.OF) -- Person addreessed -->
+<!ELEMENT DELIVERY.OFFICE - - ((#PCDATA) | BR)+ -- Postal city or town -->
+<!ELEMENT DELIVERY.POINT - - ((#PCDATA) | BR)+ -- Street, PO Box No -->
+<!ELEMENT POSTCODE - - (#PCDATA) -- Postal code -->
+<!ELEMENT COUNTRY - - (#PCDATA) -- Country -->
+<!ELEMENT REGION - - (#PCDATA) -- Geographic area -->
+<!ELEMENT FRAC - - (NUMER, DENOM) -- Fraction -->
+<!ELEMENT SUB - - (#PCDATA) -- Subscript -->
+<!ELEMENT SUP - - (#PCDATA) -- Superscript -->
+<!-- 6 -->
+<!ELEMENT (TH | TD) - o (%body.content;)* -- Table header | data cell -->
+<!ELEMENT FUNCTION - - (#PCDATA) -- Person role -->
+<!ELEMENT CARE.OF - - (#PCDATA) -- Poste Restante -->
+<!ELEMENT NUMER - - (#PCDATA) -- Fraction numerator -->
+<!ELEMENT DENOM - - (#PCDATA) -- Fraction denominator -->
+<!-- 7 -->
+<!-- 8 -->
+<!-- 9 -->
+<!-- 10 -->
+<!-- Attribute section -->
+<!ENTITY % attrs
+ 'ID ID #IMPLIED
+ Class NAMES #IMPLIED
+ Style CDATA #IMPLIED
+ Lang NAME #IMPLIED
+ Dir (Ltr | Rtl) #IMPLIED'>
+<!ENTITY % block.align
+ "align (Bleedleft | Left | Center | Right | Bleedright | Justify) Center ">
+<!ENTITY % cell.halign
+ 'Halign (Left | Center | Right | Justify | Char) #IMPLIED
+ Char CDATA #IMPLIED
+ Charoff CDATA #IMPLIED'>
+<!ENTITY % cell.valign
+ 'Valign (Top | Middle | Bottom | Baseline) #IMPLIED'>
+<!ENTITY % form.type "NITF | ASCII | JPEG | GIF |TIF| MPEG2 | Unspec" >
+<!ENTITY % frame "Void | Above | Below | Hsides | LHS | RHS | Vsides | Box | 
+Border">
+<!ENTITY % link.type "NAME">
+<!ENTITY % linkextraattributes
+ "rel %link.type #IMPLIED
+ rev %link.type #IMPLIED
+ title CDATA #IMPLIED
+ methods NAMES #IMPLIED">
+<!ENTITY % nid.name
+ "(Doc.Action |
+  Doc.Dukey |
+  Doc.Fixture |
+  Doc.ID |
+  Doc.Owner |
+  Doc.Provider |
+  Doc.Release-Time |
+  Doc.Result |
+  Doc.Type |
+  Doc.Urgency)">
+<!ENTITY % nid.type
+ "(Advisory | Container | Election | Market | Score | Story | Summary | 
+Table)">
+<!ENTITY % object.type "Article | Part.Article | Envelope | Illustration | 
+Image | Audio | Video | Other">
+<!ENTITY % rules "None | Basic | Rows | Cols | All">
+<!ENTITY % tagline.type "Std | PA | NPA">
+<!ENTITY % title.type "Main | SubTitle | PartTitle | Alternate | Abbrev | 
+Other">
+<!ENTITY % URI "CDATA">
+<!ENTITY % url.link "md CDATA #IMPLIED">
+<!ENTITY % where "Left | Center | Right">
+<!-- -->
+<!ATTLIST NITF
+ VERSION CDATA #FIXED "-//IPTC-NAA//DTD NITF 1.0F//EN"
+ Change.Date CDATA #FIXED "24 April 1996"
+ Change.Time CDATA #FIXED "1500"
+ Baselang CDATA #IMPLIED
+ URN CDATA #IMPLIED
+ Class NAMES #IMPLIED>
+<!ATTLIST ADDRESS %attrs;>
+<!ATTLIST A
+ Href %URI; #IMPLIED
+ Name CDATA #IMPLIED
+ Lang CDATA "en.us"
+ %url.link;
+ %linkextraattributes;>
+<!ATTLIST ANPA89-3.WIREHEAD -- from ANPA Special Report 89-3 --
+ anpa89-3.sld CDATA #IMPLIED -- --
+ anpa89-3.storynum NUMBER #IMPLIED
+ anpa89-3.visual CDATA #IMPLIED
+ anpa89-3.selcode CDATA #IMPLIED
+ anpa89-3.priority CDATA #IMPLIED
+ anpa89-3.category CDATA #IMPLIED
+ anpa89-3.formatid (31 | 32 | 41 | 42 ) #IMPLIED
+ anpa89-3.keyword CDATA #IMPLIED
+ anpa89-3.version CDATA #IMPLIED
+ anpa89-3.reference CDATA #IMPLIED
+ anpa89-3.filedate CDATA #IMPLIED
+ anpa89-3.words NUMBER #IMPLIED
+ anpa89-3.timedate CDATA #IMPLIED>
+<!ATTLIST AUDIO
+ %attrs;
+ Src %URI; #REQUIRED
+ %url.link;
+ Length NUMBER #IMPLIED>
+<!ATTLIST AUDIO.DATA
+ Copyright CDATA #IMPLIED>
+<!ATTLIST BANNER %attrs;>
+<!ATTLIST BASE
+ ID ID #IMPLIED
+  Href %URI; #REQUIRED>
+<!ATTLIST BODY
+ %attrs;
+ Background %URI; #IMPLIED>
+<!ATTLIST BQ
+ %attrs;
+ Nowrap  (nowrap) #IMPLIED>
+<!ATTLIST CAPTION
+ %attrs;
+ align (top | bottom | left | right) #IMPLIED>
+<!ATTLIST CHRON
+ Norm CDATA #IMPLIED>
+<!ATTLIST CLINK
+ Hytime name CLINK
+ Linkend idrefs #REQUIRED      
+ ID id #IMPLIED>
+<!ATTLIST COL
+ %attrs;
+ Span NUMBER 1
+ Width CDATA #IMPLIED
+ %cell.halign;
+ %cell.valign;>
+<!ATTLIST COLGROUP
+ %attrs;
+ %cell.halign;
+ %cell.valign;>
+<!ATTLIST CREDIT %attrs;>
+<!ATTLIST DATALOC
+ ID id #REQUIRED
+ Locsrc idref #IMPLIED
+ Quantum (norm) norm
+ HyTime name DATALOC >
+<!ATTLIST DD %attrs;>
+<!ATTLIST DIMLIST
+ HyTime name DIMLIST>
+<!ATTLIST DL %attrs;>
+<!ATTLIST DS
+ Num NUTOKEN #REQUIRED>
+<!ATTLIST DT %attrs;>
+<!ATTLIST EM %attrs;>
+<!ATTLIST FIG
+ %attrs;
+ Src %URI; #REQUIRED
+ %url.link;
+ %block.align;
+ Noflow (noflow) #IMPLIED
+ Width NUMBER #IMPLIED
+ Height NUMBER #IMPLIED
+ Imagemap (%URI) #IMPLIED>        
+<!ATTLIST FIG.DATA
+ Copyright CDATA #IMPLIED>
+<!ATTLIST FN %attrs;>
+<!ATTLIST (%heading) %attrs;>
+<!ATTLIST (HL1|HL2) %attrs;>
+<!ATTLIST HR
+ Src %URI; #IMPLIED>
+<!ATTLIST IIM
+ Ver NUTOKEN #IMPLIED>
+<!ATTLIST IMG
+ %attrs;
+ Src %URI; #REQUIRED
+ %url.link;
+ Alt CDATA #IMPLIED
+ Align (top|middle|bottom|left|right) top
+ Width NUMBER #IMPLIED
+ Height NUMBER #IMPLIED
+ Units (pixels) pixels
+ Ismap (ismap) #IMPLIED>
+<!ATTLIST IMG.DATA
+ Copyright CDATA #IMPLIED>
+<!ATTLIST IPTC7901.WIREHEAD -- from IPTC 7901 R4 (1991) --
+ iptc7901.svcid CDATA #IMPLIED
+ iptc7901.msgnum NUMBER #IMPLIED
+ iptc7901.priority CDATA #IMPLIED
+ iptc7901.category CDATA #IMPLIED
+ iptc7901.words NUMBER #IMPLIED
+ iptc7901.optinfo CDATA #IMPLIED
+ iptc7901.keyword CDATA #IMPLIED
+ iptc7901.catchline CDATA #IMPLIED
+ iptc7901.timedate CDATA #IMPLIED>
+<!ATTLIST LANG %attrs;>
+<!ATTLIST LH %attrs;>
+<!ATTLIST LI
+ %attrs;
+ Dingbat ENTITY #IMPLIED
+ Src  (%URI;) #IMPLIED
+ %url.link;
+ Skip NUMBER 0>
+<!ATTLIST LINK
+ href %URI #REQUIRED
+ %linkextraattributes;>
+<!ATTLIST MARKLIST
+ HyTime NAME MARKLIST>
+<!ATTLIST META
+ Http-equiv NAME #IMPLIED
+ Name NAME #IMPLIED
+ Content CDATA #REQUIRED>
+<!ATTLIST MONEY
+ Unit CDATA #IMPLIED>
+<!ATTLIST NAMELOC
+ ID id #REQUIRED
+ HyTime name NAMELOC>
+<!ATTLIST NID
+ Name %nid.name #IMPLIED
+ Type %nid.type #IMPLIED
+ Value CDATA #IMPLIED>
+<!ATTLIST NMLIST
+ Docorsub entity #IMPLIED
+ Nametype (element | entity) element
+ HyTime name NMLIST>
+<!ATTLIST NOTE
+ %attrs;
+ Noteclass (cpyrt | end | hd | editorsnote | trademk | undef) #IMPLIED
+ Type (std | pa | npa) std
+ Src %URI; #IMPLIED
+ %url.link;>
+<!ATTLIST OL
+ %attrs;
+ Continue (Continue) #IMPLIED
+ Seqnum NUMBER #IMPLIED
+ Compact (Compact) #IMPLIED>
+<!ATTLIST ORGID 
+ IDSrc CDATA #REQUIRED
+ Value CDATA #REQUIRED>
+<!ATTLIST P %attrs;>
+<!ATTLIST PHOTO
+ %attrs;
+ Src %URI; #REQUIRED
+ %url.link;
+ Alt CDATA #IMPLIED
+ Align (top|middle|bottom|left|right) top
+ Width NUMBER #IMPLIED
+ Height NUMBER #IMPLIED
+ Units (pixels) pixels
+ Ismap (ismap) #IMPLIED>
+<!ATTLIST PHOTO.DATA
+ Copyright CDATA #IMPLIED>
+<!ATTLIST Q %attrs;>
+<!ATTLIST SUB %attrs;>
+<!ATTLIST SUP %attrs;>
+<!ATTLIST TABLE
+ %attrs;
+ TableType ENTITY #IMPLIED
+ Align (%where) #IMPLIED
+ Width CDATA #IMPLIED
+ Cols NUMBER #IMPLIED
+ Border CDATA #IMPLIED
+ Frame (%frame) #IMPLIED
+ Rules (%rules) #IMPLIED
+ Cellspacing CDATA #IMPLIED
+ Cellpadding CDATA #IMPLIED>
+<!ATTLIST TAGLINE
+ Type (%tagline.type) std>
+<!ATTLIST (TBODY | TFOOT | THEAD)
+ %attrs;
+ %cell.halign;
+ %cell.valign;>
+<!ATTLIST (TD | TH)
+ %attrs;
+ Axis CDATA #IMPLIED
+ Axes CDATA #IMPLIED
+ Nowrap (nowrap) #IMPLIED
+ Rowspan NUMBER 1
+ Colspan NUMBER 1
+ %cell.halign;
+ %cell.valign;>
+<!ATTLIST TITLE
+ Type (%title.type;) #IMPLIED>
+<!ATTLIST TR
+ %attrs;
+ %cell.halign;
+ %cell.valign;>
+<!ATTLIST TREELOC
+ ID id #REQUIRED
+ Locsrc idref #IMPLIED
+ HyTime name TREELOC>
+<!ATTLIST UL
+ %attrs;
+ Wrap (Vert | Horiz | None) None
+ Plain (Plain) #IMPLIED
+ Dingbat ENTITY #IMPLIED
+ Src (%URI) #IMPLIED
+ %url.link;
+ Compact (Compact) #IMPLIED>
+<!ATTLIST VIDEO
+ %attrs;
+ Src %URI; #REQUIRED
+ %url.link;
+ Length NUMBER #IMPLIED>
+<!ATTLIST VIDEO.DATA
+ Copyright CDATA #IMPLIED>
+<!-- Special Characters -->
+<!ENTITY amp SDATA "[amp]">
+<!ENTITY clubs SDATA "[clubs]">
+<!ENTITY copy SDATA "[copy]">
+<!ENTITY diams SDATA "[diams]">
+<!ENTITY emsp SDATA "[emsp]"><!-- Deprecated -->
+<!ENTITY ensp SDATA "[ensp]"><!-- Deprecated -->
+<!ENTITY excl SDATA "[excl]">
+<!ENTITY gt SDATA "[gt]">
+<!ENTITY hearts SDATA "[hearts]">
+<!ENTITY iexcl SDATA "[iexcl]">
+<!ENTITY iquest SDATA "[iquest]">
+<!ENTITY lt SDATA "[lt]">
+<!ENTITY mdash SDATA "[mdash]">
+<!ENTITY mldr SDATA "[mldr]">
+<!ENTITY nbsp SDATA "[nbsp]">
+<!ENTITY ndash SDATA "[ndash]">
+<!ENTITY nldr SDATA "[nldr]">
+<!ENTITY numsp SDATA "[numsp]">
+<!ENTITY para SDATA "[para]">
+<!ENTITY percnt SDATA "[percnt]">
+<!ENTITY quest SDATA "[quest]">
+<!ENTITY quot SDATA "[quot]">
+<!ENTITY reg SDATA "[reg]">
+<!ENTITY shy SDATA "[shy]">
+<!ENTITY spades SDATA "[spades]">
+<!ENTITY trade SDATA "[trade]">
+<!-- Short references -->
+<!-- none -->
+<!-- The End -->
+<!-- Work items, ICADD, external entity references, short references, 
+minimization, additional content markup -->
+<!-- Change History -->
+<!-- 951208 Version -->
+<!-- old -->
+<!-- <!ELEMENT (H1 | H2 | H3 | H4 | H5 | H6 | H7 | H8) - - (#PCDATA | 
+%inline)> -->
+<!-- new (dma) -->
+<!-- <!ELEMENT (H1 | H2 | H3 | H4 | H5 | H6 | H7 | H8) - - (#PCDATA | 
+%inline)*> -->
+<!-- old -->
+<!-- <!ELEMENT NUM - - (#PCDATA | FRAC | SUB | SUP)> -->
+<!-- new (dma) -->
+<!-- <!ELEMENT NUM - - (#PCDATA | FRAC | SUB | SUP)*> -->
+<!-- old -->
+<!-- <!ELEMENT TR - o (TH | TD)> -->
+<!-- new (dma) -->
+<!-- <!ELEMENT TR - o (TH | TD)+> -->
+<!-- old -->
+<!-- <!ELEMENT NAMELOC - - (NMLIST)> -->
+<!-- new (jwi)-->
+<!-- <!ELEMENT NAMELOC - - (NMLIST)*> -->
+<!-- new(jwi)-->
+<!--
+<!ELEMENT ANPA89-3.WIREHEAD - o EMPTY>
+<!ATTRLIST ANPA89-3.WIREHEAD
+ anpa89-3.sld CDATA #IMPLIED
+ anpa89-3.snum NUMBER #IMPLIED
+ anpa89-3.selcode CDATA #IMPLIED
+ anpa89-3.priority CDATA #IMPLIED
+ anpa89-3.category CDATA #IMPLIED
+ anpa89-3.fid CDATA #IMPLIED
+ anpa89-3.keyword CDATA #IMPLIED
+ anpa89-3.version CDATA #IMPLIED
+ anpa89-3.reference CDATA #IMPLIED
+ anpa89-3.date CDATA #IMPLIED
+ anpa89-3.wcnt NUMBER #IMPLIED
+ anpa89-3.timedate CDATA #IMPLIED>
+-->
+<!--
+<!ELEMENT IPTC7901.WIREHEAD - o EMPTY>
+<!ATTRLIST IPTC7901.WIREHEAD
+ iptc7901.sid CDATA #IMPLIED
+ iptc7901.msgnum NUMBER #IMPLIED
+ iptc7901.priority CDATA #IMPLIED
+ iptc7901.category CDATA #IMPLIED
+ iptc7901.wcnt NUMBER #IMPLIED
+ iptc7901.optinfo CDATA #IMPLIED
+ iptc7901.keyword CDATA #IMPLIED
+ iptc7901.catchline CDATA #IMPLIED
+ iptc7901.timedate CDATA #IMPLIED>
+-->
+<!-- old -->
+<!-- <!ELEMENT HEAD o o ((%head.html), (%head.docdata), (%head.links))> -->
+<!-- new (jwi)-->
+<!-- <!ELEMENT HEAD o o ((%head.html), (%head.docdata), (%head.links)?)> -->
+<!-- change order independent (& listed) elements with order dependent (, 
+listed) elements. SGML expert indicated that this creates a lot of overhead 
+for items whose order can be controlled behind the scenes -->
+<!-- new(jwi) -->
+<!-- <!ATTLIST CAPTION ...> -->
+<!-- old -->
+<!-- <!ENTITY % nid.type
+ "(Advisory | Container | Election | Market | Score | Story | Table)"> -->
+<!-- new (dma) add Summary-->
+<!-- <!ENTITY % nid.type
+ "(Advisory | Container | Election | Market | Score | Story | Summary | 
+Table)"> -->
+<!-- old -->
+<!-- <!ELEMENT NONIIM - - (EVENTLOC, NID*)> -->
+<!-- new(jwi) eliminate surplus tagging level-->
+<!-- <!ELEMENT NONIIM - - (LOCATION, NID*)> -->
+<!-- old -->
+<!-- <!ELEMENT EVENTLOC - - (LOCATION)> -->
+<!-- new(jwi) drop element eventloc-->
+<!-- new(jwi) add initial comment with NITF declaration-->
+<!-- new(jwi) close parameter entities with +; -->
+<!-- new(jwi) add short description to each element-->
+<!-- old -->
+<!-- <!ELEMENT LI - o (%block;) -->
+<!-- new - eliminate need for BLOCK tag -->
+<!-- <!ELEMENT LI - o (%block.content;) -->
+<!-- old -->
+<!-- <!ELEMENT DD - o (%block;)* -->
+<!-- new - eliminate need for BLOCK tag -->
+<!-- <!ELEMENT DD - o (%block.content;)* -->
+<!-- old -->
+<!-- <!ENTITY % bodytext "%heading | %block | %list | %epub.block | %text | 
+P"> -->
+<!-- new - simplify definition of body text. eliminated information contained 
+within block -->
+<!-- <!ENTITY % bodytext "%heading; | %block;"> -->
+<!-- old -->
+<!-- <!ENTITY % body.content "%bodytext;*"> -->
+<!-- new - eliminate unneeded repetition -->
+<!-- <!ENTITY % body.content "%bodytext;"> -->
+<!-- old -->
+<!-- <!ENTITY % banner.content "EMPTY"> -->
+<!-- new - provide choices for banner that match html 2 -->
+<!-- <!ENTITY % banner.content "%body.content;"> -->
+<!-- old -->
+<!-- <!ENTITY % block.content "P | TABLE | FIG | IMG | PHOTO | AUDIO | VIDEO 
+| %list; | BQ | FN | NOTE | PRE"> -->
+<!-- new - add HR -->
+<!-- <!ENTITY % block.content "P | TABLE | FIG | IMG | PHOTO | AUDIO | VIDEO 
+| %list; | BQ | FN | NOTE | PRE | HR"> -->
+<!-- old -->
+<!-- <!ENTITY % stext "#PCDATA"> -->
+<!-- new - eliminate entity -->
+<!-- old -->
+<!-- <!ELEMENT NITF o o (HEAD, BODY) > -->
+<!-- new - require start and end tags -->
+<!-- <!ELEMENT NITF - - (HEAD, BODY) > -->
+<!-- old -->
+<!-- <!ELEMENT BANNER - - %banner.content> -->
+<!-- new - allow repeatition -->
+<!-- <!ELEMENT BANNER - - (%banner.content;)+> -->
+<!-- old -->
+<!-- <!ELEMENT BYLINE - - ((PERSON, BYTTL?) | #PCDATA) > -->
+<!-- new - eliminate mixed content -->
+<!-- <!ELEMENT BYLINE - - ((PERSON, BYTTL?) | BYTAG) > -->
+<!-- old -->
+<!-- <!ELEMENT NID - - EMPTY > -->
+<!-- new add end tag -->
+<!-- <!ELEMENT NID - o EMPTY > -->
+<!-- old -->
+<!-- <!ELEMENT TABLE - - (CAPTION?, (COL | COLGROUP)*, THEAD?, TFOOT?, TBODY+
+) > -->
+<!-- new change to match current html table model -->
+<!-- <!ELEMENT TABLE - - (CAPTION?, (COL* | COLGROUP*), THEAD?, TFOOT?, TBODY+
+) > -->
+<!-- old -->
+<!-- <!ELEMENT BQ - - ((%heading | %block | HR), CREDIT?)*> -->
+<!-- new - remove HR(already in %block; and make element repeatable -->
+<!-- <!ELEMENT BQ - - ((%heading; | %block;)+, CREDIT?)* > -->
+<!-- old -->
+<!-- <!ELEMENT BYTTL - - (%stext)> -->
+<!-- new replace %stext with #PCDATA -->
+<!-- <!ELEMENT BYTTL - - (#PCDATA)> -->
+<!-- new - add tag to eliminate mixed content -->
+<!-- <!ELEMENT BYTAG - - (#PCDATA) > -- >
+<!-- old -->
+<!-- <!ELEMENT HR - - EMPTY> -->
+<!-- new change endtag requirement -->
+<!-- <!ELEMENT HR - o EMPTY> -->
+<!-- old -->
+<!-- <!ELEMENT (ORG | MONEY | CHRON | EVENT) - - (#PCDATA)> -->
+<!-- new remove ORG from original list and create new element to eliminate 
+potential mixed content problem -->
+<!-- <!ELEMENT (MONEY | CHRON | EVENT) - - (#PCDATA) >
+<!ELEMENT ORG - - (ORGID|#PCDATA)* > -->
+<!-- old -->
+<!-- <!ELEMENT LOCATION - - ((SUBLOCATION?, CITY?, STATE?, REGION?, COUNTRY?) 
+| (#PCDATA))> -->
+<!-- new - restructure for mixed content elimination -->
+<!-- <!ELEMENT LOCATION - - (SUBLOCATION| CITY | STATE | REGION | COUNTRY | 
+#PCDATA)* > -->
+<!-- old -->
+<!-- <!ELEMENT A - - (#PCDATA)> -->
+<!-- new - update to match html 3 defn -->
+<!-- <!ENTITY % A.content "(%text)+"> -->
+<!-- ELEMENT A - - %A.content > -->
+<!-- old -->
+<!-- <!ELEMENT FIG.DATA - - (%body.content)> -->
+<!-- new - add repeat -->
+<!-- <!ELEMENT FIG.DATA - - (%body.content)+> -->
+<!-- old -->
+<!-- <!ELEMENT IMG.DATA - - EMPTY> -->
+<!-- new change endtag requirement -->
+<!-- <!ELEMENT IMG.DATA - o EMPTY> -->
+<!-- old -->
+<!-- <!ELEMENT PHOTO.DATA - - EMPTY> -->
+<!-- new change endtag requirement -->
+<!-- <!ELEMENT PHOTO.DATA - o EMPTY> -->
+<!-- old -->
+<!-- <!ELEMENT AUDIO.DATA - - EMPTY> -->
+<!-- new change endtag requirement -->
+<!-- <!ELEMENT AUDIO.DATA - o EMPTY> -->
+<!-- old -->
+<!-- <!ELEMENT VIDEO.DATA - - EMPTY> -->
+<!-- new change endtag requirement -->
+<!-- <!ELEMENT VIDEO.DATA - o EMPTY> -->
+<!-- old -->
+<!-- <!ELEMENT LI - o (%block) > -->
+<!-- new - eliminate need for block tag -->
+<!-- <!ELEMENT LI - o (%block.content) > -->
+<!-- old -->
+<!-- <!ELEMENT DD - o (%block) > -->
+<!-- new - eliminate need for block tag -->
+<!-- <!ELEMENT DD - o (%block.content) > -->
+<!-- new - add ORGID to eliminate mixed content -->
+<!-- <!ELEMENT ORGID - o EMPTY > -->
+<!-- old -->
+<!-- <!ELEMENT DELIVERY.OFFICE - - (#PCDATA) >
+<!ELEMENT DELIVERY.POINT - - (#PCDATA) > -->
+<!-- new - allow for breaks in addresses -->
+<!-- <!ELEMENT DELIVERY.OFFICE - - ((#PCDATA) | BR)+ >
+<!ELEMENT DELIVERY.POINT - - ((#PCDATA) | BR)+ > -->
+<!-- old -->
+<!-- <!ELEMENT COUNTRY - - (%stext)>
+<!ELEMENT REGION - - (%stext)> -->
+<!-- new - eliminate %stext -->
+<!-- <!ELEMENT COUNTRY - - (#PCDATA)>
+<!ELEMENT REGION - - (#PCDATA)> -->
+<!-- old -->
+<!-- <!ELEMENT (TH | TD) - o (%body.content)> -->
+<!-- new - allow repition -->
+<!-- <!ELEMENT (TH | TD) - o (%body.content)*> -->
+<!-- typo -->
+<!-- change Rtr to Rtl in Dir of attrs -->
+<!-- <!ENTITY % form.type "NITF | ASCII | JPEG | GIF |TIF| MPEG2 | Unspec" > -->
+<!-- new - add JPEG to list -->
+<!-- <!ENTITY % form.type "NITF | ASCII | JPEG | GIF |TIF| MPEG2 | Unspec" > -->
+<!-- old -->
+<!-- <!ENTITY % nid.type
+ "(Advisory | Container | Election | Market | Score | Story  | Table)"> -->
+<!-- new - add Summary option -->
+<!-- <!ENTITY % nid.type
+ "(Advisory | Container | Election | Market | Score | Story | Summary | 
+Table)"> -->
+<!-- update version(F) date and time in nitf attributes -->
+<!-- drop position attribute from BANNER -->
+<!-- delete ORG and add ORGID ATTLIST -->
+<!-- add  TableType ENTITY #IMPLIED to attlist for TABLE -->
+<!-- old -->
+<!-- <!ELEMENT DATALOC - o (DIMLIST) > -->
+<!-- new - correct typo -->
+<!-- <!ELEMENT DATALOC - o (DIMLIST) > -->
+<!-- new - add missing attributes -->
+<!-- <!ATTLIST DIMLIST
+ HyTime name DIMLIST> -->
+<!-- new - add missing attributes -->
+<!-- <!ATTLIST LINK
+ href %URI #REQUIRED
+ %linkExtraAttributes;> -->
+<!-- old -->
+<!-- <!ELEMENT MARKLIST - - (#PCDATA)> -->
+<!-- new, correct definition and add attribute -->
+<!-- <!ELEMENT MARKLIST o o (#PCDATA)>
+ <ATTLIST MARKLIST
+ HyTime NAME MARKLIST> -->
+<!-- old -->
+<!-- <!ELEMENT TREELOC - - (MARKLIST)> -->
+<!-- new, correct typo -->
+<!-- <!ELEMENT TREELOC - - (MARKLIST*)> -->
+
+

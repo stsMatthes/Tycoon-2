@@ -1,4 +1,0 @@
-class X_SystemTracer
-super Object
-metaclass AbstractClass
-;

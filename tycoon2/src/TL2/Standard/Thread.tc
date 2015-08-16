@@ -30,7 +30,7 @@ super Object
   NOTE: ALL slots of this class MUST be private.
   
 *)
-meta ThreadClass(T)
+meta ThreadClass(T,Thread(T))
 {
 
 value :T
@@ -176,7 +176,7 @@ _previous :Thread(Void)
 _performCodeBuffer :ByteArray
   (* code buffer for generic perform. TVM only. *)
 
-_debugEventChanged :Condition
+_debugEventChanged @:Condition
   (* signalled whenever debugEvent changes. TVM only. *)
 
 _tvmFn :Fun():Void
@@ -195,10 +195,10 @@ _state :Int
 _value :T
   (* will receive the value computed by _fn. Tycoon only.  *)
 
-_mx :Mutex
+_mx @:Mutex
   (* synchronize state. Tycoon only. *)
 
-_terminated :BroadcastingCondition
+_terminated @:BroadcastingCondition
   (* joining this thread. Tycoon only. *)
 
 _name :String
@@ -212,7 +212,7 @@ _init :Void
   (* put the thread into the TVM thread ring and launch it *)
 {
   _performCodeBuffer := ByteArray.new(4)
-  _debugEventChanged := Condition.new
+  _debugEventChanged := Condition.new@
   _tvmFn := fun() {
       value ::= try({ _fn[] } else:
       fun(e :Exception) {
@@ -228,8 +228,8 @@ _init :Void
     _terminated.signal		; notify all threads waiting for the receiver inside 'join' 
     _mx.unlock
   }
-  _mx := Mutex.new
-  _terminated := BroadcastingCondition.new
+  _mx := Mutex.new@
+  _terminated := BroadcastingCondition.new@
   _state := 0 
   _name := "Unknown"
   success ::= __init		   ; start _tvmFn 

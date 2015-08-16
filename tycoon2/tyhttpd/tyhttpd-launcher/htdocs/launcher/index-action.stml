@@ -1,0 +1,80 @@
+<!doctype stml system [
+
+  <!entity start system "start.sgml" >
+  <!entity stop system "stop.sgml" >
+  <!entity restart system "restart.sgml" >
+  <!entity kill system "kill.sgml" >
+  <!entity reinstall system "reinstall.sgml" >
+]> 
+  
+<stml processor=HttpdLauncherProcessor>
+
+<!-- we cannot use forms inside tables, we have to use the same
+     action URL for every server and action pair.
+     we therefore encode the server name in the submit button name,
+     and dispatch on the value.
+-->
+
+<tycoon>
+  let field = formFields.keys.detect(
+    fun(field :String) {field.startsWith("tyhttpd-") }
+  ),
+  assert field.isNotNil,
+  server := field,
+  let action = formFields[field]
+</tycoon> 
+
+<tycoon>let var success :Bool = false </tycoon>
+<define name=title></define>
+<define name=msg></define>
+
+<if true='action = "Start"'>&start
+<elseif true='action = "Stop"'>&stop
+<elseif true='action = "Restart"'>&restart
+<elseif true='action = "Kill!"'>&kill
+<elseif true='action = "Reinstall"'>&reinstall
+<else><tycoon/assert false/
+</if>
+
+<head>
+<title><ref name=title>Title</ref></title>
+</head><body bgcolor="#FFFFFF">
+<h2> <ref name=title>Title</ref> </h2>
+<hr>
+  <if true=success>
+    <table><tr><td><img src="/hox-icons/success.gif" alt="Success:">
+      <td><strong>Operation successful</strong></table>
+  <else>
+    <table><tr><td><img src="/hox-icons/error.gif" alt="Error:">
+      <td><strong>Operation failed</strong></table>
+  </if>
+  <p><ref name=msg>Message</ref>
+  <hr>
+    <table cellspacing="2">
+    <tr>
+      <td>
+        <table>
+	<tr>
+	  <td>
+	    <a href="index.stml">
+	      <img src="/hox-icons/back.gif" align=left alt="back" border=0>
+	    </a>
+	  <td>
+	    <a href="index.stml">
+	     Back to Launcher
+	    </a>
+	</table>
+      <td>
+        <table>
+	<tr>
+	  <td>
+	    <a href="../index.html">
+	      <img src="/hox-icons/home.gif" align=left alt="back" border=0>
+	    </a>
+	  <td>
+	    <a href="../index.html">
+	      Back to Control Pad
+	    </a>
+	  </td>
+        </table>
+    </table>

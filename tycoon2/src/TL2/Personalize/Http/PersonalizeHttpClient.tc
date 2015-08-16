@@ -1,36 +1,30 @@
 class PersonalizeHttpClient
-
 super PersonalizeHttp
-
-metaclass AbstractClass
-
-public
-
+(**)
+meta AbstractClass
+{
 personalizeHttpState :PersonalizeHttpState
 
-methods
-
-id :String { _id }
+id :String
+  (* *)
+{ _id }
 
 personalizeHttp(request :HttpRequest, response :HttpResponse) :HttpResponse
+  (* *)
 {
   personalizeHttpState.personalizeHttp(self, request, response)
 }
 
 noCookiesPlease :Void
+  (* *)
 {
   personalizeHttpState.noCookiesPlease(self)
 }
 
-
 private
 
-
-methods
-
 _id :String
-;
-	
+  (* *)
+{ nil }
 
-
-
+}

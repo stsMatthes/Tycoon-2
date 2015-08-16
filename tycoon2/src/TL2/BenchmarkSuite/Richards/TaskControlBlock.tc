@@ -1,7 +1,5 @@
 class TaskControlBlock
 super TaskState
-metaclass TaskControlBlockClass(TaskControlBlock)
-
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -21,53 +19,55 @@ metaclass TaskControlBlockClass(TaskControlBlock)
  * 
  * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
  *
- "Richards" benchmark: ported from C++ to TL-2 *)   
-   
-public
+ "Richards" benchmark: ported from C++ to TL-2 *)
+meta TaskControlBlockClass(TaskControlBlock)
+{
+ident    :Int
 
-ident    :Int,
-priority :Int,
+priority :Int
+
 input    :Queue(Packet)
-
-
-methods
 
 addPacket(p :Packet,
           newTaskList :List(TaskControlBlock),
 	  oldTaskList :List(TaskControlBlock))
 	  :List(TaskControlBlock)
+  (* *)
 {
-  input.isEmpty
-    ? { input.addLast(p),
-        packetPending := true,
-	priority > oldTaskList.head.priority
-	  ? { newTaskList }
-	  : { oldTaskList }
+  if( input.isEmpty
+    then: { input.addLast(p)
+        packetPending := true
+	if( priority > oldTaskList.head.priority
+	  then: { newTaskList }
+	  else: { oldTaskList })
       }
-    : { input.addLast(p),
+    else: { input.addLast(p)
         oldTaskList
-      }
-}      
+      })
+}
 
 actionFunc(p :Packet, noWork :Bool)
-  :List(TaskControlBlock) deferred
+  :List(TaskControlBlock)
+  (* *)
+deferred
 
 runTask() :List(TaskControlBlock)
+  (* *)
 {
-  isWaitingWithPacket
-    ? { let msg = input.removeFirst,
-        input.isEmpty
-	  ? { setRunning }
-	  : { setPacketPending  },
+  if( isWaitingWithPacket
+    then: { msg ::= input.removeFirst
+        if( input.isEmpty
+	  then: { setRunning }
+	  else: { setPacketPending  })
 	actionFunc(msg, false)
       }
-    : { let dummy = Packet.new,
+    else: { dummy ::= Packet.new
         actionFunc(dummy, true)
-      }
-}      
-   
-        
-print() :Void
-{}  
+      })
+}
 
-;
+print() :Void
+  (* *)
+{}
+
+}

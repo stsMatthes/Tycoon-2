@@ -1,3 +1,5 @@
+class URLError
+super WWW, Exception
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -22,21 +24,16 @@
 
   Author: Matthias Ernst 12/96
 *)
-
-class URLError
-super WWW, Exception
-metaclass URLErrorClass
-
-public
-
+meta URLErrorClass
+{
 message: String
 
-methods
-
-printOn(o :Output) {
-  o.writeAll("URLError("),
-  message.printOn(o),
+printOn(o :Output) :Void
+  (* *)
+{
+  o.writeAll("URLError(")
+  message.printOn(o)
   o.writeAll(")")
 }
 
-;
+}

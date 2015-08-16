@@ -60,12 +60,12 @@ private
 
 _in :Reader(Char)
 
-_buffer :StringBuilderOutput
+_buffer @:StringBuilderOutput
 
 _init :Void
   (* *)
 {
-  _buffer := StringBuilderOutput.new1(100)
+  _buffer := StringBuilderOutput.new1(100)@
   super._init
   }
 

@@ -1,44 +1,53 @@
 class CShortHolder
-
 super CValueHolder(Int)
-
-metaclass SimpleConcreteClass(CShortHolder)
-
-public methods
-
-valueClass():Class { Int }
+(**)
+meta SimpleConcreteClass(CShortHolder)
+{
+valueClass():Class
+  (* *)
+{ Int }
 
 value():Int
-{ handle.isNotNil ? {tycoon.rts.tymem_peekShort(handle,0)}
-                  : {let i:Int = nil} }
+  (* *)
+{ if( handle.isNotNil then: {tycoon.tycoonOS.memory_peekShort(handle,0)}
+                  else: {i:Int := nil}) }
 
-intValue():Int { value() }
+intValue():Int
+  (* *)
+{ value() }
 
-shortValue():Int { intValue() }
+shortValue():Int
+  (* *)
+{ intValue() }
 
 "value:="(v:Int):Int
-{ handle.isNotNil
-  ? { ((v <= 32767) & (v >= -32768))
-    ? {tycoon.rts.tymem_pokeShort(handle,0,v),
-       tycoon.rts.tymem_peekShort(handle,0)}
-    : {ArithmeticError.new("Value out of range (-32768 <= value <= 32767)").raise}
+  (* *)
+{ if( handle.isNotNil
+  then: { if( ((v <= 32767) & (v >= (-32768)))
+    then: {tycoon.tycoonOS.memory_pokeShort(handle,0,v)
+       tycoon.tycoonOS.memory_peekShort(handle,0)}
+    else: {ArithmeticError.new("Value out of range (-32768 <= value <= 32767)").raise})
     }
-  : {nil}
+  else: {nil})
 }
 
-setIntValue(v:Int):Int { value:=v }
+setIntValue(v:Int):Int
+  (* *)
+{ value:=v }
 
-setShortValue(v:Int):Int { value:=v }
+setShortValue(v:Int):Int
+  (* *)
+{ value:=v }
 
-private methods
+private
 
 _init:Self
+  (* *)
 {
-  super._init,
-  super._allocate(2),
-  tycoon.rts.tymem_pokeShort(handle,0,0),
+  super._init
+  super._allocate(2)
+  tycoon.tycoonOS.memory_pokeShort(handle,0,0)
   self
 }
 
-;
-
+}

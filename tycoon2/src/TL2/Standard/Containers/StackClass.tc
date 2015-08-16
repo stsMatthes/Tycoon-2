@@ -55,7 +55,7 @@ _new2(initialCapacity :Int, initialSize :Int) :Stack(E)
 {
   assert({ initialCapacity >= initialSize && initialSize >= 0 })
   instance ::= _new
-  instance._elements := MutableArray.new(initialCapacity)
+  instance._elements := MutableArray.new(initialCapacity)@
   instance._elementStart := initialCapacity - initialSize
   instance._init
   instance

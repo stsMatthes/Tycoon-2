@@ -1,26 +1,24 @@
 class TaskControlBlockClass(Instance <: TaskControlBlock)
 super ConcreteClass(Instance)
-metaclass MetaClass
-
-public
-
+(**)
+meta MetaClass
+{
 benchmark :Richards
-
-methods
 
 create(id :Int,
        prio :Int,
        workQueue :Queue(Packet),
        initialState :TaskState) :Instance
+  (* *)
 {
-  let obj = _new,
-  obj.ident := id,
-  obj.priority := prio,
-  obj.input := workQueue,
-  obj.packetPending := initialState.packetPending,
-  obj.taskWaiting := initialState.taskWaiting,
-  obj.taskHolding := initialState.taskHolding,
+  obj ::= _new
+  obj.ident := id
+  obj.priority := prio
+  obj.input := workQueue
+  obj.packetPending := initialState.packetPending
+  obj.taskWaiting := initialState.taskWaiting
+  obj.taskHolding := initialState.taskHolding
   obj
 }
 
-;
+}

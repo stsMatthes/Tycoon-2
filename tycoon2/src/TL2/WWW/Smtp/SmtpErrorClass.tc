@@ -1,12 +1,5 @@
 class SmtpErrorClass
-
 super ConcreteClass(SmtpError)
-
-metaclass MetaClass
-
-public methods
-
-new(response :SmtpResponse) :SmtpError
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -26,11 +19,16 @@ new(response :SmtpResponse) :SmtpError
  * 
  * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
  *
- ------------------------------------------------------------ *)
-  {
-    let instance = _new,
-    instance.response := response,
+ *)
+meta MetaClass
+{
+new(response :SmtpResponse) :SmtpError
+  (* ------------------------------------------------------------ *)
+{
+    instance ::= _new
+    instance.response := response
     instance._init
+    instance
   }
 
-;
+}

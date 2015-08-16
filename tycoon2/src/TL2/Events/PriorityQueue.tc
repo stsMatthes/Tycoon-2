@@ -1,3 +1,5 @@
+class PriorityQueue(E <: Ordered(E))
+super Sequence(E), Events
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -21,74 +23,62 @@
 Author:  Axel Wienberg, Gerd Bremer
 Date:    09-Oct-1997
 Updates: (Date)	  (Name)	(Description)
-*)
 
-(* just a hack -- should be half a dynsequence: removeXXX  *)
-
-class PriorityQueue(E <: Ordered(E))
-super Events, Sequence(E)
-metaclass SimpleConcreteClass(PriorityQueue(E))
-
-public methods
-
+ just a hack -- should be half a dynsequence: removeXXX  *)
+meta SimpleConcreteClass(PriorityQueue(E))
+{
 "[]"(i :Int) :E
-
-  require i.isNotNil
-(* ------------------------------------------------------------ *)  
+  (* ------------------------------------------------------------ *)
+require i.isNotNil
+  
   { _elements[i] }
 
-  
 size :Int
-(* ------------------------------------------------------------ *)  
-  { _elements.size }
+  (* ------------------------------------------------------------ *)
+{ _elements.size }
+
+add(e :E) :Void
+  (* binary insert of 'e' into '_elements' 
+ N.Wirth, Algorithmen und Datenstrukturen, 2. Auflage, Seite 95 
+ -------------------------------------------------------------- *)
+require e.isNotNil
+
 
   
-add(e :E) :Void
-
-  require e.isNotNil
-(* binary insert of 'e' into '_elements' *)
-(* N.Wirth, Algorithmen und Datenstrukturen, 2. Auflage, Seite 95 *)
-(* -------------------------------------------------------------- *)  
   { 
-    let var l = 0,
-    let var r = _elements.size-1,
-    while({ l <= r },
+    l ::= 0
+    r ::= _elements.size-1
+    while({ l <= r } do:
       {
-        (* all _elements with index < l are less than e,
-           all _elements with index > r are greater or equal e *)
-        let m = (l + r) / 2,
-        e < _elements[m] ? { r := m - 1 } : { l := m + 1 } 
-      }),
+        ; all _elements with index < l are less than e,
+;           all _elements with index > r are greater or equal e 
+        m ::= (l + r) / 2
+        if( e < _elements[m] then: { r := m - 1 } else: { l := m + 1 }) 
+      })
     _elements.insert(e, l)
   }
 
-
 removeFirst :E
-
-  require _elements.size > 0
-(* ------------------------------------------------------------ *)  
+  (* ------------------------------------------------------------ *)
+require _elements.size > 0
+  
   { _elements.removeFirst }
 
-
 remove(e :E) :Void
+  (* ------------------------------------------------------------ *)
+require e.isNotNil
 
-  require e.isNotNil
-(* ------------------------------------------------------------ *)
   { _elements.remove(e) }
-  
-    
+
 private
 
 _elements: Queue(E)
 
-methods
-
-_init :Self
-(* ------------------------------------------------------------ *)  
-  {
-    super._init,
-    _elements := Queue.new,
-    self
+_init :Void
+  (* ------------------------------------------------------------ *)
+{
+    super._init
+    _elements := Queue.new
   }
-  
-;
+
+}

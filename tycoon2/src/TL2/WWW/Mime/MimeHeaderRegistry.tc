@@ -1,30 +1,31 @@
 class MimeHeaderRegistry
 super MimeHeaderDictionary(MimeHeaderValueClass)
-metaclass SingletonClass(MimeHeaderRegistry)
-
-public methods
-
+(**)
+meta SingletonClass(MimeHeaderRegistry)
+{
 newHeaderValue(name :String) :MimeHeaderValue
-  {
-    let var clazz :MimeHeaderValueClass = nil,
+  (* *)
+{
+    clazz :MimeHeaderValueClass := nil
     lookup(name,
       fun(c :MimeHeaderValueClass) { clazz := c },
       fun(){ clazz := defaultHeader }
-    ),
+    )
     clazz.new
   }
 
-registerHeader(name :String, clazz :MimeHeaderValueClass)
-  { self[name] := clazz }
+registerHeader(name :String, clazz :MimeHeaderValueClass) :Void
+  (* *)
+{ self[name] := clazz }
 
-unregisterHeader(name :String)
-  { removeKey(name) }
+unregisterHeader(name :String) :Void
+  (* *)
+{ removeKey(name) }
 
-  
-private methods
+private
 
 defaultHeader :MimeHeaderValueClass
-(*
+  (*
  * This file is part of the Tycoon-2 system.
  *
  * The Tycoon-2 system is free software; you can redistribute it and/or
@@ -44,8 +45,6 @@ defaultHeader :MimeHeaderValueClass
  * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
  *
  A header with unknown name is parsed into a MimeString *)
-  { MimeString }
+{ MimeString }
 
-;
-
-  
+}

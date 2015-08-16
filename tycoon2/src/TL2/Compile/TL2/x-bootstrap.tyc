@@ -1,16 +1,27 @@
 (*  Script for "Big" Bootstrap
     generate a new X-Store
 
-cd $HOX_HOME
+cd ../bootstrap
+. ../tycoon2/tools/Unix/def_tl2_sh
+# make sure the descriptors are up to date
+jam
+
+cd ../tycoon2
+. tools/Unix/def_tl2_sh
 
 (* launch simple store *)
 tycoon2 TL2.ts
 (* create and dump a new memory image *)
 DO load "Compile/TL2/x-bootstrap.tyc";
 DO exit;
+
+cd ../bootstrap
+. ../tycoon2/tools/Unix/def_tl2_sh
+
 (* turn dump into store ON NEW (X-) MACHINE *)
-tycoon2 -bootstrap dump
+tycoon2 -bootstrap ../tycoon2/dump
 (* unfold store *)
+(* tycoon2 Bootstrap.ts < src/TL2/Compile/X_TL2/post-bootstrap.tyc *)
 tycoon2 Bootstrap.ts
 (* assume all classes are typechecked *)
 Array.fromContainer(tycoon.tl.typeChecker.agenda).do(
@@ -64,7 +75,7 @@ let script = f.readString(f.size.asInt),
 f.close,
 newTL.topLevel.string(script+";");
 
-newTL.topLevel.file(x_tl2Path+"X_SystemTracer/BootStrap.tyc");
+newTL.topLevel.file(x_tl2Path+"X_Cross/BootStrap.tyc");
 newTL.loader.unregisterClass("Class");
 newTL.loader.unregisterClass("AbstractClass");
 newTL.loader.unregisterClass("MetaClass");
@@ -102,6 +113,7 @@ newTL.loader.registerClassFile("Class", x_tl2Path+"Compile/X_TL2/X_TL2Class.tc")
 newTL.loader.registerClassFile("MetaClass", x_tl2Path+"Compile/X_TL2/X_TL2MetaClass.tc");
 newTL.loader.registerClassFile("Root", x_tl2Path+"Compile/X_TL2/X_TL2Root.tc");
 
+Date.now;
 newTL.loader.update;
 
 Date.now;
@@ -113,8 +125,8 @@ newTL.topLevel.string("define tycoon :Tycoon");
 let path = x_tl2Path+"Compile/X_TL2/startup.tyc",
 let errorLog = ErrorLog.new,
 let f = File.openRead(path),
-let s = newTL.oldSyntax.scan(path, f, errorLog),
-let startup = newTL.oldSyntax.parse(s, errorLog),
+let s = newTL.newSyntax.scan(path, f, errorLog),
+let startup = newTL.newSyntax.parse(s, errorLog),
 f.close,
 assert startup."class" == X_TL2PUBindings,
 let startup = _typeCast(startup, :X_TL2PUBindings),

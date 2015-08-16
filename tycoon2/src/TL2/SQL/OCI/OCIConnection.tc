@@ -1,3 +1,5 @@
+class OCIConnection
+super SQLConnection
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -28,24 +30,18 @@ Updates: (Date)		(Name)	(Description)
 	 14-mar-1997	MS	replaced integers for return-, type- and
 				error-codes with named constants
 *)
-
-class OCIConnection
-
-super SQLConnection
-
-metaclass SimpleConcreteClass(OCIConnection)
-
-public methods
-
-newStatement:OCIStatement
+meta SimpleConcreteClass(OCIConnection)
 {
-  !isClosed
-  ? {
-      let s=OCIStatement.new,
-      s.open(_hdbc,self),
+newStatement:OCIStatement
+  (* *)
+{
+  if( !isClosed
+  then: {
+      s::=OCIStatement.new
+      s.open(_hdbc,self)
       s
     }
-  : {nil}
+  else: {nil})
 }
 
 setAutoCommit(on:Bool):Void
@@ -57,64 +53,67 @@ setAutoCommit(on:Bool):Void
      raises OCIError.
    *)
 {
-  let er = on ? {oci.ocon(_hdbc)} 
-              : {oci.ocof(_hdbc)},
-  er != 0 ? {OCIError.new(_hdbc,_hdbc).raise}
+  er ::= if( on then: {oci.ocon(_hdbc)} 
+              else: {oci.ocof(_hdbc)})
+  if( er != 0 then: {OCIError.new(_hdbc,_hdbc).raise})
 }
 
 commit():Void
+  (* *)
 {
-  oci.ocom(_hdbc) != 0 ? {OCIError.new(_hdbc,_hdbc).raise}
+  if( oci.ocom(_hdbc) != 0 then: {OCIError.new(_hdbc,_hdbc).raise})
 }
 
 rollback():Void
+  (* *)
 {
-  oci.orol(_hdbc) != 0 ? {OCIError.new(_hdbc,_hdbc).raise}
+  if( oci.orol(_hdbc) != 0 then: {OCIError.new(_hdbc,_hdbc).raise})
 }
 
-private methods
+private
 
 _connect(database:String,user:String,password:String):Void
+  (* *)
 {
-   _henv := tycoon.ansiC.malloc(256),
-   _hdbc := tycoon.ansiC.malloc(64),
-   let er = oci.olog(_hdbc,_henv,user,oci.NTS,password,oci.NTS,
-                     database,oci.NTS),
-   er != 0 ? {let error = OCIError.new(_hdbc,_hdbc),
-              tycoon.ansiC.free(_hdbc),_hdbc:=nil,
-              tycoon.ansiC.free(_henv),_henv:=nil,
-	      error.raise},
+   _henv := tycoon.ansiC.malloc(256)
+   _hdbc := tycoon.ansiC.malloc(64)
+   er ::= oci.olog(_hdbc,_henv,user,oci.NTS,password,oci.NTS,
+                     database,oci.NTS)
+   if( er != 0 then: {error ::= OCIError.new(_hdbc,_hdbc)
+              tycoon.ansiC.free(_hdbc)_hdbc:=nil
+              tycoon.ansiC.free(_henv)_henv:=nil
+	      error.raise})
    _setDateFormat
 }
 
 _open(url:URL):Void
+  (* *)
 {
-  let var database = "",
-  let var user = "",
-  let var password = "",
-  url.arcs.size > 1 ? { database := url.arcs[1] }, 
-  url.parameters.includesKey("user")
-  ? { user := url.parameters["user"].head },
-  url.parameters.includesKey("password") 
-  ? { password := url.parameters["password"].head },
+  database ::= ""
+  user ::= ""
+  password ::= ""
+  if( url.arcs.size > 1 then: { database := url.arcs[1] }) 
+  if( url.parameters.includesKey("user")
+  then: { user := url.parameters["user"].head })
+  if( url.parameters.includesKey("password") 
+  then: { password := url.parameters["password"].head })
   _connect(database,user,password)
 }
 
 _releaseHandles():Void
+  (* *)
 {
-  oci.ologof(_hdbc),
-  tycoon.ansiC.free(_hdbc),
+  oci.ologof(_hdbc)
+  tycoon.ansiC.free(_hdbc)
   tycoon.ansiC.free(_henv)
 }
 
 _setDateFormat:Void
+  (* *)
 {
-  let statement = newStatement,
-  statement.executeDirectUpdate("alter session set nls_date_format = \'YYYY-MM-DD HH24:MI:SS\'"),
+  statement ::= newStatement
+  statement.executeDirectUpdate("alter session set nls_date_format = \'YYYY-MM-DD HH24:MI:SS\'")
   statement.close 
 }
 
-;
-
-
-
+}

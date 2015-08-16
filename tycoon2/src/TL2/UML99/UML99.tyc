@@ -1,0 +1,6 @@
+tycoon.tl.loader.registerDirectory("UML99");
+tycoon.tl.loader.update;
+tycoon.tl.typeChecker.checkPackage("./UML99/");
+
+TestDriver.init;
+TestDriver.instance.setup;

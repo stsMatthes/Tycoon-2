@@ -1,9 +1,0 @@
-class X_WeakRefDescriptor
-super X_ArrayDescriptor
-metaclass SingletonClass(X_WeakRefDescriptor)
-public methods
-
-layout :Int
-{ layoutWeakRef }
-
-;

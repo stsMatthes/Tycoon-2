@@ -1,3 +1,5 @@
+class SgmlEntityOutput
+super Sgml, OutputDecorator
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -24,159 +26,156 @@ My instances replace special characters with entity references
 13-Mar-1997 Andreas Gawecki
 
 *)
+meta SgmlEntityOutputClass()
 
-class SgmlEntityOutput
-
-super Sgml, OutputDecorator
-
-public
-
-table :MutableArray(String)	(* a mapping of characters to entity names *)
-
-methods
-
-writeEntityReference(entity :String)
 {
-  super.write('&'),
-  super.writeString(entity),
+table :MutableArray(String)
+  (* a mapping of characters to entity names *)
+
+writeEntityReference(entity :String) :Void
+  (* *)
+{
+  super.write('&')
+  super.writeString(entity)
   super.write(';')
 }
 
-write(ch :Char)
+write(ch :Char) :Void
+  (* *)
 {
-  let s = table[ch.asInt],
-  s == nil ? { super.write(ch) } : {
+  s ::= table[ch.asInt]
+  if( s == nil then: { super.write(ch) } else: {
     writeEntityReference(s)
-  }
+  })
 }
 
-addHtmlLatin
+addHtmlLatin :Void
+  (* *)
 {
-  addIsoLat1,
-  table['\160'.asInt] := "nbsp",
-  table['\161'.asInt] := "iexcl",
-  table['\162'.asInt] := "cent",
-  table['\163'.asInt] := "pound",
-  table['\164'.asInt] := "curren",
-  table['\165'.asInt] := "yen",
-  table['\166'.asInt] := "brvbar",
-  table['\167'.asInt] := "sect",
-  table['\168'.asInt] := "uml",
-  table['\169'.asInt] := "copy",
-  table['\170'.asInt] := "ordf",
-  table['\171'.asInt] := "laquo",
-  table['\172'.asInt] := "not",
-  table['\173'.asInt] := "shy",
-  table['\174'.asInt] := "reg",
-  table['\175'.asInt] := "macr",
-  table['\176'.asInt] := "deg",
-  table['\177'.asInt] := "plusmn",
-  table['\178'.asInt] := "sup2",
-  table['\179'.asInt] := "sup3",
-  table['\180'.asInt] := "acute",
-  table['\181'.asInt] := "micro",
-  table['\182'.asInt] := "para",
-  table['\183'.asInt] := "middot",
-  table['\184'.asInt] := "cedil",
-  table['\185'.asInt] := "sup1",
-  table['\186'.asInt] := "ordm",
-  table['\187'.asInt] := "raquo",
-  table['\188'.asInt] := "frac14",
-  table['\189'.asInt] := "frac12",
-  table['\190'.asInt] := "frac34",
+  addIsoLat1
+  table['\160'.asInt] := "nbsp"
+  table['\161'.asInt] := "iexcl"
+  table['\162'.asInt] := "cent"
+  table['\163'.asInt] := "pound"
+  table['\164'.asInt] := "curren"
+  table['\165'.asInt] := "yen"
+  table['\166'.asInt] := "brvbar"
+  table['\167'.asInt] := "sect"
+  table['\168'.asInt] := "uml"
+  table['\169'.asInt] := "copy"
+  table['\170'.asInt] := "ordf"
+  table['\171'.asInt] := "laquo"
+  table['\172'.asInt] := "not"
+  table['\173'.asInt] := "shy"
+  table['\174'.asInt] := "reg"
+  table['\175'.asInt] := "macr"
+  table['\176'.asInt] := "deg"
+  table['\177'.asInt] := "plusmn"
+  table['\178'.asInt] := "sup2"
+  table['\179'.asInt] := "sup3"
+  table['\180'.asInt] := "acute"
+  table['\181'.asInt] := "micro"
+  table['\182'.asInt] := "para"
+  table['\183'.asInt] := "middot"
+  table['\184'.asInt] := "cedil"
+  table['\185'.asInt] := "sup1"
+  table['\186'.asInt] := "ordm"
+  table['\187'.asInt] := "raquo"
+  table['\188'.asInt] := "frac14"
+  table['\189'.asInt] := "frac12"
+  table['\190'.asInt] := "frac34"
   table['\191'.asInt] := "iquest"
 }
-  
 
-addIsoLat1
-(* all characters from \192 to \255 *)
+addIsoLat1 :Void
+  (* all characters from \192 to \255 *)
 {
-  addUmlauts,
-  table['\192'.asInt] := "Agrave",
-  table['\193'.asInt] := "Aacute",
-  table['\194'.asInt] := "Acirc",
-  table['\195'.asInt] := "Atilde",
-  table['\197'.asInt] := "Aring",
-  table['\198'.asInt] := "AElig",
-  table['\199'.asInt] := "Ccedil",
-  table['\200'.asInt] := "Egrave",
-  table['\201'.asInt] := "Eacute",
-  table['\202'.asInt] := "Ecirc",
-  table['\203'.asInt] := "Euml",
-  table['\204'.asInt] := "Igrave",
-  table['\205'.asInt] := "Iacute",
-  table['\206'.asInt] := "Icirc",
-  table['\207'.asInt] := "Iuml",
-  table['\208'.asInt] := "ETH",
-  table['\209'.asInt] := "Ntilde",
-  table['\210'.asInt] := "Ograve",
-  table['\211'.asInt] := "Oacute",
-  table['\212'.asInt] := "Ocirc",
-  table['\213'.asInt] := "Otilde",
-  table['\215'.asInt] := "times",
-  table['\216'.asInt] := "Oslash",
-  table['\217'.asInt] := "Ugrave",
-  table['\218'.asInt] := "Uacute",
-  table['\219'.asInt] := "Ucirc",
-  table['\221'.asInt] := "Yacute",
-  table['\222'.asInt] := "THORN",
-  table['\224'.asInt] := "agrave",
-  table['\225'.asInt] := "aacute",
-  table['\226'.asInt] := "acirc",
-  table['\227'.asInt] := "atilde",
-  table['\229'.asInt] := "aring",
-  table['\230'.asInt] := "aelig",
-  table['\231'.asInt] := "ccedil",
-  table['\232'.asInt] := "egrave",
-  table['\233'.asInt] := "eacute",
-  table['\234'.asInt] := "icirc",
-  table['\235'.asInt] := "euml",
-  table['\236'.asInt] := "igrave",
-  table['\237'.asInt] := "iacute",
-  table['\238'.asInt] := "icirc",
-  table['\239'.asInt] := "iuml",
-  table['\240'.asInt] := "eth",
-  table['\241'.asInt] := "ntilde",
-  table['\242'.asInt] := "ograve",
-  table['\243'.asInt] := "oacute",
-  table['\244'.asInt] := "ocirc",
-  table['\245'.asInt] := "otilde",
-  table['\247'.asInt] := "divide",
-  table['\248'.asInt] := "oslash",
-  table['\249'.asInt] := "ugrave",
-  table['\250'.asInt] := "uacute",
-  table['\251'.asInt] := "ucirc",
-  table['\253'.asInt] := "yacute",
-  table['\254'.asInt] := "thorn",
+  addUmlauts
+  table['\192'.asInt] := "Agrave"
+  table['\193'.asInt] := "Aacute"
+  table['\194'.asInt] := "Acirc"
+  table['\195'.asInt] := "Atilde"
+  table['\197'.asInt] := "Aring"
+  table['\198'.asInt] := "AElig"
+  table['\199'.asInt] := "Ccedil"
+  table['\200'.asInt] := "Egrave"
+  table['\201'.asInt] := "Eacute"
+  table['\202'.asInt] := "Ecirc"
+  table['\203'.asInt] := "Euml"
+  table['\204'.asInt] := "Igrave"
+  table['\205'.asInt] := "Iacute"
+  table['\206'.asInt] := "Icirc"
+  table['\207'.asInt] := "Iuml"
+  table['\208'.asInt] := "ETH"
+  table['\209'.asInt] := "Ntilde"
+  table['\210'.asInt] := "Ograve"
+  table['\211'.asInt] := "Oacute"
+  table['\212'.asInt] := "Ocirc"
+  table['\213'.asInt] := "Otilde"
+  table['\215'.asInt] := "times"
+  table['\216'.asInt] := "Oslash"
+  table['\217'.asInt] := "Ugrave"
+  table['\218'.asInt] := "Uacute"
+  table['\219'.asInt] := "Ucirc"
+  table['\221'.asInt] := "Yacute"
+  table['\222'.asInt] := "THORN"
+  table['\224'.asInt] := "agrave"
+  table['\225'.asInt] := "aacute"
+  table['\226'.asInt] := "acirc"
+  table['\227'.asInt] := "atilde"
+  table['\229'.asInt] := "aring"
+  table['\230'.asInt] := "aelig"
+  table['\231'.asInt] := "ccedil"
+  table['\232'.asInt] := "egrave"
+  table['\233'.asInt] := "eacute"
+  table['\234'.asInt] := "icirc"
+  table['\235'.asInt] := "euml"
+  table['\236'.asInt] := "igrave"
+  table['\237'.asInt] := "iacute"
+  table['\238'.asInt] := "icirc"
+  table['\239'.asInt] := "iuml"
+  table['\240'.asInt] := "eth"
+  table['\241'.asInt] := "ntilde"
+  table['\242'.asInt] := "ograve"
+  table['\243'.asInt] := "oacute"
+  table['\244'.asInt] := "ocirc"
+  table['\245'.asInt] := "otilde"
+  table['\247'.asInt] := "divide"
+  table['\248'.asInt] := "oslash"
+  table['\249'.asInt] := "ugrave"
+  table['\250'.asInt] := "uacute"
+  table['\251'.asInt] := "ucirc"
+  table['\253'.asInt] := "yacute"
+  table['\254'.asInt] := "thorn"
   table['\255'.asInt] := "yuml"
 }
 
-addUmlauts
+addUmlauts :Void
+  (* *)
 {
-  table[Char.AE.asInt] := "Auml",
-  table[Char.OE.asInt] := "Ouml",
-  table[Char.UE.asInt] := "Uuml",
-  table[Char.ae.asInt] := "auml",
-  table[Char.oe.asInt] := "ouml",
-  table[Char.ue.asInt] := "uuml",
+  table[Char.AE.asInt] := "Auml"
+  table[Char.OE.asInt] := "Ouml"
+  table[Char.UE.asInt] := "Uuml"
+  table[Char.ae.asInt] := "auml"
+  table[Char.oe.asInt] := "ouml"
+  table[Char.ue.asInt] := "uuml"
   table[Char.ss.asInt] := "szlig"
 }
 
 private
 
-methods
-
 _init :Void
+  (* *)
 {
-  super._init,
-  table := MutableArray(:String).new(256),
+  super._init
+  table := MutableArray(:String).new(256)
   
-  table['&'.asInt]  := "amp",
-  table['<'.asInt]  := "lt",
-  table['\"'.asInt] := "quot",
-  table['>'.asInt]  := "gt",
-  table := table,
+  table['&'.asInt]  := "amp"
+  table['<'.asInt]  := "lt"
+  table['\"'.asInt] := "quot"
+  table['>'.asInt]  := "gt"
+  table := table
   self
 }
 
-;
+}

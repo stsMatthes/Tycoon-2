@@ -1,4 +1,6 @@
 class Encoding
 super Mime
-metaclass AbstractClass
-;
+(**)
+meta AbstractClass
+{
+}

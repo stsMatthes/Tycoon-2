@@ -1,3 +1,5 @@
+class Sieve
+super Object
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -20,83 +22,62 @@
 
     Sieve.new.test(200000);
 *)
-class Sieve
-super Object
-metaclass SimpleConcreteClass(Sieve)
-public
-
-sieb :BitSet(Int),
-max :Int,
-intSetGenerator :BitSetGenerator(Int)
-
-methods
-
-test(max:Int)
+meta SimpleConcreteClass(Sieve)
 {
-  let t =
+sieb :IntSet
+
+max :Int
+
+test(max:Int) :Void
+  (* *)
+{
+  t ::=
     Timer.new(tycoon.cpuClock).time({
       calculate(max)
-    }),
+    })
   tycoon.stdout
-   << "Time:  " << t     << "\n",
+   << "Time:  " << t     << "\n"
   nil
 }
 
-(* compute all primes <= max *)
-calculate(max :Int)
+calculate(max :Int) :Void
+  (* compute all primes <= max *)
 {
-  self.max := max,
-  let max = (max-1)/2,
-  let sieb = intSetGenerator.new1(max),
-  for(1,max,fun(i:Int){
-    sieb.add(i)
-  }),
-  self.sieb := sieb,
-  for(1, max.sqrt.asInt, fun(i :Int){
-    (* !sieb.includes(i) => 2*i+1 is no prime *)
-    sieb.includes(i)
-    ? { let p = i+i+1,
-        let var j = i+p,
-        while({ j <= max }, {
-	  sieb.remove(j),
+  self.max := max
+  max ::= (max-1)/2
+  sieb ::= IntSet.new(max)
+  self.sieb := sieb
+  for(1 to: max.sqrt.asInt do: fun(i :Int){
+    ; sieb.includes(i) => 2*i+1 is no prime 
+    if( !sieb.includes(i)
+    then: { p ::= i+i+1
+        j ::= i+p
+        while({ j <= max } do: {
+	  sieb.add(j)
 	  j := j + p
-	}) }
+	}) })
   })
 }
 
-isPrime(i :Int)
-{ i > max
-  ? { let result:Bool = nil }
-  : { i%2 = 1 && { sieb.includes(i/2) }
-      || { i = 2 } }
+isPrime(i :Int) :Void
+  (* *)
+{ if( i > max
+  then: { result:Bool := nil }
+  else: { i%2 = 1 &&  !sieb.includes(i/2) 
+      ||  i = 2  })
 }
 
-printOn(out :Output)
+printOn(out :Output) :Void
+  (* *)
 {
-  out.writeString("Sieve{"),
-  max.isNil
-  ? { out.writeString("not computed") }
-  : { out << "2 ",
-      sieb.do(fun(i:Int){
-	out << i+i+1 << " "
-      }) },
+  out.writeString("Sieve{")
+  if( max.isNil
+  then: { out.writeString("not computed") }
+  else: { out << "2 "
+      for(1 to:(max-1)/2 do:fun(i:Int){
+	if( !sieb.includes(i) then: { out << i+i+1 << " " })
+      }) })
   out.write('}')
 }
 
-private methods
-
-_init :Self
-{
-  intSetGenerator := BitSetGenerator.new(
-    fun(o :Object) {
-      o."class" == Int
-      ? { let i :Int = _typeCast(o),
-          i >= 0 ? { i } : { nil } }
-      : { nil }
-    },
-    fun(i :Int) {
-      i
-    }),
-  self
 }
-;

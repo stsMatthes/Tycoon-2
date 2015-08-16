@@ -1,23 +1,23 @@
 class HttpFileResourceClass
-
 super ConcreteClass(HttpFileResource)
-
-metaclass MetaClass
-
-public methods
-
-new(file :File) :HttpFileResource
+(**)
+meta MetaClass
 {
-  let instance = _new,
-  instance._init,
-  instance._file := file,
+new(file :File) :HttpFileResource
+  (* *)
+{
+  instance ::= _new
+  instance._init
+  instance._file := file
   instance  
 }
 
 new2(file :File, contentType :MediaType) :HttpFileResource
+  (* *)
 {
-  let instance = new(file),
-  instance.contentType := contentType,
+  instance ::= new(file)
+  instance.contentType := contentType
   instance  
 }
-;
+
+}

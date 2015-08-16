@@ -1,3 +1,5 @@
+class MimeHeaderValueImplClass(T <: Object)
+super SimpleConcreteClass(MimeHeaderValueImpl(T)), MimeHeaderValueClass
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -24,25 +26,22 @@
    Changes : me   6.1.97   separate class+metaclass, name change
 
 *)
-
-class MimeHeaderValueImplClass(T <: Object)
-super SimpleConcreteClass(MimeHeaderValueImpl(T)), MimeHeaderValueClass
-metaclass MetaClass
-
-public methods
-
-withValue(v :T) :MimeHeaderValueImpl(T) {
-  let instance = _new,
-  instance.value := v,
+meta MetaClass
+{
+withValue(v :T) :MimeHeaderValueImpl(T)
+  (* *)
+{
+  instance ::= _new
+  instance.value := v
   instance
 }
 
-fromString(s :String) :MimeHeaderValueImpl(T) {
-  let instance = _new,
-  instance.string := s,
+fromString(s :String) :MimeHeaderValueImpl(T)
+  (* *)
+{
+  instance ::= _new
+  instance.string := s
   instance
 }
 
-;
-
-
+}

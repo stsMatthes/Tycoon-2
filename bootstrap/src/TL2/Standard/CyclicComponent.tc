@@ -22,7 +22,7 @@ super Exception
 
 Purpose: TVM exception raised by slot move to operation ("foo@:=")
 
-CyclicComponent.tc 1.1 98/11/19  Axel Wienberg
+$File$ $Revision$ $Date$  Axel Wienberg
 
 created by the virtual machine
 *)

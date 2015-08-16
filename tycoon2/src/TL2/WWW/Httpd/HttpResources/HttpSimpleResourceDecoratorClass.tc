@@ -1,17 +1,15 @@
 class HttpSimpleResourceDecoratorClass(Instance <:HttpResourceDecorator)
-
 super ConcreteClass(Instance)
-
-metaclass MetaClass
-
-public methods
-
-new(resource :HttpResource) :Instance
+(**)
+meta MetaClass
 {
-  let instance = _new,
-  instance._init,
-  instance.resource := resource,
+new(resource :HttpResource) :Instance
+  (* *)
+{
+  instance ::= _new
+  instance._init
+  instance.resource := resource
   instance
 }
 
-;
+}

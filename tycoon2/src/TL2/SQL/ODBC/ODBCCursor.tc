@@ -1,3 +1,5 @@
+class ODBCCursor
+super SQLCursor
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -39,17 +41,10 @@ Updates: (Date)		(Name)	(Description)
 	                        Otherwise next() fails if cursor
 				contains TIMESTAMP-data.
 *)
-
-class ODBCCursor
-
-super SQLCursor
-
-metaclass SimpleConcreteClass(ODBCCursor)
-
-public methods
-
+meta SimpleConcreteClass(ODBCCursor)
+{
 next():Bool
-   (* fetches the next result row from the database,
+  (* fetches the next result row from the database,
       answers true on success,
               false if no further data was found
       note: - Because of a bug in the ADABAS-ODBC-Driver
@@ -57,164 +52,162 @@ next():Bool
 	      -> Bus Error
     *)
 {
-  _hstmt.isNotNil ?
+  if( _hstmt.isNotNil then:
   {
   
-  let error = odbc.SQLFetch(_hstmt),
-  ((error = odbc.SQL_SUCCESS) || {error = odbc.SQL_SUCCESS_WITH_INFO})
-  ? {true}
-  : {error = odbc.SQL_NO_DATA_FOUND
-     ? {false}
-     : {ODBCError.new(odbc.NULL,odbc.NULL,_hstmt).raise}}
+  error ::= odbc.SQLFetch(_hstmt)
+  if( ((error = odbc.SQL_SUCCESS) || error = odbc.SQL_SUCCESS_WITH_INFO)
+  then: {true}
+  else: {if( error = odbc.SQL_NO_DATA_FOUND
+     then: {false}
+     else: {ODBCError.new(odbc.NULL,odbc.NULL,_hstmt).raise})})
   }
-  : {let n:Bool = nil}
+  else: {n:Bool := nil})
 }
 
 private
 
-_hstmt:Int32,
+_hstmt:Int32
 
 _dataArea:MutableArray(AnyCValueHolder)
 
-methods
-
 _createCursorMetaData(hstmt:Int32):ODBCCursorMetaData
+  (* *)
 {
-  let m = ODBCCursorMetaData.new(),
-  m.retrieveColumnData(hstmt),
+  m ::= ODBCCursorMetaData.new()
+  m.retrieveColumnData(hstmt)
   m
 }
 
 _allocateDataArea:Void
+  (* *)
 {
-  _dataArea:=MutableArray.new(metaData.columnCount),
-  for (0,_dataArea.size-1,fun (i:Int)
+  _dataArea:=MutableArray.new(metaData.columnCount)
+  for(0 to:_dataArea.size-1 do:fun (i:Int)
     {
-      let t = metaData.sqlType(i),
-      ((t>=odbc.SQL_NUMERIC) && {t<=odbc.SQL_SMALLINT})
-      ? { ((metaData.scale(i) = 0) & (metaData.precision(i) <=8))
-          ? {_dataArea[i]:=CIntHolder.new}
-	  : {_dataArea[i]:=CRealHolder.new}
-	} :{
-      ((t>=odbc.SQL_FLOAT) && {t<=odbc.SQL_DOUBLE})
-      ? {_dataArea[i]:=CRealHolder.new} : {
-      (t=odbc.SQL_TIMESTAMP)
-      ? {_dataArea[i]:=CStringHolder.new(  metaData.precision(i)
+      t ::= metaData.sqlType(i)
+      if( ((t>=odbc.SQL_NUMERIC) && t<=odbc.SQL_SMALLINT)
+      then: { if( ((metaData.scale(i) = 0) & (metaData.precision(i) <=8))
+          then: {_dataArea[i]:=CIntHolder.new}
+	  else: {_dataArea[i]:=CRealHolder.new})
+	} else:{
+      if( ((t>=odbc.SQL_FLOAT) && t<=odbc.SQL_DOUBLE)
+      then: {_dataArea[i]:=CRealHolder.new} else: {
+      if( (t=odbc.SQL_TIMESTAMP)
+      then: {_dataArea[i]:=CStringHolder.new(  metaData.precision(i)
                                          + metaData.scale(i)
-					 + 1) } :{
-      ((t= odbc.SQL_LONGVARCHAR) || {t= odbc.SQL_LONGVARBINARY})
-      ? {_dataArea[i]:=CRawStringHolder.new(odbc.rawBufferLength)}
-      : {_dataArea[i]:=CStringHolder.new(metaData.precision(i))}}}}
+					 + 1) } else:{
+      if( ((t= odbc.SQL_LONGVARCHAR) || t= odbc.SQL_LONGVARBINARY)
+      then: {_dataArea[i]:=CRawStringHolder.new(odbc.rawBufferLength)}
+      else: {_dataArea[i]:=CStringHolder.new(metaData.precision(i))})})})})
     })
 }
-    
+
 _allocateInfoDataArea():Void
+  (* *)
 {
-  _lengthDataArea:=MutableArray.new(metaData.columnCount),
-  for (0,metaData.columnCount()-1,fun (i:Int)
+  _lengthDataArea:=MutableArray.new(metaData.columnCount)
+  for(0 to:metaData.columnCount()-1 do:fun (i:Int)
     {
-	_lengthDataArea[i]:=CIntHolder.new,
+	_lengthDataArea[i]:=CIntHolder.new
 	_lengthDataArea[i].setIntValue(odbc.SQL_NULL_DATA)
     })
 }
 
 _bindColumns():Void
+  (* *)
 {
-  for(0,metaData.columnCount-1, fun (i:Int)
+  for(0 to:metaData.columnCount-1 do: fun (i:Int)
     {
-      let t = metaData.sqlType(i),
-      let maxlength = ((t>=odbc.SQL_NUMERIC) && {t<=odbc.SQL_DOUBLE})
-                        ? {0} (* numerical types *)
-		        : {
-		      (t=odbc.SQL_TIMESTAMP)  
-		        ? {metaData.precision(i)+metaData.scale(i)+2} :{
-		      ((t=odbc.SQL_LONGVARCHAR) || {t=odbc.SQL_LONGVARBINARY}) 
-		        ? {odbc.rawBufferLength}      (* Raw *)
-		        : {metaData.precision(i)+1} (* String *)
-		      }},
-      let CType = ((t>=odbc.SQL_NUMERIC) && {t<=odbc.SQL_SMALLINT})
-                  ? { ((metaData.scale(i) = 0) && {metaData.precision(i) <=8})
-                      ? {odbc.CTypeCode[Int]}
-		      : {odbc.CTypeCode[Real]}
-		    } :{
-		  ((t>=odbc.SQL_FLOAT) && {t<=odbc.SQL_DOUBLE})
-		  ? {odbc.CTypeCode[Real]} :{
-		  ((t=odbc.SQL_LONGVARCHAR) || {t=odbc.SQL_LONGVARBINARY})
-		  ? {odbc.CTypeCode[File]}
-		  : {odbc.CTypeCode[String]}}},
-      let error = (odbc.SQLBindCol(_hstmt,i+1,CType,_dataArea[i].handle,
-                                   maxlength,_lengthDataArea[i].handle) != 0),
-      error ? { let er = ODBCError.new(odbc.NULL,odbc.NULL,_hstmt),
-                self.close(),
-		er.raise }
+      t ::= metaData.sqlType(i)
+      maxlength ::= if( ((t>=odbc.SQL_NUMERIC) && t<=odbc.SQL_DOUBLE)
+                        then: {0} ; numerical types 
+		        else: {
+		      if( (t=odbc.SQL_TIMESTAMP)  
+		        then: {metaData.precision(i)+metaData.scale(i)+2} else:{
+		      if( ((t=odbc.SQL_LONGVARCHAR) || t=odbc.SQL_LONGVARBINARY) 
+		        then: {odbc.rawBufferLength}      ; Raw 
+		        else: {metaData.precision(i)+1}) ; String 
+		      })})
+      CType ::= if( ((t>=odbc.SQL_NUMERIC) && t<=odbc.SQL_SMALLINT)
+                  then: { if( ((metaData.scale(i) = 0) && metaData.precision(i) <=8)
+                      then: {odbc.CTypeCode[Int]}
+		      else: {odbc.CTypeCode[Real]})
+		    } else:{
+		  if( ((t>=odbc.SQL_FLOAT) && t<=odbc.SQL_DOUBLE)
+		  then: {odbc.CTypeCode[Real]} else:{
+		  if( ((t=odbc.SQL_LONGVARCHAR) || t=odbc.SQL_LONGVARBINARY)
+		  then: {odbc.CTypeCode[File]}
+		  else: {odbc.CTypeCode[String]})})})
+      error ::= (odbc.SQLBindCol(_hstmt,i+1,CType,_dataArea[i].handle,
+                                   maxlength,_lengthDataArea[i].handle) != 0)
+      if( error then: { er ::= ODBCError.new(odbc.NULL,odbc.NULL,_hstmt)
+                self.close()
+		er.raise })
      })
 }
 
 _unbindColumns():Void
+  (* *)
 {
   odbc.SQLFreeStmt(_hstmt,odbc.SQL_UNBIND)
 }
 
 _isNull(column:Int):Bool
+  (* *)
 {
   _lengthDataArea[column].value = odbc.SQL_NULL_DATA
 }
 
 _isDate(column:Int):Bool
+  (* *)
 {
      (metaData.sqlType(column) >= odbc.SQL_DATE)
-  && {metaData.sqlType(column) <= odbc.SQL_TIMESTAMP}
+  && metaData.sqlType(column) <= odbc.SQL_TIMESTAMP
 }
 
 _isBlob(column:Int):Bool
+  (* *)
 {
      (metaData.sqlType(column) = odbc.SQL_LONGVARCHAR)
-  || {metaData.sqlType(column) = odbc.SQL_LONGVARBINARY}
+  || metaData.sqlType(column) = odbc.SQL_LONGVARBINARY
 }
 
 _formatDate(column:Int):Date
+  (* *)
 {
-  metaData.sqlType(column) = odbc.SQL_DATE
-    ? {Date.fromString(_dataArea[column].stringValue,"%Y-%m-%d")}
-    : {
-  metaData.sqlType(column) = odbc.SQL_TIME
-    ? {Date.fromString(_dataArea[column].stringValue,"%H:%M:%S")}
-    : {
-  metaData.sqlType(column) = odbc.SQL_TIMESTAMP
-    ? {Date.fromString(_dataArea[column].stringValue,"%Y-%m-%d %H:%M:%S")}
-    : {
-  CoerceError.new(_dataArea[column].stringValue,Date).raise }}}
+  if( metaData.sqlType(column) = odbc.SQL_DATE
+    then: {Date.fromString(_dataArea[column].stringValue,"%Y-%m-%d")}
+    else: {
+  if( metaData.sqlType(column) = odbc.SQL_TIME
+    then: {Date.fromString(_dataArea[column].stringValue,"%H:%M:%S")}
+    else: {
+  if( metaData.sqlType(column) = odbc.SQL_TIMESTAMP
+    then: {Date.fromString(_dataArea[column].stringValue,"%Y-%m-%d %H:%M:%S")}
+    else: {
+  CoerceError.new(_dataArea[column].stringValue,Date).raise })})})
 }
 
 _retrieveRaw(column:Int, outputFile:File):File
+  (* *)
 {
-  outputFile.openWrite,
-  let var sqlError = ODBCError.new(odbc.NULL,odbc.NULL,_hstmt),
-  while({sqlError.isDataTruncated}, 
+  outputFile.openWrite
+  sqlError ::= ODBCError.new(odbc.NULL,odbc.NULL,_hstmt)
+  while({sqlError.isDataTruncated} do: 
   {
-    let data = _dataArea[column].rawStringValue,
-    outputFile.writeBuffer(data,0,odbc.rawBufferLength),
+    data ::= _dataArea[column].rawStringValue
+    outputFile.writeBuffer(data,0,odbc.rawBufferLength)
     odbc.SQLGetData(_hstmt,column+1,odbc.CTypeCode[File],
                     _dataArea[column].handle,odbc.rawBufferLength,
-		    _lengthDataArea[column].handle),
+		    _lengthDataArea[column].handle)
     sqlError := ODBCError.new(odbc.NULL,odbc.NULL,_hstmt)
-  }),
+  })
   outputFile.writeBuffer(_dataArea[column].rawStringValue,0,
-                         _lengthDataArea[column].intValue),
-  outputFile.close,
-  sqlError.errorCode == 0
-  ? {outputFile}
-  : {sqlError.raise}
+                         _lengthDataArea[column].intValue)
+  outputFile.close
+  if( sqlError.errorCode == 0
+  then: {outputFile}
+  else: {sqlError.raise})
 }
 
-;
-
-
-
-
-
-
-
-
-
-
+}

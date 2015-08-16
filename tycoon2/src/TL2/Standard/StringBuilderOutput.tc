@@ -55,7 +55,7 @@ _needBuffer(n :Int) :Void
 {
   chunks := List(:String).cons(_buffer, chunks)
   bufferSize ::= n.max(minimumChunkSize)
-  _buffer := MutableString.new(bufferSize)
+  _buffer := MutableString.new(bufferSize)@
   _pos := 0
 }
 
@@ -63,7 +63,7 @@ _init :Void
   (* *)
 { super._init
   chunks := EmptyList.new
-  _buffer := MutableString.new(minimumChunkSize)
+  _buffer := MutableString.new(minimumChunkSize)@
   _pos := 0
   self
 }

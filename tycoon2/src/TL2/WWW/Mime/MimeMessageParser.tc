@@ -1,3 +1,5 @@
+class MimeMessageParser(Message <: MimeMessage)
+super Mime
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -27,23 +29,17 @@
 	Copyright 1997, Higher-Order GmbH, Hamburg
 
 *)
-
-class MimeMessageParser(Message <: MimeMessage)
-
-super Mime
-
-metaclass SimpleConcreteClass(MimeMessageParser(MimeMessage))
-
-public methods
-
-parse (from :Input, to :Message)
+meta SimpleConcreteClass(MimeMessageParser(MimeMessage))
 {
-  let hp = HeaderParser.new(from),
+parse (from :Input, to :Message) :Void
+  (* *)
+{
+  hp ::= HeaderParser.new(from)
 
-  to.headers := hp.parseHeaders,
-  to.body    := from (* with headers already consumed *)
+  to.headers := hp.parseHeaders
+  to.body    := from ; with headers already consumed 
 }
 
-private methods
+private
 
-;
+}

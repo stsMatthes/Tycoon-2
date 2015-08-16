@@ -1,9 +1,11 @@
 class SgmlOutput
 super Sgml, Output
-metaclass AbstractClass
-public methods
-
-(*
+(**)
+meta AbstractClass
+{
+defineElement( id :String, contentType :SgmlContentType,
+	       defaultAttributeValues :Dictionary(String, String)) :Void
+  (*
  * This file is part of the Tycoon-2 system.
  *
  * The Tycoon-2 system is free software; you can redistribute it and/or
@@ -22,51 +24,47 @@ public methods
  * 
  * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
  *
- DTD *)
-
-(* Generic identifier <id> has content type <contentType>.
+ DTD 
+ Generic identifier <id> has content type <contentType>.
    defaultAttributeValues contains an entry for each attribute with a default
    value. *)
-defineElement( id :String, contentType :SgmlContentType,
-	       defaultAttributeValues :Dictionary(String, String))
-  deferred
+deferred
 
-(* document instance *)
-
-(* we have encountered a start tag for generic identifier <id>.
+startElement(id :String, attributes :Dictionary(String, String)) :Void
+  (* document instance 
+ we have encountered a start tag for generic identifier <id>.
    <id> appeared earlier in an elementDefinition.
    <attributes> contains all explicitly given or current attributes. *)
-startElement(id :String, attributes :Dictionary(String, String))
-  deferred
+deferred
 
-(* ...inherited output methods... *)
-  
-(* closing bracket to startElement *)
-endElement(id :String)
-  deferred
+endElement(id :String) :Void
+  (* ...inherited output methods... 
+ closing bracket to startElement *)
+deferred
 
-
-(* Is this SgmlOutput interested in receiving "path:=" and "lineNumber:="
-   messages? Must remain constant for the duration of each parse. *)
 interestedInPosition :Bool
-  deferred
+  (* Is this SgmlOutput interested in receiving "path:=" and "lineNumber:="
+   messages? Must remain constant for the duration of each parse. *)
+deferred
 
-(* update source position: next output will come from file <path> / line <lineno>
+"path:="(path :String) :Void
+  (* update source position: next output will come from file <path> / line <lineno>
    interested subclasses have to keep track of line numbers in character data themselves *)
-
-"path:="(path :String)
-  require interestedInPosition
+require interestedInPosition
   deferred
 
-"lineNumber:="(lineNumber :Int)
-  require interestedInPosition
+"lineNumber:="(lineNumber :Int) :Void
+  (* *)
+require interestedInPosition
   deferred
 
-(* Is this SgmlOutput interested in receiving "comment" messages?
-   Must remain constant for the duration of each parse. *)
 interestedInComments :Bool
-  deferred
+  (* Is this SgmlOutput interested in receiving "comment" messages?
+   Must remain constant for the duration of each parse. *)
+deferred
 
-comment(comment :String)
-  deferred
-;
+comment(comment :String) :Void
+  (* *)
+deferred
+
+}

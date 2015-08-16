@@ -1,5 +1,6 @@
 class HttpClientel
 super Http
-metaclass AbstractClass
-;
-	
+(**)
+meta AbstractClass
+{
+}

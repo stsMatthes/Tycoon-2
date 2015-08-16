@@ -1,22 +1,27 @@
 class SugarBinding
 super SugarSequenceElement
-public
+(**)
+meta SugarBindingClass()
+{
+ide :String
 
-ide :String,
-type :String,
-equal :String,
+type :String
+
+equal :String
+
 val :String
 
-methods
-
 sequenceElementCase(T <: Void,
-  ifBinding :Fun1(SugarBinding, T),
-            :Fun1(SugarValue, T)) :T
+  ifBinding :Fun(:SugarBinding):T,
+            :Fun(:SugarValue):T) :T
+  (* *)
 { ifBinding[self] }
 
-printOn(out :Output)
+printOn(out :Output) :Void
+  (* *)
 {
-  out << ide << (type.isEmpty?{"::"}:{type+":"})<<equal
+  out << ide << if( type.isEmpty then:{"::"}else:{type+":"})<<equal
 	     << val
 }
-;
+
+}

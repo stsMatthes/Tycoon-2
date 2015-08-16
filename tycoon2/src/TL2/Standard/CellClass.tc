@@ -30,4 +30,12 @@ new(value :T) :Cell(T)
   instance
 }
 
+new(value :T) @:Cell(T)
+  (* *)
+{
+  instance @::= _new@
+  instance.value := value
+  instance@
+}
+
 }

@@ -38,10 +38,10 @@ _init :Void
   self
 }
 
-_createMonitorWaiters :BroadcastingCondition
+_createMonitorWaiters @:BroadcastingCondition
   (* *)
 {
-  BroadcastingCondition.new
+  BroadcastingCondition.new@
 }
 
 _synchronizeBlockingCall(T <:Void, statement :Fun():T) :T

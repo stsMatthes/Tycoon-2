@@ -1,5 +1,5 @@
 class HttpRootResource
-
+super HttpResourceDecorator
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -20,46 +20,41 @@ class HttpRootResource
  * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
  *
  a root resource serves as the root of a HTTP servers resouce tree *)
-
-super HttpResourceDecorator
-
-metaclass HttpSimpleResourceDecoratorClass(HttpRootResource)
-
-public
-
-methods
-
+meta HttpSimpleResourceDecoratorClass(HttpRootResource)
+{
 documentRoot :String
+  (* *)
 {
   _documentRoot
 }
 
 "documentRoot:="(newRoot :String) :String
+  (* *)
 {
-  (* adapt the old resource tree to a (possibly different) document root *)
-  (*##relocate resource tree?*)
+  ; adapt the old resource tree to a (possibly different) document root 
+  ;##relocate resource tree?
 
-  resource.isNotNil ? {
-     (* search for directory resource with empty path
-        (might raise exception if misconfigured): *)
-     try({ let dirResource = resource.lookupDirectory(EmptyList.new),
-	   dirResource.isNotNil ? {
-	     newRoot != dirResource.dir.path ? {
-	       resource := nil (* overwrite it later *)
-	     }
-	   }
-	 },
+  if( resource.isNotNil then: {
+     ; search for directory resource with empty path
+;        (might raise exception if misconfigured): 
+     try({ dirResource ::= resource.lookupDirectory(EmptyList.new)
+	   if( dirResource.isNotNil then: {
+	     if( newRoot != dirResource.dir.path then: {
+	       resource := nil ; overwrite it later 
+	     })
+	   })
+	 } else:
         fun(e :Exception) {
-	  resource := nil (* overwrite it later *)
+	  resource := nil ; overwrite it later 
         })       
-   },
+   })
    
-  _documentRoot := newRoot,
+  _documentRoot := newRoot
   
-  resource.isNil ? {
-     let dir = HttpDirectoryResource.new(Directory.new(_documentRoot)),
+  if( resource.isNil then: {
+     dir ::= HttpDirectoryResource.new(Directory.new(_documentRoot))
      resource := dir
-   },
+   })
 
   _documentRoot
 }
@@ -68,9 +63,4 @@ private
 
 _documentRoot :String
 
-methods
-
-
-;
-
-
+}

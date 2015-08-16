@@ -24,13 +24,18 @@ super AddGeneratorMixin(Int, IntSet), ConcreteClass(IntSet)
 meta MetaClass
 {
 
+new(initialCapacity :Int) :IntSet
+{
+  _newCapacity(initialCapacity)
+}
+
 private
 
 _newCapacity(initialCapacity :Int) :IntSet
 {
   instance ::= _new
   wordSize ::= 32
-  instance._bits := IntArray.new((initialCapacity + wordSize - 1) / wordSize)
+  instance._bits := IntArray.new((initialCapacity + wordSize - 1) / wordSize)@
   instance._size := 0
   ; instance.clear, 
   instance

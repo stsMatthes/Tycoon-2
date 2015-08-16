@@ -1,12 +1,16 @@
 class SgmlLeafClass
 super ConcreteClass(SgmlLeaf)
-metaclass MetaClass
-public methods
-new(position :SgmlPos, data :String) :SgmlLeaf
+(**)
+meta MetaClass
 {
-  let instance = _new,
-  instance.position := position,
-  instance.data := data,
+new(position :SgmlPos, data :String) :SgmlLeaf
+  (* *)
+{
+  instance ::= _new
+  instance.position := position
+  instance.data := data
   instance._init
+  instance
 }
-;
+
+}

@@ -1,3 +1,5 @@
+class SgmlPos
+super SourcePos
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -23,29 +25,30 @@
    Purpose: A source position indicated by the sgmls parser.
    column is always zero.
 *)
- 
-class SgmlPos
-super SourcePos
-metaclass SgmlPosClass
-public methods
-
-path :String   (* better name *)
+meta SgmlPosClass
+{
+path :String
+  (* better name *)
 { where }
 
 column :Int
+  (* *)
 { 0 }
 
-printOn(out :Output)
+printOn(out :Output) :Void
+  (* *)
 {
-  path.isNotNil ? {
-    out.writeAll(path),
+  if( path.isNotNil then: {
+    out.writeAll(path)
     out.write(':')
-  },
+  })
   line.printOn(out)
 }
 
-private methods
+private
 
-"path:="(s :String) :String   (* better name *)
+"path:="(s :String) :String
+  (* better name *)
 { _where := s }
-;
+
+}

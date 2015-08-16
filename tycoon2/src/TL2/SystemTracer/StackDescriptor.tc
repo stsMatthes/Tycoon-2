@@ -1,10 +1,5 @@
 class StackDescriptor
 super ArrayDescriptor
-metaclass SingletonClass(StackDescriptor)
-public methods
-
-_brand_StackDescriptor { }
-
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -24,5 +19,21 @@ _brand_StackDescriptor { }
  * 
  * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
  *
- that''s all *)
-;
+*)
+meta TspDescriptorClass(StackDescriptor)
+{
+_brand_StackDescriptor :Void
+  (* *)
+{ }
+
+layout :Int
+{ layoutStack }
+
+allocate(o :Object, tl2Class :TL2Class) :Int
+  (* tracing a stack is not implemented (and probably not sensible). *)
+{
+  tycoon.stdout << "### Error: Cannot trace a stack.  ignored.  (this dump will not work!)";
+  0
+}
+
+}

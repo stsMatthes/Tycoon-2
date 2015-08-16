@@ -1,0 +1,36 @@
+class Vorgang
+super Buero
+meta VorgangClass
+{
+
+naechstesZiel :Arbeitsplatz
+
+anlagen @:AtDictionary(String, Dokument)
+
+angekommen(a :Arbeitsplatz) :Void
+{
+  if(a == naechstesZiel then: {
+    ;; ...was tun...
+    ;; auf zum naechsten Ziel
+    if( ziele.isEmpty then: {
+      naechstesZiel := nil
+    } else: {
+      naechstesZiel := ziele.removeFirst
+    })
+  } else: {
+    ;; ich gebe auf, ich habe mich verlaufen
+    naechstesZiel := nil
+  })
+}
+
+private
+
+_init :Void
+{ super._init
+  anlagen := AtDictionary.new@
+  naechstesZiel := ziele.removeFirst
+}
+
+ziele @:Queue(Arbeitsplatz)
+
+}

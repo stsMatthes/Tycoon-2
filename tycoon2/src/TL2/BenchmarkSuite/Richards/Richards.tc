@@ -1,3 +1,5 @@
+class Richards
+super Benchmark
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -20,212 +22,227 @@
 
     Richards Benchmark
 *)
-class Richards
-super Benchmark
-metaclass RichardsClass(Richards)
+meta RichardsClass(Richards)
+{
+nTasks         :Int
 
-public
+tracing        :Bool
 
-nTasks         :Int,
-tracing        :Bool,
-taskList       :List(TaskControlBlock),
-currentTaskList    :List(TaskControlBlock),
-currentTaskIdent :Int,
-taskTable      :MutableArray(List(TaskControlBlock)),
-layOut         :Int,
-holdCount      :Int,
-queuePacketCount :Int,
-deviceA        :Int,
-deviceB        :Int,
-idler          :Int,
-worker         :Int,
-handlerA       :Int,
-handlerB       :Int,
-devicePacket   :Int,
+taskList       :List(TaskControlBlock)
+
+currentTaskList    :List(TaskControlBlock)
+
+currentTaskIdent :Int
+
+taskTable      :MutableArray(List(TaskControlBlock))
+
+layOut         :Int
+
+holdCount      :Int
+
+queuePacketCount :Int
+
+deviceA        :Int
+
+deviceB        :Int
+
+idler          :Int
+
+worker         :Int
+
+handlerA       :Int
+
+handlerB       :Int
+
+devicePacket   :Int
+
 workPacket     :Int
 
-
-
-methods
-
 findTask(id :Int) :List(TaskControlBlock)
+  (* *)
 {
    taskTable[id]
 }
 
 holdSelf() :List(TaskControlBlock)
+  (* *)
 {
-  holdCount := holdCount + 1,
-  currentTaskList.head.taskHolding := true,
+  holdCount := holdCount + 1
+  currentTaskList.head.taskHolding := true
   currentTaskList.tail
 }
 
 queuePacket(p :Packet) :List(TaskControlBlock)
+  (* *)
 {
-  let tList = findTask(p.ident),
-  queuePacketCount := queuePacketCount + 1,
-  p.ident := currentTaskIdent,
+  tList ::= findTask(p.ident)
+  queuePacketCount := queuePacketCount + 1
+  p.ident := currentTaskIdent
   tList.head.addPacket(p, tList, currentTaskList)
 }
 
 release(id :Int) :List(TaskControlBlock)
+  (* *)
 {
-  let tList = findTask(id),
-  tList.head.taskHolding := false,
-  tList.head.priority > currentTaskList.head.priority
-    ? { tList }
-    : { currentTaskList }
-}    
+  tList ::= findTask(id)
+  tList.head.taskHolding := false
+  if( tList.head.priority > currentTaskList.head.priority
+    then: { tList }
+    else: { currentTaskList })
+}
 
-  
 trace(id :Int, s :String) :Void
+  (* *)
 {
-  layOut := layOut - 1,
-  layOut == 0
-    ? { "\n".print, layOut := 20 },
-  s.print, (id+1).print
+  layOut := layOut - 1
+  if( layOut == 0
+    then: { "\n".print layOut := 20 })
+  s.print (id+1).print
 }
 
 wait() :List(TaskControlBlock)
+  (* *)
 {
-  currentTaskList.head.taskWaiting := true,
+  currentTaskList.head.taskWaiting := true
   currentTaskList
-}  
-
+}
 
 initScheduler() :Void
+  (* *)
 {
-   queuePacketCount := 0,
-   holdCount := 0,
-   taskTable := MutableArray.new(nTasks),
-   taskList := List.new,
+   queuePacketCount := 0
+   holdCount := 0
+   taskTable := MutableArray.new(nTasks)
+   taskList := List.new
    currentTaskList := List.new
 }
 
-
 go(traceFlag :Bool) :Void
+  (* *)
 {
-  tracing := traceFlag,
-  initScheduler,
-  let taskState = TaskState.create,
-  taskState.setRunning,
-  let idlerQ = Queue.new,
-  createIdler(idler, 0, idlerQ, taskState),
+  tracing := traceFlag
+  initScheduler
+  taskState ::= TaskState.create
+  taskState.setRunning
+  idlerQ ::= Queue.new
+  createIdler(idler, 0, idlerQ, taskState)
 
 
-  let workQ = Queue.new,
-  workQ.addLast(Packet.create(worker,workPacket)),
-  workQ.addLast(Packet.create(worker,workPacket)),
-  let taskState = TaskState.create,
-  taskState.setWaitingWithPacket,
-  createWorker(worker, 1000, workQ, taskState),
+  workQ ::= Queue.new
+  workQ.addLast(Packet.create(worker,workPacket))
+  workQ.addLast(Packet.create(worker,workPacket))
+  taskState ::= TaskState.create
+  taskState.setWaitingWithPacket
+  createWorker(worker, 1000, workQ, taskState)
 
  
-  let workQ = Queue.new,
-  workQ.addLast(Packet.create(deviceA,devicePacket)),
-  workQ.addLast(Packet.create(deviceA,devicePacket)),
-  workQ.addLast(Packet.create(deviceA,devicePacket)),
-  let taskState = TaskState.create,
-  taskState.setWaitingWithPacket,
-  createHandler(handlerA, 2000, workQ, taskState),
+  workQ ::= Queue.new
+  workQ.addLast(Packet.create(deviceA,devicePacket))
+  workQ.addLast(Packet.create(deviceA,devicePacket))
+  workQ.addLast(Packet.create(deviceA,devicePacket))
+  taskState ::= TaskState.create
+  taskState.setWaitingWithPacket
+  createHandler(handlerA, 2000, workQ, taskState)
 
-  let workQ = Queue.new,
-  workQ.addLast(Packet.create(deviceB,devicePacket)),
-  workQ.addLast(Packet.create(deviceB,devicePacket)),
-  workQ.addLast(Packet.create(deviceB,devicePacket)),
-  let taskState = TaskState.create,
-  taskState.setWaitingWithPacket,
-  createHandler(handlerB, 3000, workQ, taskState),
+  workQ ::= Queue.new
+  workQ.addLast(Packet.create(deviceB,devicePacket))
+  workQ.addLast(Packet.create(deviceB,devicePacket))
+  workQ.addLast(Packet.create(deviceB,devicePacket))
+  taskState ::= TaskState.create
+  taskState.setWaitingWithPacket
+  createHandler(handlerB, 3000, workQ, taskState)
 
-  let workQ = Queue.new,
-  let taskState = TaskState.create,
-  taskState.setWaiting,
-  createDevice(deviceA, 4000, workQ, taskState),
+  workQ ::= Queue.new
+  taskState ::= TaskState.create
+  taskState.setWaiting
+  createDevice(deviceA, 4000, workQ, taskState)
   
-  let workQ = Queue.new,
-  let taskState = TaskState.create,
-  taskState.setWaiting,
-  createDevice(deviceB, 5000, workQ, taskState),
+  workQ ::= Queue.new
+  taskState ::= TaskState.create
+  taskState.setWaiting
+  createDevice(deviceB, 5000, workQ, taskState)
 
  
-   schedule,
+   schedule
 
-  queuePacketCount == 23246 && {holdCount == 9297}
-    ?  { "Richards results are correct.\n".print }
-    :  { "Richards results are incorrect. queuePacketCount = ".print,
-         queuePacketCount.print, " holdCount = ".print, holdCount.print,"\n".print }
+  if( queuePacketCount == 23246 && holdCount == 9297
+    then:  { "Richards results are correct.\n".print }
+    else:  { "Richards results are incorrect. queuePacketCount = ".print
+         queuePacketCount.print " holdCount = ".print holdCount.print"\n".print })
                                                  
 }
 
-
 private
-methods
-
 
 enterTask(id :Int, task :TaskControlBlock) :Void
+  (* *)
 {
-    taskList := List.cons(task, taskList),
-    let tList = taskList,
+    taskList := List.cons(task, taskList)
+    tList ::= taskList
     taskTable[id] := tList
 }
 
 createDevice(id :Int, prio :Int, work :Queue(Packet), state :TaskState) :Void
+  (* *)
 {
-    let data = DeviceTaskRec.new,
-    let task = DeviceTCB.createTCB(id,prio,work,state,data),
+    data ::= DeviceTaskRec.new
+    task ::= DeviceTCB.createTCB(id,prio,work,state,data)
     enterTask(id, task)
 }
-
 
 createHandler(id :Int, prio :Int, work :Queue(Packet), state :TaskState) :Void
+  (* *)
 {
-    let data = HandlerTaskRec.new,
-    let task = HandlerTCB.createTCB(id,prio,work,state,data),
+    data ::= HandlerTaskRec.new
+    task ::= HandlerTCB.createTCB(id,prio,work,state,data)
     enterTask(id, task)
 }
-
 
 createIdler(id :Int, prio :Int, work :Queue(Packet), state :TaskState) :Void
+  (* *)
 {
-    let data = IdleTaskRec.new,
-    let task = IdlerTCB.createTCB(id,prio,work,state,data),
+    data ::= IdleTaskRec.new
+    task ::= IdlerTCB.createTCB(id,prio,work,state,data)
     enterTask(id, task)
 }
 
-
 createWorker(id :Int, prio :Int, work :Queue(Packet), state :TaskState) :Void
+  (* *)
 {
-    let data = WorkerTaskRec.new,
-    let task = WorkerTCB.createTCB(id,prio,work,state,data),
+    data ::= WorkerTaskRec.new
+    task ::= WorkerTCB.createTCB(id,prio,work,state,data)
     enterTask(id, task)
 }
 
 schedule() :Void
+  (* *)
 {
   
-   currentTaskList := taskList,
-   while({ !currentTaskList.isEmpty },
-         { (*taskTable.do(fun(tl :List(TaskControlBlock))
-               {
-	         "\n++ ".print, tl.do(fun(t :TaskControlBlock){t.print})
-	        }),*)
-	    currentTaskList.head.isTaskHoldingOrWaiting
-	     ? { currentTaskList := currentTaskList.tail }
-	     : { currentTaskIdent := currentTaskList.head.ident,
-	         (* tracing ? { trace(currentTaskIdent, "i") }, *)
+   currentTaskList := taskList
+   while({ !currentTaskList.isEmpty } do:
+         { ;taskTable.do(fun(tl :List(TaskControlBlock))
+;               {
+;	         "\n++ ".print, tl.do(fun(t :TaskControlBlock){t.print})
+;	        }),
+	    if( currentTaskList.head.isTaskHoldingOrWaiting
+	     then: { currentTaskList := currentTaskList.tail }
+	     else: { currentTaskIdent := currentTaskList.head.ident
+	         ; tracing ? { trace(currentTaskIdent, "i") }, 
 	         currentTaskList := currentTaskList.head.runTask()
-	       }
+	       })
 	 })
 	     
 }
 
-
 _setup() :Void
+  (* *)
 {
 }
 
 _run() :Void
+  (* *)
 {
   go(false)
 }
-;
+
+}

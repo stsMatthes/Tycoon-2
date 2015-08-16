@@ -5,3 +5,9 @@ tycoon.tl.loader.registerFile("WWW/URL.tc");
 tycoon.tl.loader.registerFile("WWW/URLClass.tc");
 
 tycoon.tl.loader.update;
+tycoon.tl.typeChecker.check;
+
+(*
+  tycoon.tl.loader.registerFile("WWW/TestURL.tc");
+  TestURL.new.do_tests;
+*)

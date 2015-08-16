@@ -1,21 +1,21 @@
 class HttpAcceptClass
 super ConcreteClass(HttpAccept)
-metaclass MetaClass
-
-public methods
-
-
+(**)
+meta MetaClass
+{
 new(type :String, subtype :String, parameters :List(Pair(String, String)),
-    q :Real, mxb :Real) :HttpAccept {
+    q :Real, mxb :Real) :HttpAccept
+  (* *)
+{
 
-    let instance = _new,
-    instance.type    := type,
-    instance.subtype := subtype,
-    instance.parameters := parameters,
-    instance.q       := q,
-    instance.mxb     := mxb,
+    instance ::= _new
+    instance.type    := type
+    instance.subtype := subtype
+    instance.parameters := parameters
+    instance.q       := q
+    instance.mxb     := mxb
 
     instance
 }
 
-;
+}

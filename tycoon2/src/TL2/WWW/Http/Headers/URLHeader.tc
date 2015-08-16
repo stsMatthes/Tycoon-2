@@ -1,20 +1,24 @@
 class URLHeader
 super MimeHeaderValueImpl(URL)
-metaclass MimeHeaderValueImplClass(URL)
+(**)
+meta MimeHeaderValueImplClass(URL)
+{
+private
 
-private methods
+parseValue(s :String) :URL
+  (* *)
+{
+  p ::= MimeParser.new(s.reader)
 
-parseValue(s :String) :URL {
-  let p = MimeParser.new(s.reader),
-
-  p.skiphws,
+  p.skiphws
 
   URL.fromString(String.fromReader(p.reader))
 }
 
-unparseValue(url :URL) :String {
+unparseValue(url :URL) :String
+  (* *)
+{
   url.asString		 
 }
 
-;
-
+}

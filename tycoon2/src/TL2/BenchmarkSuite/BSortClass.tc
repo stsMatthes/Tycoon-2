@@ -1,13 +1,14 @@
-class BSortClass(Instance <: Object)
+class BSortClass(Instance <: BSort)
 super ConcreteClass(Instance)
-metaclass MetaClass
-
-public methods
-
-new1(elem :Int) :Instance
+(**)
+meta MetaClass
 {
-  let s = _new,
-  s._elem := elem,
+new1(elem :Int) :Instance
+  (* *)
+{
+  s ::= _new
+  s._elem := elem
   s._init
 }
-;
+
+}

@@ -1,3 +1,5 @@
+class Encoder
+super Encoding, InputDecorator
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -21,17 +23,17 @@
   Abstract superclass of MIME En- and Decoder classes
 
   Matthias Ernst  20/1/97
-*)  
+*)
+meta EncoderClass()
 
-class Encoder
-super Encoding, InputDecorator
-
-private methods
-
-_init1(r :Input)
 {
-  super._init,
+private
+
+_init1(r :Input) :Void
+  (* *)
+{
+  super._init
   _in := r
 }
 
-;
+}

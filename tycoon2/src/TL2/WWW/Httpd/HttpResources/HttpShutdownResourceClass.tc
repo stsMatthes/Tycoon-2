@@ -1,15 +1,15 @@
 class HttpShutdownResourceClass
 super ConcreteClass(HttpShutdownResource)
-metaclass MetaClass
-
-public methods
-
-new(httpd :Httpd): HttpShutdownResource
+(**)
+meta MetaClass
 {
-  let instance = _new,
-  instance._init,
-  instance.httpd := httpd,
+new(httpd :Httpd): HttpShutdownResource
+  (* *)
+{
+  instance ::= _new
+  instance._init
+  instance.httpd := httpd
   instance
 }
-;
 
+}

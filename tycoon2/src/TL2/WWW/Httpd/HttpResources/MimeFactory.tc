@@ -1,33 +1,34 @@
 class MimeFactory
-
 super HttpResourceFactory
+(**)
+meta MimeFactoryClass()
 
-public
+{
+types :Dictionary(String, MediaType)
 
-types :Dictionary(String, MediaType),
-encodings :Dictionary(String, String),
+encodings :Dictionary(String, String)
+
 defaultType :MediaType
 
-methods
-
 newFileResource(file :File) :HttpResource
+  (* *)
 {
-  let var contentEncoding :String = nil,
-  let var ext = fs.pathExtension(file.path),
-  ext.isNotNil ? {
-    encodings.includesKey(ext) ? {
-      contentEncoding := encodings[ext],
+  contentEncoding :String := nil
+  ext ::= fs.pathExtension(file.path)
+  if( ext.isNotNil then: {
+    if( encodings.includesKey(ext) then: {
+      contentEncoding := encodings[ext]
       ext := fs.pathExtension(fs.pathPrefix(file.path))
-    }
-  },
-  ext.isNil ? { ext := "" },
-  let type = types.lookup(ext,
+    })
+  })
+  if( ext.isNil then: { ext := "" })
+  type ::= types.lookup(ext,
     fun(type :MediaType) { type },
     fun() { defaultType}
-  ),
-  let resource = HttpFileResource.new2(file, type),
+  )
+  resource ::= HttpFileResource.new2(file, type)
   
-  resource.contentEncoding := contentEncoding,
+  resource.contentEncoding := contentEncoding
   resource
 }
 
@@ -52,32 +53,28 @@ newDirectoryResource(dir :Directory) :HttpResource
  * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
  *
  create a new directory resource with the given name in the given directory *)
-     
 {
   HttpDirectoryResource.new(dir)
 }
 
 private
 
-methods
-
 _init :Void
+  (* *)
 {
-  types := Dictionary.new,
-  encodings := Dictionary.new,
-  defaultType := MediaType.TEXT_PLAIN,
+  types := Dictionary.new
+  encodings := Dictionary.new
+  defaultType := MediaType.TEXT_PLAIN
   
-  (* register some well known media types and content encodings: *)
-  types["html"] := types["htm"] := MediaType.TEXT_HTML,
-  types["ps"] := MediaType.APPLICATION_POSTSCRIPT,
-  types["gif"] := MediaType.IMAGE_GIF,
-  types["jpeg"] := types["jpg"] := MediaType.IMAGE_JPEG,  
+  ; register some well known media types and content encodings: 
+  types["html"] := types["htm"] := MediaType.TEXT_HTML
+  types["ps"] := MediaType.APPLICATION_POSTSCRIPT
+  types["gif"] := MediaType.IMAGE_GIF
+  types["jpeg"] := types["jpg"] := MediaType.IMAGE_JPEG  
   
-  encodings["Z"] := nil, (*##*)
+  encodings["Z"] := nil ;##
   
   super._init
 }
 
-;
-
-
+}

@@ -1,14 +1,14 @@
 class FTPErrorClass
-
 super ConcreteClass(FTPError)
-
-metaclass MetaClass
-
-public methods
-
+(**)
+meta MetaClass
+{
 new(response :FTPResponse) :FTPError
-{ let instance = _new,
-  instance.response := response,
+  (* *)
+{ instance ::= _new
+  instance.response := response
   instance._init
+  instance
 }
-;
+
+}

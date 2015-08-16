@@ -182,9 +182,9 @@ _ansiC :AnsiC
 
 _tycoonOS :TycoonOS
 
-_clock :TycoonClock
+_clock @:TycoonClock
 
-_cpuClock :CPUClock
+_cpuClock @:CPUClock
 
 _tl :X_TL2TL
 
@@ -228,8 +228,8 @@ _init :Void
   
   stdin := File.stdin
   stdout := File.stdout
-  _clock := TycoonClock.new
-  _cpuClock := CPUClock.new
+  _clock := TycoonClock.new@
+  _cpuClock := CPUClock.new@
   self
   }
 

@@ -21,7 +21,7 @@
 /*
   Copyright (c) 1996 Higher-Order GmbH, Hamburg. All rights reserved.
 
-  tmdebug.h 1.6 98/05/18 Marc Weikard
+  $File: //depot/tycoon2/stsmain/bootstrap/src/tm/tmdebug.h $ $Revision: #3 $ $Date: 2003/10/02 $ Marc Weikard
 
   Simple Debugging Infos
 

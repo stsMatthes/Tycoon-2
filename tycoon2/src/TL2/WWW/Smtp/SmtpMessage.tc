@@ -1,3 +1,5 @@
+class SmtpMessage
+super MimeMessage
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -30,77 +32,133 @@ Date:    30-Sep-1997
 Updates: (Date)	  (Name)	(Description)
 
 *)
+meta SmtpMessageClass
+{
+parser :MimeMessageParser(Self)
+  (* *)
+{ SmtpMessageParser.new }
 
-class SmtpMessage
-super MimeMessage
-metaclass SmtpMessageClass
+fromString :String
+  (* *)
+{ "From" }
 
-public
+hasFrom :Bool
+  (* *)
+{ hasHeader(fromString) }
 
-methods
+from :String
+  (* *)
+{ headerValue(fromString) }
 
-parser :MimeMessageParser(Self) { SmtpMessageParser.new }
+"from:="(from :String) :Void
+  (* *)
+{ setHeaderValue(fromString, MimeString, from) }
 
-fromString :String { "From" }
-hasFrom :Bool { hasHeader(fromString) }
-from :String { headerValue(fromString) }
-"from:="(from :String) { setHeaderValue(fromString, MimeString, from) }
+toString :String
+  (* *)
+{ "To" }
 
-toString :String { "To" }
-hasTo :Bool { hasHeader(toString) }
-to :String { headerValue(toString) }
-"to:="(to :String) { setHeaderValue(toString, MimeString, to) }
+hasTo :Bool
+  (* *)
+{ hasHeader(toString) }
 
-subjectString :String { "Subject" }
-hasSubject :Bool { hasHeader(subjectString) }
-subject :String { headerValue(subjectString) }
-"subject:="(subject :String) { setHeaderValue(subjectString, MimeString, subject) }
+to :String
+  (* *)
+{ headerValue(toString) }
 
-messageIdString :String { "Message-Id" }
-hasMessageId :Bool { hasHeader(messageIdString) }
-messageId :String { headerValue(messageIdString) }
-"messageId:="(messageId :String) { setHeaderValue(messageIdString, MimeString, messageId) }
+"to:="(to :String) :Void
+  (* *)
+{ setHeaderValue(toString, MimeString, to) }
 
-ccString :String { "Cc" }
-hasCC :Bool { hasHeader(ccString) }
-cc :String { headerValue(ccString) }
-"cc:="(cc :String) { setHeaderValue(ccString, MimeString, cc) }
+subjectString :String
+  (* *)
+{ "Subject" }
 
-bccString :String { "Bcc" }
-hasBCC :Bool { hasHeader(bccString) }
-bcc :String { headerValue(bccString) }
-"bcc:="(bcc :String) { setHeaderValue(bccString, MimeString, bcc) }
+hasSubject :Bool
+  (* *)
+{ hasHeader(subjectString) }
 
+subject :String
+  (* *)
+{ headerValue(subjectString) }
+
+"subject:="(subject :String) :Void
+  (* *)
+{ setHeaderValue(subjectString, MimeString, subject) }
+
+messageIdString :String
+  (* *)
+{ "Message-Id" }
+
+hasMessageId :Bool
+  (* *)
+{ hasHeader(messageIdString) }
+
+messageId :String
+  (* *)
+{ headerValue(messageIdString) }
+
+"messageId:="(messageId :String) :Void
+  (* *)
+{ setHeaderValue(messageIdString, MimeString, messageId) }
+
+ccString :String
+  (* *)
+{ "Cc" }
+
+hasCC :Bool
+  (* *)
+{ hasHeader(ccString) }
+
+cc :String
+  (* *)
+{ headerValue(ccString) }
+
+"cc:="(cc :String) :Void
+  (* *)
+{ setHeaderValue(ccString, MimeString, cc) }
+
+bccString :String
+  (* *)
+{ "Bcc" }
+
+hasBCC :Bool
+  (* *)
+{ hasHeader(bccString) }
+
+bcc :String
+  (* *)
+{ headerValue(bccString) }
+
+"bcc:="(bcc :String) :Void
+  (* *)
+{ setHeaderValue(bccString, MimeString, bcc) }
 
 send(server :IPAddress, verbose :Bool) :Void
-
-  require server.isNotNil &
+  (* ------------------------------------------------------------ *)
+require server.isNotNil &
     verbose.isNotNil
-(* ------------------------------------------------------------ *)    
+    
   {
-    let client = SmtpClient.new(server, verbose),
-    let sendfrom = from,
-    let recipient = to,
-    sendfrom.isNotNil & recipient.isNotNil & sendfrom.size < 256 &
-      recipient.size < 256 ?
+    client ::= SmtpClient.new(server, verbose)
+    sendfrom ::= from
+    recipient ::= to
+    if( sendfrom.isNotNil & recipient.isNotNil & sendfrom.size < 256 &
+      recipient.size < 256 then:
       {        
-        client.open,
-	client.sender(sendfrom),
-	client.recipient(recipient),
-	client.data,
-	let out = StringBuilderOutput.new,
-	emit(out),	
-	client.body(out.contents),
+        client.open
+	client.sender(sendfrom)
+	client.recipient(recipient)
+	client.data
+	out ::= StringBuilderOutput.new
+	emit(out)	
+	client.body(out.contents)
 	client.close
-      } :
-      { (* ## raise error *) }
+      } else:
+      { ; ## raise error 
+})
   }
-	
-
 
 private
 
-methods
-
-;
-
+}

@@ -35,8 +35,8 @@ asArray :Array(E)
 
 private
 
-_newElements(initialCapacity :Int) :MutableArray(E)
+_newElements(initialCapacity :Int) @:MutableArray(E)
   (* *)
-{ MutableArray.new(initialCapacity) }
+{ MutableArray.new(initialCapacity)@ }
 
 }

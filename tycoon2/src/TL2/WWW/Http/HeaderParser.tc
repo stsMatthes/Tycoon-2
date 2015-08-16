@@ -1,3 +1,5 @@
+class HeaderParser
+super Http
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -22,86 +24,84 @@
   Author: Matthias Ernst 12/96
   Change: me 6.1.96 Names
 *)
-
-class HeaderParser
-super Http
-metaclass HeaderParserClass
-
-public
-
+meta HeaderParserClass
+{
 in :Reader(Char)
 
-methods
-
-
 parseHeaders: MimeHeaderDictionary(MimeHeaderValue)
+  (* *)
 {
-  let result = MimeHeaderDictionary(:MimeHeaderValue).new,
-  let parser = MimeParser.new(in),
+  result ::= MimeHeaderDictionary(:MimeHeaderValue).new
+  parser ::= MimeParser.new(in)
   
   while({
-    (* Empty line ends headers
-       should be CRLF but we allow LF only too *)
-    !(parser.char == '\n' || {
-      parser.char == '\r' && { parser.next, parser.char == '\n' }
-    })
-  }, {
-    let name = headerName(parser),
-    parser.skip(':'),
-    let value = headerValue(parser),
+    ; Empty line ends headers
+;       should be CRLF but we allow LF only too 
+    !(parser.char == '\n' || 
+      parser.char == '\r' && ( parser.next parser.char == '\n' )
+    )
+  } do: {
+    name ::= headerName(parser)
+    parser.skip(':')
+    value ::= headerValue(parser)
 
-    (* Lookup (or enter) headerValue *)
-    let var headerValue = result.lookup(name,
-      let ifFound    = fun(hv: MimeHeaderValue) { hv },
-      let ifNotFound =                          { result[name] := newHeaderValue(name) }
-    ),
+    ; Lookup (or enter) headerValue 
+    headerValue ::= result.lookup(name,
+      fun(hv: MimeHeaderValue) { hv },
+      { result[name] := newHeaderValue(name) }
+    )
 
-    (* if this header already exists, we should build a list from the values.
-       should this be a special behaviour of the 'string:=' message, or should
-       the knowledge be here ?
-    *)
+    ; if this header already exists, we should build a list from the values.
+;       should this be a special behaviour of the 'string:=' message, or should
+;       the knowledge be here ?
+;    
     headerValue.string := value
-  }),
+  })
 
   result
 }
 
-private methods
+private
 
 newHeaderValue(name :String) :MimeHeaderValue
+  (* *)
 {
   MimeHeaderRegistry.instance.newHeaderValue(name)
 }
 
-headerName(parser :MimeParser) :String {
+headerName(parser :MimeParser) :String
+  (* *)
+{
   parser.nextToken
 }
 
-headerValue(parser :MimeParser) :String {
-  parser.skiphws,
-  let value = GapString.new(10),
+headerValue(parser :MimeParser) :String
+  (* *)
+{
+  parser.skiphws
+  value ::= GapString.new(10)
   
-  let var break = false,
-  while({!break}, {
-    parser.char == nil ? { MimeParserError.new("Premature end of headers").raise },
+  break ::= false
+  while({!break} do: {
+    if( parser.char == nil then: { MimeParserError.new("Premature end of headers").raise })
 
-    parser.char == '\n' || { parser.char == '\r' && { parser.next, parser.char == '\n' }} ? {
-	 parser.next,
-	 parser.char != ' ' && { parser.char != '\t' } ? {
-	   break := true, nil
-	 } : {
-	   parser.skiphws,
-	   value.add(' '), nil   (* LWS is equivalent to SP *)
-	 }
-    } : {
-      value.add(parser.char),
-      parser.next,
+    if( parser.char == '\n' ||  parser.char == '\r' && ( parser.next parser.char == '\n' ) then: {
+	 parser.next
+	 if( parser.char != ' ' &&  parser.char != '\t'  then: {
+	   break := true nil
+	 } else: {
+	   parser.skiphws
+	   value.add(' ') nil   ; LWS is equivalent to SP 
+	 })
+    } else: {
+      value.add(parser.char)
+      parser.next
 
       nil
-    }
-  }),
+    })
+  })
 
   value.asString
 }
 
-;
+}

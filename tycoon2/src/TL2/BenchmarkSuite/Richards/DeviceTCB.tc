@@ -1,31 +1,30 @@
 class DeviceTCB
 super TaskControlBlock
-metaclass DeviceTCBClass(DeviceTCB)
-
-public
-
+(**)
+meta DeviceTCBClass(DeviceTCB)
+{
 handle :DeviceTaskRec
 
-methods
-
 actionFunc(p :Packet,  noWork :Bool) :List(TaskControlBlock)
+  (* *)
 {
-  let bm = TaskControlBlock.benchmark,
-  noWork
-   ? { handle.pendingPackets.isEmpty
-         ? { bm.wait }
-	 : { let packet = handle.pendingPackets.removeFirst(),
+  bm ::= TaskControlBlock.benchmark
+  if( noWork
+   then: { if( handle.pendingPackets.isEmpty
+         then: { bm.wait }
+	 else: { packet ::= handle.pendingPackets.removeFirst()
 	     bm.queuePacket(packet)
-	   }
+	   })
      }
-   : { handle.pendingPackets.addLast(p),
-       bm.tracing 
-         ? { bm.trace(p.datum, "d") },
+   else: { handle.pendingPackets.addLast(p)
+       if( bm.tracing 
+         then: { bm.trace(p.datum, "d") })
        bm.holdSelf
-     }
-}     
+     })
+}
 
 print() :Void
+  (* *)
 {}
 
-;
+}

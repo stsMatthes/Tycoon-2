@@ -1,3 +1,5 @@
+class HttpProduct
+super Http
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -20,27 +22,30 @@
  A product description from Http/1.1
    version may be nil
 *)
+meta HttpProductClass()
 
-class HttpProduct
-  super Http
+{
+product :String
+  (* *)
+{ _product }
 
-public methods
-
-  product :String { _product }
-  version :String { _version }
+version :String
+  (* *)
+{ _version }
 
 private
 
-  _product :String,
-  _version :String
+_product :String
 
-methods
+_version :String
 
-  init2(p :String, v :String) {
-    super._init,
+init2(p :String, v :String) :Void
+  (* *)
+{
+    super._init
     
-    _product := p,
+    _product := p
     _version := v
   }
 
-;
+}

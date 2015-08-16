@@ -1,33 +1,39 @@
 class FileURLConnection
 super URLConnection
-metaclass AbstractURLConnectionClass(FileURLConnection)
-public methods
-openRead :Input
+(**)
+meta AbstractURLConnectionClass(FileURLConnection)
 {
-  let path = tycoon.os.fs.composePath(List.cons(tycoon.os.fs.rootPath, url.arcs)),
+openRead :Input
+  (* *)
+{
+  path ::= tycoon.os.fs.composePath(List.cons(tycoon.os.fs.rootPath, url.arcs))
   File.openRead(path)
 }
 
-writeTo(content :String)
+writeTo(content :String) :Void
+  (* *)
 {
-  let path = tycoon.os.fs.composePath(List.cons(tycoon.os.fs.rootPath, url.arcs)),
-  mkdirhier(path),
-  let f = File.openWrite(path),
+  path ::= tycoon.os.fs.composePath(List.cons(tycoon.os.fs.rootPath, url.arcs))
+  mkdirhier(path)
+  f ::= File.openWrite(path)
   protect({ f.writeAll(content) }, { f.close })
 }
 
-delete
+delete :Void
+  (* *)
 {
-  let path = tycoon.os.fs.composePath(List.cons(tycoon.os.fs.rootPath, url.arcs)),
+  path ::= tycoon.os.fs.composePath(List.cons(tycoon.os.fs.rootPath, url.arcs))
   File.new(path).remove
 }
 
-basicAuthorization(:String, :String)
+basicAuthorization(:String, :String) :Void
+  (* *)
 {}
 
-private methods
-mkdirhier(path :String)
-(*
+private
+
+mkdirhier(path :String) :Void
+  (*
  * This file is part of the Tycoon-2 system.
  *
  * The Tycoon-2 system is free software; you can redistribute it and/or
@@ -50,16 +56,16 @@ mkdirhier(path :String)
    ensure that the directories beneath it exist
 *)
 {
-  let arcs = tycoon.os.fs.decomposePath(path),
-  let var dir  = arcs.read,
+  arcs ::= tycoon.os.fs.decomposePath(path)
+  dir  ::= arcs.read
 
-  let var arc :String = nil,
-  while({arc := arcs.read, arc != nil}, {
-    let d = Directory.new(dir),
-    !d.exists ? { d.mkDir },
+  arc :String := nil
+  while({arc := arcs.read arc != nil} do: {
+    d ::= Directory.new(dir)
+    if( !d.exists then: { d.mkDir })
 
     dir := tycoon.os.fs.composePath(Array.with2(dir, arc))
   })
 }
 
-;
+}

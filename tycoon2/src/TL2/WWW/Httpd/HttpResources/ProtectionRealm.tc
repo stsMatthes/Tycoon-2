@@ -1,3 +1,5 @@
+class ProtectionRealm
+super Http
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -24,31 +26,29 @@
    A realm is a protection-space, a part of the served document space,
    and defines a method by which it is protected
 *)
+meta AbstractClass
+{
+name :String
+  (* *)
+{ _name }
 
-class ProtectionRealm
-super Http
-metaclass AbstractClass
-
-public methods
-
-  name :String { _name }
-
+challenges(forURL :URL) :List(WWWAuthenticate)
   (* the challenges for an unauthenticated client *)
-  challenges(forURL :URL) :List(WWWAuthenticate) deferred
+deferred
 
+authenticates(request :HttpRequest) :Bool
   (* Does the included authentification authentify the client ? *)
-  authenticates(request :HttpRequest) :Bool deferred
+deferred
 
 private
 
-  _name :String
+_name :String
 
-methods
-
-  _init1(name :String)
-  {
-    super._init,
+_init1(name :String) :Void
+  (* *)
+{
+    super._init
     _name := name
   }
-  
-;
+
+}

@@ -1,44 +1,52 @@
 class URLConnection
 super WWW
-metaclass AbstractClass
-public methods
+(**)
+meta AbstractClass
+{
 openRead :Input
-  deferred
+  (* *)
+deferred
 
-writeTo(content :String)
-  deferred
+writeTo(content :String) :Void
+  (* *)
+deferred
 
-delete
-  deferred
+delete :Void
+  (* *)
+deferred
 
-basicAuthorization(:String, :String)
-  deferred
-  
+basicAuthorization(:String, :String) :Void
+  (* *)
+deferred
+
 private
+
 url :URL
 
-methods
 ipAddressFromHost :IPAddress
+  (* *)
 {
-  url.host.isNil ? {
+  if( url.host.isNil then: {
     IPAddress.localHost
-  } : {
+  } else: {
     IPAddress.byName(url.host)
-  }
+  })
 }
-  
+
 _init1(u :URL) :Self
+  (* *)
 {
-  _init,
-  url := u,
+  _init
+  url := u
   self
 }
 
 _init3(url :URL, user :String, passwd :String) :Self
+  (* *)
 {
-  _init1(url),
-  basicAuthorization(user, passwd),
+  _init1(url)
+  basicAuthorization(user, passwd)
   self
 }
 
-;
+}

@@ -1,3 +1,5 @@
+class MimeParserError
+super Mime, Exception
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -22,21 +24,16 @@
 
   Author: Matthias Ernst 12/96
 *)
-
-class MimeParserError
-super Mime, Exception
-metaclass MimeParserErrorClass
-
-public
-
+meta MimeParserErrorClass
+{
 message: String
 
-methods
-
-printOn(o :Output) {
-  o.writeAll("MimeParserError("),
-  message.printOn(o),
+printOn(o :Output) :Void
+  (* *)
+{
+  o.writeAll("MimeParserError(")
+  message.printOn(o)
   o.writeAll(")")
 }
 
-;
+}

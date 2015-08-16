@@ -1,3 +1,5 @@
+class URLErrorClass
+super ConcreteClass(URLError)
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -22,18 +24,14 @@
 
   Author: Matthias Ernst 12/96
 *)
-
-class URLErrorClass
-super ConcreteClass(URLError)
-metaclass MetaClass
-
-public methods
-
-new(msg :String): URLError
+meta MetaClass
 {
-  let result = _new,
-  result.message := msg,
+new(msg :String): URLError
+  (* *)
+{
+  result ::= _new
+  result.message := msg
   result
 }
-;
 
+}

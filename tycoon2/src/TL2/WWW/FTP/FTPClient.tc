@@ -1,5 +1,5 @@
 class FTPClient
-
+super FTP
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -24,71 +24,72 @@ A simple and incomplete implementation of a
 File Transfer Protocol (FTP) client
 
 The FTP protocol is specified in RFC 959
-*) 
-   
+*)
+meta FTPClientClass()
 
-super FTP
+{
+server :IPAddress
 
-public
+port :Int
 
-server :IPAddress,
-port :Int,
-user :String,
-password :String,
+user :String
+
+password :String
+
 verbose :Bool
 
-methods
-
-open
+open :Void
   (* open a control connection to the server and
      authenticate ourselves.
      raise IOError if the connection fails,
      or FTPError if the authentication fails.
   *)
 {
-   _control := StreamSocket.new2(server, port),
+   _control := StreamSocket.new2(server, port)
 
    try({
-     _check(220, _readResponse),
+     _check(220, _readResponse)
 
-     (* authenticate: *)
-     let var response = _send("USER " + user),
-     response.code = 331 ? {
+     ; authenticate: 
+     response ::= _send("USER " + user)
+     if( response.code = 331 then: {
        response := _send("PASS " + password)
-     },
+     })
      _check(230, response)
-   }, fun(e :Exception) {
-     try({ _control.close }, fun(:Exception) {}),
+   } else: fun(e :Exception) {
+     try({ _control.close } else: fun(:Exception) {})
      e.raise
    })
 }
 
-retrieve(path :String, handleInput :Fun1(Input, Void))
+retrieve(path :String, handleInput :Fun(:Input):Void) :Void
+  (* *)
 {
   _sendDataPullCommand("RETR " + path, handleInput)
 }
 
-store(path :String, handleOutput :Fun1(Output, Void))
+store(path :String, handleOutput :Fun(:Output):Void) :Void
+  (* *)
 {
   _sendDataPushCommand("STOR " + path, handleOutput)
 }
 
-get(remotePath :String, localFile :File)
+get(remotePath :String, localFile :File) :Void
   (* retrieve the remote file with the given path
      and store it into the given local file
   *)
 {
-  !localFile.isOpen ? {
+  if( !localFile.isOpen then: {
     localFile.openWrite
-  },
+  })
   protect({
       retrieve(remotePath, fun(in :Input) {
-	let buffer = MutableString.new(512),
-	let var n = in.readBuffer(buffer, 0, buffer.size),
-	while({n > 0}, {
-	  localFile.writeBuffer(buffer, 0, n),
+	buffer ::= MutableString.new(512)
+	n ::= in.readBuffer(buffer, 0, buffer.size)
+	while({n > 0} do: {
+	  localFile.writeBuffer(buffer, 0, n)
 	  n := in.readBuffer(buffer, 0, buffer.size)
-	}),
+	})
 	in.close
       })
     }, fun() {
@@ -96,7 +97,7 @@ get(remotePath :String, localFile :File)
   })
 }
 
-put(remotePath :String, localFile :File)
+put(remotePath :String, localFile :File) :Void
   (* store the given local file at the server side
      with the given path.
      the local file may have been opened for writing
@@ -104,173 +105,185 @@ put(remotePath :String, localFile :File)
      otherwise, it is opened here.     
   *)
 {
-  !localFile.isOpen ? {
+  if( !localFile.isOpen then: {
     localFile.openRead
-  },    
+  })    
   protect({
       store(remotePath, fun(out :Output) {
-	let buffer = MutableString.new(512),
-	let var n = localFile.readBuffer(buffer, 0, buffer.size),
-	while({n > 0}, {
-	  out.writeBuffer(buffer, 0, n),
+	buffer ::= MutableString.new(512)
+	n ::= localFile.readBuffer(buffer, 0, buffer.size)
+	while({n > 0} do: {
+	  out.writeBuffer(buffer, 0, n)
 	  n := localFile.readBuffer(buffer, 0, buffer.size)
-	}),
+	})
 	out.close
       })
     }, { localFile.close })
 }
 
-delete(path :String)
+delete(path :String) :Void
+  (* *)
 {
   _checkClass(2, _send("DELE " + path))
 }
 
 currentDirectory :String
+  (* *)
 {
-  let response = _send("PWD"),
-  _checkClass(2, response),
-  let msg = response.msg,
-  let from = msg.locateChar('\"')+1,
-  let to = msg.locateChar1('\"', from),
+  response ::= _send("PWD")
+  _checkClass(2, response)
+  msg ::= response.msg
+  from ::= msg.locateChar('\"')+1
+  to ::= msg.locateChar1('\"', from)
   msg.subString(from, to-from)
 }
 
-changeDirectory(path :String)
+changeDirectory(path :String) :Void
+  (* *)
 {
   _checkClass(2, _send("CWD " + path))
 }
 
-makeDirectory(path :String)
+makeDirectory(path :String) :Void
+  (* *)
 {
   _checkClass(2, _send("MKD " + path))
 }
 
-removeDirectory(path :String)
+removeDirectory(path :String) :Void
+  (* *)
 {
   _checkClass(2, _send("RMD " + path))
 }
 
-list(path :String, handleInput :Fun1(Input, Void))
+list(path :String, handleInput :Fun(:Input):Void) :Void
+  (* *)
 {
   _sendDataPullCommand("LIST " + path, handleInput)
 }
 
-nameList(path :String, handleInput :Fun1(Input, Void))
+nameList(path :String, handleInput :Fun(:Input):Void) :Void
+  (* *)
 {
   _sendDataPullCommand("NLST " + path, handleInput)
 }
 
-binary
+binary :Void
+  (* *)
 {
   _check(200, _send("TYPE I"))
 }
 
-ascii
+ascii :Void
+  (* *)
 {
   _check(200, _send("TYPE A"))
 }
 
-close
+close :Void
+  (* *)
 {
   protect({ _checkClass(2, _send("QUIT")) }, {
-    _control.isNotNil ? {
+    if( _control.isNotNil then: {
       _control.close
-    },
-    _data.isNotNil ? {
+    })
+    if( _data.isNotNil then: {
       _data.close
-    }
+    })
   })
 }
 
 private
 
-_control :StreamSocket,
-_data :StreamSocket,
-_minDataPort :Int,
-_maxDataPort :Int,
+_control :StreamSocket
+
+_data :StreamSocket
+
+_minDataPort :Int
+
+_maxDataPort :Int
+
 _dataPort :Int
 
-methods
-
-_init :Self
-{
-  super._init,
-  self
-}
-
-_sendDataPullCommand(command :String, handleInput :Fun1(Input, Void))
+_sendDataPullCommand(command :String, handleInput :Fun(:Input):Void) :Void
+  (* *)
 {
   _sendDataCommand(command, fun(dataConnection :StreamSocket) {
     handleInput[dataConnection]
   })  
 }
 
-_sendDataPushCommand(command :String, handleOutput :Fun1(Output, Void))
+_sendDataPushCommand(command :String, handleOutput :Fun(:Output):Void) :Void
+  (* *)
 {
   _sendDataCommand(command, fun(dataConnection :StreamSocket) {
     handleOutput[dataConnection]
   })  
 }
 
-_sendDataCommand(command :String, transmit :Fun1(StreamSocket, Void))
+_sendDataCommand(command :String, transmit :Fun(:StreamSocket):Void) :Void
+  (* *)
 {
-  let myIPAddr = IPAddress.localHost,
-  let s = ServerSocket.new(myIPAddr, 0, 1),
-  let ephemeralPort = s.port,
-  let sb = StringBuilderOutput.new,
+  myIPAddr ::= IPAddress.localHost
+  s ::= ServerSocket.new(myIPAddr, 0, 1)
+  ephemeralPort ::= s.port
+  sb ::= StringBuilderOutput.new
   sb << myIPAddr.bytes[0] << "," <<
 	myIPAddr.bytes[1] << "," <<
 	myIPAddr.bytes[2] << "," <<
 	myIPAddr.bytes[3] << "," <<
 	(ephemeralPort / 256) << "," <<
-	(ephemeralPort % 256),
-  let arg = sb.contents,
+	(ephemeralPort % 256)
+  arg ::= sb.contents
 
-  _checkClass(2, _send("PORT " + arg)),
+  _checkClass(2, _send("PORT " + arg))
 
-  _checkClass(1, _send(command)),
+  _checkClass(1, _send(command))
   
-  _data := s.accept,
+  _data := s.accept
 
   protect({
-     transmit[_data],
+     transmit[_data]
      _checkClass(2, _readResponse)
    }, {
-     s.close,
-     _data.isOpen ? {
+     s.close
+     if( _data.isOpen then: {
        _data.close
-     },
+     })
      _data := nil
   })
 }
-    
+
 _send(command :String) :FTPResponse
+  (* *)
 {
-  verbose ? {
+  if( verbose then: {
     tycoon.stdout << command << '\n'
-  },
-  _control << command + "\r\n",
+  })
+  _control << command + "\r\n"
   _readResponse
 }
 
 _readResponse :FTPResponse
+  (* *)
 {
   FTPResponse.fromInput(_control)
 }
 
-
-_check(expected :Int, response :FTPResponse)
+_check(expected :Int, response :FTPResponse) :Void
+  (* *)
 {
-  response.code != expected ? {
+  if( response.code != expected then: {
     FTPError.new(response).raise
-  }
+  })
 }
 
-_checkClass(expectedClass :Int, response :FTPResponse)
+_checkClass(expectedClass :Int, response :FTPResponse) :Void
+  (* *)
 {
-  (response.code / 100) != expectedClass ? {
+  if( (response.code / 100) != expectedClass then: {
     FTPError.new(response).raise
-  }
+  })
 }
 
-;
+}

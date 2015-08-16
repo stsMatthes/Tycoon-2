@@ -1,19 +1,19 @@
 class WWWAuthenticateClass
 super ConcreteClass(WWWAuthenticate)
-metaclass MetaClass
-
-public methods
-
-new(scheme :String, realm :String, parameters :Dictionary(String, String)) :WWWAuthenticate
+(**)
+meta MetaClass
 {
-  let auth = _new,
-  auth._init3(scheme, realm, parameters),
+new(scheme :String, realm :String, parameters :Dictionary(String, String)) :WWWAuthenticate
+  (* *)
+{
+  auth ::= _new
+  auth._init3(scheme, realm, parameters)
 
   auth
 }
 
-
-(*
+basicScheme :String
+  (*
  * This file is part of the Tycoon-2 system.
  *
  * The Tycoon-2 system is free software; you can redistribute it and/or
@@ -33,11 +33,12 @@ new(scheme :String, realm :String, parameters :Dictionary(String, String)) :WWWA
  * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
  *
  The basic scheme does not take additional parameters *)
-basicScheme :String { "Basic" }
+{ "Basic" }
 
 basic(realm :String) :WWWAuthenticate
+  (* *)
 {
   new(basicScheme, realm, nil)
 }
 
-;
+}

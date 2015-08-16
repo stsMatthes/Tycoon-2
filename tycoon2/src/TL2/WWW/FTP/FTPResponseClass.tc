@@ -1,53 +1,123 @@
 class FTPResponseClass
-
 super ConcreteClass(FTPResponse)
-
-metaclass MetaClass
-
-public methods
-
-new(code :Int, msg :String) :FTPResponse
-{ let instance = _new,
-  instance.code := code,
-  instance.msg := msg,
-  instance._init
-}
-
-
-fromInput(in :Input) :FTPResponse
+(**)
+meta MetaClass
 {
-  let instance = new(nil, nil),
-  instance.parse(in),
+new(code :Int, msg :String) :FTPResponse
+  (* *)
+{ instance ::= _new
+  instance.code := code
+  instance.msg := msg
+  instance._init
   instance
 }
 
-FILE_STATUS_OK			:Int { 150 }
-OK				:Int { 200 }
-SYSTEM_STATUS			:Int { 211 }
-DIRECTORY_STATUS		:Int { 212 }
-FILE_STATUS			:Int { 213 }
-SERVICE_READY			:Int { 220 }
-SERVICE_CLOSING			:Int { 221 }
-TRANSFER_COMPLETED		:Int { 226 }
-PASSIVE_MODE			:Int { 227 }
-USER_LOGGED_IN			:Int { 230 }
-FILE_ACTION_COMPLETED		:Int { 250 }
-PATHNAME_CREATED		:Int { 257 }
+fromInput(in :Input) :FTPResponse
+  (* *)
+{
+  instance ::= new(nil, nil)
+  instance.parse(in)
+  instance
+}
 
-USER_NAME_OK			:Int { 331 }
-NEED_ACCOUNT_FOR_LOGIN		:Int { 332 }
+FILE_STATUS_OK			:Int
+  (* *)
+{ 150 }
 
-SERVICE_UNAVAILABLE		:Int { 421 }
-CANNOT_OPEN			:Int { 425 }
-TRANSFER_ABORTED		:Int { 426 }
-ABORTED_ON_ERROR		:Int { 451 }
-INSUFFFICIANT_STORAGE_SPACE	:Int { 452 }
+OK				:Int
+  (* *)
+{ 200 }
 
-ACTION_NOT_TAKEN		:Int { 550 }
-NOT_LOGGED_IN			:Int { 530 }
-NEED_ACCOUNT_FOR_STORING	:Int { 532 }
-ABORTED				:Int { 551 }
-STORAGE_ALLOCATION_EXCEEDED	:Int { 552 }
-FILENAME_NOT_ALLOWED		:Int { 553 }
+SYSTEM_STATUS			:Int
+  (* *)
+{ 211 }
 
-;
+DIRECTORY_STATUS		:Int
+  (* *)
+{ 212 }
+
+FILE_STATUS			:Int
+  (* *)
+{ 213 }
+
+SERVICE_READY			:Int
+  (* *)
+{ 220 }
+
+SERVICE_CLOSING			:Int
+  (* *)
+{ 221 }
+
+TRANSFER_COMPLETED		:Int
+  (* *)
+{ 226 }
+
+PASSIVE_MODE			:Int
+  (* *)
+{ 227 }
+
+USER_LOGGED_IN			:Int
+  (* *)
+{ 230 }
+
+FILE_ACTION_COMPLETED		:Int
+  (* *)
+{ 250 }
+
+PATHNAME_CREATED		:Int
+  (* *)
+{ 257 }
+
+USER_NAME_OK			:Int
+  (* *)
+{ 331 }
+
+NEED_ACCOUNT_FOR_LOGIN		:Int
+  (* *)
+{ 332 }
+
+SERVICE_UNAVAILABLE		:Int
+  (* *)
+{ 421 }
+
+CANNOT_OPEN			:Int
+  (* *)
+{ 425 }
+
+TRANSFER_ABORTED		:Int
+  (* *)
+{ 426 }
+
+ABORTED_ON_ERROR		:Int
+  (* *)
+{ 451 }
+
+INSUFFFICIANT_STORAGE_SPACE	:Int
+  (* *)
+{ 452 }
+
+ACTION_NOT_TAKEN		:Int
+  (* *)
+{ 550 }
+
+NOT_LOGGED_IN			:Int
+  (* *)
+{ 530 }
+
+NEED_ACCOUNT_FOR_STORING	:Int
+  (* *)
+{ 532 }
+
+ABORTED				:Int
+  (* *)
+{ 551 }
+
+STORAGE_ALLOCATION_EXCEEDED	:Int
+  (* *)
+{ 552 }
+
+FILENAME_NOT_ALLOWED		:Int
+  (* *)
+{ 553 }
+
+}

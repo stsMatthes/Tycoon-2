@@ -1,12 +1,17 @@
 class HttpAccept
 super Http
+(**)
+meta HttpAcceptClass()
 
-public
+{
+type    :String
 
-type    :String,
-subtype :String,
-parameters :List(Pair(String, String)),
-q       :Real,
+subtype :String
+
+parameters :List(Pair(String, String))
+
+q       :Real
+
 mxb     :Real
 
-;
+}

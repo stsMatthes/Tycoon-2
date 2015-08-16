@@ -1,3 +1,6 @@
+class PersonalizeStmlProcessor(Client <:Object,
+  Application <:PersonalizeStmlApplication(Client, Application))
+super PersonalizeStml, StmlProcessor(Application)
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -23,100 +26,89 @@ Author:  Gerd Bremer
 Date:    22-Jul-1997
 Updates: (Date)	  (Name)	(Description)
 *)
-
-class PersonalizeStmlProcessor(Client <:Object,
-  Application <:PersonalizeStmlApplication(Client, Application))
-
-super PersonalizeStml, StmlProcessor(Application)
-
-metaclass StmlProcessorClass(Application, PersonalizeStmlProcessor(Client, Application))
-
-public
-
+meta StmlProcessorClass(Application, PersonalizeStmlProcessor(Client, Application))
+{
 client :Client
-(* before processing and if not found in database, this value is nil.
+  (* before processing and if not found in database, this value is nil.
    stml page MUST create a new client in this case.
-*) 
+*)
 
-methods
-
-process
-  {
-    client := _client(request),
-    super.process,    (* evaluate stml pages *)
-    _addCookieHeader  (* add cookie header *) 
+process :Void
+  (* *)
+{
+    client := _client(request)
+    super.process    ; evaluate stml pages 
+    _addCookieHeader  ; add cookie header 
   }
 
 private
 
 _cookieName :String
 
-methods
-
 _init :Self
-  {
-    super._init,
-    _cookieName := "TYCOON_PERSONALIZER",
+  (* *)
+{
+    super._init
+    _cookieName := "TYCOON_PERSONALIZER"
     self
   }
 
-  
 _client(request :HttpRequest) :Client
   (* inpsect the request and detect the client id.
      answer nil if no client id can be found
    *)
-  {
-    let var client :Client = nil,
+{
+    client :Client := nil
    
-    (* cookie? *)
-    request.hasCookies ?
+    ; cookie? 
+    if( request.hasCookies then:
       {
-        let cookie = request.cookies.detect(fun(cookie :HttpCookie)
-	  { cookie.name = _cookieName }),
-        cookie.isNotNil ?
+        cookie ::= request.cookies.detect(fun(cookie :HttpCookie)
+	  { cookie.name = _cookieName })
+        if( cookie.isNotNil then:
 	  {
-	    client := application.client(cookie.value),
-	    client.isNotNil ?
-	      { tycoon.stdout << "Client id: " + application.clientId(client).printString + "\n" }
-	  } :
-	  { tycoon.stdout << "Client id: unknown or wrong cookie\n" }
-      } :
+	    client := application.client(cookie.value)
+	    if( client.isNotNil then:
+	      { tycoon.stdout << "Client id: " + application.clientId(client).printString + "\n" })
+	  } else:
+	  { tycoon.stdout << "Client id: unknown or wrong cookie\n" })
+      } else:
       {
-        client := nil,
+        client := nil
 	tycoon.stdout << "Client id: no cookie\n"
-      },
+      })
     
-(* ## in addition do authentification
-    client.isNil ?
-      {
-        ...  
-      },
-*)    
+; ## in addition do authentification
+;    client.isNil ?
+;      {
+;        ...  
+;      },
+;
     client
   }
 
-
 _plusOneYear(date :Date) :Date
-  {
-    let time = date.asTime + (365 * Date.secondsPerDay).asLong,
+  (* *)
+{
+    time ::= date.asTime + (365 * Date.secondsPerDay).asLong
     Date.fromTime(time)
   }
 
-  
 _addCookieHeader :Void
-  { client.isNotNil && { !request.hasCookies } ?
+  (* *)
+{ if( client.isNotNil &&  !request.hasCookies  then:
       {
-        let name = _cookieName,
-	let value = application.clientId(client),
-	let expires = _plusOneYear(Date.now),
-	let domain = nil,
-	let path = application.path,
-	let secure = false,
-        let cookie = HttpSetCookie.new(name, value, expires, domain, path, secure),
-	response.setCookies := List.with1(cookie),
+        name ::= _cookieName
+	value ::= application.clientId(client)
+	expires ::= _plusOneYear(Date.now)
+	domain ::= nil
+	path ::= application.path
+	secure ::= false
+        cookie ::= HttpSetCookie.new(name, value, expires, domain, path, secure)
+	response.setCookies := List.with1(cookie)
 	client := nil
-      } :
-      { nil }
+      } else:
+      { nil })
   }
 
-;
+}

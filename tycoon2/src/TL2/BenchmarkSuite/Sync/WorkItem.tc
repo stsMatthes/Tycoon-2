@@ -1,21 +1,24 @@
 class WorkItem(T <: Object)
 super Object
-metaclass WorkItemClass(T)
-
-public methods
-
+(**)
+meta WorkItemClass(T)
+{
 eval :Void
+  (* *)
 {
   _result := _process[]
 }
 
 result :T
+  (* *)
 {
   _result
 }
 
 private
 
-_process :Fun0(T),
+_process :Fun():T
+
 _result :T
 
+}

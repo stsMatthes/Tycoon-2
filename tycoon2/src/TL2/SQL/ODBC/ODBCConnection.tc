@@ -1,3 +1,5 @@
+class ODBCConnection
+super SQLConnection
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -30,27 +32,20 @@ Updates: (Date)		(Name)	(Description)
 				SQL-types and ODBC-standard-parameters with
 				integer-constants defined in class ODBC
 *)
-
-class ODBCConnection
-
-super SQLConnection
-
-metaclass SimpleConcreteClass(ODBCConnection)
-
-public methods
-
+meta SimpleConcreteClass(ODBCConnection)
+{
 newStatement():ODBCStatement
   (* Creates ODBCStatement,
      returns nil if connection is closed
    *)
 {
-  !isClosed
-  ? {
-      let s=ODBCStatement.new(),
-      s.open(_hdbc,self),
+  if( !isClosed
+  then: {
+      s::=ODBCStatement.new()
+      s.open(_hdbc,self)
       s
     }
-  : {nil}
+  else: {nil})
 }
 
 setAutoCommit(on:Bool):Void
@@ -62,69 +57,71 @@ setAutoCommit(on:Bool):Void
      raises ODBCError.
    *)
 {
-  let autoCommitMode = (on ? {1} : {0}),
-  (odbc.SQLSetConnectOption(_hdbc,102,autoCommitMode) != 0)
-  ? {ODBCError.new(odbc.NULL,_hdbc,odbc.NULL).raise}
+  autoCommitMode ::= if( on then: {1} else: {0})
+  if( (odbc.SQLSetConnectOption(_hdbc,102,autoCommitMode) != 0)
+  then: {ODBCError.new(odbc.NULL,_hdbc,odbc.NULL).raise})
 }
 
 commit():Void
+  (* *)
 {
-  (odbc.SQLTransact(_henv,_hdbc,0) != 0)
-  ? {ODBCError.new(_henv,_hdbc,odbc.NULL).raise}
+  if( (odbc.SQLTransact(_henv,_hdbc,0) != 0)
+  then: {ODBCError.new(_henv,_hdbc,odbc.NULL).raise})
 }
 
 rollback():Void
+  (* *)
 {
-  (odbc.SQLTransact(_henv,_hdbc,1) != 0)
-  ? {ODBCError.new(_henv,_hdbc,odbc.NULL).raise}
+  if( (odbc.SQLTransact(_henv,_hdbc,1) != 0)
+  then: {ODBCError.new(_henv,_hdbc,odbc.NULL).raise})
 }
 
-private methods
+private
 
 _connect(database:String,user:String,password:String):Void
+  (* *)
 {
-    let var h=CIntHolder.new(),
-    (odbc.SQLAllocEnv(h.handle) = 0) ? {_henv:=h.value32}
-                                     : {_henv:=nil},
-    (odbc.SQLAllocConnect(_henv,h.handle) = 0)
-    ? {_hdbc:=h.value32,
+    h::=CIntHolder.new()
+    if( (odbc.SQLAllocEnv(h.handle) = 0) then: {_henv:=h.value32}
+                                     else: {_henv:=nil})
+    if( (odbc.SQLAllocConnect(_henv,h.handle) = 0)
+    then: {_hdbc:=h.value32
        h.close()}
-    : {_hdbc:=nil,
-       let e=ODBCError.new(_henv,odbc.NULL,odbc.NULL),
-       odbc.SQLFreeEnv(_henv),
-       _henv:=nil,
-       h.close(),
-       e.raise},
-    (odbc.SQLConnect(_hdbc,database,odbc.SQL_NTS,
+    else: {_hdbc:=nil
+       e::=ODBCError.new(_henv,odbc.NULL,odbc.NULL)
+       odbc.SQLFreeEnv(_henv)
+       _henv:=nil
+       h.close()
+       e.raise})
+    if( (odbc.SQLConnect(_hdbc,database,odbc.SQL_NTS,
                            user,odbc.SQL_NTS,
 			   password,odbc.SQL_NTS) != 0)
-  ? {let e = ODBCError.new(odbc.NULL,_hdbc,odbc.NULL),
-     odbc.SQLFreeConnect(_hdbc),_hdbc:=nil,
-     odbc.SQLFreeEnv(_henv),    _henv:=nil,
-     e.raise}
+  then: {e ::= ODBCError.new(odbc.NULL,_hdbc,odbc.NULL)
+     odbc.SQLFreeConnect(_hdbc)_hdbc:=nil
+     odbc.SQLFreeEnv(_henv)    _henv:=nil
+     e.raise})
 }
 
 _open(url:URL):Void
+  (* *)
 {
-  let var database = "",
-  let var user = "",
-  let var password = "",
-  url.arcs.size > 1 ? { database := url.arcs[1] }, 
-  url.parameters.includesKey("user")
-  ? { user := url.parameters["user"].head },
-  url.parameters.includesKey("password") 
-  ? { password := url.parameters["password"].head },
+  database ::= ""
+  user ::= ""
+  password ::= ""
+  if( url.arcs.size > 1 then: { database := url.arcs[1] }) 
+  if( url.parameters.includesKey("user")
+  then: { user := url.parameters["user"].head })
+  if( url.parameters.includesKey("password") 
+  then: { password := url.parameters["password"].head })
   _connect(database,user,password)
 }
 
 _releaseHandles():Void
+  (* *)
 {
-  odbc.SQLDisconnect(_hdbc),
-  odbc.SQLFreeConnect(_hdbc),
+  odbc.SQLDisconnect(_hdbc)
+  odbc.SQLFreeConnect(_hdbc)
   odbc.SQLFreeEnv(_henv)
 }
-		 
-;
 
-
-
+}

@@ -1,24 +1,22 @@
 class OCIErrorClass
-
 super ConcreteClass(OCIError)
-
-metaclass MetaClass
-
-public methods
-
-new(lda:Int32, dataArea:Int32):OCIError
+(**)
+meta MetaClass
 {
-  let i=_new(),
-  i.errorCode:=tycoon.rts.tymem_peekShort(dataArea,12),
-  i.errorMessage := oci.errorDictionary.includesKey(i.errorCode)
-                    ? {oci.errorDictionary[i.errorCode]}
-		    : {let buf = CStringHolder.new(1000),
-                       oci.oerhms(lda,i.errorCode,buf.handle,1000),
-                       let message = buf.value,
-                       buf.close,
+new(lda:Int32, dataArea:Int32):OCIError
+  (* *)
+{
+  i::=_new()
+  i.errorCode:=tycoon.tycoonOS.memory_peekShort(dataArea,12)
+  i.errorMessage := if( oci.errorDictionary.includesKey(i.errorCode)
+                    then: {oci.errorDictionary[i.errorCode]}
+		    else: {buf ::= CStringHolder.new(1000)
+                       oci.oerhms(lda,i.errorCode,buf.handle,1000)
+                       message ::= buf.value
+                       buf.close
 		       message
-		      },
+		      })
   i
 }
-;
 
+}

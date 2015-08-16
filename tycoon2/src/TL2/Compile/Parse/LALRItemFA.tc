@@ -70,11 +70,11 @@ initFromLR0ItemFA(lr0m: LR0ItemFA) :Void
       }
     )
     lr1state.items :=
-      Set.fromReader(
-        lr0state.items.map(fun(item :Item) {
+      Set.fromContainerWithMap(
+        lr0state.items,
+	fun(item :Item) {
 	  LR1Item.fromItem(item)
 	})
-      )
   })
   progress.finish
 }
@@ -193,8 +193,8 @@ computeCondensation :Void
     propaGraph.condensation(Graph, partition, 
       fun(r :Container(Node(LR1Item))) {
 	PropagateBlock.new(
-	  Array.fromReader(
-	    r.map(fun(n :Node(LR1Item)){n.value})))
+	  MutableArray.fromContainerWithMap(r,
+	    fun(n :Node(LR1Item)){n.value}))
       }
     )
   blockGraph.statistics(tycoon.stdout)

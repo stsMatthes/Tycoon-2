@@ -21,12 +21,12 @@
 /*
   Copyright (c) 1996 Higher-Order GmbH, Hamburg. All rights reserved.
 
-  tvm.c 1.53 97/12/08  Andreas Gawecki, Marc Weikard
+  $File: //depot/tycoon2/stsmain/tycoon2/src/tm/tvm.c $ $Revision: #3 $ $Date: 2003/10/01 $  Andreas Gawecki, Marc Weikard
 
   component and debugging extensions (c) 1998 Axel Wienberg
 
   Tycoon Virtual Machine
-
+  
 */
 
 #include <stdio.h>
@@ -168,7 +168,7 @@ static void updateCache(void)
 /* method lookup: */
 
 static tyc_Method * lookup(tyc_MethodDictionary * pDictionary,
-                           tyc_Symbol pSelector)
+			   tyc_Symbol pSelector)
 {
   tyc_Symbol * pKeys = pDictionary->apszKeys;
   Word wHash = tsp_hash(pSelector);
@@ -202,8 +202,8 @@ tyc_Method * tvm_methodLookup(tyc_SelectorId idSelector, tyc_ClassId idClass)
 }
 
 tyc_Method * tvm_methodSuperLookup(tyc_SelectorId idSelector,
-                                   tyc_ClassId idClass,
-                                   tyc_Class * pSuperClass)
+				   tyc_ClassId idClass,
+				   tyc_Class * pSuperClass)
 {
   Bool fStart = FALSE, fSelf = FALSE;
   tyc_Class * pClass = tyc_CLASS(idClass);
@@ -214,18 +214,18 @@ tyc_Method * tvm_methodSuperLookup(tyc_SelectorId idSelector,
     if(!fStart) {
       /* skip dictionaries until superclass is found */
       if(fSelf) {
-        if(pDictionary->pClass != pSuperClass)
-          fStart = TRUE;
+	if(pDictionary->pClass != pSuperClass)
+	  fStart = TRUE;
       }
       else {
-        if(pDictionary->pClass == pSuperClass)
-          fSelf = TRUE;
+	if(pDictionary->pClass == pSuperClass)
+	  fSelf = TRUE;
       }
     }
     if(fStart) {
       tyc_Method * pMethod = lookup(pDictionary, pSelector);
       if(pMethod) {
-        return pMethod;
+	return pMethod;
       }
     }
     pList = pList->pTail;
@@ -527,8 +527,8 @@ void tvm_raise(void * pException)
   tyc_StackFrame * fp;
   tyc_Stack sp;
   tyc_Thread * pThread;
-
-  FETCH_THREAD();
+ 
+  FETCH_THREAD();  
   LOAD_REGS();
   CLEAR_PAST_EVENT(pThread);
 
@@ -543,17 +543,17 @@ void tvm_raise(void * pException)
     if (pCatchFrame) {
       Word nFrames = tsp_size(pCatchFrame) / sizeof(tyc_CatchFrame);
       for (; nFrames; nFrames--, pCatchFrame++)
-        if (pCatchFrame->ipFrom <= (ip - fp->pByteCode) &&
-            pCatchFrame->ipTo > (ip - fp->pByteCode)) {
-          sp = ((tsp_OID*) fp) - pCatchFrame->cwLocals;
-          ip = fp->pByteCode;
-          ip += pCatchFrame->ip;
-          /* drop exception package */
-          *--sp = pException;
+	if (pCatchFrame->ipFrom <= (ip - fp->pByteCode) &&
+	    pCatchFrame->ipTo > (ip - fp->pByteCode)) {
+	  sp = ((tsp_OID*) fp) - pCatchFrame->cwLocals;
+	  ip = fp->pByteCode;
+	  ip += pCatchFrame->ip;		
+	  /* drop exception package */
+	  *--sp = pException;        
 	  /* continue with handler code */
-          SAVE_REGS();
-          longjmp(tmthread_currentJmpBuf(), 1);
-        }
+	  SAVE_REGS();
+	  longjmp(tmthread_currentJmpBuf(), 1);
+	}
     }
 #ifdef tvm_TRACE
     /* no exception handler found in this stackframe,
@@ -578,7 +578,7 @@ void tvm_raise(void * pException)
   sp = ((tsp_OID*) fp);
   /* no exception handler found */
   fprintf(stderr,"\nTVM error: uncaught exception %s.\n",
-                 tyc_CLASS(tsp_classId(pException))->pszName);
+	         tyc_CLASS(tsp_classId(pException))->pszName);
   tsp_setPrintDepth(2, 5);
   tsp_printObject(pException);
   tmdebug_backTrace(pThread, stdout);
@@ -594,12 +594,12 @@ void tvm_raise(void * pException)
 #define RAISE_DLLOpenError(p) \
   raise1(tyc_ClassId_DLLOpenError, p)
 #define RAISE_DivisionByZero(p) \
-  raise1(tyc_ClassId_DivisionByZero, p)
+  raise1(tyc_ClassId_DivisionByZero, p) 
 #define RAISE_FetchBoundComponent(p) \
   raise1(tyc_ClassId_FetchBoundComponent, p)
 #define RAISE_WriteToImmutable(p) \
   raise1(tyc_ClassId_WriteToImmutable, p)
-  
+
 #define RAISE_TypeError(p, a) \
   raise2(tyc_ClassId_TypeError, p, tyc_CLASS(a))
 #define RAISE_DoesNotUnderstand(p, a) \
@@ -615,7 +615,7 @@ void tvm_raise(void * pException)
 
 #define RAISE_WrongSignature(p, a, b, c) \
   raise4(tyc_ClassId_WrongSignature, p, a, b, c)
-  
+
 
 static void raise1(tsp_ClassId wClassId, tsp_OID p1)
 /* raise generic exception with one argument */
@@ -633,7 +633,7 @@ static void raise1(tsp_ClassId wClassId, tsp_OID p1)
 
 static void raise2(tsp_ClassId wClassId, tsp_OID p1, tsp_OID p2)
 /* raise generic exception with two arguments */
-{
+{ 
   tsp_OID * pError;
   /* save arguments on local OID stack */
   tmthread_pushStack(p1);
@@ -667,8 +667,9 @@ static void raise4(tsp_ClassId wClassId, tsp_OID p1, tsp_OID p2, tsp_OID p3, tsp
   tvm_raise(pError);
 }
 
+
 void  tvm_raiseTypeError(tsp_OID p, tsp_ClassId id)
-{
+{ 
   RAISE_TypeError(p, id);
 }
 
@@ -745,7 +746,7 @@ static tsp_OID run(void)
   register tyc_Stack sp;
   register tyc_StackFrame * fp;
 
-  FETCH_THREAD();
+  FETCH_THREAD();  
   LOAD_REGS();
 
   for(;;)
@@ -761,7 +762,7 @@ static tsp_OID run(void)
       NULL
     };
     #undef TVM_OP
-
+    
     #define METHODLABEL(l) l
 
     #define BLABEL(l) label_ ## l
@@ -784,32 +785,32 @@ static tsp_OID run(void)
 
     #define BLABEL(l) case l
     #define BNEXT()   break
-
+    
     switch(ip[0])
 #endif
       {
 
       /* load operands */
       LABEL(tvm_Op_global):
-        *--sp = fp->pReceiver[ip[1]];
-        ip += 2;
-        NEXT();
+	*--sp = fp->pReceiver[ip[1]];
+	ip += 2;
+	NEXT();
       LABEL(tvm_Op_literal8):
-        *--sp = fp->pCode->pLiterals[ip[1]];
-        ip += 2;
-        NEXT();
+	*--sp = fp->pCode->pLiterals[ip[1]];
+	ip += 2;
+	NEXT();
       LABEL(tvm_Op_literal16):
-        {
-        FETCH_SHORT(value);
-        *--sp = fp->pCode->pLiterals[value];
-        }
-        ip += 3;
-        NEXT();
+	{
+	FETCH_SHORT(value);
+	*--sp = fp->pCode->pLiterals[value];
+	}
+	ip += 3;
+	NEXT();
       LABEL(tvm_Op_arg):
       LABEL(tvm_Op_referenceArgument):
-        *--sp = ((tsp_OID*)(fp + 1))[ip[1]];
-        ip += 2;
-        NEXT();
+	*--sp = ((tsp_OID*)(fp + 1))[ip[1]];
+	ip += 2;
+	NEXT();
       LABEL(tvm_Op_takeFromArgument):
         {
 	int argidx = ip[1];
@@ -823,9 +824,9 @@ static tsp_OID run(void)
 	NEXT();
       LABEL(tvm_Op_local):
       LABEL(tvm_Op_referenceLocal):
-        *--sp = ((tsp_OID*)fp)[-(ip[1])];
-        ip += 2;
-        NEXT();
+	*--sp = ((tsp_OID*)fp)[-(ip[1])];
+	ip += 2;
+	NEXT();
       LABEL(tvm_Op_takeFromLocal):
 	{
 	int idx = ip[1];
@@ -838,54 +839,54 @@ static tsp_OID run(void)
 	ip += 2;
 	NEXT();
       LABEL(tvm_Op_char):
-        *--sp = (tsp_OID)tyc_boxChar(ip[1]);
-        ip += 2;
-        NEXT();
+	*--sp = (tsp_OID)tyc_boxChar(ip[1]);
+	ip += 2;
+	NEXT();
       LABEL(tvm_Op_byte):
-        *--sp = tyc_TAG_INT((signed char)ip[1]);
-        ip += 2;
-        NEXT();
+	*--sp = tyc_TAG_INT((signed char)ip[1]);
+	ip += 2;
+	NEXT();
       LABEL(tvm_Op_short):
-        {
-        FETCH_SHORT(value);
-        *--sp = tyc_TAG_INT(value);
-        }
-        ip += 3;
-        NEXT();
+	{
+	FETCH_SHORT(value);
+	*--sp = tyc_TAG_INT(value);
+	}
+	ip += 3;
+	NEXT();
       LABEL(tvm_Op_true):
-        *--sp = tyc_TRUE;
-        ip++;
-        NEXT();
+	*--sp = tyc_TRUE;
+	ip++;
+	NEXT();
       LABEL(tvm_Op_false):
-        *--sp = tyc_FALSE;
-        ip++;
-        NEXT();
+	*--sp = tyc_FALSE;
+	ip++;
+	NEXT();
       LABEL(tvm_Op_nil):
 	*--sp = tyc_NIL;
-        ip++;
-        NEXT();
+	ip++;
+	NEXT();
       LABEL(tvm_Op_minusOne):
-        *--sp = tyc_TAG_INT(-1);
-        ip++;
-        NEXT();
+	*--sp = tyc_TAG_INT(-1);
+	ip++;
+	NEXT();
       LABEL(tvm_Op_zero):
-        *--sp = tyc_TAG_INT(0);
-        ip++;
-        NEXT();
+	*--sp = tyc_TAG_INT(0);
+	ip++;
+	NEXT();
       LABEL(tvm_Op_one):
-        *--sp = tyc_TAG_INT(1);
-        ip++;
-        NEXT();
+	*--sp = tyc_TAG_INT(1);
+	ip++;
+	NEXT();
       LABEL(tvm_Op_two):
-        *--sp = tyc_TAG_INT(2);
-        ip++;
-        NEXT();
+	*--sp = tyc_TAG_INT(2);
+	ip++;
+	NEXT();
 
       /* store operands */
       LABEL(tvm_Op_storeLocal):
-        ((tsp_OID*)fp)[-(ip[1])] = *sp;
-        ip += 2;
-        NEXT();
+	((tsp_OID*)fp)[-(ip[1])] = *sp;
+	ip += 2;
+	NEXT();
       LABEL(tvm_Op_moveToLocal):
 	/* superComponent is not modified */
 	if(!tyc_IS_NIL(*sp))
@@ -897,17 +898,17 @@ static tsp_OID run(void)
 
       /* access captured mutable bindings */
       LABEL(tvm_Op_cellNew):
-        {
-        tsp_OID * pCell;
-        SAVE_REGS();
+	{
+	tsp_OID * pCell;
+	SAVE_REGS();
 	pCell = tsp_newArray(tyc_ClassId_MutableArray, 1);
-        FETCH_THREAD();
-        LOAD_REGS();
-        *pCell = *sp;
-        *sp = pCell;
-        }
-        ip++;
-        NEXT();
+	FETCH_THREAD();
+	LOAD_REGS();
+	*pCell = *sp;
+	*sp = pCell;
+	}
+	ip++;
+	NEXT();
       LABEL(tvm_Op_componentCellNew):
 	{
 	tsp_OID * pCell;
@@ -923,9 +924,9 @@ static tsp_OID run(void)
 	NEXT();
       LABEL(tvm_Op_cellLoad):
       LABEL(tvm_Op_cellReference):
-        *sp = *((tsp_OID*)*sp);
-        ip++;
-        NEXT();
+	*sp = *((tsp_OID*)*sp);
+	ip++;
+	NEXT();
       LABEL(tvm_Op_takeFromCell):
 	{
 	tsp_OID * cell = (tsp_OID*)*sp;
@@ -934,12 +935,12 @@ static tsp_OID run(void)
 	ip++;
 	NEXT();
       LABEL(tvm_Op_cellStore):
-        {
-        tsp_OID * pCell = *sp++;
-        *pCell = *sp;
-        }
-        ip++;
-        NEXT();
+	{
+	tsp_OID * pCell = *sp++;
+	*pCell = *sp;
+	}
+	ip++;
+	NEXT();
       LABEL(tvm_Op_moveToCell):
 	{
 	tsp_OID * pCell = *sp++;
@@ -950,10 +951,10 @@ static tsp_OID run(void)
 	}
 	ip++;
 	NEXT();
-
+	
       /* control */
       LABEL(tvm_Op_return):
-        {
+	{
 	tsp_OID v;
 #ifdef tvm_TRACE
 	if(debug_interesting(pThread, TRACE_RETURN_BIT,
@@ -967,92 +968,92 @@ static tsp_OID run(void)
 	}
 #endif
 	v = *sp;
-        sp = ((tsp_OID*)(fp + 1)) + fp->pCode->method.nArgs;
-        ip = fp->parent.ip;
-        fp = fp->parent.fp;
-        *sp = v;
-        }
-        ip += 3;
-        NEXT();
+	sp = ((tsp_OID*)(fp + 1)) + fp->pCode->method.nArgs;
+	ip = fp->parent.ip;
+	fp = fp->parent.fp;
+	*sp = v;
+	}
+	ip += 3;
+	NEXT();
       {
       register tyc_Bool * bool;
-
+     
       LABEL(tvm_Op_ifTrue8):
-        bool = (tyc_Bool*)*sp++;
-        if(tyc_IS_TRUE(bool)) {
-          ip += (signed char)ip[1];
-          NEXT();
-        }
-        if(tyc_IS_FALSE(bool)) {
-          ip += 2;
-          NEXT();
-        }
-        /* no boolean on stack: raise exception */
+	bool = (tyc_Bool*)*sp++;
+	if(tyc_IS_TRUE(bool)) {
+	  ip += (signed char)ip[1];
+	  NEXT();
+	}
+	if(tyc_IS_FALSE(bool)) {
+	  ip += 2;
+	  NEXT();
+	}
+	/* no boolean on stack: raise exception */
 noBool:
-        {
-        SAVE_REGS();
-        RAISE_MustBeBoolean(bool);
-        }
-        break; /* not reachable */
+	{
+	SAVE_REGS();
+	RAISE_MustBeBoolean(bool);
+	}
+	break; /* not reachable */
       LABEL(tvm_Op_ifTrue16):
-        bool = (tyc_Bool*)*sp++;
-        if(tyc_IS_TRUE(bool)) {
-          FETCH_SHORT(offset);
-          ip += offset;
-          NEXT();
-        }
-        if(tyc_IS_FALSE(bool)) {
-          ip += 3;
-          NEXT();
-        }
-        goto noBool;
+	bool = (tyc_Bool*)*sp++;
+	if(tyc_IS_TRUE(bool)) {
+	  FETCH_SHORT(offset);
+	  ip += offset;
+	  NEXT();
+	}
+	if(tyc_IS_FALSE(bool)) {
+	  ip += 3;
+	  NEXT();
+	}
+	goto noBool;
       LABEL(tvm_Op_ifFalse8):
-        bool = (tyc_Bool*)*sp++;
-        if(tyc_IS_FALSE(bool)) {
-          ip += (signed char)ip[1];
-          NEXT();
-        }
-        if(tyc_IS_TRUE(bool)) {
-          ip += 2;
-          NEXT();
-        }
-        goto noBool;
+	bool = (tyc_Bool*)*sp++;
+	if(tyc_IS_FALSE(bool)) {
+	  ip += (signed char)ip[1];
+	  NEXT();
+	}
+	if(tyc_IS_TRUE(bool)) {
+	  ip += 2;
+	  NEXT();
+	}
+	goto noBool;
       LABEL(tvm_Op_ifFalse16):
-        bool = (tyc_Bool*)*sp++;
-        if(tyc_IS_FALSE(bool)) {
-          FETCH_SHORT(offset);
-          ip += offset;
-          NEXT();
-        }
-        if(tyc_IS_TRUE(bool)) {
-          ip += 3;
-          NEXT();
-        }
-        goto noBool;
+	bool = (tyc_Bool*)*sp++;
+	if(tyc_IS_FALSE(bool)) {
+	  FETCH_SHORT(offset);
+	  ip += offset;
+	  NEXT();
+	}
+	if(tyc_IS_TRUE(bool)) {
+	  ip += 3;
+	  NEXT();
+	}
+	goto noBool;
       }
       LABEL(tvm_Op_jump8):
-        ip += (signed char)ip[1];
-        NEXT();
+	ip += (signed char)ip[1];
+	NEXT();
       LABEL(tvm_Op_jump16):
-        {
-        FETCH_SHORT(offset);
-        ip += offset;
-        }
-        NEXT();
+	{
+	FETCH_SHORT(offset);
+	ip += offset;
+	}
+	NEXT();
 
       /* stack manipulation */
       LABEL(tvm_Op_drop):
-        sp += ip[1];
-        ip += 2;
-        NEXT();
+	sp += ip[1];
+	ip += 2;
+	NEXT();
       LABEL(tvm_Op_adjust):
-        {
-        tsp_OID v = *sp;
-        sp += ip[1];
-        *sp = v;
-        }
-        ip += 2;
-        NEXT();
+	{
+	tsp_OID v = *sp;
+	sp += ip[1];
+	*sp = v;
+	}
+	ip += 2;
+	NEXT();
       LABEL(tvm_Op_componentAdjust):
 	zapComponent(pThread, sp+1);
 	sp[1] = sp[0];
@@ -1060,27 +1061,27 @@ noBool:
 	ip++;
 	NEXT();
       LABEL(tvm_Op_pop):
-        sp++;
-        ip++;
-        NEXT();
+	sp++;
+	ip++;
+	NEXT();
       LABEL(tvm_Op_componentPop):
 	zapComponent(pThread, sp);
 	sp++;
 	ip++;
 	NEXT();
-
+	
       /* create closure */
       LABEL(tvm_Op_closure):
-        {
+	{
 	Word n, nSlots, nArgs, wSorts;
 	tyc_ClassId wClassId;
 	Bool fReturnsComponent;
-        tsp_OID * pClosure;
-        nSlots = ip[1];
-        nArgs = ((tyc_CompiledMethod*)*sp)->method.nArgs;
+	tsp_OID * pClosure;
+	nSlots = ip[1];
+	nArgs = ((tyc_CompiledMethod*)*sp)->method.nArgs;
 	wSorts = ((tyc_CompiledMethod*)*sp)->method.wSorts;
 	fReturnsComponent = ((tyc_CompiledMethod*)*sp)->method.pSelector[2] == '@';
-        SAVE_REGS();
+	SAVE_REGS();
 	if (nArgs >= FUNC_MAXARGS) {
 	  assert(nArgs <= FUN_MAXARGS && wSorts == 0 && !fReturnsComponent);
 	  wClassId = tyc_ClassId_Fun_FUNC_MAXARGS - FUNC_MAXARGS + nArgs;
@@ -1089,25 +1090,25 @@ noBool:
 	  wClassId = tyc_ClassId_Fun0 - 2 + ((fReturnsComponent?3:2)<<nArgs) + wSorts;
 	}
 	pClosure = tsp_newArray(wClassId, nSlots + 1);
-        FETCH_THREAD();
-        LOAD_REGS();
-        for(n = 0; n <= nSlots; n++) {
-          pClosure[n] = *sp++;
-        }
-        *--sp = pClosure;
-        }
-        ip += 2;
-        NEXT();
+	FETCH_THREAD();
+	LOAD_REGS();
+	for(n = 0; n <= nSlots; n++) {
+	  pClosure[n] = *sp++;
+	}
+	*--sp = pClosure;
+	}
+	ip += 2;
+	NEXT();
 
       /* syncronize threads */
       LABEL(tvm_Op_sync):
-        {
+	{
         ip++;
         if (pThread->pStackLimit == tmthread_ILL_STACKLIMIT) {
-          SYNC();
-        }
-        }
-        NEXT();
+	  SYNC();
+	}
+	}
+	NEXT();
 
       LABEL(tvm_Op_makeArray):
 	{
@@ -1142,240 +1143,240 @@ noBool:
 /* ------------- */
       /* tagged integer add */
       LABEL(tvm_Op_sendAdd):
-        {
-        if(tsp_IS_IMMEDIATE(sp[0]) && tsp_IS_IMMEDIATE(sp[1])) {
-          Int wResult = tyc_UNTAG_INT(sp[1]) + tyc_UNTAG_INT(sp[0]);
-          if(!tyc_MUST_BOX_INT(wResult)) {
-            *++sp = tyc_TAG_INT(wResult);
-            ip += 3;
-            NEXT();
-          }
-          else {
-            tsp_OID pResult;
-            SAVE_REGS();
-            pResult = (tsp_OID)tyc_boxInt(wResult);
-            FETCH_THREAD();
-            LOAD_REGS();
-            *++sp = pResult;
-            ip += 3;
-            NEXT();
-          }
-        }
-        }
-        goto label_send1;
+	{
+	if(tsp_IS_IMMEDIATE(sp[0]) && tsp_IS_IMMEDIATE(sp[1])) {
+	  Int wResult = tyc_UNTAG_INT(sp[1]) + tyc_UNTAG_INT(sp[0]);
+	  if(!tyc_MUST_BOX_INT(wResult)) {
+	    *++sp = tyc_TAG_INT(wResult);
+	    ip += 3;
+	    NEXT();
+	  }
+	  else {
+	    tsp_OID pResult;
+	    SAVE_REGS();
+	    pResult = (tsp_OID)tyc_boxInt(wResult);
+	    FETCH_THREAD();
+	    LOAD_REGS();
+	    *++sp = pResult;
+	    ip += 3;
+	    NEXT();
+	  }
+	}
+	}
+	goto label_send1;
       /* tagged integer sub */
       LABEL(tvm_Op_sendSub):
-        {
-        if(tsp_IS_IMMEDIATE(sp[0]) && tsp_IS_IMMEDIATE(sp[1])) {
-          Int wResult = tyc_UNTAG_INT(sp[1]) - tyc_UNTAG_INT(sp[0]);
-          if(!tyc_MUST_BOX_INT(wResult)) {
-            *++sp = tyc_TAG_INT(wResult);
-            ip += 3;
-            NEXT();
-          }
-          else {
-            tsp_OID pResult;
-            SAVE_REGS();
-            pResult = (tsp_OID)tyc_boxInt(wResult);
-            FETCH_THREAD();
-            LOAD_REGS();
-            *++sp = pResult;
-            ip += 3;
-            NEXT();
-          }
-        }
-        }
-        goto label_send1;
-      /* tagged integer lessOrEqual */
+	{
+	if(tsp_IS_IMMEDIATE(sp[0]) && tsp_IS_IMMEDIATE(sp[1])) {
+	  Int wResult = tyc_UNTAG_INT(sp[1]) - tyc_UNTAG_INT(sp[0]);
+	  if(!tyc_MUST_BOX_INT(wResult)) {
+	    *++sp = tyc_TAG_INT(wResult);
+	    ip += 3;
+	    NEXT();
+	  }
+	  else {
+	    tsp_OID pResult;
+	    SAVE_REGS();
+	    pResult = (tsp_OID)tyc_boxInt(wResult);
+	    FETCH_THREAD();
+	    LOAD_REGS();
+	    *++sp = pResult;
+	    ip += 3;
+	    NEXT();
+	  }
+	}
+	}
+	goto label_send1;
+      /* tagged integer lessOrEqual */	
       LABEL(tvm_Op_sendLessOrEqual):
-        {
-        if(tsp_IS_IMMEDIATE(sp[0]) && tsp_IS_IMMEDIATE(sp[1])) {
-          tyc_Bool * pResult =
-            tyc_boxBool(tyc_UNTAG_INT(sp[1]) <= tyc_UNTAG_INT(sp[0]));
-          *++sp = pResult;
-          ip += 3;
-          NEXT();
-        }
-        }
-        goto label_send1;
+	{
+	if(tsp_IS_IMMEDIATE(sp[0]) && tsp_IS_IMMEDIATE(sp[1])) {
+	  tyc_Bool * pResult =
+	    tyc_boxBool(tyc_UNTAG_INT(sp[1]) <= tyc_UNTAG_INT(sp[0]));
+	  *++sp = pResult;
+	  ip += 3;
+	  NEXT();
+	}
+	}
+	goto label_send1;
       /* object equal */
       LABEL(tvm_Op_sendEqual):
-        {
-        tyc_Bool * pResult = tyc_boxBool(sp[1] == sp[0]);
-        *++sp = pResult;
-        }
-        ip += 3;
-        NEXT();
-      /* object notEqual */
+	{
+	tyc_Bool * pResult = tyc_boxBool(sp[1] == sp[0]);
+	*++sp = pResult;
+	}
+	ip += 3;
+	NEXT();
+      /* object notEqual */ 
       LABEL(tvm_Op_sendNotEqual):
-        {
-        tyc_Bool * pResult = tyc_boxBool(sp[1] != sp[0]);
-        *++sp = pResult;
-        }
-        ip += 3;
-        NEXT();
+	{
+	tyc_Bool * pResult = tyc_boxBool(sp[1] != sp[0]);
+	*++sp = pResult;
+	}
+	ip += 3;
+	NEXT();
       /* fun0 apply */
       LABEL(tvm_Op_sendFun0Apply):
 #ifndef tvm_TRACE
-        {
-        if(tyc_CLASSID(sp[0]) == tyc_ClassId_Fun0) {
-          pReceiver = sp[0];
-          pMethod = (tyc_Method*)((tyc_Fun*)pReceiver)->pCompiledFun;
+	{
+	if(tyc_CLASSID(sp[0]) == tyc_ClassId_Fun0) {
+	  pReceiver = sp[0];
+	  pMethod = (tyc_Method*)((tyc_Fun*)pReceiver)->pCompiledFun;
 	  goto nonrec_methodcall;
-        }
-        }
+	}
+	}
 #endif
-        goto label_send0;
+	goto label_send0;
       /* fun1 apply */
       LABEL(tvm_Op_sendFun1Apply):
 #ifndef tvm_TRACE
-        {
-        if(tyc_CLASSID(sp[1]) == tyc_ClassId_Fun1) {
-          pReceiver = sp[1];
-          pMethod = (tyc_Method*)((tyc_Fun*)pReceiver)->pCompiledFun;
+	{
+	if(tyc_CLASSID(sp[1]) == tyc_ClassId_Fun1) {
+	  pReceiver = sp[1];
+	  pMethod = (tyc_Method*)((tyc_Fun*)pReceiver)->pCompiledFun;
 	  goto nonrec_methodcall;
-        }
-        }
+	}
+	}
 #endif
-        goto label_send1;
+	goto label_send1;
       /* object isNil */
       LABEL(tvm_Op_sendIsNil):
-        {
-        *sp = tyc_boxBool(!(*sp));
-        }
-        ip += 3;
-        NEXT();
+	{
+	*sp = tyc_boxBool(!(*sp));
+	}
+	ip += 3;
+	NEXT();
       /* object isNotNil */
       LABEL(tvm_Op_sendIsNotNil):
-        {
-        *sp = tyc_boxBool(*sp);
-        }
-        ip += 3;
-        NEXT();
+	{
+	*sp = tyc_boxBool(*sp);
+	}
+	ip += 3;
+	NEXT();
 /* ------------- */
 /* special sends */
-
+      
       LABEL(tvm_Op_sendSuper):
-        {
-        register tvm_SuperCacheEntry * pSuperEntry;
-        tyc_ClassId idSuperClass;
-        FETCH_SELECTORID(idSelector);
+	{
+	register tvm_SuperCacheEntry * pSuperEntry;
+	tyc_ClassId idSuperClass;
+	FETCH_SELECTORID(idSelector);
         pReceiver = sp[tyc_ARGUMENTS(idSelector)];
-        if(tsp_IS_IMMEDIATE(pReceiver))
-          goto taggedInt1;
-        if(tyc_IS_NIL(pReceiver))
-          goto nil1;
-        idClass = tsp_classId(pReceiver);
+	if(tsp_IS_IMMEDIATE(pReceiver))
+	  goto taggedInt1;
+	if(tyc_IS_NIL(pReceiver))
+	  goto nil1;
+	idClass = tsp_classId(pReceiver);
 super0:
-        idSuperClass = tyc_UNTAG_INT(fp->pCode->pClass->wInstanceId);
+	idSuperClass = tyc_UNTAG_INT(fp->pCode->pClass->wInstanceId);
 #ifdef tvm_DEBUG
-        tvm_debugSuperSend(idClass, idSuperClass, idSelector);
+	tvm_debugSuperSend(idClass, idSuperClass, idSelector);
 #endif
 #ifdef tvm_TRACE
 	/* ### signal super send event */
 	SET_PAST_EVENT(pThread);
 #endif
-        pSuperEntry =
-          &superCache[SUPERHASH(idClass, idSuperClass, idSelector)];
-        if(pSuperEntry->superKey == idSuperClass &&
-           pSuperEntry->cache.key == tvm_KEY(idSelector, idClass)) {
-          /* 1st level cache hit */
-          pEntry = &pSuperEntry->cache;
-          goto cacheHit;
-        }
+	pSuperEntry =
+	  &superCache[SUPERHASH(idClass, idSuperClass, idSelector)];
+	if(pSuperEntry->superKey == idSuperClass &&
+	   pSuperEntry->cache.key == tvm_KEY(idSelector, idClass)) {
+	  /* 1st level cache hit */
+	  pEntry = &pSuperEntry->cache;
+	  goto cacheHit;
+	}
         /* 1st level cache miss */
-        {
-        /* aquire 2nd level r/w cache lock */
-        tmthread_cacheLock();
-        /* decrease update counter and update 1st level cache if necessary */
-        if(--cacheMisses == 0) {
-          tmthread_cacheUnlock();
-          tmthread_pushStack(pReceiver);
-          SAVE_REGS();
-          updateCache();
-          FETCH_THREAD();
-          LOAD_REGS();
-          pReceiver = tmthread_popStack();
-          tmthread_cacheLock();
-        }
-        pSuperEntry =
-          &rwSuperCache[SUPERHASH(idClass, idSuperClass, idSelector)];
-        if(pSuperEntry->superKey == idSuperClass &&
-           pSuperEntry->cache.key == tvm_KEY(idSelector, idClass)) {
-          /* 2nd level cache hit */
-          pMethod = pSuperEntry->cache.pMethod;
+	{
+	/* aquire 2nd level r/w cache lock */
+	tmthread_cacheLock();
+	/* decrease update counter and update 1st level cache if necessary */
+	if(--cacheMisses == 0) {
+	  tmthread_cacheUnlock();
+	  tmthread_pushStack(pReceiver);
+	  SAVE_REGS();
+	  updateCache();
+	  FETCH_THREAD();
+	  LOAD_REGS();
+	  pReceiver = tmthread_popStack();
+	  tmthread_cacheLock();
+	}
+	pSuperEntry =
+	  &rwSuperCache[SUPERHASH(idClass, idSuperClass, idSelector)];
+	if(pSuperEntry->superKey == idSuperClass &&
+	   pSuperEntry->cache.key == tvm_KEY(idSelector, idClass)) {
+	  /* 2nd level cache hit */
+	  pMethod = pSuperEntry->cache.pMethod;
 #ifdef tvm_THREADED_CODE
-          pMethodCode = pSuperEntry->cache.pMethodCode;
+	  pMethodCode = pSuperEntry->cache.pMethodCode;
 #endif
-          /* release 2nd level cache lock */
-          tmthread_cacheUnlock();
+	  /* release 2nd level cache lock */
+	  tmthread_cacheUnlock();
 #ifdef tvm_THREADED_CODE
-          goto *pMethodCode;
+	  goto *pMethodCode;
 #else
-          goto lookupHit;
+	  goto lookupHit;
 #endif
-        }
-        /* cache miss */
-        {
-        tyc_Class * pSuperClass = fp->pCode->pClass;
-        if((pMethod = tvm_methodSuperLookup(idSelector, idClass,
-                                            pSuperClass))) {
-          /* check no. of arguments */
+	}
+	/* cache miss */ 
+	{
+	tyc_Class * pSuperClass = fp->pCode->pClass;
+	if((pMethod = tvm_methodSuperLookup(idSelector, idClass,
+					    pSuperClass))) {
+	  /* check no. of arguments */
 	  tyc_Selector *pSelector = tyc_pRoot->apSelectorTable[idSelector];
 	  if(pMethod->nArgs != pSelector->wArity || pMethod->wSorts != pSelector->wSorts) {
-            goto wrongSignature;
-          }
-          /* update lookup index */
-          pSuperEntry->superKey = idSuperClass;
-          pEntry = &pSuperEntry->cache;
-          goto methodFound;
-        }
-        /* method not implemented */
-        goto dontUnderstand;
-        }
-        }
+	    goto wrongSignature;
+	  }
+	  /* update lookup index */	  
+	  pSuperEntry->superKey = idSuperClass;
+	  pEntry = &pSuperEntry->cache;
+	  goto methodFound;
+	}
+	/* method not implemented */
+	goto dontUnderstand;
+	}
+	}
 taggedInt1:
-        idClass = tyc_ClassId_Int;
-        goto super0;
+	idClass = tyc_ClassId_Int;
+	goto super0;	
 nil1:
-        idClass = tyc_ClassId_Nil;
-        goto super0;
-        }
+	idClass = tyc_ClassId_Nil;
+	goto super0;
+	}
       LABEL(tvm_Op_sendTail):
       LABEL(tvm_Op_send):
-        FETCH_SELECTORID(idSelector);
+	FETCH_SELECTORID(idSelector);
         pReceiver = sp[tyc_ARGUMENTS(idSelector)];
-        goto send1;
+	goto send1;
       LABEL(tvm_Op_send5):
         pReceiver = sp[5];
-        goto send0;
+	goto send0;
       LABEL(tvm_Op_send4):
         pReceiver = sp[4];
-        goto send0;
+	goto send0;
       LABEL(tvm_Op_send3):
         pReceiver = sp[3];
-        goto send0;
+	goto send0;
       LABEL(tvm_Op_send2):
         pReceiver = sp[2];
-        goto send0;
+	goto send0;
       LABEL(tvm_Op_send1):
 label_send1:
         pReceiver = sp[1];
-        goto send0;
+	goto send0;
       LABEL(tvm_Op_send0):
 label_send0:
         pReceiver = sp[0];
 send0:
-        FETCH_SELECTORID(idSelector);
+	FETCH_SELECTORID(idSelector);
 send1:
-        if(tsp_IS_IMMEDIATE(pReceiver))
-          goto taggedInt0;
-        if(tyc_IS_NIL(pReceiver))
-          goto nil0;
-        idClass = tsp_classId(pReceiver);
+	if(tsp_IS_IMMEDIATE(pReceiver))
+	  goto taggedInt0;
+	if(tyc_IS_NIL(pReceiver))
+	  goto nil0;
+	idClass = tsp_classId(pReceiver);
 send2:
 #ifdef tvm_DEBUG
-        tvm_debugSend(idClass, idSelector);
+	tvm_debugSend(idClass, idSelector);
 #endif
 #ifdef tvm_TRACE
 	/* for builtin/slot return event: */
@@ -1392,23 +1393,23 @@ send2:
 	}
 	SET_PAST_EVENT(pThread);
 #endif
-        pEntry = &cache[HASH(idClass, idSelector)];
-        if(pEntry->key == tvm_KEY(idSelector, idClass))
+	pEntry = &cache[HASH(idClass, idSelector)];
+	if(pEntry->key == tvm_KEY(idSelector, idClass))
 cacheHit:
-          {
-          /* 1st level cache hit */
-          /* get method from read only cache */
-          pMethod = pEntry->pMethod;
+	  {
+	  /* 1st level cache hit */
+	  /* get method from read only cache */
+	  pMethod = pEntry->pMethod;
 #ifdef tvm_THREADED_CODE
-          goto *pEntry->pMethodCode;
+	  goto *pEntry->pMethodCode;
 #else
 lookupHit:
-          switch(tsp_classId(pMethod))
-          {
-#endif
-          METHODLABEL(CompiledMethod):
+	  switch(tsp_classId(pMethod))
+	  {
+#endif  
+	  METHODLABEL(CompiledMethod):
 methodcall:
-          {
+	  {
 	    /* valid variables: pReceiver, pMethod, idSelector */
 	    if(*ip == tvm_Op_sendTail) {
 	      /* tail recursive call */
@@ -1429,31 +1430,31 @@ methodcall:
 #ifndef tvm_TRACE
 nonrec_methodcall:
 #endif
-            /* ordinary method call */
+	    /* ordinary method call */
 	    /* valid variables: pReceiver, pMethod */
-            sp -= sizeof(tyc_StackFrame) / sizeof(tsp_OID);
-            ((tyc_StackFrame*)sp)->parent.fp = fp;
-            fp = (tyc_StackFrame*)sp;
-            fp->parent.ip = ip;
-            fp->pReceiver = pReceiver;
-            fp->pCode = (tyc_CompiledMethod*)pMethod;
-            ip = fp->pByteCode = ((tyc_CompiledMethod*)pMethod)->pbCode;
-            CHECK_STACK_OVERFLOW();
+	    sp -= sizeof(tyc_StackFrame) / sizeof(tsp_OID);
+	    ((tyc_StackFrame*)sp)->parent.fp = fp;
+	    fp = (tyc_StackFrame*)sp;
+	    fp->parent.ip = ip;
+	    fp->pReceiver = pReceiver;
+	    fp->pCode = (tyc_CompiledMethod*)pMethod;
+	    ip = fp->pByteCode = ((tyc_CompiledMethod*)pMethod)->pbCode;
+	    CHECK_STACK_OVERFLOW();
 	    CLEAR_PAST_EVENT(pThread);
-            SAMPLE();
-            NEXT();            /* continue interpreter loop */
-          }
+	    SAMPLE();
+	    NEXT();            /* continue interpreter loop */
+	  }
 
-          METHODLABEL(SlotAccessMethod):
+	  METHODLABEL(SlotAccessMethod):
 	  METHODLABEL(SlotReferenceMethod):
-          {
-            /* slot access */
+	  {
+	    /* slot access */
 	    Int i = ((tyc_SlotMethod*)pMethod)->iOffset;
-            assert(!tsp_IS_IMMEDIATE(pReceiver) && !tyc_IS_NIL(pReceiver));
-            assert(i >= 0 && i < (tsp_size(pReceiver) / sizeof(tsp_OID)));
-            *sp = ((tsp_OID*)pReceiver)[i];
-            BNEXT();           /* continue interpreter loop */
-          }
+	    assert(!tsp_IS_IMMEDIATE(pReceiver) && !tyc_IS_NIL(pReceiver));
+	    assert(i >= 0 && i < (tsp_size(pReceiver) / sizeof(tsp_OID)));
+	    *sp = ((tsp_OID*)pReceiver)[i];
+	    BNEXT();	       /* continue interpreter loop */
+	  }
 
 	  METHODLABEL(SlotTakeFromMethod):
 	  {
@@ -1465,17 +1466,17 @@ nonrec_methodcall:
 	    BNEXT();
 	  }
 
-          METHODLABEL(SlotUpdateMethod):
-          {
-            /* slot update */
-            tsp_OID pArgument = *sp;
+	  METHODLABEL(SlotUpdateMethod):
+	  {
+	    /* slot update */
+	    tsp_OID pArgument = *sp;
 	    Int i = ((tyc_SlotMethod*)pMethod)->iOffset;
-            assert(!tsp_IS_IMMEDIATE(pReceiver) && !tyc_IS_NIL(pReceiver));
-            assert(i >= 0 && i < (tsp_size(pReceiver) / sizeof(tsp_OID)));
-            ((tsp_OID*)pReceiver)[i] = pArgument;
-            *++sp = pArgument;
+	    assert(!tsp_IS_IMMEDIATE(pReceiver) && !tyc_IS_NIL(pReceiver));
+	    assert(i >= 0 && i < (tsp_size(pReceiver) / sizeof(tsp_OID)));
+	    ((tsp_OID*)pReceiver)[i] = pArgument;
+	    *++sp = pArgument;
 	    BNEXT();
-          }
+	  }
 
 	  METHODLABEL(SlotMoveToMethod):
 	  {
@@ -1492,123 +1493,123 @@ nonrec_methodcall:
 	    BNEXT();
 	  }
 
-#ifndef tvm_THREADED_CODE
-          METHODLABEL(BuiltinMethod):
-          {
-            /* builtin method call */
-            switch(((tyc_BuiltinMethod*)pMethod)->iNumber)
-              {
+#ifndef tvm_THREADED_CODE 
+	  METHODLABEL(BuiltinMethod):
+	  {
+	    /* builtin method call */
+	    switch(((tyc_BuiltinMethod*)pMethod)->iNumber)
+	      {
 #endif
-              /* generic integer arithmetic operation */
+	      /* generic integer arithmetic operation */
               #define INTOP(op) \
-                { \
-                tsp_OID pArgument = *sp; \
-                assert(tyc_IS_TAGGED_INT(pReceiver)); \
-                if(tyc_IS_TAGGED_INT(pArgument)) { \
-                  tsp_OID pResult; \
-                  Int wResult = tyc_TAGGED_INT_VALUE(pReceiver) op \
-                                tyc_TAGGED_INT_VALUE(pArgument); \
-                  if(tyc_MUST_BOX_INT(wResult)) { \
-                    SAVE_REGS(); \
-                    pResult = (tsp_OID)tyc_boxInt(wResult); \
-                    FETCH_THREAD(); \
-                    LOAD_REGS(); \
-                  } \
-                  else { \
-                    pResult = tyc_TAG_INT(wResult); \
-                  } \
-                  *++sp = pResult; \
-                  BNEXT(); \
-                } \
-                SAVE_REGS(); \
-                RAISE_TypeError(pArgument, tyc_ClassId_Int); \
-                }
-              BLABEL(tvm_Builtin_Int_add):  INTOP(+);
-              BLABEL(tvm_Builtin_Int_sub):  INTOP(-);
-              BLABEL(tvm_Builtin_Int_mult): INTOP(*);
-              BLABEL(tvm_Builtin_Int_or):   INTOP(|);
-              BLABEL(tvm_Builtin_Int_and):  INTOP(&);
-              BLABEL(tvm_Builtin_Int_xor):  INTOP(^);
-              BLABEL(tvm_Builtin_Int_shiftRight): INTOP(>>);
-              BLABEL(tvm_Builtin_Int_shiftLeft):  INTOP(<<);
-              /* catch division by zero */
-              BLABEL(tvm_Builtin_Int_div):
-                {
-                tsp_OID pArgument = *sp;
-                assert(tyc_IS_TAGGED_INT(pReceiver));
-                if(tyc_IS_TAGGED_INT(pArgument)) {
-                  tsp_OID pResult;
-                  Int wResult = tyc_TAGGED_INT_VALUE(pArgument);
-                  if(wResult != 0) {
-                    wResult = div(tyc_TAGGED_INT_VALUE(pReceiver),
-                                  wResult).quot;
-                    if(tyc_MUST_BOX_INT(wResult)) {
-                      SAVE_REGS();
-                      pResult = (tsp_OID)tyc_boxInt(wResult);
-                      FETCH_THREAD();
-                      LOAD_REGS();
-                    }
-                    else {
-                      pResult = tyc_TAG_INT(wResult);
-                    }
-                    *++sp = pResult;
-                    BNEXT();
-                  }
-                  /* division by zero */
+		{ \
+		tsp_OID pArgument = *sp; \
+		assert(tyc_IS_TAGGED_INT(pReceiver)); \
+		if(tyc_IS_TAGGED_INT(pArgument)) { \
+		  tsp_OID pResult; \
+		  Int wResult = tyc_TAGGED_INT_VALUE(pReceiver) op \
+				tyc_TAGGED_INT_VALUE(pArgument); \
+		  if(tyc_MUST_BOX_INT(wResult)) { \
+		    SAVE_REGS(); \
+		    pResult = (tsp_OID)tyc_boxInt(wResult); \
+		    FETCH_THREAD(); \
+		    LOAD_REGS(); \
+		  } \
+		  else { \
+		    pResult = tyc_TAG_INT(wResult); \
+		  } \
+		  *++sp = pResult; \
+		  BNEXT(); \
+		} \
+		SAVE_REGS(); \
+		RAISE_TypeError(pArgument, tyc_ClassId_Int); \
+		}
+	      BLABEL(tvm_Builtin_Int_add):  INTOP(+);
+	      BLABEL(tvm_Builtin_Int_sub):  INTOP(-);
+	      BLABEL(tvm_Builtin_Int_mult): INTOP(*);
+	      BLABEL(tvm_Builtin_Int_or):   INTOP(|);
+	      BLABEL(tvm_Builtin_Int_and):  INTOP(&);
+	      BLABEL(tvm_Builtin_Int_xor):  INTOP(^);
+	      BLABEL(tvm_Builtin_Int_shiftRight): INTOP(>>);
+	      BLABEL(tvm_Builtin_Int_shiftLeft):  INTOP(<<);
+	      /* catch division by zero */
+	      BLABEL(tvm_Builtin_Int_div):
+		{
+		tsp_OID pArgument = *sp;
+		assert(tyc_IS_TAGGED_INT(pReceiver));
+		if(tyc_IS_TAGGED_INT(pArgument)) {
+		  tsp_OID pResult;
+		  Int wResult = tyc_TAGGED_INT_VALUE(pArgument);
+		  if(wResult != 0) {
+		    wResult = div(tyc_TAGGED_INT_VALUE(pReceiver),
+				  wResult).quot;
+		    if(tyc_MUST_BOX_INT(wResult)) {
+		      SAVE_REGS();
+		      pResult = (tsp_OID)tyc_boxInt(wResult);
+		      FETCH_THREAD();
+		      LOAD_REGS();
+		    }
+		    else {
+		      pResult = tyc_TAG_INT(wResult);
+		    }
+		    *++sp = pResult;
+		    BNEXT();
+		  }
+		  /* division by zero */
 divisionbyzero:
-                  {
-                  SAVE_REGS();
-                  RAISE_DivisionByZero(*sp);
-                  }
-                }
-                SAVE_REGS();
-                RAISE_TypeError(pArgument, tyc_ClassId_Int);
-                }
-              BLABEL(tvm_Builtin_Int_mod):
-                {
-                tsp_OID pArgument = *sp;
-                assert(tyc_IS_TAGGED_INT(pReceiver));
-                if(tyc_IS_TAGGED_INT(pArgument)) {
-                  tsp_OID pResult;
-                  Int wResult = tyc_TAGGED_INT_VALUE(pArgument);
-                  if(wResult != 0) {
-                    wResult = div(tyc_TAGGED_INT_VALUE(pReceiver),
-                                  wResult).rem;
-                    if(tyc_MUST_BOX_INT(wResult)) {
-                      SAVE_REGS();
-                      pResult = (tsp_OID)tyc_boxInt(wResult);
-                      FETCH_THREAD();
-                      LOAD_REGS();
-                    }
-                    else {
-                      pResult = tyc_TAG_INT(wResult);
-                    }
-                    *++sp = pResult;
-                    BNEXT();
-                  }
-                  /* division by zero */
-                  goto divisionbyzero;
-                }
-                SAVE_REGS();
-                RAISE_TypeError(pArgument, tyc_ClassId_Int);
-                }
-                /* generic int compare operation */
+		  {
+		  SAVE_REGS();
+		  RAISE_DivisionByZero(*sp);
+		  }
+		}
+		SAVE_REGS();
+		RAISE_TypeError(pArgument, tyc_ClassId_Int);
+		}
+	      BLABEL(tvm_Builtin_Int_mod):
+		{
+		tsp_OID pArgument = *sp;
+		assert(tyc_IS_TAGGED_INT(pReceiver));
+		if(tyc_IS_TAGGED_INT(pArgument)) {
+		  tsp_OID pResult;
+		  Int wResult = tyc_TAGGED_INT_VALUE(pArgument);
+		  if(wResult != 0) {
+		    wResult = div(tyc_TAGGED_INT_VALUE(pReceiver),
+				  wResult).rem;
+		    if(tyc_MUST_BOX_INT(wResult)) {
+		      SAVE_REGS();
+		      pResult = (tsp_OID)tyc_boxInt(wResult);
+		      FETCH_THREAD();
+		      LOAD_REGS();
+		    }
+		    else {
+		      pResult = tyc_TAG_INT(wResult);
+		    }
+		    *++sp = pResult;
+		    BNEXT();
+		  }
+		  /* division by zero */
+		  goto divisionbyzero;
+		}
+		SAVE_REGS();
+		RAISE_TypeError(pArgument, tyc_ClassId_Int);
+		}
+		/* generic int compare operation */
               #define INTCMP(op) \
-                { \
-                tsp_OID pArgument = *sp; \
-                assert(tyc_IS_TAGGED_INT(pReceiver)); \
-                if(tyc_IS_TAGGED_INT(pArgument)) { \
-                  *++sp = tyc_boxBool(tyc_TAGGED_INT_VALUE(pReceiver) op \
-                                      tyc_TAGGED_INT_VALUE(pArgument)); \
-                  BNEXT(); \
-                } \
-                SAVE_REGS(); \
-                RAISE_TypeError(pArgument, tyc_ClassId_Int); \
-                }
-              BLABEL(tvm_Builtin_Int_less):           INTCMP(<);
-              BLABEL(tvm_Builtin_Int_lessOrEqual):    INTCMP(<=);
-              BLABEL(tvm_Builtin_Int_greater):        INTCMP(>);
-              BLABEL(tvm_Builtin_Int_greaterOrEqual): INTCMP(>=);
+		{ \
+		tsp_OID pArgument = *sp; \
+		assert(tyc_IS_TAGGED_INT(pReceiver)); \
+		if(tyc_IS_TAGGED_INT(pArgument)) { \
+		  *++sp = tyc_boxBool(tyc_TAGGED_INT_VALUE(pReceiver) op \
+				      tyc_TAGGED_INT_VALUE(pArgument)); \
+		  BNEXT(); \
+		} \
+		SAVE_REGS(); \
+		RAISE_TypeError(pArgument, tyc_ClassId_Int); \
+		}	      
+	      BLABEL(tvm_Builtin_Int_less):           INTCMP(<);
+	      BLABEL(tvm_Builtin_Int_lessOrEqual):    INTCMP(<=);
+	      BLABEL(tvm_Builtin_Int_greater):        INTCMP(>);
+	      BLABEL(tvm_Builtin_Int_greaterOrEqual): INTCMP(>=);
 	      BLABEL(tvm_Builtin_Int_equal):
 		{
 		tsp_OID pArgument = *sp;
@@ -1622,37 +1623,37 @@ divisionbyzero:
 		}
 		BNEXT();
 		}	      
-              BLABEL(tvm_Builtin_Int_not):
-                {
-                Int wResult;
-                tsp_OID pResult;
-                assert(tyc_IS_TAGGED_INT(pReceiver));
-                wResult = ~(tyc_TAGGED_INT_VALUE(pReceiver));
-                if(tyc_MUST_BOX_INT(wResult)) {
-                  SAVE_REGS();
-                  pResult = (tsp_OID)tyc_boxInt(wResult);
-                  FETCH_THREAD();
-                  LOAD_REGS();
-                }
-                else {
-                  pResult = tyc_TAG_INT(wResult);
-                }
-                *sp = pResult;
-                }
-                BNEXT();
-              BLABEL(tvm_Builtin_Int_asChar):
-                assert(tyc_IS_TAGGED_INT(pReceiver));
-                *sp = tyc_boxChar(tyc_TAGGED_INT_VALUE(pReceiver));
-                BNEXT();
-              BLABEL(tvm_Builtin_Object_equal):
-                {
-                tsp_OID pArgument = *sp;
-                *++sp = tyc_boxBool(pReceiver == pArgument);
-                }
-                BNEXT();
-              BLABEL(tvm_Builtin_Object_class):
-                *sp = tyc_CLASS(tyc_CLASSID(pReceiver));
-                BNEXT();
+	      BLABEL(tvm_Builtin_Int_not):
+	        {
+		Int wResult;
+		tsp_OID pResult;
+		assert(tyc_IS_TAGGED_INT(pReceiver));
+		wResult = ~(tyc_TAGGED_INT_VALUE(pReceiver));
+		if(tyc_MUST_BOX_INT(wResult)) {
+		  SAVE_REGS();
+		  pResult = (tsp_OID)tyc_boxInt(wResult);
+		  FETCH_THREAD();
+		  LOAD_REGS();
+		}
+		else {
+		  pResult = tyc_TAG_INT(wResult);
+		}
+		*sp = pResult;
+		}
+		BNEXT();
+	      BLABEL(tvm_Builtin_Int_asChar):
+		assert(tyc_IS_TAGGED_INT(pReceiver));
+		*sp = tyc_boxChar(tyc_TAGGED_INT_VALUE(pReceiver));
+		BNEXT();
+	      BLABEL(tvm_Builtin_Object_equal):
+		{
+		tsp_OID pArgument = *sp;
+		*++sp = tyc_boxBool(pReceiver == pArgument);
+		}
+		BNEXT();
+	      BLABEL(tvm_Builtin_Object_class):
+		*sp = tyc_CLASS(tyc_CLASSID(pReceiver));
+		BNEXT();
 	      BLABEL(tvm_Builtin_Object_true):
 		*sp = tyc_TRUE;
 		BNEXT();
@@ -1694,12 +1695,12 @@ divisionbyzero:
 		*sp = pNewObject;
 		}
 		BNEXT();
-              BLABEL(tvm_Builtin_Object__typeCast):
-                {
-                tsp_OID v = *sp;
-                *++sp = v;
-                }
-                BNEXT();
+	      BLABEL(tvm_Builtin_Object__typeCast):
+		{
+		tsp_OID v = *sp;
+		*++sp = v;
+		}
+		BNEXT();
 	      BLABEL(tvm_Builtin_Object_fetchAt):
 		{
 		tsp_OID v = *sp;
@@ -1713,24 +1714,24 @@ divisionbyzero:
 		*++sp = v;
 		}
 		BNEXT();
-              BLABEL(tvm_Builtin_Object__hash):
-                assert(!tyc_IS_NIL(pReceiver) &&
-                       !tyc_IS_TAGGED_INT(pReceiver));
-                *sp = tyc_TAG_INT(tsp_hash(pReceiver));
-                BNEXT();
-              BLABEL(tvm_Builtin_Object__setHash):
-                {
-                tsp_OID pArgument = *sp;
-                assert(!tyc_IS_NIL(pReceiver) &&
-                       !tyc_IS_TAGGED_INT(pReceiver));
-                if(tyc_IS_TAGGED_INT(pArgument)) {
-                  tsp_setHash(pReceiver, tyc_TAGGED_INT_VALUE(pArgument));
-                  *++sp = tyc_TAG_INT(tsp_hash(pReceiver));
-                  BNEXT();
-                }
-                SAVE_REGS();
-                RAISE_TypeError(pArgument, tyc_ClassId_Int);
-                }
+	      BLABEL(tvm_Builtin_Object__hash):
+		assert(!tyc_IS_NIL(pReceiver) &&
+		       !tyc_IS_TAGGED_INT(pReceiver));
+		*sp = tyc_TAG_INT(tsp_hash(pReceiver));
+		BNEXT();
+	      BLABEL(tvm_Builtin_Object__setHash):
+		{
+		tsp_OID pArgument = *sp;
+		assert(!tyc_IS_NIL(pReceiver) &&
+		       !tyc_IS_TAGGED_INT(pReceiver));
+		if(tyc_IS_TAGGED_INT(pArgument)) {
+		  tsp_setHash(pReceiver, tyc_TAGGED_INT_VALUE(pArgument));
+		  *++sp = tyc_TAG_INT(tsp_hash(pReceiver));
+		  BNEXT();
+		}
+		SAVE_REGS();
+		RAISE_TypeError(pArgument, tyc_ClassId_Int);
+		}
 	      BLABEL(tvm_Builtin_Object_superComponent):
 		if(tyc_IS_NIL(pReceiver)) {
 		  SAVE_REGS();
@@ -1790,11 +1791,11 @@ divisionbyzero:
 		  *sp = tyc_TAG_INT(tsp_getCSize(pReceiver));
 		}
 		BNEXT();
-              BLABEL(tvm_Builtin_Object__basicAt):
-                {
-                tsp_OID pArgument = *sp;
-                if(tyc_IS_TAGGED_INT(pArgument)) {
-                  Int i = tyc_TAGGED_INT_VALUE(pArgument);
+	      BLABEL(tvm_Builtin_Object__basicAt):
+		{
+	      	tsp_OID pArgument = *sp;
+		if(tyc_IS_TAGGED_INT(pArgument)) {
+		  Int i = tyc_TAGGED_INT_VALUE(pArgument);
 		  if(tyc_IS_NIL(pReceiver)) {
 		    /* index out of bounds */
 		    SAVE_REGS();
@@ -1809,46 +1810,46 @@ divisionbyzero:
 		    SAVE_REGS();
 		    RAISE_IndexOutOfBounds(pReceiver, pArgument);
 		  } else if(!tsp_isCStruct(pReceiver)) {
-                    if(i >= 0 && i < (tsp_size(pReceiver) / sizeof(tsp_OID))) {
-                      *++sp = ((tsp_OID*)pReceiver)[i];
-                      BNEXT();
-                    }
-                    /* index out of bounds */
-                    SAVE_REGS();
-                    RAISE_IndexOutOfBounds(pReceiver, pArgument);
-                  }
-                  else {
-                    if(i >= 0 && i < tsp_getCSize(pReceiver)) {
-                      tsp_OID pSlot;
-                      SAVE_REGS();
-                      pSlot = tsp_getCSlot(pReceiver, i);
-                      FETCH_THREAD();
-                      LOAD_REGS();
-                      *++sp = pSlot;
-                      BNEXT();
-                    }
-                    /* index out of bounds */
-                    SAVE_REGS();
-                    RAISE_IndexOutOfBounds(pReceiver, pArgument);
-                  }
-                }
-                SAVE_REGS();
-                RAISE_TypeError(pArgument, tyc_ClassId_Int);
-                }
-              BLABEL(tvm_Builtin_Object__basicAtPut):
-                {
-                tsp_OID pElement =  sp[0];
-                tsp_OID pPosition = sp[1];
+		    if(i >= 0 && i < (tsp_size(pReceiver) / sizeof(tsp_OID))) {
+		      *++sp = ((tsp_OID*)pReceiver)[i];
+		      BNEXT();
+		    }
+		    /* index out of bounds */
+		    SAVE_REGS();
+		    RAISE_IndexOutOfBounds(pReceiver, pArgument);
+		  }
+		  else {
+		    if(i >= 0 && i < tsp_getCSize(pReceiver)) {
+		      tsp_OID pSlot;
+		      SAVE_REGS();
+		      pSlot = tsp_getCSlot(pReceiver, i);
+		      FETCH_THREAD();
+		      LOAD_REGS();
+		      *++sp = pSlot;
+		      BNEXT();
+		    }
+		    /* index out of bounds */
+		    SAVE_REGS();
+		    RAISE_IndexOutOfBounds(pReceiver, pArgument);
+		  }
+		}
+		SAVE_REGS();
+		RAISE_TypeError(pArgument, tyc_ClassId_Int);
+		}
+	      BLABEL(tvm_Builtin_Object__basicAtPut):
+		{
+		tsp_OID pElement =  sp[0];
+		tsp_OID pPosition = sp[1];
 		if(tyc_IS_NIL(pReceiver)
 		   || tsp_IS_IMMEDIATE(pReceiver)
 		   || tsp_immutable(pReceiver)) {
-                  SAVE_REGS();
+		  SAVE_REGS();
 		  RAISE_WriteToImmutable(pReceiver);
-                }
-                if(tyc_IS_TAGGED_INT(pPosition)) {
-                  Int i = tyc_TAGGED_INT_VALUE(pPosition);
-                  if(!tsp_isCStruct(pReceiver)) {
-                    if(i >= 0 && i < (tsp_size(pReceiver) / sizeof(tsp_OID))) {
+		}
+		if(tyc_IS_TAGGED_INT(pPosition)) {
+		  Int i = tyc_TAGGED_INT_VALUE(pPosition);
+		  if(!tsp_isCStruct(pReceiver)) {
+		    if(i >= 0 && i < (tsp_size(pReceiver) / sizeof(tsp_OID))) {
 		      tyc_Class *pClass = tyc_CLASS(tyc_CLASSID(pReceiver));
 		      if((i < tyc_UNTAG_INT(pClass->wInstanceSize)
 			  && pClass->slotMap[i]->isComponent)
@@ -1867,17 +1868,17 @@ divisionbyzero:
 			      tsp_setSuperComponent(pElement, pReceiver);
 			  }
 		      }
-                      ((tsp_OID*)pReceiver)[i] = pElement;
-                      sp += 2;
-                      *sp = pElement;
-                      BNEXT();
-                    }
-                    /* index out of bounds */
-                    SAVE_REGS();
-                    RAISE_IndexOutOfBounds(pReceiver, pPosition);
-                  }
-                  else {
-                    if(i >= 0 && i < tsp_getCSize(pReceiver)) {
+		      ((tsp_OID*)pReceiver)[i] = pElement;
+		      sp += 2;
+		      *sp = pElement;
+		      BNEXT();
+		    }
+		    /* index out of bounds */
+		    SAVE_REGS();
+		    RAISE_IndexOutOfBounds(pReceiver, pPosition);
+		  }
+		  else {
+		    if(i >= 0 && i < tsp_getCSize(pReceiver)) {
 		      tyc_Class *pClass = tyc_CLASS(tyc_CLASSID(pReceiver));
 		      int fMoved = FALSE;
 		      if(pClass->slotMap[i]->isComponent) {
@@ -1896,28 +1897,28 @@ divisionbyzero:
 			      fMoved = TRUE;
 			  }
 		      }
-                      if(tsp_setCSlot(pReceiver, pElement, i)) {
-                        sp += 2;
-                        *sp = pElement;
-                        BNEXT();
-                      }
+		      if(tsp_setCSlot(pReceiver, pElement, i)) {
+			sp += 2;
+			*sp = pElement;
+			BNEXT();
+		      }
 		      if (fMoved) {
 			  assert_superComponent(pReceiver, pElement);
 			  tsp_setSuperComponent(pElement, tyc_NIL);
 		      }
-                      /* slot type mismatch */
-                      SAVE_REGS();
+		      /* slot type mismatch */
+		      SAVE_REGS();
 		      RAISE_TypeError(pElement, tyc_ClassId_Object);
-                    }
-                    /* index out of bounds */
-                    SAVE_REGS();
-                    RAISE_IndexOutOfBounds(pReceiver, pPosition);
-                  }
-                }
-                SAVE_REGS();
-                RAISE_TypeError(pPosition, tyc_ClassId_Int);
-                }
-              /* generic perform */
+		    }
+		    /* index out of bounds */
+		    SAVE_REGS();
+		    RAISE_IndexOutOfBounds(pReceiver, pPosition);
+		  }
+		}
+		SAVE_REGS();
+		RAISE_TypeError(pPosition, tyc_ClassId_Int);
+		}
+	      /* generic perform */
 	      BLABEL(tvm_Builtin_Object__perform):
 	      BLABEL(tvm_Builtin_Object__performAt):
 		{
@@ -2034,7 +2035,7 @@ divisionbyzero:
 		SAVE_REGS();
 		RAISE_TypeError(pSelector, tyc_ClassId_Selector);
 		}
-              /* catch all methods */
+	      /* catch all methods */
 	      BLABEL(tvm_Builtin_Object___doesNotUnderstand):
 		{
 		Word nArgs = tyc_ARGUMENTS(idSelector);
@@ -2092,35 +2093,35 @@ divisionbyzero:
 		*sp = tyc_NIL;
 		}
 		BNEXT();
-              BLABEL(tvm_Builtin_String_at):
-                {
-                tsp_OID pArgument = *sp;
-                assert(tyc_CLASSID(pReceiver) == tyc_ClassId_String ||
-                       tyc_CLASSID(pReceiver) == tyc_ClassId_MutableString ||
-                       tyc_CLASSID(pReceiver) == tyc_ClassId_Symbol);
-                if(tyc_IS_TAGGED_INT(pArgument)) {
-                  Int i = tyc_TAGGED_INT_VALUE(pArgument);
-                  if(i >= 0 && i < (tsp_size(pReceiver) - 1)) {
-                    *++sp = tyc_boxChar(((Char*)pReceiver)[i]);
-                    BNEXT();
-                  }
-                  /* index out of bounds */
-                  SAVE_REGS();
-                  RAISE_IndexOutOfBounds(pReceiver, pArgument);
-                }
-                SAVE_REGS();
-                RAISE_TypeError(pArgument, tyc_ClassId_Int);
-                }
-              BLABEL(tvm_Builtin_String_size):
-                assert(tyc_CLASSID(pReceiver) == tyc_ClassId_String ||
-                       tyc_CLASSID(pReceiver) == tyc_ClassId_MutableString ||
-                       tyc_CLASSID(pReceiver) == tyc_ClassId_Symbol);
-                *sp = tyc_TAG_INT(tsp_size(pReceiver) - 1);
-                BNEXT();
+	      BLABEL(tvm_Builtin_String_at):
+		{
+		tsp_OID pArgument = *sp;
+		assert(tyc_CLASSID(pReceiver) == tyc_ClassId_String ||
+		       tyc_CLASSID(pReceiver) == tyc_ClassId_MutableString ||
+		       tyc_CLASSID(pReceiver) == tyc_ClassId_Symbol);
+		if(tyc_IS_TAGGED_INT(pArgument)) {
+		  Int i = tyc_TAGGED_INT_VALUE(pArgument);
+		  if(i >= 0 && i < (tsp_size(pReceiver) - 1)) {
+		    *++sp = tyc_boxChar(((Char*)pReceiver)[i]);
+		    BNEXT();
+		  }
+		  /* index out of bounds */
+		  SAVE_REGS();
+		  RAISE_IndexOutOfBounds(pReceiver, pArgument);
+		}
+		SAVE_REGS();
+		RAISE_TypeError(pArgument, tyc_ClassId_Int);
+		}
+	      BLABEL(tvm_Builtin_String_size):
+		assert(tyc_CLASSID(pReceiver) == tyc_ClassId_String ||
+		       tyc_CLASSID(pReceiver) == tyc_ClassId_MutableString ||
+		       tyc_CLASSID(pReceiver) == tyc_ClassId_Symbol);
+		*sp = tyc_TAG_INT(tsp_size(pReceiver) - 1);
+		BNEXT();
 	      BLABEL(tvm_Builtin_MutableString_atPut):
 		assert(tyc_CLASSID(pReceiver) == tyc_ClassId_MutableString);
-	        {
-		tsp_OID pChar =      sp[0];
+		{
+		tsp_OID pChar =	     sp[0];
 		tsp_OID pPosition  = sp[1];
 		if(tyc_IS_TAGGED_INT(pPosition) &&
 		   tyc_CLASSID(pChar) == tyc_ClassId_Char) {
@@ -2147,7 +2148,7 @@ divisionbyzero:
 		  RAISE_TypeError(pChar, tyc_ClassId_Char);
 		}
 		}
-  	      BLABEL(tvm_Builtin_SymbolClass__new):
+	      BLABEL(tvm_Builtin_SymbolClass__new):
 		{
 		tsp_OID pArgument = *sp;
 		tsp_OID pNew;
@@ -2169,12 +2170,12 @@ divisionbyzero:
 		SAVE_REGS();
 		RAISE_TypeError(pArgument, tyc_ClassId_String);
 		}
-  	      BLABEL(tvm_Builtin_MutableString_replace):
+	      BLABEL(tvm_Builtin_MutableString_replace):
 		{
 		tsp_OID pStartAt = sp[0];
-		tsp_OID pWith =    sp[1];
-		tsp_OID pAt =      sp[2];
-		tsp_OID pN =       sp[3];
+		tsp_OID pWith =	   sp[1];
+		tsp_OID pAt =	   sp[2];
+		tsp_OID pN =	   sp[3];
 		tsp_ClassId id = tyc_CLASSID(pWith);
 		if(tyc_CLASSID(pReceiver) == tyc_ClassId_MutableString
 		  && !tsp_immutable(pReceiver)) {
@@ -2217,31 +2218,31 @@ divisionbyzero:
 		  &(((tyc_BuiltinMethod*)pMethod)->compiledMethod);
 		goto methodcall;
 		}
-              BLABEL(tvm_Builtin_Array_at):
-                {
-                tsp_OID pArgument = *sp;
-                assert(tyc_CLASSID(pReceiver) == tyc_ClassId_Array ||
+	      BLABEL(tvm_Builtin_Array_at):
+		{
+		tsp_OID pArgument = *sp;
+		assert(tyc_CLASSID(pReceiver) == tyc_ClassId_Array ||
 		       tyc_CLASSID(pReceiver) == tyc_ClassId_MutableArray ||
 		       tyc_CLASSID(pReceiver) == tyc_ClassId_AtArray);
-                if(tyc_IS_TAGGED_INT(pArgument)) {
-                  Int i = tyc_TAGGED_INT_VALUE(pArgument);
-                  if(i >= 0 && i < (tsp_size(pReceiver) / sizeof(tsp_OID))) {
-                    *++sp = ((tsp_OID*)pReceiver)[i];
-                    BNEXT();
-                  }
-                  /* index out of bounds */
-                  SAVE_REGS();
-                  RAISE_IndexOutOfBounds(pReceiver, pArgument);
-                }
-                SAVE_REGS();
-                RAISE_TypeError(pArgument, tyc_ClassId_Int);
-                }
-              BLABEL(tvm_Builtin_Array_size):
-                assert(tyc_CLASSID(pReceiver) == tyc_ClassId_Array ||
+		if(tyc_IS_TAGGED_INT(pArgument)) {
+		  Int i = tyc_TAGGED_INT_VALUE(pArgument);
+		  if(i >= 0 && i < (tsp_size(pReceiver) / sizeof(tsp_OID))) {
+		    *++sp = ((tsp_OID*)pReceiver)[i];
+		    BNEXT();
+		  }
+		  /* index out of bounds */
+		  SAVE_REGS();
+		  RAISE_IndexOutOfBounds(pReceiver, pArgument);
+		}
+		SAVE_REGS();
+		RAISE_TypeError(pArgument, tyc_ClassId_Int);
+		}
+	      BLABEL(tvm_Builtin_Array_size):
+		assert(tyc_CLASSID(pReceiver) == tyc_ClassId_Array ||
 		       tyc_CLASSID(pReceiver) == tyc_ClassId_MutableArray ||
 		       tyc_CLASSID(pReceiver) == tyc_ClassId_AtArray);
-                *sp = tyc_TAG_INT(tsp_size(pReceiver) / sizeof(tsp_OID));
-                BNEXT();
+		*sp = tyc_TAG_INT(tsp_size(pReceiver) / sizeof(tsp_OID));
+		BNEXT();
 	      BLABEL(tvm_Builtin_AtArray_takeFrom):
 		{
 		tsp_OID pArgument = *sp;
@@ -2263,9 +2264,9 @@ divisionbyzero:
 	      BLABEL(tvm_Builtin_MutableArray_replace):
 		{
 		tsp_OID pStartAt = sp[0];
-		tsp_OID pWith =    sp[1];
-		tsp_OID pAt =      sp[2];
-		tsp_OID pN =       sp[3];
+		tsp_OID pWith =	   sp[1];
+		tsp_OID pAt =	   sp[2];
+		tsp_OID pN =	   sp[3];
 		tsp_ClassId id = tyc_CLASSID(pWith);
 		if(tyc_CLASSID(pReceiver) == tyc_ClassId_MutableArray
 		   && !tsp_immutable(pReceiver)) {
@@ -2311,7 +2312,7 @@ divisionbyzero:
 	      BLABEL(tvm_Builtin_AtArray_moveTo):
 		assert(tyc_CLASSID(pReceiver) == tyc_ClassId_AtArray);
 		{
-		  /* tsp_OID pElement =  sp[0]; */
+		  /* tsp_OID pElement =	 sp[0]; */
 		tsp_OID pPosition = sp[1];
 		if(tyc_IS_TAGGED_INT(pPosition)) {
 		  Int i = tyc_TAGGED_INT_VALUE(pPosition);
@@ -2331,10 +2332,10 @@ divisionbyzero:
 		}
 		SAVE_REGS();
 		RAISE_TypeError(pPosition, tyc_ClassId_Int);
-	        }
+		}
 	      BLABEL(tvm_Builtin_MutableArray_atPut):
 		assert(tyc_CLASSID(pReceiver) == tyc_ClassId_MutableArray);
-	        {
+		{
 		tsp_OID pElement =  sp[0];
 		tsp_OID pPosition = sp[1];
 		if(!tsp_immutable(pReceiver)) {
@@ -2355,169 +2356,169 @@ divisionbyzero:
 		}
 		SAVE_REGS();
 		RAISE_WriteToImmutable(pReceiver);
-	        }
+		}
 
-              /* arrays with integral values */
-              #define SHORTATOP(t) \
-                { \
-                tsp_OID pArgument = *sp; \
-                assert(tyc_CLASSID(pReceiver) == tyc_ClassId_ ## t ## Array); \
-                if(tyc_IS_TAGGED_INT(pArgument)) { \
-                  Int i = tyc_TAGGED_INT_VALUE(pArgument); \
-                  if(i >= 0 && i < (tsp_size(pReceiver) / sizeof(t))) { \
-                    *++sp = tyc_TAG_INT(((t*)pReceiver)[i]); \
-                    BNEXT(); \
-                  } \
-                  /* index out of bounds */ \
-                  SAVE_REGS(); \
-                  RAISE_IndexOutOfBounds(pReceiver, pArgument); \
-                } \
-                SAVE_REGS(); \
-                RAISE_TypeError(pArgument, tyc_ClassId_Int); \
-                }
-              BLABEL(tvm_Builtin_ByteArray_at):  SHORTATOP(Byte);
-              BLABEL(tvm_Builtin_ShortArray_at): SHORTATOP(Short);
+	      /* arrays with integral values */
+	      #define SHORTATOP(t) \
+		{ \
+		tsp_OID pArgument = *sp; \
+		assert(tyc_CLASSID(pReceiver) == tyc_ClassId_ ## t ## Array); \
+		if(tyc_IS_TAGGED_INT(pArgument)) { \
+		  Int i = tyc_TAGGED_INT_VALUE(pArgument); \
+		  if(i >= 0 && i < (tsp_size(pReceiver) / sizeof(t))) { \
+		    *++sp = tyc_TAG_INT(((t*)pReceiver)[i]); \
+		    BNEXT(); \
+		  } \
+		  /* index out of bounds */ \
+		  SAVE_REGS(); \
+		  RAISE_IndexOutOfBounds(pReceiver, pArgument); \
+		} \
+		SAVE_REGS(); \
+		RAISE_TypeError(pArgument, tyc_ClassId_Int); \
+		}
+	      BLABEL(tvm_Builtin_ByteArray_at):	 SHORTATOP(Byte);
+	      BLABEL(tvm_Builtin_ShortArray_at): SHORTATOP(Short);
 
-              #define ATPUTOP(t) \
-                { \
-                tsp_OID pInt =       sp[0]; \
-                tsp_OID pPosition  = sp[1]; \
-                assert(tyc_CLASSID(pReceiver) == tyc_ClassId_ ## t ## Array); \
-                if(tyc_IS_TAGGED_INT(pPosition) && \
-                   tyc_CLASSID(pInt) == tyc_ClassId_Int) { \
-                  Int i = tyc_TAGGED_INT_VALUE(pPosition); \
-                  if( i >= 0 && i < (tsp_size(pReceiver) / sizeof(t))) { \
-                    ((t*)pReceiver)[i] = tyc_TAGGED_INT_VALUE(pInt); \
-                    sp += 2; \
-                    *sp = pInt; \
-                    BNEXT(); \
-                  } \
-                  /* index out of bounds */ \
-                  SAVE_REGS(); \
-                  RAISE_IndexOutOfBounds(pReceiver, pPosition); \
-                } \
-                SAVE_REGS(); \
-                if(!tyc_IS_TAGGED_INT(pPosition)) { \
-                  RAISE_TypeError(pPosition, tyc_ClassId_Int); \
-                } \
-                else { \
-                  RAISE_TypeError(pInt, tyc_ClassId_Int); \
-                } \
-                }
-              BLABEL(tvm_Builtin_ByteArray_atPut):  ATPUTOP(Byte);
-              BLABEL(tvm_Builtin_ShortArray_atPut): ATPUTOP(Short);
-              BLABEL(tvm_Builtin_IntArray_atPut):   ATPUTOP(Int);
+	      #define ATPUTOP(t) \
+		{ \
+		tsp_OID pInt =	     sp[0]; \
+		tsp_OID pPosition  = sp[1]; \
+		assert(tyc_CLASSID(pReceiver) == tyc_ClassId_ ## t ## Array); \
+		if(tyc_IS_TAGGED_INT(pPosition) && \
+		   tyc_CLASSID(pInt) == tyc_ClassId_Int) { \
+		  Int i = tyc_TAGGED_INT_VALUE(pPosition); \
+		  if( i >= 0 && i < (tsp_size(pReceiver) / sizeof(t))) { \
+		    ((t*)pReceiver)[i] = tyc_TAGGED_INT_VALUE(pInt); \
+		    sp += 2; \
+		    *sp = pInt; \
+		    BNEXT(); \
+		  } \
+		  /* index out of bounds */ \
+		  SAVE_REGS(); \
+		  RAISE_IndexOutOfBounds(pReceiver, pPosition); \
+		} \
+		SAVE_REGS(); \
+		if(!tyc_IS_TAGGED_INT(pPosition)) { \
+		  RAISE_TypeError(pPosition, tyc_ClassId_Int); \
+		} \
+		else { \
+		  RAISE_TypeError(pInt, tyc_ClassId_Int); \
+		} \
+		}
+	      BLABEL(tvm_Builtin_ByteArray_atPut):  ATPUTOP(Byte);
+	      BLABEL(tvm_Builtin_ShortArray_atPut): ATPUTOP(Short);
+	      BLABEL(tvm_Builtin_IntArray_atPut):   ATPUTOP(Int);
 
-              BLABEL(tvm_Builtin_IntArray_at):
-                {
-                tsp_OID pNew, pArgument = *sp;
-                assert(tyc_CLASSID(pReceiver) == tyc_ClassId_IntArray);
-                if(tyc_IS_TAGGED_INT(pArgument)) {
-                  Int i = tyc_TAGGED_INT_VALUE(pArgument);
-                  if(i >= 0 && i < (tsp_size(pReceiver) / sizeof(Int))) {
-                    SAVE_REGS();
-                    pNew = tyc_TAG_MAYBEBOXED(((Int*)pReceiver)[i]);
-                    FETCH_THREAD();
-                    LOAD_REGS();
-                    *++sp = pNew;
-                    BNEXT();
-                  }
-                  /* index out of bounds */
-                  SAVE_REGS();
-                  RAISE_IndexOutOfBounds(pReceiver, pArgument);
-                }
-                SAVE_REGS();
-                RAISE_TypeError(pArgument, tyc_ClassId_Int);
-                }
-              BLABEL(tvm_Builtin_LongArray_at):
-                {
-                tsp_OID pNew, pArgument = *sp;
-                assert(tyc_CLASSID(pReceiver) == tyc_ClassId_LongArray);
-                if(tyc_IS_TAGGED_INT(pArgument)) {
-                  Int i = tyc_TAGGED_INT_VALUE(pArgument);
-                  if(i >= 0 && i < (tsp_size(pReceiver) / sizeof(Long))) {
-                    SAVE_REGS();
-                    pNew = tyc_boxLong(((Long*)pReceiver)[i]);
-                    FETCH_THREAD();
-                    LOAD_REGS();
-                    *++sp = pNew;
-                    BNEXT();
-                  }
-                  /* index out of bounds */
-                  SAVE_REGS();
-                  RAISE_IndexOutOfBounds(pReceiver, pArgument);
-                }
-                SAVE_REGS();
-                RAISE_TypeError(pArgument, tyc_ClassId_Int);
-                }
-              BLABEL(tvm_Builtin_LongArray_atPut):
-                {
-                tsp_OID pLong =      sp[0];
-                tsp_OID pPosition  = sp[1];
-                assert(tyc_CLASSID(pReceiver) == tyc_ClassId_LongArray);
-                if(tyc_IS_TAGGED_INT(pPosition) &&
-                   tyc_CLASSID(pLong) == tyc_ClassId_Long) {
-                  Int i = tyc_TAGGED_INT_VALUE(pPosition);
-                  if( i >= 0 && i < (tsp_size(pReceiver) / sizeof(Long))) {
-                    ((Long*)pReceiver)[i] = tyc_LONG_VALUE(pLong);
-                    sp += 2;
-                    *sp = pLong;
-                    BNEXT();
-                  } \
-                  /* index out of bounds */
-                  SAVE_REGS();
-                  RAISE_IndexOutOfBounds(pReceiver, pPosition);
-                }
-                SAVE_REGS();
-                if(!tyc_IS_TAGGED_INT(pPosition)) {
-                  RAISE_TypeError(pPosition, tyc_ClassId_Int);
-                }
-                else {
-                  RAISE_TypeError(pLong, tyc_ClassId_Long);
-                }
-                }
+	      BLABEL(tvm_Builtin_IntArray_at):
+		{
+		tsp_OID pNew, pArgument = *sp;
+		assert(tyc_CLASSID(pReceiver) == tyc_ClassId_IntArray);
+		if(tyc_IS_TAGGED_INT(pArgument)) {
+		  Int i = tyc_TAGGED_INT_VALUE(pArgument);
+		  if(i >= 0 && i < (tsp_size(pReceiver) / sizeof(Int))) {
+		    SAVE_REGS();
+		    pNew = tyc_TAG_MAYBEBOXED(((Int*)pReceiver)[i]);
+		    FETCH_THREAD();
+		    LOAD_REGS();
+		    *++sp = pNew;
+		    BNEXT();
+		  }
+		  /* index out of bounds */
+		  SAVE_REGS();
+		  RAISE_IndexOutOfBounds(pReceiver, pArgument);
+		}
+		SAVE_REGS();
+		RAISE_TypeError(pArgument, tyc_ClassId_Int);
+		}
+	      BLABEL(tvm_Builtin_LongArray_at):
+		{
+		tsp_OID pNew, pArgument = *sp;
+		assert(tyc_CLASSID(pReceiver) == tyc_ClassId_LongArray);
+		if(tyc_IS_TAGGED_INT(pArgument)) {
+		  Int i = tyc_TAGGED_INT_VALUE(pArgument);
+		  if(i >= 0 && i < (tsp_size(pReceiver) / sizeof(Long))) {
+		    SAVE_REGS();
+		    pNew = tyc_boxLong(((Long*)pReceiver)[i]);
+		    FETCH_THREAD();
+		    LOAD_REGS();
+		    *++sp = pNew;
+		    BNEXT();
+		  }
+		  /* index out of bounds */
+		  SAVE_REGS();
+		  RAISE_IndexOutOfBounds(pReceiver, pArgument);
+		}
+		SAVE_REGS();
+		RAISE_TypeError(pArgument, tyc_ClassId_Int);
+		}
+	      BLABEL(tvm_Builtin_LongArray_atPut):
+		{
+		tsp_OID pLong =	     sp[0];
+		tsp_OID pPosition  = sp[1];
+		assert(tyc_CLASSID(pReceiver) == tyc_ClassId_LongArray);
+		if(tyc_IS_TAGGED_INT(pPosition) &&
+		   tyc_CLASSID(pLong) == tyc_ClassId_Long) {
+		  Int i = tyc_TAGGED_INT_VALUE(pPosition);
+		  if( i >= 0 && i < (tsp_size(pReceiver) / sizeof(Long))) {
+		    ((Long*)pReceiver)[i] = tyc_LONG_VALUE(pLong);
+		    sp += 2;
+		    *sp = pLong;
+		    BNEXT();
+		  } \
+		  /* index out of bounds */
+		  SAVE_REGS();
+		  RAISE_IndexOutOfBounds(pReceiver, pPosition);
+		}
+		SAVE_REGS();
+		if(!tyc_IS_TAGGED_INT(pPosition)) {
+		  RAISE_TypeError(pPosition, tyc_ClassId_Int);
+		}
+		else {
+		  RAISE_TypeError(pLong, tyc_ClassId_Long);
+		}
+		}
 
-              #define SIZEOP(t) \
-                { \
-                assert(tyc_CLASSID(pReceiver) == tyc_ClassId_ ## t ## Array); \
-                *sp = tyc_TAG_INT(tsp_size(pReceiver) / sizeof(t)); \
-                }
-              BLABEL(tvm_Builtin_ByteArray_size):  SIZEOP(Byte); BNEXT();
-              BLABEL(tvm_Builtin_ShortArray_size): SIZEOP(Short); BNEXT();
-              BLABEL(tvm_Builtin_IntArray_size):   SIZEOP(Int); BNEXT();
-              BLABEL(tvm_Builtin_LongArray_size):  SIZEOP(Long); BNEXT();
+	      #define SIZEOP(t) \
+		{ \
+		assert(tyc_CLASSID(pReceiver) == tyc_ClassId_ ## t ## Array); \
+		*sp = tyc_TAG_INT(tsp_size(pReceiver) / sizeof(t)); \
+		}
+	      BLABEL(tvm_Builtin_ByteArray_size):  SIZEOP(Byte); BNEXT();
+	      BLABEL(tvm_Builtin_ShortArray_size): SIZEOP(Short); BNEXT();
+	      BLABEL(tvm_Builtin_IntArray_size):   SIZEOP(Int); BNEXT();
+	      BLABEL(tvm_Builtin_LongArray_size):  SIZEOP(Long); BNEXT();
 
-              #define NEWOP(t) \
-                { \
-                tsp_OID pNew, pArgument = *sp; \
-                tyc_Class * pClass = (tyc_Class*)pReceiver; \
-                if(tyc_IS_TAGGED_INT(pArgument)) { \
-                  Int i = tyc_TAGGED_INT_VALUE(pArgument); \
-                  SAVE_REGS(); \
-                  pNew = tsp_new ## t ## Array( \
-                         tyc_UNTAG_INT(pClass->wInstanceId), i); \
-                  assert(tsp_classId(pNew) == tyc_ClassId_ ## t ## Array); \
-                  FETCH_THREAD(); \
-                  LOAD_REGS(); \
-                  *++sp = pNew; \
-                  BNEXT(); \
-                } \
-                SAVE_REGS(); \
-                RAISE_TypeError(pArgument, tyc_ClassId_Int); \
-                }
-              BLABEL(tvm_Builtin_ByteArrayClass__new1):  NEWOP(Byte);
-              BLABEL(tvm_Builtin_ShortArrayClass__new1): NEWOP(Short);
-              BLABEL(tvm_Builtin_IntArrayClass__new1):   NEWOP(Int);
-              BLABEL(tvm_Builtin_LongArrayClass__new1):  NEWOP(Long);
-              /* end of arrays */
+	      #define NEWOP(t) \
+		{ \
+		tsp_OID pNew, pArgument = *sp; \
+		tyc_Class * pClass = (tyc_Class*)pReceiver; \
+		if(tyc_IS_TAGGED_INT(pArgument)) { \
+		  Int i = tyc_TAGGED_INT_VALUE(pArgument); \
+		  SAVE_REGS(); \
+		  pNew = tsp_new ## t ## Array( \
+			 tyc_UNTAG_INT(pClass->wInstanceId), i); \
+		  assert(tsp_classId(pNew) == tyc_ClassId_ ## t ## Array); \
+		  FETCH_THREAD(); \
+		  LOAD_REGS(); \
+		  *++sp = pNew; \
+		  BNEXT(); \
+		} \
+		SAVE_REGS(); \
+		RAISE_TypeError(pArgument, tyc_ClassId_Int); \
+		}
+	      BLABEL(tvm_Builtin_ByteArrayClass__new1):	 NEWOP(Byte);
+	      BLABEL(tvm_Builtin_ShortArrayClass__new1): NEWOP(Short);
+	      BLABEL(tvm_Builtin_IntArrayClass__new1):	 NEWOP(Int);
+	      BLABEL(tvm_Builtin_LongArrayClass__new1):	 NEWOP(Long);
+	      /* end of arrays */
 
-              BLABEL(tvm_Builtin_Char_asInt):
-                assert(tyc_CLASSID(pReceiver) == tyc_ClassId_Char);
-                *sp = tyc_TAG_INT(tyc_CHAR_VALUE(pReceiver));
-                BNEXT();
+	      BLABEL(tvm_Builtin_Char_asInt):
+		assert(tyc_CLASSID(pReceiver) == tyc_ClassId_Char);
+		*sp = tyc_TAG_INT(tyc_CHAR_VALUE(pReceiver));
+		BNEXT();
 	      BLABEL(tvm_Builtin_Char_equal):
 		assert(tyc_CLASSID(pReceiver) == tyc_ClassId_Char);
-	        {
+		{
 		tsp_OID pArgument = *sp;
 		if(tyc_CLASSID(pArgument) == tyc_ClassId_Char)
 		  *++sp = tyc_boxBool(tyc_CHAR_VALUE(pReceiver) ==
@@ -2526,165 +2527,165 @@ divisionbyzero:
 		  *++sp = tyc_FALSE;
 		}
 		BNEXT();
-              BLABEL(tvm_Builtin_DLL___open):
-                {
-                void * handle;
-                tsp_OID pNew, pPath = *sp;
-                tsp_ClassId id = tyc_CLASSID(pPath);
-                if( id == tyc_ClassId_String ||
-                    id == tyc_ClassId_MutableString ||
-                    id == tyc_ClassId_Symbol) {
-                  SAVE_REGS();
-                  if(!(handle = rtdll_open(pPath))) {
-                    /* raise exception */
-                    RAISE_DLLOpenError(pReceiver);
-                  }
-                  pNew = tyc_TAG_MAYBEBOXED(handle);
-                  FETCH_THREAD();
-                  LOAD_REGS();
-                  *++sp = pNew;
-                  BNEXT();
-                }
-                SAVE_REGS();
-                RAISE_TypeError(pPath, tyc_ClassId_String);
-                }
-              BLABEL(tvm_Builtin_DLL___close):
-                {
-                tsp_OID hDLL = *sp;
-                if(tyc_IS_TAGGED_INT(hDLL)) {
-                  *++sp =
-                   tyc_TAG_INT(rtdll_close((void*)tyc_TAGGED_INT_VALUE(hDLL)));
-                  BNEXT();
-                }
-                /* type error */
-                SAVE_REGS();
-                RAISE_TypeError(hDLL, tyc_ClassId_Int);
-                }
-              BLABEL(tvm_Builtin_Exception__raise):
-                SAVE_REGS();
-                tvm_raise(pReceiver);
+	      BLABEL(tvm_Builtin_DLL___open):
+		{
+		void * handle;
+		tsp_OID pNew, pPath = *sp;
+		tsp_ClassId id = tyc_CLASSID(pPath);
+		if( id == tyc_ClassId_String ||
+		    id == tyc_ClassId_MutableString ||
+		    id == tyc_ClassId_Symbol) {
+		  SAVE_REGS();
+		  if(!(handle = rtdll_open(pPath))) {
+		    /* raise exception */
+		    RAISE_DLLOpenError(pReceiver);
+		  }
+		  pNew = tyc_TAG_MAYBEBOXED(handle);
+		  FETCH_THREAD();
+		  LOAD_REGS();
+		  *++sp = pNew;
+		  BNEXT();
+		}
+		SAVE_REGS();
+		RAISE_TypeError(pPath, tyc_ClassId_String);
+		}
+	      BLABEL(tvm_Builtin_DLL___close):
+		{
+		tsp_OID hDLL = *sp;
+		if(tyc_IS_TAGGED_INT(hDLL)) {
+		  *++sp =
+		   tyc_TAG_INT(rtdll_close((void*)tyc_TAGGED_INT_VALUE(hDLL)));
+		  BNEXT();
+		}
+		/* type error */
+		SAVE_REGS();
+		RAISE_TypeError(hDLL, tyc_ClassId_Int);
+		}
+	      BLABEL(tvm_Builtin_Exception__raise):
+		SAVE_REGS();
+		tvm_raise(pReceiver);
 
-                /* generic fun apply */
-                #define FUNAPPLY(nr) \
+		/* generic fun apply */
+		#define FUNAPPLY(nr) \
 		  assert(tyc_CLASSID(pReceiver) == tyc_ClassId_Fun ## nr); \
 		  pMethod = (tyc_Method*)((tyc_Fun*)pReceiver)->pCompiledFun; \
 		  assert(pMethod->nArgs == nr); \
 		  assert(pMethod->wSorts == 0); \
 		  assert(strcmp(pMethod->pSelector, "[]") == 0); \
 		  goto methodcall;
-              BLABEL(tvm_Builtin_Fun0_apply):  FUNAPPLY(0);
-              BLABEL(tvm_Builtin_Fun1_apply):  FUNAPPLY(1);
-              BLABEL(tvm_Builtin_Fun2_apply):  FUNAPPLY(2);
-              BLABEL(tvm_Builtin_Fun3_apply):  FUNAPPLY(3);
-              BLABEL(tvm_Builtin_Fun4_apply):  FUNAPPLY(4);
-              BLABEL(tvm_Builtin_Fun5_apply):  FUNAPPLY(5);
-              BLABEL(tvm_Builtin_Fun6_apply):  FUNAPPLY(6);
-              BLABEL(tvm_Builtin_Fun7_apply):  FUNAPPLY(7);
-              BLABEL(tvm_Builtin_Fun8_apply):  FUNAPPLY(8);
-              BLABEL(tvm_Builtin_Fun9_apply):  FUNAPPLY(9);
-              BLABEL(tvm_Builtin_Fun10_apply): FUNAPPLY(10);
+	      BLABEL(tvm_Builtin_Fun0_apply):  FUNAPPLY(0);
+	      BLABEL(tvm_Builtin_Fun1_apply):  FUNAPPLY(1);
+	      BLABEL(tvm_Builtin_Fun2_apply):  FUNAPPLY(2);
+	      BLABEL(tvm_Builtin_Fun3_apply):  FUNAPPLY(3);
+	      BLABEL(tvm_Builtin_Fun4_apply):  FUNAPPLY(4);
+	      BLABEL(tvm_Builtin_Fun5_apply):  FUNAPPLY(5);
+	      BLABEL(tvm_Builtin_Fun6_apply):  FUNAPPLY(6);
+	      BLABEL(tvm_Builtin_Fun7_apply):  FUNAPPLY(7);
+	      BLABEL(tvm_Builtin_Fun8_apply):  FUNAPPLY(8);
+	      BLABEL(tvm_Builtin_Fun9_apply):  FUNAPPLY(9);
+	      BLABEL(tvm_Builtin_Fun10_apply): FUNAPPLY(10);
 
-                #define FUNAPPLY_R(args, sortsCR, sorts) \
+		#define FUNAPPLY_R(args, sortsCR, sorts) \
 		  assert(tyc_CLASSID(pReceiver) == tyc_ClassId_Fun ## sortsCR ## R); \
 		  pMethod = (tyc_Method*)((tyc_Fun*)pReceiver)->pCompiledFun; \
 		  assert(pMethod->nArgs == args); \
 		  assert(pMethod->wSorts == sorts); \
 		  assert(strcmp(pMethod->pSelector, "[]") == 0); \
 		  goto methodcall;
-	      BLABEL(tvm_Builtin_FunCR_apply):  FUNAPPLY_R(1,C,1);
+	      BLABEL(tvm_Builtin_FunCR_apply):	FUNAPPLY_R(1,C,1);
 	      BLABEL(tvm_Builtin_FunCRR_apply): FUNAPPLY_R(2,CR,1);
 	      BLABEL(tvm_Builtin_FunRCR_apply): FUNAPPLY_R(2,RC,2);
 	      BLABEL(tvm_Builtin_FunCCR_apply): FUNAPPLY_R(2,CC,3);
 
-                #define FUNAPPLY_C(args, sortsCR, sorts) \
+		#define FUNAPPLY_C(args, sortsCR, sorts) \
 		  assert(tyc_CLASSID(pReceiver) == tyc_ClassId_Fun ## sortsCR ## C); \
 		  pMethod = (tyc_Method*)((tyc_Fun*)pReceiver)->pCompiledFun; \
 		  assert(pMethod->nArgs == args); \
 		  assert(pMethod->wSorts == sorts); \
 		  assert(strcmp(pMethod->pSelector, "[]@") == 0); \
 		  goto methodcall;
-                #define FUNAPPLY_C1(args, sorts) \
+		#define FUNAPPLY_C1(args, sorts) \
 		  assert(tyc_CLASSID(pReceiver) == tyc_ClassId_Fun ## C); \
 		  pMethod = (tyc_Method*)((tyc_Fun*)pReceiver)->pCompiledFun; \
 		  assert(pMethod->nArgs == args); \
 		  assert(pMethod->wSorts == sorts); \
 		  assert(strcmp(pMethod->pSelector, "[]@") == 0); \
 		  goto methodcall;
-	      BLABEL(tvm_Builtin_FunC_apply):   FUNAPPLY_C1(0,0);
-	      BLABEL(tvm_Builtin_FunRC_apply):  FUNAPPLY_C(1,R,0);
-	      BLABEL(tvm_Builtin_FunCC_apply):  FUNAPPLY_C(1,C,1);
+	      BLABEL(tvm_Builtin_FunC_apply):	FUNAPPLY_C1(0,0);
+	      BLABEL(tvm_Builtin_FunRC_apply):	FUNAPPLY_C(1,R,0);
+	      BLABEL(tvm_Builtin_FunCC_apply):	FUNAPPLY_C(1,C,1);
 	      BLABEL(tvm_Builtin_FunRRC_apply): FUNAPPLY_C(2,RR,0);
 	      BLABEL(tvm_Builtin_FunCRC_apply): FUNAPPLY_C(2,CR,1);
 	      BLABEL(tvm_Builtin_FunRCC_apply): FUNAPPLY_C(2,RC,2);
 	      BLABEL(tvm_Builtin_FunCCC_apply): FUNAPPLY_C(2,CC,3);
-              
-              BLABEL(tvm_Builtin_Tycoon_errno):
-                assert(tyc_CLASSID(pReceiver) == tyc_ClassId_Tycoon);
-                *sp = tyc_TAG_INT(tosError_getCode());
-                BNEXT();
-              BLABEL(tvm_Builtin_Tycoon_backTrace):
-                assert(tyc_CLASSID(pReceiver) == tyc_ClassId_Tycoon);
-                SAVE_REGS();
-                tmdebug_backTrace(pThread, stdout);
-                *sp = tyc_NIL;
-                BNEXT();
-              BLABEL(tvm_Builtin_Tycoon__rollback):
-                /* brute force version */
-                assert(tyc_CLASSID(pReceiver) == tyc_ClassId_Tycoon);
-                /* restart the whole process */
-                tosProcess_execute(tm_pszProg, tm_pArguments);
-                /* should not proceed beyond this point */
-                *sp = tyc_TAG_INT(1);
-                BNEXT();
-              BLABEL(tvm_Builtin_Tycoon__commit):
-                {
-                tsp_ErrorCode wErrorCode;
-                assert(tyc_CLASSID(pReceiver) == tyc_ClassId_Tycoon);
-                SAVE_REGS();
-                tmthread_criticalLock();
-                tmthread_checkSyncRequest();
-                FETCH_THREAD();
-                LOAD_REGS();
-                *sp = tyc_TAG_INT(2);
-                ip += 3;
+	      
+	      BLABEL(tvm_Builtin_Tycoon_errno):
+		assert(tyc_CLASSID(pReceiver) == tyc_ClassId_Tycoon);
+		*sp = tyc_TAG_INT(tosError_getCode());
+		BNEXT();
+	      BLABEL(tvm_Builtin_Tycoon_backTrace):
+		assert(tyc_CLASSID(pReceiver) == tyc_ClassId_Tycoon);
+		SAVE_REGS();
+		tmdebug_backTrace(pThread, stdout);
+		*sp = tyc_NIL;
+		BNEXT();
+	      BLABEL(tvm_Builtin_Tycoon__rollback):
+		/* brute force version */
+		assert(tyc_CLASSID(pReceiver) == tyc_ClassId_Tycoon);
+		/* restart the whole process */
+		tosProcess_execute(tm_pszProg, tm_pArguments);
+		/* should not proceed beyond this point */
+		*sp = tyc_TAG_INT(1);
+		BNEXT();
+	      BLABEL(tvm_Builtin_Tycoon__commit):
+		{
+		tsp_ErrorCode wErrorCode;
+		assert(tyc_CLASSID(pReceiver) == tyc_ClassId_Tycoon);
+		SAVE_REGS();
+		tmthread_criticalLock();
+		tmthread_checkSyncRequest();
+		FETCH_THREAD();
+		LOAD_REGS();
+		*sp = tyc_TAG_INT(2);
+		ip += 3;
 		CLEAR_PAST_EVENT(pThread);
-                SAVE_REGS();
-                /* shrink store (do a compacting gc) */
-                tsp_gc(TRUE);
-                tmthread_syncRequest();
-                /* execute commit */
-                wErrorCode = tsp_commit();
-                /* leave critical section */
-                tmthread_syncRelease();
-                tmthread_criticalUnlock();
-                /* check return code and raise exception if commit failed */
-                if(wErrorCode) {
-                  fprintf(stderr,"\nTSP error: commit failed: %s.\n",
-                          tsp_errorCode(wErrorCode));
-                  tvm_raise(tyc_pCommitError);
-                }
-                FETCH_THREAD();
-                LOAD_REGS();
-                ip -= 3;
-                *sp = tyc_TAG_INT(0);
-                }
-                BNEXT();
-              BLABEL(tvm_Builtin_Tycoon_builtinArgv):
-                assert(tyc_CLASSID(pReceiver) == tyc_ClassId_Tycoon);
-                *sp = tyc_pArgv;
-                BNEXT();
-              BLABEL(tvm_Builtin_ConcreteClass__new):
-                {
-                tsp_OID pNew;
-                tyc_Class * pClass = (tyc_Class*)pReceiver;
-                SAVE_REGS();
-                pNew = tsp_newArray(tyc_UNTAG_INT(pClass->wInstanceId),
-                                    tyc_UNTAG_INT(pClass->wInstanceSize));
-                FETCH_THREAD();
-                LOAD_REGS();
-                *sp = pNew;
-                }
-                BNEXT();
+		SAVE_REGS();
+		/* shrink store (do a compacting gc) */
+		tsp_gc(TRUE);
+		tmthread_syncRequest();
+		/* execute commit */
+		wErrorCode = tsp_commit();
+		/* leave critical section */
+		tmthread_syncRelease();
+		tmthread_criticalUnlock();
+		/* check return code and raise exception if commit failed */
+		if(wErrorCode) {
+		  fprintf(stderr,"\nTSP error: commit failed: %s.\n",
+			  tsp_errorCode(wErrorCode));
+		  tvm_raise(tyc_pCommitError);
+		}
+		FETCH_THREAD();
+		LOAD_REGS();
+		ip -= 3;
+		*sp = tyc_TAG_INT(0);
+		}
+		BNEXT();
+	      BLABEL(tvm_Builtin_Tycoon_builtinArgv):
+		assert(tyc_CLASSID(pReceiver) == tyc_ClassId_Tycoon);
+		*sp = tyc_pArgv;
+		BNEXT();
+	      BLABEL(tvm_Builtin_ConcreteClass__new):
+		{
+		tsp_OID pNew;
+		tyc_Class * pClass = (tyc_Class*)pReceiver;
+		SAVE_REGS();
+		pNew = tsp_newArray(tyc_UNTAG_INT(pClass->wInstanceId),
+				    tyc_UNTAG_INT(pClass->wInstanceSize));
+		FETCH_THREAD();
+		LOAD_REGS();
+		*sp = pNew;
+		}
+		BNEXT();
 	      BLABEL(tvm_Builtin_MutableArrayClass__new1):
 		{
 		tsp_OID pNew, pArgument = *sp;
@@ -2739,7 +2740,7 @@ divisionbyzero:
 		SAVE_REGS();
 		RAISE_TypeError(pArgument, tyc_ClassId_Int);
 		}
-              BLABEL(tvm_Builtin_Builtin_fail):
+	      BLABEL(tvm_Builtin_Builtin_fail):
 		/* call bytecode */
 		pMethod = (tyc_Method*)
 		  &(((tyc_BuiltinMethod*)pMethod)->compiledMethod);
@@ -2767,7 +2768,7 @@ divisionbyzero:
 		BNEXT();
 	      BLABEL(tvm_Builtin_Root_flushSelector):
 		{
-		  /* tsp_OID pClass =    sp[0]; */
+		  /* tsp_OID pClass =	 sp[0]; */
 		  /* tsp_OID pSelector = sp[1]; */
 		assert(tyc_CLASSID(pReceiver) == tyc_ClassId_Root);
 		SAVE_REGS();
@@ -2778,142 +2779,142 @@ divisionbyzero:
 		*sp = pReceiver;
 		}
 		BNEXT();
-              BLABEL(tvm_Builtin_EagerDFA_transition):
-                /* this is a quick hack: arguments are not checked
-                   and no exception is raised! */
-                {
-                Int ch = tyc_CHAR_VALUE(sp[0]);
-                register Word wOffset = tyc_TAGGED_INT_VALUE(sp[1]);
-                Short * pMoveTable = (Short*)(sp[2]);
-                Int result;
-                for(;; wOffset += 2) {
-                  register Int ch2 = pMoveTable[wOffset];
-                  if (ch2 > ch) {
-                    result = pMoveTable[wOffset+1];
-                    break;
-                  }
-                  if (ch2 == -1) {
-                    result = -1;
-                    break;
-                  }
-                }
-                sp += 3;
-                *sp = tyc_TAG_INT(result);
-                }
-                BNEXT();
-              BLABEL(tvm_Builtin_Root_newClassId):
-                {
-                tsp_OID pDescriptor = sp[0];
-                tsp_OID pLayout =     sp[1];
-                tsp_ClassId newId;
-                assert(tyc_CLASSID(pReceiver) == tyc_ClassId_Root);
-                if(tyc_IS_TAGGED_INT(pLayout)) {
-                  tsp_ClassId id = tyc_CLASSID(pDescriptor);
-                  if(id==tyc_ClassId_Nil || id==tyc_ClassId_MutableString ||
-                     id==tyc_ClassId_String || id==tyc_ClassId_Symbol) {
-                    newId = tsp_newClassId(tyc_TAGGED_INT_VALUE(pLayout),
-                                           pDescriptor);
-                    sp += 2;
-                    *sp = tyc_TAG_INT(newId);
-                    BNEXT();
-                  }
-                  SAVE_REGS();
-                  RAISE_TypeError(pDescriptor, tyc_ClassId_String);
-                }
-                SAVE_REGS();
-                RAISE_TypeError(pLayout, tyc_ClassId_Int);
-                }
-              BLABEL(tvm_Builtin_CStructClass__new):
-                {
-                tsp_OID pNew;
-                tyc_Class * pClass = (tyc_Class*)pReceiver;
-                SAVE_REGS();
-                pNew = tsp_newStruct(tyc_UNTAG_INT(pClass->wInstanceId));
-                FETCH_THREAD();
-                LOAD_REGS();
-                *sp = pNew;
-                }
-                BNEXT();
-              BLABEL(tvm_Builtin_Tycoon__platformCode):
-                {
-                int hostID;
-                assert(tyc_CLASSID(pReceiver) == tyc_ClassId_Tycoon);
-                hostID = tosSystem_getID();
-                *sp = tyc_TAG_INT(hostID);
-                }
-                BNEXT();
-              /* thread & weakRef initilaization */
-              BLABEL(tvm_Builtin_ThreadClass__new):
-                {
-                tsp_OID pNew;
-                SAVE_REGS();
-                pNew = tsp_newThread(tyc_ClassId_Thread);
-                FETCH_THREAD();
-                LOAD_REGS();
-                *sp = pNew;
-                }
-                BNEXT();
-              BLABEL(tvm_Builtin_ThreadClass_this):
-                {
-                *sp = pThread;
-                }
-                BNEXT();
-              BLABEL(tvm_Builtin_ThreadClass_sleep):
-                {
-                tyc_Long * pLong = *sp;
-                if(tyc_CLASSID(pLong) == tyc_ClassId_Long) {
-                  Long longTime = pLong->value;
-                  SAVE_REGS();
-                  tmthread_criticalLock();
-                  tmthread_checkSyncRequest();
-                  FETCH_THREAD();
-                  SET_BLOCKED(pThread);
-                  tmthread_criticalUnlock();
-                  tosThread_sleep((Word)longTime);
-                  tmthread_criticalLock();
-                  tmthread_checkSyncRequest();
-                  FETCH_THREAD();
-                  LOAD_REGS();
-                  CLEAR_BLOCKED(pThread);
-                  tmthread_criticalUnlock();
-                  sp++;
-                  BNEXT();
-                }
-                SAVE_REGS();
-                RAISE_TypeError(pLong, tyc_ClassId_Long);
-                }
-              BLABEL(tvm_Builtin_ThreadClass_testCancel):
-                {
-                SAVE_REGS();
-                tmthread_testCancel();
-                }
-                BNEXT();
-              BLABEL(tvm_Builtin_Thread___init):
-                {
-                tsp_OID pNew;
-                assert(tyc_CLASSID(pReceiver) == tyc_ClassId_Thread);
+	      BLABEL(tvm_Builtin_EagerDFA_transition):
+		/* this is a quick hack: arguments are not checked
+		   and no exception is raised! */
+		{
+		Int ch = tyc_CHAR_VALUE(sp[0]);
+		register Word wOffset = tyc_TAGGED_INT_VALUE(sp[1]);
+		Short * pMoveTable = (Short*)(sp[2]);
+		Int result;
+		for(;; wOffset += 2) {
+		  register Int ch2 = pMoveTable[wOffset];
+		  if (ch2 > ch) {
+		    result = pMoveTable[wOffset+1];
+		    break;
+		  }
+		  if (ch2 == -1) {
+		    result = -1;
+		    break;
+		  }
+		}
+		sp += 3;
+		*sp = tyc_TAG_INT(result);
+		}
+		BNEXT();
+	      BLABEL(tvm_Builtin_Root_newClassId):
+		{
+		tsp_OID pDescriptor = sp[0];
+		tsp_OID pLayout =     sp[1];
+		tsp_ClassId newId;
+		assert(tyc_CLASSID(pReceiver) == tyc_ClassId_Root);
+		if(tyc_IS_TAGGED_INT(pLayout)) {
+		  tsp_ClassId id = tyc_CLASSID(pDescriptor);
+		  if(id==tyc_ClassId_Nil || id==tyc_ClassId_MutableString ||
+		     id==tyc_ClassId_String || id==tyc_ClassId_Symbol) {
+		    newId = tsp_newClassId(tyc_TAGGED_INT_VALUE(pLayout),
+					   pDescriptor);
+		    sp += 2;
+		    *sp = tyc_TAG_INT(newId);
+		    BNEXT();
+		  }
+		  SAVE_REGS();
+		  RAISE_TypeError(pDescriptor, tyc_ClassId_String);
+		}
+		SAVE_REGS();
+		RAISE_TypeError(pLayout, tyc_ClassId_Int);
+		}
+	      BLABEL(tvm_Builtin_CStructClass__new):
+		{
+		tsp_OID pNew;
+		tyc_Class * pClass = (tyc_Class*)pReceiver;
+		SAVE_REGS();
+		pNew = tsp_newStruct(tyc_UNTAG_INT(pClass->wInstanceId));
+		FETCH_THREAD();
+		LOAD_REGS();
+		*sp = pNew;
+		}
+		BNEXT();
+	      BLABEL(tvm_Builtin_Tycoon__platformCode):
+		{
+		int hostID;
+		assert(tyc_CLASSID(pReceiver) == tyc_ClassId_Tycoon);
+		hostID = tosSystem_getID();
+		*sp = tyc_TAG_INT(hostID);
+		}
+		BNEXT();
+	      /* thread & weakRef initilaization */
+	      BLABEL(tvm_Builtin_ThreadClass__new):
+		{
+		tsp_OID pNew;
+		SAVE_REGS();
+		pNew = tsp_newThread(tyc_ClassId_Thread);
+		FETCH_THREAD();
+		LOAD_REGS();
+		*sp = pNew;
+		}
+		BNEXT();
+	      BLABEL(tvm_Builtin_ThreadClass_this):
+		{
+		*sp = pThread;
+		}
+		BNEXT();
+	      BLABEL(tvm_Builtin_ThreadClass_sleep):
+		{
+		tyc_Long * pLong = *sp;
+		if(tyc_CLASSID(pLong) == tyc_ClassId_Long) {
+		  Long longTime = pLong->value;
+		  SAVE_REGS();
+		  tmthread_criticalLock();
+		  tmthread_checkSyncRequest();
+		  FETCH_THREAD();
+		  SET_BLOCKED(pThread);
+		  tmthread_criticalUnlock();
+		  tosThread_sleep((Word)longTime);
+		  tmthread_criticalLock();
+		  tmthread_checkSyncRequest();
+		  FETCH_THREAD();
+		  LOAD_REGS();
+		  CLEAR_BLOCKED(pThread);
+		  tmthread_criticalUnlock();
+		  sp++;
+		  BNEXT();
+		}
+		SAVE_REGS();
+		RAISE_TypeError(pLong, tyc_ClassId_Long);
+		}
+	      BLABEL(tvm_Builtin_ThreadClass_testCancel):
+		{
+		SAVE_REGS();
+		tmthread_testCancel();
+		}
+		BNEXT();
+	      BLABEL(tvm_Builtin_Thread___init):
+		{
+		tsp_OID pNew;
+		assert(tyc_CLASSID(pReceiver) == tyc_ClassId_Thread);
 #ifdef tvm_TRACE
 		if(IS_TRACE_INHERIT(pThread)) {
 		  SET_TRACE_FLAGS((tyc_Thread *)pReceiver,
 				  TRACE_FLAGS(pThread));
 		}
 #endif
-                SAVE_REGS();
-                pNew = tmthread_new(pReceiver);
-                FETCH_THREAD();
-                LOAD_REGS();
-                *sp = tyc_boxBool(pNew);
-                }
-                BNEXT();
-              BLABEL(tvm_Builtin_Thread_cancel):
-                {
-                assert(tyc_CLASSID(pReceiver) == tyc_ClassId_Thread);
-                tmthread_setCancel((tyc_Thread*)pReceiver);
-                }
-                BNEXT();
+		SAVE_REGS();
+		pNew = tmthread_new(pReceiver);
+		FETCH_THREAD();
+		LOAD_REGS();
+		*sp = tyc_boxBool(pNew);
+		}
+		BNEXT();
+	      BLABEL(tvm_Builtin_Thread_cancel):
+		{
+		assert(tyc_CLASSID(pReceiver) == tyc_ClassId_Thread);
+		tmthread_setCancel((tyc_Thread*)pReceiver);
+		}
+		BNEXT();
 
 	      BLABEL(tvm_Builtin_Thread_traceFlags):
-	        {
+		{
 		Word wTraceFlags;
 		tsp_OID pResult;
 		assert(tyc_CLASSID(pReceiver) == tyc_ClassId_Thread);
@@ -2926,7 +2927,7 @@ divisionbyzero:
 		}
 		BNEXT();
 	      BLABEL(tvm_Builtin_Thread_setTraceFlags):
-	        {
+		{
 		tsp_OID pFlags = sp[0];
 		assert(tyc_CLASSID(pReceiver) == tyc_ClassId_Thread);
 		if(tyc_CLASSID(pFlags) == tyc_ClassId_Int) {
@@ -2950,7 +2951,7 @@ divisionbyzero:
 		RAISE_TypeError(pFlags, tyc_ClassId_Int);
 		}
 	      BLABEL(tvm_Builtin_Thread_resume):
-	        {
+		{
 		assert(tyc_CLASSID(pReceiver) == tyc_ClassId_Thread);
 		SAVE_REGS();
 		tmthread_debugResume((tyc_Thread*)pReceiver);
@@ -2958,9 +2959,9 @@ divisionbyzero:
 		LOAD_REGS();
 		*sp = tyc_NIL;
 		}
-	        BNEXT();
+		BNEXT();
 	      BLABEL(tvm_Builtin_Thread_debugEvent):
-	        {
+		{
 		Word wSusp, wResult;
 		assert(tyc_CLASSID(pReceiver) == tyc_ClassId_Thread);
 		SAVE_REGS();
@@ -2980,9 +2981,9 @@ divisionbyzero:
 		  wResult = 0;
 		*sp = tyc_TAG_INT(wResult);
 		}
-	        BNEXT();
+		BNEXT();
 	      BLABEL(tvm_Builtin_Thread_inspectSendSelector):
-	        {
+		{
 		Word wSusp, wSuspSelectorId;
 		tyc_Selector *pSelector;
 		tyc_Thread *pSuspThread;
@@ -3004,9 +3005,9 @@ divisionbyzero:
 		tmthread_criticalUnlock();
 		*sp = pSelector;
 		}
-	        BNEXT();
+		BNEXT();
 	      BLABEL(tvm_Builtin_Thread_inspectActiveObject):
-	        {
+		{
 		tyc_Thread *pSuspThread;
 		tsp_OID pResult;
 		assert(tyc_CLASSID(pReceiver) == tyc_ClassId_Thread);
@@ -3029,9 +3030,9 @@ divisionbyzero:
 		tmthread_criticalUnlock();
 		*sp = pResult;
 		}
-	        BNEXT();
+		BNEXT();
 	      BLABEL(tvm_Builtin_Thread_inspectReturnReceiver):
-	        {
+		{
 		tyc_Thread *pSuspThread;
 		tsp_OID pResult;
 		Word wSusp;
@@ -3064,9 +3065,9 @@ divisionbyzero:
 		tmthread_criticalUnlock();
 		*sp = pResult;
 		}
-	        BNEXT();
+		BNEXT();
 	      BLABEL(tvm_Builtin_Thread_inspectReturnComponent):
-	        {
+		{
 		tyc_Thread *pSuspThread;
 		tsp_OID pResult;
 		assert(tyc_CLASSID(pReceiver) == tyc_ClassId_Thread);
@@ -3097,9 +3098,9 @@ divisionbyzero:
 		tmthread_criticalUnlock();
 		*sp = pResult;
 		}
-	        BNEXT();
+		BNEXT();
 	      BLABEL(tvm_Builtin_Thread_inspectStack):
-	        {
+		{
 		tsp_OID pArgument = *sp;
 		if(tyc_IS_TAGGED_INT(pArgument)) {
 		  Word wArgument = tyc_UNTAG_INT(pArgument);
@@ -3126,7 +3127,7 @@ divisionbyzero:
 		RAISE_TypeError(pArgument, tyc_ClassId_Int);
 		}
 	      BLABEL(tvm_Builtin_TL2Debugger__fetchStoppedThread):
-	        {
+		{
 		tyc_Thread *pResult;
 		assert(tyc_CLASSID(pReceiver) == tyc_ClassId_Debugger);
 		SAVE_REGS();
@@ -3135,432 +3136,432 @@ divisionbyzero:
 		LOAD_REGS();
 		*sp = pResult;
 		}
-	        BNEXT();
+		BNEXT();
 
-              BLABEL(tvm_Builtin_WeakRefClass__new):
-                {
-                tsp_OID pNew;
-                SAVE_REGS();
-                pNew = tsp_newWeakRef(tyc_ClassId_WeakRef);
-                FETCH_THREAD();
-                LOAD_REGS();
-                *sp = pNew;
-                }
-                BNEXT();
-              BLABEL(tvm_Builtin_WeakRef___init):
-                {
-                tsp_OID pNew;
-                assert(tyc_CLASSID(pReceiver) == tyc_ClassId_WeakRef);
-                SAVE_REGS();
-                pNew = tsp_initWeakRef(pReceiver);
-                FETCH_THREAD();
-                LOAD_REGS();
-                *sp = pNew;
-                }
-                BNEXT();
-              /* mutex & condition variable initialization */
-              BLABEL(tvm_Builtin_Mutex___init):
-                {
-                Bool fSuccess;
-                assert(tyc_CLASSID(pReceiver) == tyc_ClassId_Mutex);
-                fSuccess = tmthread_initMutex(pReceiver);
-                *sp = tyc_boxBool(fSuccess);
-                }
-                BNEXT();
-              BLABEL(tvm_Builtin_Mutex___finalize):
-                {
-                assert(tyc_CLASSID(pReceiver) == tyc_ClassId_Mutex);
-                tmthread_finalizeMutex(pReceiver);
-                }
-                BNEXT();
-              BLABEL(tvm_Builtin_Condition___init):
-                {
-                Bool fSuccess;
-                assert(tyc_CLASSID(pReceiver) == tyc_ClassId_Condition);
-                fSuccess = tmthread_initSingleCondition(pReceiver);
-                *sp = tyc_boxBool(fSuccess);
-                }
-                BNEXT();
-              BLABEL(tvm_Builtin_BroadcastingCondition___init):
-                {
-                Bool fSuccess;
-                assert(tyc_CLASSID(pReceiver) == tyc_ClassId_BroadcastingCondition);
-                fSuccess = tmthread_initBroadcastCondition(pReceiver);
-                *sp = tyc_boxBool(fSuccess);
-                }
-                BNEXT();
-              BLABEL(tvm_Builtin_Condition___finalize):
-                {
-                assert(tyc_CLASSID(pReceiver) == tyc_ClassId_Condition ||
-                       tyc_CLASSID(pReceiver) == tyc_ClassId_BroadcastingCondition);
-                tmthread_finalizeCondition(pReceiver);
-                }
-                BNEXT();
-              /* mutex actions */
-              BLABEL(tvm_Builtin_Mutex_lock): /* blocking builtin */
-                {
-                int rValue;
-                void * hOSMutex;
-                assert(tyc_CLASSID(pReceiver) == tyc_ClassId_Mutex);
-                hOSMutex = ((tyc_Mutex*)pReceiver)->hOSMutex;
+	      BLABEL(tvm_Builtin_WeakRefClass__new):
+		{
+		tsp_OID pNew;
+		SAVE_REGS();
+		pNew = tsp_newWeakRef(tyc_ClassId_WeakRef);
+		FETCH_THREAD();
+		LOAD_REGS();
+		*sp = pNew;
+		}
+		BNEXT();
+	      BLABEL(tvm_Builtin_WeakRef___init):
+		{
+		tsp_OID pNew;
+		assert(tyc_CLASSID(pReceiver) == tyc_ClassId_WeakRef);
+		SAVE_REGS();
+		pNew = tsp_initWeakRef(pReceiver);
+		FETCH_THREAD();
+		LOAD_REGS();
+		*sp = pNew;
+		}
+		BNEXT();
+	      /* mutex & condition variable initialization */
+	      BLABEL(tvm_Builtin_Mutex___init):
+		{
+		Bool fSuccess;
+		assert(tyc_CLASSID(pReceiver) == tyc_ClassId_Mutex);
+		fSuccess = tmthread_initMutex(pReceiver);
+		*sp = tyc_boxBool(fSuccess);
+		}
+		BNEXT();
+	      BLABEL(tvm_Builtin_Mutex___finalize):
+		{
+		assert(tyc_CLASSID(pReceiver) == tyc_ClassId_Mutex);
+		tmthread_finalizeMutex(pReceiver);
+		}
+		BNEXT();
+	      BLABEL(tvm_Builtin_Condition___init):
+		{
+		Bool fSuccess;
+		assert(tyc_CLASSID(pReceiver) == tyc_ClassId_Condition);
+		fSuccess = tmthread_initSingleCondition(pReceiver);
+		*sp = tyc_boxBool(fSuccess);
+		}
+		BNEXT();
+	      BLABEL(tvm_Builtin_BroadcastingCondition___init):
+		{
+		Bool fSuccess;
+		assert(tyc_CLASSID(pReceiver) == tyc_ClassId_BroadcastingCondition);
+		fSuccess = tmthread_initBroadcastCondition(pReceiver);
+		*sp = tyc_boxBool(fSuccess);
+		}
+		BNEXT();
+	      BLABEL(tvm_Builtin_Condition___finalize):
+		{
+		assert(tyc_CLASSID(pReceiver) == tyc_ClassId_Condition ||
+		       tyc_CLASSID(pReceiver) == tyc_ClassId_BroadcastingCondition);
+		tmthread_finalizeCondition(pReceiver);
+		}
+		BNEXT();
+	      /* mutex actions */
+	      BLABEL(tvm_Builtin_Mutex_lock): /* blocking builtin */
+		{
+		int rValue;
+		void * hOSMutex;
+		assert(tyc_CLASSID(pReceiver) == tyc_ClassId_Mutex);
+		hOSMutex = ((tyc_Mutex*)pReceiver)->hOSMutex;
 		/* be optimistic and use a trylock first */
-                if((rValue = tosMutex_trylock(hOSMutex)) == 0) {
+		if((rValue = tosMutex_trylock(hOSMutex)) == 0) {
 		  ((tyc_Mutex*)pReceiver)->pOwner = pThread;
 		}
 		else {
-                  SAVE_REGS();
-                  tmthread_criticalLock();
-                  tmthread_checkSyncRequest();
-                  FETCH_THREAD();
-                  SET_BLOCKED(pThread);
-                  tmthread_criticalUnlock();
+		  SAVE_REGS();
+		  tmthread_criticalLock();
+		  tmthread_checkSyncRequest();
+		  FETCH_THREAD();
+		  SET_BLOCKED(pThread);
+		  tmthread_criticalUnlock();
 
-                  rValue = tosMutex_lock(hOSMutex);
+		  rValue = tosMutex_lock(hOSMutex);
 
-                  tmthread_criticalLock();
-                  tmthread_checkSyncRequest();
-                  FETCH_THREAD();
-                  LOAD_REGS();
-                  CLEAR_BLOCKED(pThread);
-                  ((tyc_Mutex*)*sp)->pOwner = pThread;
-                  tmthread_criticalUnlock();
+		  tmthread_criticalLock();
+		  tmthread_checkSyncRequest();
+		  FETCH_THREAD();
+		  LOAD_REGS();
+		  CLEAR_BLOCKED(pThread);
+		  ((tyc_Mutex*)*sp)->pOwner = pThread;
+		  tmthread_criticalUnlock();
 		}
-                *sp = tyc_boxBool(rValue == 0);
-                }
-                BNEXT();
-              BLABEL(tvm_Builtin_Mutex_tryLock):
-                {
-                int rValue;
-                void * hOSMutex;
-                assert(tyc_CLASSID(pReceiver) == tyc_ClassId_Mutex);
-                hOSMutex = ((tyc_Mutex*)pReceiver)->hOSMutex;
-                if((rValue = tosMutex_trylock(hOSMutex)) == 0) {
-                  ((tyc_Mutex*)pReceiver)->pOwner = pThread;
-                }
-                *sp = tyc_boxBool(rValue == 0);
-                }
-                BNEXT();
-              BLABEL(tvm_Builtin_Mutex_unlock):
-                {
-                int rValue;
-                void * hOSMutex;
-                tsp_OID pOwner;
-                assert(tyc_CLASSID(pReceiver) == tyc_ClassId_Mutex);
+		*sp = tyc_boxBool(rValue == 0);
+		}
+		BNEXT();
+	      BLABEL(tvm_Builtin_Mutex_tryLock):
+		{
+		int rValue;
+		void * hOSMutex;
+		assert(tyc_CLASSID(pReceiver) == tyc_ClassId_Mutex);
+		hOSMutex = ((tyc_Mutex*)pReceiver)->hOSMutex;
+		if((rValue = tosMutex_trylock(hOSMutex)) == 0) {
+		  ((tyc_Mutex*)pReceiver)->pOwner = pThread;
+		}
+		*sp = tyc_boxBool(rValue == 0);
+		}
+		BNEXT();
+	      BLABEL(tvm_Builtin_Mutex_unlock):
+		{
+		int rValue;
+		void * hOSMutex;
+		tsp_OID pOwner;
+		assert(tyc_CLASSID(pReceiver) == tyc_ClassId_Mutex);
 		assert(((tyc_Mutex*)pReceiver)->pOwner == pThread);
-                hOSMutex = ((tyc_Mutex*)pReceiver)->hOSMutex;
-                pOwner = ((tyc_Mutex*)pReceiver)->pOwner;
-                if(pOwner == pThread) {
-                  ((tyc_Mutex*)pReceiver)->pOwner = NULL;
-                  rValue = tosMutex_unlock(hOSMutex);
-                }
-                else {
-                  fprintf(stderr,
-                          "TVM error: trying to unlock foreign mutex.\n");
-                  rValue = -1;
-                }
-                *sp = tyc_boxBool(rValue == 0);
-                }
-                BNEXT();
-              /*
-               * condition variable actions
-               *
-               * tycoonOS: We need different builtins for signal
-               * and broadcasting conditions...
-               */
-              BLABEL(tvm_Builtin_Condition_signal):
-                {
-                int rValue;
-                assert(tyc_CLASSID(pReceiver) == tyc_ClassId_Condition);
-                rValue = tosCondition_signal(((tyc_Condition*)pReceiver)->hOSCondition);
-                *sp = tyc_boxBool(rValue == 0);
-                }
-                BNEXT();
-              BLABEL(tvm_Builtin_BroadcastingCondition_broadcast):
-                {
-                int rValue;
-                assert(tyc_CLASSID(pReceiver) == tyc_ClassId_BroadcastingCondition);
-                rValue = tosCondition_broadcast(((tyc_Condition*)pReceiver)->hOSCondition);
-                *sp = tyc_boxBool(rValue == 0);
-                }
-                BNEXT();
-              BLABEL(tvm_Builtin_Condition_wait): /* blocking builtin */
-                {
-                int rValue;
-                tyc_Mutex * pMutex = sp[0];
-                assert(tyc_CLASSID(pReceiver) == tyc_ClassId_Condition ||
-                       tyc_CLASSID(pReceiver) == tyc_ClassId_BroadcastingCondition);
+		hOSMutex = ((tyc_Mutex*)pReceiver)->hOSMutex;
+		pOwner = ((tyc_Mutex*)pReceiver)->pOwner;
+		if(pOwner == pThread) {
+		  ((tyc_Mutex*)pReceiver)->pOwner = NULL;
+		  rValue = tosMutex_unlock(hOSMutex);
+		}
+		else {
+		  fprintf(stderr,
+			  "TVM error: trying to unlock foreign mutex.\n");
+		  rValue = -1;
+		}
+		*sp = tyc_boxBool(rValue == 0);
+		}
+		BNEXT();
+	      /*
+	       * condition variable actions
+	       *
+	       * tycoonOS: We need different builtins for signal
+	       * and broadcasting conditions...
+	       */
+	      BLABEL(tvm_Builtin_Condition_signal):
+		{
+		int rValue;
+		assert(tyc_CLASSID(pReceiver) == tyc_ClassId_Condition);
+		rValue = tosCondition_signal(((tyc_Condition*)pReceiver)->hOSCondition);
+		*sp = tyc_boxBool(rValue == 0);
+		}
+		BNEXT();
+	      BLABEL(tvm_Builtin_BroadcastingCondition_broadcast):
+		{
+		int rValue;
+		assert(tyc_CLASSID(pReceiver) == tyc_ClassId_BroadcastingCondition);
+		rValue = tosCondition_broadcast(((tyc_Condition*)pReceiver)->hOSCondition);
+		*sp = tyc_boxBool(rValue == 0);
+		}
+		BNEXT();
+	      BLABEL(tvm_Builtin_Condition_wait): /* blocking builtin */
+		{
+		int rValue;
+		tyc_Mutex * pMutex = sp[0];
+		assert(tyc_CLASSID(pReceiver) == tyc_ClassId_Condition ||
+		       tyc_CLASSID(pReceiver) == tyc_ClassId_BroadcastingCondition);
 		assert(pMutex->pOwner == pThread);
-                if(tyc_CLASSID(pMutex) == tyc_ClassId_Mutex) {
-                  void * hOSCondition = ((tyc_Condition*)pReceiver)->hOSCondition;
-                  void * hOSMutex = pMutex->hOSMutex;
-                  SAVE_REGS();
-                  tmthread_criticalLock();
-                  tmthread_checkSyncRequest();
-                  FETCH_THREAD();
-                  LOAD_REGS();
-                  SET_BLOCKED(pThread);
-                  SET_WAITING(pThread);
-                  ((tyc_Mutex*)(sp[0]))->pOwner = NULL;
-                  /* at startup time a cond_broadcast is simulated and all
-                     waiting threads start competing for the associated mutex.
-                   */
-                  SAVE_REGS();
-                  tmthread_criticalUnlock();
+		if(tyc_CLASSID(pMutex) == tyc_ClassId_Mutex) {
+		  void * hOSCondition = ((tyc_Condition*)pReceiver)->hOSCondition;
+		  void * hOSMutex = pMutex->hOSMutex;
+		  SAVE_REGS();
+		  tmthread_criticalLock();
+		  tmthread_checkSyncRequest();
+		  FETCH_THREAD();
+		  LOAD_REGS();
+		  SET_BLOCKED(pThread);
+		  SET_WAITING(pThread);
+		  ((tyc_Mutex*)(sp[0]))->pOwner = NULL;
+		  /* at startup time a cond_broadcast is simulated and all
+		     waiting threads start competing for the associated mutex.
+		   */
+		  SAVE_REGS();
+		  tmthread_criticalUnlock();
 
-                  rValue = tosCondition_wait(hOSCondition, hOSMutex);
+		  rValue = tosCondition_wait(hOSCondition, hOSMutex);
 
-                  tmthread_criticalLock();
-                  tmthread_checkSyncRequest();
-                  FETCH_THREAD();
-                  LOAD_REGS();
-                  CLEAR_BLOCKED(pThread);
-                  CLEAR_WAITING(pThread);
-                  ((tyc_Mutex*)(sp[0]))->pOwner = pThread;
-                  tmthread_criticalUnlock();
-                  *++sp = tyc_boxBool(rValue == 0);
-                  BNEXT();
-                }
-                SAVE_REGS();
-                RAISE_TypeError(pMutex, tyc_ClassId_Mutex);
-                }
-              BLABEL(tvm_Builtin_Condition_timedWait): /* blocking builtin */
-                {
-                int rValue;
-                tyc_Mutex * pMutex = sp[1];
-                tyc_Long * pLong = sp[0];
-                assert(tyc_CLASSID(pReceiver) == tyc_ClassId_Condition ||
-                       tyc_CLASSID(pReceiver) == tyc_ClassId_BroadcastingCondition);
+		  tmthread_criticalLock();
+		  tmthread_checkSyncRequest();
+		  FETCH_THREAD();
+		  LOAD_REGS();
+		  CLEAR_BLOCKED(pThread);
+		  CLEAR_WAITING(pThread);
+		  ((tyc_Mutex*)(sp[0]))->pOwner = pThread;
+		  tmthread_criticalUnlock();
+		  *++sp = tyc_boxBool(rValue == 0);
+		  BNEXT();
+		}
+		SAVE_REGS();
+		RAISE_TypeError(pMutex, tyc_ClassId_Mutex);
+		}
+	      BLABEL(tvm_Builtin_Condition_timedWait): /* blocking builtin */
+		{
+		int rValue;
+		tyc_Mutex * pMutex = sp[1];
+		tyc_Long * pLong = sp[0];
+		assert(tyc_CLASSID(pReceiver) == tyc_ClassId_Condition ||
+		       tyc_CLASSID(pReceiver) == tyc_ClassId_BroadcastingCondition);
 		assert(pMutex->pOwner == pThread);
-                if(tyc_CLASSID(pMutex) == tyc_ClassId_Mutex) {
-                  if(tyc_CLASSID(pLong) == tyc_ClassId_Long) {
-                    void * hOSCondition = ((tyc_Condition*)pReceiver)->hOSCondition;
-                    void * hOSMutex = pMutex->hOSMutex;
-                    Long longTime = (pLong->value) * 1000 ; /* sec -> msec */
-                    SAVE_REGS();
-                    tmthread_criticalLock();
-                    tmthread_checkSyncRequest();
-                    FETCH_THREAD();
-                    LOAD_REGS();
-                    SET_BLOCKED(pThread);
-                    SET_WAITING(pThread);
-                    ((tyc_Mutex*)(sp[1]))->pOwner = NULL;
-                    /* at startup time a cond_broadcast is simulated and all
-                       waiting threads start competing for the associated
-                       mutex. */
-                    SAVE_REGS();
-                    tmthread_criticalUnlock();
+		if(tyc_CLASSID(pMutex) == tyc_ClassId_Mutex) {
+		  if(tyc_CLASSID(pLong) == tyc_ClassId_Long) {
+		    void * hOSCondition = ((tyc_Condition*)pReceiver)->hOSCondition;
+		    void * hOSMutex = pMutex->hOSMutex;
+		    Long longTime = (pLong->value) * 1000 ; /* sec -> msec */
+		    SAVE_REGS();
+		    tmthread_criticalLock();
+		    tmthread_checkSyncRequest();
+		    FETCH_THREAD();
+		    LOAD_REGS();
+		    SET_BLOCKED(pThread);
+		    SET_WAITING(pThread);
+		    ((tyc_Mutex*)(sp[1]))->pOwner = NULL;
+		    /* at startup time a cond_broadcast is simulated and all
+		       waiting threads start competing for the associated
+		       mutex. */
+		    SAVE_REGS();
+		    tmthread_criticalUnlock();
 
-                    rValue = tosCondition_timedwait(hOSCondition, hOSMutex, longTime);
+		    rValue = tosCondition_timedwait(hOSCondition, hOSMutex, longTime);
 
-                    tmthread_criticalLock();
-                    tmthread_checkSyncRequest();
-                    FETCH_THREAD();
-                    LOAD_REGS();
-                    CLEAR_BLOCKED(pThread);
-                    CLEAR_WAITING(pThread);
-                    ((tyc_Mutex*)(sp[1]))->pOwner = pThread;
-                    tmthread_criticalUnlock();
-                    sp += 2;
-                    *sp = tyc_boxBool(rValue == 0);
-                    BNEXT();
-                  }
-                  SAVE_REGS();
-                  RAISE_TypeError(pLong, tyc_ClassId_Long);
-                }
-                SAVE_REGS();
-                RAISE_TypeError(pMutex, tyc_ClassId_Mutex);
-                }
-              BLABEL(tvm_Builtin_Finalizer___fetchWeaks):
-                {
-                *sp = tmthread_getWeakRefList();
-                }
-                BNEXT();
-              BLABEL(tvm_Builtin_BlockingExternalMethodCaller___suspend):
-                {
-                tyc_Thread * pCaller = *sp;
-                *++sp = tyc_boxBool(tmthread_suspendBlockingCaller(pCaller));
-                }
-                BNEXT();
-              BLABEL(tvm_Builtin_BlockingExternalMethodCaller___resume):
-                {
-                tyc_Thread * pCaller = *sp;
-                *++sp = tyc_boxBool(tmthread_resumeBlockingCaller(pCaller));
-                }
-                BNEXT();
+		    tmthread_criticalLock();
+		    tmthread_checkSyncRequest();
+		    FETCH_THREAD();
+		    LOAD_REGS();
+		    CLEAR_BLOCKED(pThread);
+		    CLEAR_WAITING(pThread);
+		    ((tyc_Mutex*)(sp[1]))->pOwner = pThread;
+		    tmthread_criticalUnlock();
+		    sp += 2;
+		    *sp = tyc_boxBool(rValue == 0);
+		    BNEXT();
+		  }
+		  SAVE_REGS();
+		  RAISE_TypeError(pLong, tyc_ClassId_Long);
+		}
+		SAVE_REGS();
+		RAISE_TypeError(pMutex, tyc_ClassId_Mutex);
+		}
+	      BLABEL(tvm_Builtin_Finalizer___fetchWeaks):
+		{
+		*sp = tmthread_getWeakRefList();
+		}
+		BNEXT();
+	      BLABEL(tvm_Builtin_BlockingExternalMethodCaller___suspend):
+		{
+		tyc_Thread * pCaller = *sp;
+		*++sp = tyc_boxBool(tmthread_suspendBlockingCaller(pCaller));
+		}
+		BNEXT();
+	      BLABEL(tvm_Builtin_BlockingExternalMethodCaller___resume):
+		{
+		tyc_Thread * pCaller = *sp;
+		*++sp = tyc_boxBool(tmthread_resumeBlockingCaller(pCaller));
+		}
+		BNEXT();
 #ifdef tvm_THREADED_CODE
-              BLABEL(tvm_Builtin_Undefined):
-                /* (undefined builtin) */
-                fprintf(stderr,"\nTVM warning: unknown builtin %s.%s.\n",
-                       tyc_CLASS(tyc_CLASSID(pReceiver))->pszName,
-                       tyc_SELECTOR(idSelector));
-                /* call method body */
-                goto methodcall;
+	      BLABEL(tvm_Builtin_Undefined):
+		/* (undefined builtin) */
+		fprintf(stderr,"\nTVM warning: unknown builtin %s.%s.\n",
+		       tyc_CLASS(tyc_CLASSID(pReceiver))->pszName,
+		       tyc_SELECTOR(idSelector));
+		/* call method body */
+		goto methodcall;
 #else
-              default:
-                /* (undefined builtin) */
-                fprintf(stderr,"\nTVM warning: unknown builtin %s.%s.\n",
-                       tyc_CLASS(tyc_CLASSID(pReceiver))->pszName,
-                       tyc_SELECTOR(idSelector));
-                /* call method body */
-                goto methodcall;
-              }
+	      default:
+		/* (undefined builtin) */
+		fprintf(stderr,"\nTVM warning: unknown builtin %s.%s.\n",
+		       tyc_CLASS(tyc_CLASSID(pReceiver))->pszName,
+		       tyc_SELECTOR(idSelector));
+		/* call method body */
+		goto methodcall;
+	      }
 	    break;  /* method end */
-          }
+	  }
 #endif
 
-          METHODLABEL(CSlotAccessMethod):
+	  METHODLABEL(CSlotAccessMethod):
 	  METHODLABEL(CSlotReferenceMethod):
-          {
-            /* C slot access */
-            void * pAddress;
-            tsp_OID pResult = tyc_NIL;
+	  {
+	    /* C slot access */
+	    void * pAddress;
+	    tsp_OID pResult = tyc_NIL;
 	    Int iIndex = ((tyc_CSlotMethod*)pMethod)->slotMethod.iOffset;
 	    Char cTycoonType = ((tyc_CSlotMethod*)pMethod)->cTycoonType;
-            Char cCType;
-            assert(!tsp_IS_IMMEDIATE(pReceiver) && !tyc_IS_NIL(pReceiver));
-            cCType = tsp_getCType(pReceiver, iIndex);
-            pAddress = tsp_getCAddress(pReceiver, iIndex);
-            /* convert C type -> Tycoon type */
+	    Char cCType;
+	    assert(!tsp_IS_IMMEDIATE(pReceiver) && !tyc_IS_NIL(pReceiver));
+	    cCType = tsp_getCType(pReceiver, iIndex);
+	    pAddress = tsp_getCAddress(pReceiver, iIndex);
+	    /* convert C type -> Tycoon type */
 	    if(cCType == tsp_Field_OID)
 	      /* no conversion */
 	      pResult = *(tsp_OID *)pAddress;
 	    else switch(cTycoonType)
-              {
-              case tyc_Type_Bool:
-                switch(cCType)
-                  {
-                  case tsp_Field_Char:
-                  case tsp_Field_UChar:
-                    pResult = tyc_boxBool(*((char*)pAddress)); break;
-                  case tsp_Field_Short:
-                  case tsp_Field_UShort:
-                    pResult = tyc_boxBool(*((short*)pAddress)); break;
-                  case tsp_Field_Int:
-                  case tsp_Field_UInt:
-                    pResult = tyc_boxBool(*((int*)pAddress)); break;
-                  case tsp_Field_Long:
-                  case tsp_Field_ULong:
-                    pResult = tyc_boxBool(*((long*)pAddress)); break;
-                  case tsp_Field_LongLong:
-                    pResult = tyc_boxBool(*((Long*)pAddress)); break;
-                  default:
-                    tosError_ABORT();
-                  }
-                break;
-              case tyc_Type_Char:
-                switch(cCType)
-                  {
-                  case tsp_Field_Char:
-                  case tsp_Field_UChar:
-                    pResult = tyc_boxChar(*((char*)pAddress)); break;
-                  case tsp_Field_Short:
-                  case tsp_Field_UShort:
-                    pResult = tyc_boxChar(*((short*)pAddress)); break;
-                  case tsp_Field_Int:
-                  case tsp_Field_UInt:
-                    pResult = tyc_boxChar(*((int*)pAddress)); break;
-                  case tsp_Field_Long:
-                  case tsp_Field_ULong:
-                    pResult = tyc_boxChar(*((long*)pAddress)); break;
-                  case tsp_Field_LongLong:
-                    pResult = tyc_boxChar(*((Long*)pAddress)); break;
-                  default:
-                    tosError_ABORT();
-                  }
-                break;
-              case tyc_Type_Int:
-                {
-                Int i;
-                switch(cCType)
-                  {
-                  case tsp_Field_Char:
-                    i = *((signed char*)pAddress); break;
-                  case tsp_Field_UChar:
-                    i = *((unsigned char*)pAddress); break;
-                  case tsp_Field_Short:
-                    i = *((signed short*)pAddress); break;
-                  case tsp_Field_UShort:
-                    i = *((unsigned short*)pAddress); break;
-                  case tsp_Field_Int:
-                    i = *((signed int*)pAddress); break;
-                  case tsp_Field_UInt:
-                    i = *((unsigned int*)pAddress); break;
-                  case tsp_Field_Long:
-                    i = *((signed long*)pAddress); break;
-                  case tsp_Field_ULong:
-                    i = *((unsigned long*)pAddress); break;
-                  case tsp_Field_LongLong:
-                    i = *((Long*)pAddress); break;
-                  default:
-                    tosError_ABORT();
-                  }
-                SAVE_REGS();
-                pResult = tyc_TAG_MAYBEBOXED(i);
-                FETCH_THREAD();
-                LOAD_REGS();
-                }
-                break;
-              case tyc_Type_Long:
-                {
-                Long l;
-                switch(cCType)
-                  {
-                  case tsp_Field_Char:
-                    l = *((signed char*)pAddress); break;
-                  case tsp_Field_UChar:
-                    l = *((unsigned char*)pAddress); break;
-                  case tsp_Field_Short:
-                    l = *((signed short*)pAddress); break;
-                  case tsp_Field_UShort:
-                    l = *((unsigned short*)pAddress); break;
-                  case tsp_Field_Int:
-                    l = *((signed int*)pAddress); break;
-                  case tsp_Field_UInt:
-                    l = *((unsigned int*)pAddress); break;
-                  case tsp_Field_Long:
-                    l = *((signed long*)pAddress); break;
-                  case tsp_Field_ULong:
-                    l = *((unsigned long*)pAddress); break;
-                  case tsp_Field_LongLong:
-                    l = *((Long*)pAddress); break;
-                  default:
-                    tosError_ABORT();
-                  }
-                SAVE_REGS();
-                pResult = tyc_boxLong(l);
-                FETCH_THREAD();
-                LOAD_REGS();
-                }
-                break;
-              case tyc_Type_Real:
-                {
-                Real r;
-                switch(cCType)
-                  {
-                  case tsp_Field_Float:
-                    r = *((float*)pAddress); break;
-                  case tsp_Field_Double:
-                    r = *((double*)pAddress); break;
-                  default:
-                    tosError_ABORT();
-                  }
-                SAVE_REGS();
-                pResult = tyc_boxReal(r);
-                FETCH_THREAD();
-                LOAD_REGS();
-                }
-                break;
-              case tyc_Type_Object:
+	      {
+	      case tyc_Type_Bool:
+		switch(cCType)
+		  {
+		  case tsp_Field_Char:
+		  case tsp_Field_UChar:
+		    pResult = tyc_boxBool(*((char*)pAddress)); break;
+		  case tsp_Field_Short:
+		  case tsp_Field_UShort:
+		    pResult = tyc_boxBool(*((short*)pAddress)); break;
+		  case tsp_Field_Int:
+		  case tsp_Field_UInt:
+		    pResult = tyc_boxBool(*((int*)pAddress)); break;
+		  case tsp_Field_Long:
+		  case tsp_Field_ULong:
+		    pResult = tyc_boxBool(*((long*)pAddress)); break;
+		  case tsp_Field_LongLong:
+		    pResult = tyc_boxBool(*((Long*)pAddress)); break;
+		  default:
+		    tosError_ABORT();
+		  }
+		break;
+	      case tyc_Type_Char:
+		switch(cCType)
+		  {
+		  case tsp_Field_Char:
+		  case tsp_Field_UChar:
+		    pResult = tyc_boxChar(*((char*)pAddress)); break;
+		  case tsp_Field_Short:
+		  case tsp_Field_UShort:
+		    pResult = tyc_boxChar(*((short*)pAddress)); break;
+		  case tsp_Field_Int:
+		  case tsp_Field_UInt:
+		    pResult = tyc_boxChar(*((int*)pAddress)); break;
+		  case tsp_Field_Long:
+		  case tsp_Field_ULong:
+		    pResult = tyc_boxChar(*((long*)pAddress)); break;
+		  case tsp_Field_LongLong:
+		    pResult = tyc_boxChar(*((Long*)pAddress)); break;
+		  default:
+		    tosError_ABORT();
+		  }
+		break;
+	      case tyc_Type_Int:
+		{
+		Int i;
+		switch(cCType)
+		  {
+		  case tsp_Field_Char:
+		    i = *((signed char*)pAddress); break;
+		  case tsp_Field_UChar:
+		    i = *((unsigned char*)pAddress); break;
+		  case tsp_Field_Short:
+		    i = *((signed short*)pAddress); break;
+		  case tsp_Field_UShort:
+		    i = *((unsigned short*)pAddress); break;
+		  case tsp_Field_Int:
+		    i = *((signed int*)pAddress); break;
+		  case tsp_Field_UInt:
+		    i = *((unsigned int*)pAddress); break;
+		  case tsp_Field_Long:
+		    i = *((signed long*)pAddress); break;
+		  case tsp_Field_ULong:
+		    i = *((unsigned long*)pAddress); break;
+		  case tsp_Field_LongLong:
+		    i = *((Long*)pAddress); break;
+		  default:
+		    tosError_ABORT();
+		  }
+		SAVE_REGS();
+		pResult = tyc_TAG_MAYBEBOXED(i);
+		FETCH_THREAD();
+		LOAD_REGS();
+		}
+		break;
+	      case tyc_Type_Long:
+		{
+		Long l;
+		switch(cCType)
+		  {
+		  case tsp_Field_Char:
+		    l = *((signed char*)pAddress); break;
+		  case tsp_Field_UChar:
+		    l = *((unsigned char*)pAddress); break;
+		  case tsp_Field_Short:
+		    l = *((signed short*)pAddress); break;
+		  case tsp_Field_UShort:
+		    l = *((unsigned short*)pAddress); break;
+		  case tsp_Field_Int:
+		    l = *((signed int*)pAddress); break;
+		  case tsp_Field_UInt:
+		    l = *((unsigned int*)pAddress); break;
+		  case tsp_Field_Long:
+		    l = *((signed long*)pAddress); break;
+		  case tsp_Field_ULong:
+		    l = *((unsigned long*)pAddress); break;
+		  case tsp_Field_LongLong:
+		    l = *((Long*)pAddress); break;
+		  default:
+		    tosError_ABORT();
+		  }
+		SAVE_REGS();
+		pResult = tyc_boxLong(l);
+		FETCH_THREAD();
+		LOAD_REGS();
+		}
+		break;
+	      case tyc_Type_Real:
+		{
+		Real r;
+		switch(cCType)
+		  {
+		  case tsp_Field_Float:
+		    r = *((float*)pAddress); break;
+		  case tsp_Field_Double:
+		    r = *((double*)pAddress); break;
+		  default:
+		    tosError_ABORT();
+		  }
+		SAVE_REGS();
+		pResult = tyc_boxReal(r);
+		FETCH_THREAD();
+		LOAD_REGS();
+		}
+		break;
+	      case tyc_Type_Object:
 		/* only permitted CType is OID */
-                tosError_ABORT();
-                break;
-              default:
-                /* (illegal tycoon descriptor) */
-             tosError_ABORT();
-              }
-            *sp = pResult;
+		tosError_ABORT();
+		break;
+	      default:
+		/* (illegal tycoon descriptor) */
+	     tosError_ABORT();
+	      }
+	    *sp = pResult;
 	    BNEXT();
-          }
+	  }
 
 	  METHODLABEL(CSlotTakeFromMethod):
 	  {
@@ -3577,167 +3578,167 @@ divisionbyzero:
 	    BNEXT();
 	  } 
 
-          METHODLABEL(CSlotUpdateMethod):
-          {
-            /* C slot update */
-            tsp_OID pArgument = *sp;
-            void * pAddress;
+	  METHODLABEL(CSlotUpdateMethod):
+	  {
+	    /* C slot update */
+	    tsp_OID pArgument = *sp;
+	    void * pAddress;
 	    Int iIndex = ((tyc_CSlotMethod*)pMethod)->slotMethod.iOffset;
 	    Char cTycoonType = ((tyc_CSlotMethod*)pMethod)->cTycoonType;
-            Char cCType;
-            assert(!tsp_IS_IMMEDIATE(pReceiver) && !tyc_IS_NIL(pReceiver));
-            cCType = tsp_getCType(pReceiver, iIndex);
-            pAddress = tsp_getCAddress(pReceiver, iIndex);
-            /* convert Tycoon type -> C type */
+	    Char cCType;
+	    assert(!tsp_IS_IMMEDIATE(pReceiver) && !tyc_IS_NIL(pReceiver));
+	    cCType = tsp_getCType(pReceiver, iIndex);
+	    pAddress = tsp_getCAddress(pReceiver, iIndex);
+	    /* convert Tycoon type -> C type */
 	    if(cCType == tsp_Field_OID)
 	      /* no conversion */
 	      *((tsp_OID *)pAddress) = pArgument;
 	    else switch(cTycoonType)
-              {
-              case tyc_Type_Bool:
-                {
-                Bool f;
-                if(tyc_IS_FALSE(pArgument))
-                  f = FALSE;
-                else if(tyc_IS_TRUE(pArgument))
-                  f = TRUE;
-                else {
-                  SAVE_REGS();
-                  RAISE_TypeError(pArgument, tyc_ClassId_Bool);
-                  break;
-                }
-                switch(cCType)
-                  {
-                  case tsp_Field_Char:
-                  case tsp_Field_UChar:
-                    *((char*)pAddress) = f; break;
-                  case tsp_Field_Short:
-                  case tsp_Field_UShort:
-                    *((short*)pAddress) = f; break;
-                  case tsp_Field_Int:
-                  case tsp_Field_UInt:
-                    *((int*)pAddress) = f; break;
-                  case tsp_Field_Long:
-                  case tsp_Field_ULong:
-                    *((long*)pAddress) = f; break;
-                  case tsp_Field_LongLong:
-                    *((Long*)pAddress) = f; break;
-                  default:
-                    tosError_ABORT();
-                  }
-                }
-                break;
-              case tyc_Type_Char:
-                if(tyc_CLASSID(pArgument) == tyc_ClassId_Char) {
-                  Char c = tyc_CHAR_VALUE(pArgument);
-                  switch(cCType)
-                    {
-                    case tsp_Field_Char:
-                    case tsp_Field_UChar:
-                      *((char*)pAddress) = c;   break;
-                    case tsp_Field_Short:
-                    case tsp_Field_UShort:
-                      *((short*)pAddress) = c; break;
-                    case tsp_Field_Int:
-                    case tsp_Field_UInt:
-                      *((int*)pAddress) = c; break;
-                    case tsp_Field_Long:
-                    case tsp_Field_ULong:
-                      *((long*)pAddress) = c;   break;
-                    case tsp_Field_LongLong:
-                      *((Long*)pAddress) = c; break;
-                    default:
-                      tosError_ABORT();
-                    }
-                  break;
-                }
-                SAVE_REGS();
-                RAISE_TypeError(pArgument, tyc_ClassId_Char);
-                break;
-              case tyc_Type_Int:
-                if(tyc_IS_TAGGED_INT(pArgument)) {
-                  Int i = tyc_TAGGED_INT_VALUE(pArgument);
-                  switch(cCType)
-                    {
-                    case tsp_Field_Char:
-                    case tsp_Field_UChar:
-                      *((char*)pAddress) = i;   break;
-                    case tsp_Field_Short:
-                    case tsp_Field_UShort:
-                      *((short*)pAddress) = i; break;
-                    case tsp_Field_Int:
-                    case tsp_Field_UInt:
-                      *((int*)pAddress) = i; break;
-                    case tsp_Field_Long:
-                    case tsp_Field_ULong:
-                      *((long*)pAddress) = i; break;
-                    case tsp_Field_LongLong:
-                      *((Long*)pAddress) = i; break;
-                    default:
-                      tosError_ABORT();
-                    }
-                  break;
-                }
-                SAVE_REGS();
-                RAISE_TypeError(pArgument, tyc_ClassId_Int);
-                break;
-              case tyc_Type_Long:
-                if(tyc_CLASSID(pArgument) == tyc_ClassId_Long) {
-                  Long l = tyc_LONG_VALUE(pArgument);
-                  switch(cCType)
-                    {
-                    case tsp_Field_Char:
-                    case tsp_Field_UChar:
-                      *((char*)pAddress) = l; break;
-                    case tsp_Field_Short:
-                    case tsp_Field_UShort:
-                      *((short*)pAddress) = l; break;
-                    case tsp_Field_Int:
-                    case tsp_Field_UInt:
-                      *((int*)pAddress) = l; break;
-                    case tsp_Field_Long:
-                    case tsp_Field_ULong:
-                      *((long*)pAddress) = l;   break;
-                    case tsp_Field_LongLong:
-                      *((Long*)pAddress) = l; break;
-                    default:
-                      tosError_ABORT();
-                    }
-                  break;
-                }
-                SAVE_REGS();
-                RAISE_TypeError(pArgument, tyc_ClassId_Long);
-                break;
-              case tyc_Type_Real:
-                if(tyc_CLASSID(pArgument) == tyc_ClassId_Real) {
-                  Real r = tyc_REAL_VALUE(pArgument);
-                  switch(cCType)
-                    {
-                    case tsp_Field_Float:
-                      *((float*)pAddress) = r; break;
-                    case tsp_Field_Double:
-                      *((double*)pAddress) = r; break;
-                    default:
-                      tosError_ABORT();
-                    }
-                  break;
-                }
-                SAVE_REGS();
-                RAISE_TypeError(pArgument, tyc_ClassId_Real);
-                break;
-              case tyc_Type_Object:
+	      {
+	      case tyc_Type_Bool:
+		{
+		Bool f;
+		if(tyc_IS_FALSE(pArgument))
+		  f = FALSE;
+		else if(tyc_IS_TRUE(pArgument))
+		  f = TRUE;
+		else {
+		  SAVE_REGS();
+		  RAISE_TypeError(pArgument, tyc_ClassId_Bool);
+		  break;
+		}
+		switch(cCType)
+		  {
+		  case tsp_Field_Char:
+		  case tsp_Field_UChar:
+		    *((char*)pAddress) = f; break;
+		  case tsp_Field_Short:
+		  case tsp_Field_UShort:
+		    *((short*)pAddress) = f; break;
+		  case tsp_Field_Int:
+		  case tsp_Field_UInt:
+		    *((int*)pAddress) = f; break;
+		  case tsp_Field_Long:
+		  case tsp_Field_ULong:
+		    *((long*)pAddress) = f; break;
+		  case tsp_Field_LongLong:
+		    *((Long*)pAddress) = f; break;
+		  default:
+		    tosError_ABORT();
+		  }
+		}
+		break;
+	      case tyc_Type_Char:
+		if(tyc_CLASSID(pArgument) == tyc_ClassId_Char) {
+		  Char c = tyc_CHAR_VALUE(pArgument);
+		  switch(cCType)
+		    {
+		    case tsp_Field_Char:
+		    case tsp_Field_UChar:
+		      *((char*)pAddress) = c;	break;
+		    case tsp_Field_Short:
+		    case tsp_Field_UShort:
+		      *((short*)pAddress) = c; break;
+		    case tsp_Field_Int:
+		    case tsp_Field_UInt:
+		      *((int*)pAddress) = c; break;
+		    case tsp_Field_Long:
+		    case tsp_Field_ULong:
+		      *((long*)pAddress) = c;	break;
+		    case tsp_Field_LongLong:
+		      *((Long*)pAddress) = c; break;
+		    default:
+		      tosError_ABORT();
+		    }
+		  break;
+		}
+		SAVE_REGS();
+		RAISE_TypeError(pArgument, tyc_ClassId_Char);
+		break;
+	      case tyc_Type_Int:
+		if(tyc_IS_TAGGED_INT(pArgument)) {
+		  Int i = tyc_TAGGED_INT_VALUE(pArgument);
+		  switch(cCType)
+		    {
+		    case tsp_Field_Char:
+		    case tsp_Field_UChar:
+		      *((char*)pAddress) = i;	break;
+		    case tsp_Field_Short:
+		    case tsp_Field_UShort:
+		      *((short*)pAddress) = i; break;
+		    case tsp_Field_Int:
+		    case tsp_Field_UInt:
+		      *((int*)pAddress) = i; break;
+		    case tsp_Field_Long:
+		    case tsp_Field_ULong:
+		      *((long*)pAddress) = i; break;
+		    case tsp_Field_LongLong:
+		      *((Long*)pAddress) = i; break;
+		    default:
+		      tosError_ABORT();
+		    }
+		  break;
+		}
+		SAVE_REGS();
+		RAISE_TypeError(pArgument, tyc_ClassId_Int);
+		break;
+	      case tyc_Type_Long:
+		if(tyc_CLASSID(pArgument) == tyc_ClassId_Long) {
+		  Long l = tyc_LONG_VALUE(pArgument);
+		  switch(cCType)
+		    {
+		    case tsp_Field_Char:
+		    case tsp_Field_UChar:
+		      *((char*)pAddress) = l; break;
+		    case tsp_Field_Short:
+		    case tsp_Field_UShort:
+		      *((short*)pAddress) = l; break;
+		    case tsp_Field_Int:
+		    case tsp_Field_UInt:
+		      *((int*)pAddress) = l; break;
+		    case tsp_Field_Long:
+		    case tsp_Field_ULong:
+		      *((long*)pAddress) = l;	break;
+		    case tsp_Field_LongLong:
+		      *((Long*)pAddress) = l; break;
+		    default:
+		      tosError_ABORT();
+		    }
+		  break;
+		}
+		SAVE_REGS();
+		RAISE_TypeError(pArgument, tyc_ClassId_Long);
+		break;
+	      case tyc_Type_Real:
+		if(tyc_CLASSID(pArgument) == tyc_ClassId_Real) {
+		  Real r = tyc_REAL_VALUE(pArgument);
+		  switch(cCType)
+		    {
+		    case tsp_Field_Float:
+		      *((float*)pAddress) = r; break;
+		    case tsp_Field_Double:
+		      *((double*)pAddress) = r; break;
+		    default:
+		      tosError_ABORT();
+		    }
+		  break;
+		}
+		SAVE_REGS();
+		RAISE_TypeError(pArgument, tyc_ClassId_Real);
+		break;
+	      case tyc_Type_Object:
 		/* only permitted CType is OID */
-                tosError_ABORT();
-                break;
-              default:
-                /* (illegal tycoon descriptor) */
+		tosError_ABORT();
+		break;
+	      default:
+		/* (illegal tycoon descriptor) */
 		printf("### Illegal tycoon descriptor: %s, `%c', `%c'\n",
 		       ((tyc_Method*)pMethod)->pSelector, cTycoonType, cCType);
-                tosError_ABORT();
-              }
-            *++sp = pArgument;
+		tosError_ABORT();
+	      }
+	    *++sp = pArgument;
 	    BNEXT();
-          }
+	  }
 
 	  METHODLABEL(CSlotMoveToMethod):
 	  {
@@ -3756,63 +3757,63 @@ divisionbyzero:
 	    BNEXT();
 	  } 
 
-          METHODLABEL(PoolAccessMethod):
-          {
-            /* pool access */
-            *sp = *(((tyc_PoolAccessMethod*)pMethod)->poolMethod.pCell);
+	  METHODLABEL(PoolAccessMethod):
+	  {
+	    /* pool access */
+	    *sp = *(((tyc_PoolAccessMethod*)pMethod)->poolMethod.pCell);
 	    BNEXT();
-          }
+	  }
 
-          METHODLABEL(PoolUpdateMethod):
-          {
-            /* pool update */
-            tsp_OID pArgument = *sp;
-            *(((tyc_PoolAccessMethod*)pMethod)->poolMethod.pCell) = pArgument;
-            *++sp = pArgument;
+	  METHODLABEL(PoolUpdateMethod):
+	  {
+	    /* pool update */
+	    tsp_OID pArgument = *sp;
+	    *(((tyc_PoolAccessMethod*)pMethod)->poolMethod.pCell) = pArgument;
+	    *++sp = pArgument;
 	    BNEXT();
-          }
+	  }
 
-          METHODLABEL(ExternalMethod):
-          {
-            /* ccall */
-            tsp_OID pResult;
-            Word nArgs = pMethod->nArgs;
-            SAVE_REGS();
+	  METHODLABEL(ExternalMethod):
+	  {
+	    /* ccall */
+	    tsp_OID pResult;
+	    Word nArgs = pMethod->nArgs;
+	    SAVE_REGS();
 
-            /* First call: Initialize error codes */
-            if (!((tyc_DLL*)pReceiver)->errCode) {
-               ((tyc_DLL*)pReceiver)->errCode = tyc_TAG_MAYBEBOXED(0);
-               ((tyc_DLL*)pReceiver)->errCodeDetail = tyc_TAG_MAYBEBOXED(0);
-            }
-            
-            /* Restore last error context from receiver object */
-            tosError_setContext(tyc_TAGGED_INT_VALUE(((tyc_DLL*)pReceiver)->errCode),
-                                tyc_TAGGED_INT_VALUE(((tyc_DLL*)pReceiver)->errCodeDetail));
+	    /* First call: Initialize error codes */
+	    if (!((tyc_DLL*)pReceiver)->errCode) {
+	       ((tyc_DLL*)pReceiver)->errCode = tyc_TAG_MAYBEBOXED(0);
+	       ((tyc_DLL*)pReceiver)->errCodeDetail = tyc_TAG_MAYBEBOXED(0);
+	    }
+	    
+	    /* Restore last error context from receiver object */
+	    tosError_setContext(tyc_TAGGED_INT_VALUE(((tyc_DLL*)pReceiver)->errCode),
+				tyc_TAGGED_INT_VALUE(((tyc_DLL*)pReceiver)->errCodeDetail));
 
-            pResult = tmccall_execute((tyc_ExternalMethod*)pMethod,
-                                      sp + nArgs);
+	    pResult = tmccall_execute((tyc_ExternalMethod*)pMethod,
+				      sp + nArgs);
 
-            /* Store current error context into receiver object */
-            ((tyc_DLL*)pReceiver)->errCode = tyc_TAG_MAYBEBOXED(tosError_getCode());
-            ((tyc_DLL*)pReceiver)->errCodeDetail = tyc_TAG_MAYBEBOXED(tosError_getCodeDetail());
+	    /* Store current error context into receiver object */
+	    ((tyc_DLL*)pReceiver)->errCode = tyc_TAG_MAYBEBOXED(tosError_getCode());
+	    ((tyc_DLL*)pReceiver)->errCodeDetail = tyc_TAG_MAYBEBOXED(tosError_getCodeDetail());
 
-            FETCH_THREAD();
-            LOAD_REGS();
-            sp += nArgs;        /* remove arguments */
-            *sp = pResult;      /* push result onto stack */
+	    FETCH_THREAD();
+	    LOAD_REGS();
+	    sp += nArgs;	/* remove arguments */
+	    *sp = pResult;	/* push result onto stack */
 	    BNEXT();
-          }
+	  }
 
 #ifndef tvm_THREADED_CODE
-          default:
-          {
-            /* no valid method */
-            fprintf(stderr,"\nTVM warning: unknown method type for %s.%s.\n",
-                    tyc_CLASS(tyc_CLASSID(pReceiver))->pszName,
-                    tyc_SELECTOR(idSelector));
-            goto dontUnderstand;
-          }
-        }
+	  default:
+	  {
+	    /* no valid method */
+	    fprintf(stderr,"\nTVM warning: unknown method type for %s.%s.\n",
+		    tyc_CLASS(tyc_CLASSID(pReceiver))->pszName,
+		    tyc_SELECTOR(idSelector));
+	    goto dontUnderstand;
+	  }
+	}
 #else
 methodEnd:
 #endif
@@ -3843,107 +3844,107 @@ methodEnd:
 	}
 #endif
 	NEXT();
-        }
-        /* 1st level cache miss */
-        {
-        /* aquire 2nd level r/w cache lock */
-        tmthread_cacheLock();
-        /* decrease update counter and update 1st level cache if necessary */
-        if(--cacheMisses == 0) {
-          tmthread_cacheUnlock();
-          tmthread_pushStack(pReceiver);
-          SAVE_REGS();
-          updateCache();
-          FETCH_THREAD();
-          LOAD_REGS();
-          pReceiver = tmthread_popStack();
-          tmthread_cacheLock();
-        }
-        pEntry = &rwCache[HASH(idClass, idSelector)];
-        if(pEntry->key == tvm_KEY(idSelector, idClass)) {
-          /* 2nd level cache hit */
-          pMethod = pEntry->pMethod;
+	}
+	/* 1st level cache miss */
+	{
+	/* aquire 2nd level r/w cache lock */
+	tmthread_cacheLock();
+	/* decrease update counter and update 1st level cache if necessary */
+	if(--cacheMisses == 0) {
+	  tmthread_cacheUnlock();
+	  tmthread_pushStack(pReceiver);
+	  SAVE_REGS();
+	  updateCache();
+	  FETCH_THREAD();
+	  LOAD_REGS();
+	  pReceiver = tmthread_popStack();
+	  tmthread_cacheLock();
+	}
+	pEntry = &rwCache[HASH(idClass, idSelector)];
+	if(pEntry->key == tvm_KEY(idSelector, idClass)) {
+	  /* 2nd level cache hit */
+	  pMethod = pEntry->pMethod;
 #ifdef tvm_THREADED_CODE
-          pMethodCode = pEntry->pMethodCode;
+	  pMethodCode = pEntry->pMethodCode;
 #endif
-          /* release 2nd level cache lock */
-          tmthread_cacheUnlock();
+	  /* release 2nd level cache lock */
+	  tmthread_cacheUnlock();
 #ifdef tvm_THREADED_CODE
-          goto *pMethodCode;
+	  goto *pMethodCode;
 #else
-          goto lookupHit;
+	  goto lookupHit;
 #endif
-        }
-        /* 2nd level cache miss */
-        {
-        if((pMethod = tvm_methodLookup(idSelector, idClass))) {
-          /* check no. of arguments */
+	}
+	/* 2nd level cache miss */
+	{
+	if((pMethod = tvm_methodLookup(idSelector, idClass))) {
+	  /* check no. of arguments */
 	  tyc_Selector *pSelector = tyc_pRoot->apSelectorTable[idSelector];
 	  if(pMethod->nArgs != pSelector->wArity || pMethod->wSorts != pSelector->wSorts) {
-            goto wrongSignature;
-          }
+	    goto wrongSignature;
+	  }
 methodFound:
-          /* check for special method types */
-          switch(tsp_classId(pMethod)) {
-          case tyc_ClassId_ExternalMethod:
-            {
-            void * pFunction;
-            /* check if external dll is open */
-            if(!((tyc_DLL*)pReceiver)->hDLL) {
-              tmthread_cacheUnlock();
-              SAVE_REGS();
-              RAISE_DLLOpenError(pReceiver);
-            }
-            /* function lookup */
-            pFunction = rtdll_lookup(
-              (rtdll_T)tyc_TAGGED_INT_VALUE(((tyc_DLL*)pReceiver)->hDLL),
-              ((tyc_ExternalMethod*)pMethod)->pszLabel);
-            if(!pFunction) {
-              /* function does not exist in DLL: raise exception */
-              tmthread_cacheUnlock();
-              SAVE_REGS();
-              RAISE_DLLCallError(pReceiver,
-                                 ((tyc_ExternalMethod*)pMethod)->pszLabel);
-            }
-            checkBlocking((tyc_ExternalMethod*)pMethod);
-            ((tyc_ExternalMethod*)pMethod)->pFunction = pFunction;
+	  /* check for special method types */
+	  switch(tsp_classId(pMethod)) {
+	  case tyc_ClassId_ExternalMethod:
+	    {
+	    void * pFunction;
+	    /* check if external dll is open */
+	    if(!((tyc_DLL*)pReceiver)->hDLL) {
+	      tmthread_cacheUnlock();
+	      SAVE_REGS();
+	      RAISE_DLLOpenError(pReceiver);
+	    }
+	    /* function lookup */
+	    pFunction = rtdll_lookup(
+	      (rtdll_T)tyc_TAGGED_INT_VALUE(((tyc_DLL*)pReceiver)->hDLL),
+	      ((tyc_ExternalMethod*)pMethod)->pszLabel);
+	    if(!pFunction) {
+	      /* function does not exist in DLL: raise exception */
+	      tmthread_cacheUnlock();
+	      SAVE_REGS();
+	      RAISE_DLLCallError(pReceiver,
+				 ((tyc_ExternalMethod*)pMethod)->pszLabel);
+	    }
+	    checkBlocking((tyc_ExternalMethod*)pMethod);
+	    ((tyc_ExternalMethod*)pMethod)->pFunction = pFunction;
 #ifdef tvm_THREADED_CODE
-            pMethodCode = &&ExternalMethod;
+	    pMethodCode = &&ExternalMethod;
 #endif
-            }
-            break;
-          case tyc_ClassId_BuiltinMethod:
-            {
-            lookupBuiltin((tyc_BuiltinMethod*)pMethod);
+	    }
+	    break;
+	  case tyc_ClassId_BuiltinMethod:
+	    {
+	    lookupBuiltin((tyc_BuiltinMethod*)pMethod);
 #ifdef tvm_THREADED_CODE
-            {
-            Word n = ((tyc_BuiltinMethod*)pMethod)->iNumber;
-            if(n >= 0 && n < tvm_Builtin_nBuiltins) {
-              pMethodCode = builtinTable[n];
-            }
-            else {
-              pMethodCode = &&label_tvm_Builtin_Undefined;
-            }
-            }
+	    {
+	    Word n = ((tyc_BuiltinMethod*)pMethod)->iNumber;
+	    if(n >= 0 && n < tvm_Builtin_nBuiltins) {
+	      pMethodCode = builtinTable[n];
+	    }
+	    else {
+	      pMethodCode = &&label_tvm_Builtin_Undefined;
+	    }
+	    }
 #endif
-            }
-            break;
+	    }
+	    break;
 #ifdef tvm_THREADED_CODE
-          case tyc_ClassId_CompiledMethod:
-            pMethodCode = &&CompiledMethod;
-            break;
-          case tyc_ClassId_SlotAccessMethod:
-            pMethodCode = &&SlotAccessMethod;
-            break;
-          case tyc_ClassId_CSlotAccessMethod:
-            pMethodCode = &&CSlotAccessMethod;
-            break;
-          case tyc_ClassId_SlotUpdateMethod:
-            pMethodCode = &&SlotUpdateMethod;
-            break;
-          case tyc_ClassId_CSlotUpdateMethod:
-            pMethodCode = &&CSlotUpdateMethod;
-            break;
+	  case tyc_ClassId_CompiledMethod:
+	    pMethodCode = &&CompiledMethod;
+	    break;
+	  case tyc_ClassId_SlotAccessMethod:
+	    pMethodCode = &&SlotAccessMethod;
+	    break;
+	  case tyc_ClassId_CSlotAccessMethod:
+	    pMethodCode = &&CSlotAccessMethod;
+	    break;
+	  case tyc_ClassId_SlotUpdateMethod:
+	    pMethodCode = &&SlotUpdateMethod;
+	    break;
+	  case tyc_ClassId_CSlotUpdateMethod:
+	    pMethodCode = &&CSlotUpdateMethod;
+	    break;
 	  case tyc_ClassId_SlotReferenceMethod:
 	    pMethodCode = &&SlotReferenceMethod;
 	    break;
@@ -3962,138 +3963,138 @@ methodFound:
 	  case tyc_ClassId_CSlotTakeFromMethod:
 	    pMethodCode = &&CSlotTakeFromMethod;
 	    break;
-          case tyc_ClassId_PoolAccessMethod:
-            pMethodCode = &&PoolAccessMethod;
-            break;
-          case tyc_ClassId_PoolUpdateMethod:
-            pMethodCode = &&PoolUpdateMethod;
-            break;
-          default:
-          {
-            /* no valid method */
-            fprintf(stderr,"\nTVM warning: unknown method type for %s.%s.\n",
-                    tyc_CLASS(tyc_CLASSID(pReceiver))->pszName,
-                    tyc_SELECTOR(idSelector));
-            goto dontUnderstand;
-          }
+	  case tyc_ClassId_PoolAccessMethod:
+	    pMethodCode = &&PoolAccessMethod;
+	    break;
+	  case tyc_ClassId_PoolUpdateMethod:
+	    pMethodCode = &&PoolUpdateMethod;
+	    break;
+	  default:
+	  {
+	    /* no valid method */
+	    fprintf(stderr,"\nTVM warning: unknown method type for %s.%s.\n",
+		    tyc_CLASS(tyc_CLASSID(pReceiver))->pszName,
+		    tyc_SELECTOR(idSelector));
+	    goto dontUnderstand;
+	  }
 #endif
-          }
-          pEntry->pMethod = pMethod;
+	  }
+	  pEntry->pMethod = pMethod;
 #ifdef tvm_THREADED_CODE
-          pEntry->pMethodCode = pMethodCode;
+	  pEntry->pMethodCode = pMethodCode;
 #endif
-          pEntry->key = tvm_KEY(idSelector, idClass);
-          /* call method */
-          tmthread_cacheUnlock();
+	  pEntry->key = tvm_KEY(idSelector, idClass);
+	  /* call method */
+	  tmthread_cacheUnlock();
 #ifdef tvm_THREADED_CODE
-          goto *pMethodCode;
+	  goto *pMethodCode;
 #else
-          goto lookupHit;
+	  goto lookupHit;
 #endif
-        }
-        }
+	}
+	}
 dontUnderstand:
-        /* find builtin __doesNotUnderstand in Object */
-        if((pMethod = tvm_methodLookup(idDoesNotUnderstand, idClass))) {
-          /* check no. of arguments */
+	/* find builtin __doesNotUnderstand in Object */
+	if((pMethod = tvm_methodLookup(idDoesNotUnderstand, idClass))) {
+	  /* check no. of arguments */
 	  tyc_Selector *pSelector = tyc_pRoot->apSelectorTable[idDoesNotUnderstand];
 	  if(pMethod->nArgs != pSelector->wArity || pMethod->wSorts != pSelector->wSorts) {
-            goto wrongSignature;
-          }
-          if(tsp_classId(pMethod) == tyc_ClassId_BuiltinMethod) {
-            /* map all methods to the same builtin code */
-            lookupBuiltin((tyc_BuiltinMethod*)pMethod);
+	    goto wrongSignature;
+	  }
+	  if(tsp_classId(pMethod) == tyc_ClassId_BuiltinMethod) {
+	    /* map all methods to the same builtin code */
+	    lookupBuiltin((tyc_BuiltinMethod*)pMethod);
 #ifdef tvm_THREADED_CODE
-            {
-            Word n = ((tyc_BuiltinMethod*)pMethod)->iNumber;
-            if(n >= 0 && n < tvm_Builtin_nBuiltins) {
-              pMethodCode = builtinTable[n];
-            }
-            else {
-              pMethodCode = &&label_tvm_Builtin_Undefined;
-            }
-            }
+	    {
+	    Word n = ((tyc_BuiltinMethod*)pMethod)->iNumber;
+	    if(n >= 0 && n < tvm_Builtin_nBuiltins) {
+	      pMethodCode = builtinTable[n];
+	    }
+	    else {
+	      pMethodCode = &&label_tvm_Builtin_Undefined;
+	    }
+	    }
 #endif
-          }
-          else {
-            /* must be a builtin! */
-            tosLog_error("tvm",
-                         "initDoesNotUnderstand",
-                         "Fatal TVM error: __doesNotUnderstand override.");
-            tosError_ABORT();
-          }
-          pEntry->pMethod = pMethod;
+	  }
+	  else {
+	    /* must be a builtin! */
+	    tosLog_error("tvm",
+			 "initDoesNotUnderstand",
+			 "Fatal TVM error: __doesNotUnderstand override.");
+	    tosError_ABORT();
+	  }
+	  pEntry->pMethod = pMethod;
 #ifdef tvm_THREADED_CODE
-          pEntry->pMethodCode = pMethodCode;
+	  pEntry->pMethodCode = pMethodCode;
 #endif
-          pEntry->key = tvm_KEY(idSelector, idClass);
-          /* call method */
-          tmthread_cacheUnlock();
+	  pEntry->key = tvm_KEY(idSelector, idClass);
+	  /* call method */
+	  tmthread_cacheUnlock();
 #ifdef tvm_THREADED_CODE
-          goto *pMethodCode;
+	  goto *pMethodCode;
 #else
-          goto lookupHit;
+	  goto lookupHit;
 #endif
-        }
-        tmthread_cacheUnlock();
-        /* method not implemented */
-        {
-        SAVE_REGS();
-        tosLog_error("tvm",
-                     "run",
-                     "Method not implemented");
-        RAISE_DoesNotUnderstand(pReceiver, tyc_SELECTOR(idSelector));
-        }
+	}
+	tmthread_cacheUnlock();
+	/* method not implemented */
+	{
+	SAVE_REGS();
+	tosLog_error("tvm",
+		     "run",
+		     "Method not implemented");
+	RAISE_DoesNotUnderstand(pReceiver, tyc_SELECTOR(idSelector));
+	}
 wrongSignature:
-        tmthread_cacheUnlock();
+	tmthread_cacheUnlock();
 	/* no. of arguments or argument sorts do not match */
-        {
-        int i, nArgs = tyc_ARGUMENTS(idSelector);
-        tsp_OID * pArray;
+	{
+	int i, nArgs = tyc_ARGUMENTS(idSelector);
+	tsp_OID * pArray;
 	tyc_Selector * pSelector;
 	Word wSorts;
-        SAVE_REGS();
-        tmthread_pushStack(pMethod);
-        tmthread_pushStack(pReceiver);
+	SAVE_REGS();
+	tmthread_pushStack(pMethod);
+	tmthread_pushStack(pReceiver);
 	pArray = tsp_newArray(tyc_ClassId_MutableArray, nArgs);
-        pReceiver = tmthread_popStack();
-        pMethod = tmthread_popStack();
-        FETCH_THREAD();
-        LOAD_REGS();
+	pReceiver = tmthread_popStack();
+	pMethod = tmthread_popStack();
+	FETCH_THREAD();
+	LOAD_REGS();
 	/* get selector object */
 	pSelector = tyc_pRoot->apSelectorTable[idSelector];
 	wSorts = pSelector->wSorts;
-        /* copy arguments to array */
-        for(i = 0, nArgs--; nArgs >= 0; i++, nArgs--) {
-          pArray[i] = sp[nArgs];
+	/* copy arguments to array */
+	for(i = 0, nArgs--; nArgs >= 0; i++, nArgs--) {
+	  pArray[i] = sp[nArgs];
 	  if((wSorts & (1<<i)) != 0) {
 	    zapComponent(pThread, sp+nArgs);
 	  }
-        }
+	}
 	tsp_setImmutable(pArray);
-        /* raise exception */
+	/* raise exception */
 	RAISE_WrongSignature(pMethod, pReceiver, pSelector, pArray);
-        }
-        }
+	}
+	}
 taggedInt0:
-        idClass = tyc_ClassId_Int;
-        goto send2;
+	idClass = tyc_ClassId_Int;
+	goto send2;
 nil0:
-        idClass = tyc_ClassId_Nil;
-        goto send2;
+	idClass = tyc_ClassId_Nil;
+	goto send2;
       }
 
       /* special opcode terminating thread */
       LABEL(tvm_Op_terminateThread):
-        {
-        SAVE_REGS();
-        tmthread_exit(TRUE);
-        tosError_ABORT();
-        }
-        NEXT();
+	{
+	SAVE_REGS();
+	tmthread_exit(TRUE);
+	tosError_ABORT();
+	}
+	NEXT();
 #ifndef tvm_THREADED_CODE
       default:
-        tosError_ABORT();
+	tosError_ABORT();
 #endif
       }
     }
@@ -4144,10 +4145,10 @@ void tvm_debugSend(tyc_ClassId idClass, tyc_SelectorId idSelector)
   tyc_Symbol pSelectorSymbol = tyc_SELECTOR(idSelector);
   if(fTraceSends) {
     tosLog_debug("TVM_DEBUG", "send",
-                 "TID=%d: %s.%s",
-                 *((int*)tmthread_currentThread()->hOSThread),
-                 pClassSymbol,
-                 pSelectorSymbol);
+		 "TID=%d: %s.%s",
+		 *((int*)tmthread_currentThread()->hOSThread),
+		 pClassSymbol,
+		 pSelectorSymbol);
   }
   if(fBreak) {
     if((pClassName == NULL || strcmp(pClassSymbol, pClassName) == 0) &&
@@ -4158,18 +4159,18 @@ void tvm_debugSend(tyc_ClassId idClass, tyc_SelectorId idSelector)
 }
 
 void tvm_debugSuperSend(tyc_ClassId idClass, tyc_ClassId idSuperClass,
-                        tyc_SelectorId idSelector)
+			tyc_SelectorId idSelector)
 {
   tyc_Symbol pClassSymbol = tyc_CLASS(idClass)->pszName;
   tyc_Symbol pSuperClassSymbol = tyc_CLASS(idSuperClass)->pszName;
   tyc_Symbol pSelectorSymbol = tyc_SELECTOR(idSelector);
   if(fTraceSends) {
     tosLog_debug("TVM_DEBUG", "sendSuper",
-                 "TID=%d: %s.%s lookup starts at %s",
-                 *((int*)tmthread_currentThread()->hOSThread),
-                 pClassSymbol,
-                 pSelectorSymbol,
-                 pSuperClassSymbol);
+		 "TID=%d: %s.%s lookup starts at %s",
+		 *((int*)tmthread_currentThread()->hOSThread),
+		 pClassSymbol,
+		 pSelectorSymbol,
+		 pSuperClassSymbol);
   }
   if(fBreak) {
     if((pClassName == NULL || strcmp(pClassSymbol, pClassName) == 0) &&
@@ -4188,8 +4189,8 @@ void tvm_debugSuperSend(tyc_ClassId idClass, tyc_ClassId idSuperClass,
   void fun(void) \
   { \
     tosLog_error("tvm",\
-                 "DEBUG",\
-                 "TMV Error: Machine not configured for debugging");\
+		 "DEBUG",\
+		 "TMV Error: Machine not configured for debugging");\
   }
 
 DEBUG_ERROR(tvm_setTrace)

@@ -24,9 +24,9 @@ super Set(E)
    Date: 	10-Jun-1998
    Purpose:  	Set with key equality based on object identity
 *)
-metaclass IdSetClass(E)
-
-private methods
+meta IdSetClass(E)
+{
+private
 
 _keyEqual(k1 :Object, k2 :Object) :Bool
   (* *)
@@ -36,4 +36,4 @@ _keyHash(k :Object) :Int
   (* *)
 { k.identityHash * 1997 }
 
-;
+}

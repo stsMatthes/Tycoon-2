@@ -1,7 +1,5 @@
 class Packet
 super Object
-metaclass PacketClass(Packet)
-
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -21,19 +19,19 @@ metaclass PacketClass(Packet)
  * 
  * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
  *
- "Richards" benchmark: ported from C++ to TL-2 *)   
+ "Richards" benchmark: ported from C++ to TL-2 *)
+meta PacketClass(Packet)
+{
+ident :Int
 
-public
+kind  :Int
 
-ident :Int,
-kind  :Int,
-datum :Int,
+datum :Int
+
 data  :MutableString
 
-
-methods
-
 print() :Void
-{}  
+  (* *)
+{}
 
-;
+}

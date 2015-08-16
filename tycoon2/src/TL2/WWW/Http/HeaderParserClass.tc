@@ -1,3 +1,5 @@
+class HeaderParserClass
+super ConcreteClass(HeaderParser)
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -22,20 +24,14 @@
 
   Author: Matthias Ernst 12/96
 *)
-
-class HeaderParserClass
-super ConcreteClass(HeaderParser)
-metaclass MetaClass
-
-public methods
-
-new(in :Reader(Char)) :HeaderParser
+meta MetaClass
 {
-  let instance = _new,
-  instance.in := in,
+new(in :Reader(Char)) :HeaderParser
+  (* *)
+{
+  instance ::= _new
+  instance.in := in
   instance
 }
 
-;
-
-  
+}

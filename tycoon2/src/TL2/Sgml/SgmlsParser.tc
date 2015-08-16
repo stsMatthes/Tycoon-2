@@ -1,14 +1,6 @@
 class SgmlsParser
 super Sgml
-metaclass SimpleConcreteClass(SgmlsParser)
-public
-
-verbose :Bool
-
-methods
-
-parse(additionalFiles :Sequence(String), inputPath :String, output :SgmlOutput)
-  (*
+(*
  * This file is part of the Tycoon-2 system.
  *
  * The Tycoon-2 system is free software; you can redistribute it and/or
@@ -27,219 +19,231 @@ parse(additionalFiles :Sequence(String), inputPath :String, output :SgmlOutput)
  * 
  * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
  *
- parse all <additionalFiles> followed by <inputPath>,
+ *)
+meta SimpleConcreteClass(SgmlsParser)
+{
+verbose :Bool
+
+parse(additionalFiles :Sequence(String), inputPath :String, output :SgmlOutput) :Void
+  (* parse all <additionalFiles> followed by <inputPath>,
      writing structured output to SgmlOutput.
      Reentrant (except for "verbose" switch). *)
 {
-  (* create temp file names for Sgmls output and errors *)
-  let sgmlsOutPath = tycoon.os.fs.tmpnam,
-  let errPath = tycoon.os.fs.tmpnam,
+  ; create temp file names for Sgmls output and errors 
+  sgmlsOutPath ::= tycoon.os.fs.tmpnam
+  errPath ::= tycoon.os.fs.tmpnam
 
-  (* build command line *)
-  let cmd = StringBuilderOutput.new,
-  cmd << "hoxnsgmls",
-  output.interestedInPosition
-  ? { cmd << " -l" },
-  output.interestedInComments
-  ? { cmd << " -n" },
+  ; build command line 
+  cmd ::= StringBuilderOutput.new
+   ; warning: like -wall, but without -wmixed, which conflicts with stml 
+  cmd << "nsgmls -wshould -wdefault -wundefined -wsgmldecl -wunused-map -wunused-param -wempty -wunclosed -oempty"
+  if( output.interestedInPosition
+  then: { cmd << " -oline" })
+  ; output.interestedInComments
+;     ? { cmd << " -n" },
+;  
   additionalFiles.do(fun(s :String) {
     cmd<<' '<< s
-  }),
-  cmd<<' '<<inputPath<<" >"<<sgmlsOutPath<<" 2>"<<errPath,
-  let command = cmd.contents,
+  })
+  cmd<<' '<<inputPath<<" >"<<sgmlsOutPath<<" 2>"<<errPath
+  command ::= cmd.contents
 
-  (* call it *)
-  verbose ? { tycoon.stdout << "[SgmlsParser: "<<command<<"]\n" },
+  ; call it 
+  if( verbose then: { tycoon.stdout << "[SgmlsParser: "<<command<<"]\n" })
   try({
     tycoon.os.exec(command)
-    (* ignore result *)
-  }, fun((*e*):Exception) {
-    (* ignore exception, check errFile *)
-  }),
+    ; ignore result 
+  } else: fun(;e
+:Exception) {
+    ; ignore exception, check errFile 
+  })
 
-  let errFile = File.new(errPath),
-  let errText =
-    errFile.exists
-    ? { errFile.openRead,
-	let errTextSize = errFile.size.asInt,
-	let errText = MutableString.new(errTextSize),
-	errFile.readBuffer(errText, 0, errText.size),
-	errFile.close,
-	errFile.remove,
-	let errText :String = errText }
-    : { "Could not start nsgmls" },
+  errFile ::= File.new(errPath)
+  errText ::=
+    if( errFile.exists
+    then: { errFile.openRead
+	errTextSize ::= errFile.size.asInt
+	errText ::= MutableString.new(errTextSize)
+	errFile.readBuffer(errText, 0, errText.size)
+	errFile.close
+	errFile.remove
+	errText :String := errText }
+    else: { "Could not start nsgmls" })
 
-  let sgmlsOutFile = File.new(sgmlsOutPath),
-  errText.isEmpty ? {
-    verbose ? { tycoon.stdout << "[SgmlsParser: parsing output]\n" },
-    sgmlsOutFile.openRead,   (* exception is OK here *)
-    let var exception :Exception = nil,
+  sgmlsOutFile ::= File.new(sgmlsOutPath)
+  if( errText.isEmpty then: {
+    if( verbose then: { tycoon.stdout << "[SgmlsParser: parsing output]\n" })
+    sgmlsOutFile.openRead   ; exception is OK here 
+    exception :Exception := nil
     try({
-      parseHoxSgmlsOutput(sgmlsOutFile, output)
-    }, fun(e:Exception) {
-      (* patch sourceFile information here so we do not have to
-         pass it around *)
-      e."class" = SgmlsParserError
-      ? { let e = _typeCast(e, :SgmlsParserError),
-	  e.sourceFile.isNil
-	  ? { e.sourceFile := inputPath } },
+      parseNsgmlsOutput(sgmlsOutFile, output)
+    } else: fun(e:Exception) {
+      ; patch sourceFile information here so we do not have to
+;         pass it around 
+      if( e."class" = SgmlsParserError
+      then: { e ::= _typeCast(e, :SgmlsParserError)
+	  if( e.sourceFile.isNil
+	  then: { e.sourceFile := inputPath }) })
       exception := e
-    }),
-    sgmlsOutFile.close,
-    sgmlsOutFile.remove,
-    exception.isNotNil
-    ? { exception.raise }
-  } : {
-    sgmlsOutFile.exists ? { sgmlsOutFile.remove },
-    verbose ? { tycoon.stdout << "[SgmlsParser: there were errors]\n" },
+    })
+    sgmlsOutFile.close
+    sgmlsOutFile.remove
+    if( exception.isNotNil
+    then: { exception.raise })
+  } else: {
+    if( sgmlsOutFile.exists then: { sgmlsOutFile.remove })
+    if( verbose then: { tycoon.stdout << "[SgmlsParser: there were errors]\n" })
     SgmlsParserError.new(inputPath, errText).raise
-  }
+  })
 }
 
 private
 
 contentTypes :Array(SgmlContentType)
 
-methods
+unquoterTables :ScannerTables(Char)
 
-(*
-    '-'  character data
-    '('  element name
-	    { name, value }  (specified or 'current' attribute)
-	    ""
-    ')'  element name
-    'C'
-    'L'  line number, [filename]
-*)
-parseHoxSgmlsOutput(input :File, out :SgmlOutput)
-{
-  parseDTD(input, out),
-  let var dataCode :Char = nil,
-  while({ dataCode := input.read,
-	  dataCode.isNotNil && { dataCode != 'C' } }, {
-    dataCode = '('
-    ? { let id = parseString(input),
-        let attributes = Dictionary.new,
-        let var attributeName :String = nil,
-	while({ attributeName := parseString(input),
-		!attributeName.isEmpty },{
-	  let attributeValue = parseString(input),
-	  attributes[attributeName] := attributeValue
-	}),
-	out.startElement(id, attributes) }
-    : { dataCode = ')'
-    ? { let id = parseString(input),
-        out.endElement(id) }
-    : { dataCode = '-'
-    ? { let data = parseString(input),
-        out.writeString(data) }
-    : { dataCode = 'L'
-    ? { let lineNumber = parseNumber(input),
-        let path = parseString(input),
-	!path.isEmpty ? { out.path := path },
-	out.lineNumber := lineNumber }
-    : { dataCode = '#'
-    ? { let data = parseString(input),
-        out.comment(data) }
-    : { corruptSgmlsOutput(input, "bad dataCode "+String.with1(dataCode)) }}}}}
-  }),
-  dataCode != 'C'
-  ? { SgmlsParserError.new(nil, "non-conforming document").raise }
-}
+lineScannerTables :UserScannerTables(Bool, SgmlsParserData)
 
-(*
-    element name, content type
-      { attribute name, default value }
-      ""
-    ""
-*)
-parseDTD(input :File, out :SgmlOutput)
+parseNsgmlsOutput(input :File, out :SgmlOutput) :Void
+  (* *)
 {
-  let var id :String = nil,
-  while({ id := parseString(input),
-	  !id.isEmpty },{
-    let contentType :SgmlContentType = parseContentType(input),
-    let defaultAttributeValues = Dictionary.new,
-    let var attributeName :String = nil,
-    while({ attributeName := parseString(input),
-	    !attributeName.isEmpty },{
-      let attributeValue = parseString(input),
-      defaultAttributeValues[attributeName] := attributeValue
-    }),
-    out.defineElement(id, contentType, defaultAttributeValues)
+  data ::= SgmlsParserData.new
+  data.out := out
+  lineScanner ::= UserScanner.new(lineScannerTables, input, data)
+  goon ::= true
+  while({goon.isNotNil &&  goon } do: {
+    goon := lineScanner.read
+  })
+  if( goon.isNil then: {
+    ; ended without 'C' line, or found a line that did not match anything 
+    SgmlsParserError.new(nil, "non-conforming document / malformed nsgmls output").raise
   })
 }
 
-(*
-    0 = empty 
-    1 = cdata 
-    2 = rcdata 
-    3 = mixed 
-    4 = element 
-*)
-parseContentType(input :File) :SgmlContentType
+build_linescanner :Void
+  (* ### out.defineElement  defaultAttributeValues ?? *)
 {
-  let i = parseNumber(input),
-  contentTypes.includesKey(i)
-  ? { contentTypes[i] }
-  : { corruptSgmlsOutput(input, "bad content type number: " + i.printString) }
+  sg ::= ScannerBuilder.new
+  
+  sg.addToken("-[^\n]*\n", fun(s :UserScanner(Bool,SgmlsParserData)) {
+    unquoter ::= Scanner.new1(unquoterTables,
+      StringInput.new2(s.token, 1, s.tokenSize-2),
+      s.tokenSize)
+    s.userState.out.writeAll(unquoter)
+    true
+  })
+
+  sg.addToken("A{[^ \n]+} {CDATA |TOKEN |[^ \n]+}{[^\n]*}\n",
+    fun (s:UserScanner(Bool,SgmlsParserData)) {
+      name ::= s.submatchString(0)
+      type ::= s.submatchString(1)
+      if( type = "IMPLIED"
+      then: { ; nop ### defaults!!! 
+}
+      else: { if( type = "CDATA "
+       then: { unquoter ::= Scanner.new1(unquoterTables,
+	     StringInput.new(s.submatchString(2)),
+	     s.submatchSize(2))
+	   data ::= String.fromReader(unquoter)
+	   s.userState.attribute(name, data) }
+       else: { if( type = "TOKEN "
+	then: { tokens ::= s.submatchString(2)
+	    s.userState.attribute(name, tokens) }
+	else: { if( verbose
+	    then: {tycoon.stdout.writeln(
+	         "unknown type: ignoring attribute line:\n>>"+s.token) })})})})
+      true
+    }
+  )
+
+  sg.addToken("\\([^ \n]+\n", fun(s :UserScanner(Bool,SgmlsParserData)) {
+    s.userState.openTag(String.fromSubSequence(s.token, 1, s.tokenSize-2))
+    true
+  })
+
+  sg.addToken("\\)[^ \n]+\n", fun(s :UserScanner(Bool,SgmlsParserData)) {
+    s.userState.closeTag(String.fromSubSequence(s.token, 1, s.tokenSize-2))
+    true
+  })
+
+  sg.addToken("C\n", fun(s :UserScanner(Bool,SgmlsParserData)) {
+    false
+  })
+
+  sg.addToken("e\n", fun(s :UserScanner(Bool,SgmlsParserData)) {
+    s.userState.nextIsEmpty := true
+    true
+  })
+
+  sg.addToken("L{[0-9]+}{( [^\n]*)?}\n",
+    fun (s:UserScanner(Bool,SgmlsParserData)) {
+      out ::= s.userState.out
+      out.lineNumber := Int.fromReader(s.submatchReader(0))
+      pathReader ::= s.submatchReader(1)
+      if( pathReader.read.isNotNil
+      then: { out.path := String.fromReader(pathReader) })
+      true
+    })
+
+  sg.addToken("[^-A()CLe][^\n]*\n", fun(s :UserScanner(Bool,SgmlsParserData)) {
+    if( verbose then: {
+      tycoon.stdout.writeln("ignoring input line:")
+      tycoon.stdout.writeString(s.token)
+    })
+    true
+  })
+
+  lineScannerTables := sg.generate
 }
 
-parseString(input :File) :String
+build_unquoter :Void
+  (* *)
 {
-  let n = parseNumber(input),
-  let s = input.readString(n),
-  s.size = n
-  ? { s }
-  : { corruptSgmlsOutput(input,
-         "eof in string (trying to read "
-	 +n.printString
-	 +", got "
-	 +s.size.printString
-	 +")") }
+  sg ::= ScannerBuilder(:Char).new
+
+  sg.addToken("[^\\\n]", fun(s :Scanner(Char)) {
+    s.token[0]
+  })
+
+  ; two consecutive backslashes, escaped for Tycoon Strings
+;     and another time for regexp recognition 
+  sg.addToken("\\\\\\\\", fun( :Scanner(Char)) {
+    '\\'
+  })
+  
+  sg.addToken("\\\\[0-9]([0-9][0-9]?)?", fun(s :Scanner(Char)) {
+    val ::= Int.fromReader(s.token.subSequenceReader(1,s.tokenSize-1))
+    third ::= val / 100
+    minus ::= third * 100
+    second ::= (val - minus) / 10
+    minus := minus + second * 10
+    first ::= val - minus
+    decimalVal ::= third * 64 + second * 8 + first
+    decimalVal.asChar
+  })
+
+  sg.addToken("\\\\n", fun( :Scanner(Char)) {
+    '\n'
+  })
+
+  ;; ### handle SDATA delimited by \|...\|
+  sg.addToken("\\\\\\|", fun(s :Scanner(Char)) {
+    ; currently ignored 
+    s.read
+  })
+
+  unquoterTables := sg.generate
 }
 
-parseNumber(input :File) :Int
-{
-  (* loop unrolled once for speed *)
-  let c = input.read,
-  c.isNotNil
-  ? { let var i = c.asInt,
-      i < 128
-      ? { i }
-      : { let var accu = 0,
-	  while({ i >= 128 }, {
-	    accu := ((accu-1) << 7) + i,
-	    let c = input.read,
-	    i := c.isNotNil ? { c.asInt } : { -1 }
-	  }),
-	  i >= 0
-	  ? { (accu << 7) + i }
-	  : { corruptSgmlsOutput(input, "eof in number") } } }
-  : { corruptSgmlsOutput(input, "eof in number") }
-}
+_init :Self
+  (* *)
+{ super._init
+  build_unquoter
+  build_linescanner
 
-corruptSgmlsOutput(input :File, kind :String) :Nil
-{
-  SgmlsParserError.new(nil,
-     "hoxnsgml output file corrupted at offset "
-     +input.position.printString
-     +": "
-     +kind).raise
-}
-
-_init :Void
-{ super._init,
-
-  contentTypes := Array.with5(
-    SgmlContentType.empty,
-    SgmlContentType.cdata,
-    SgmlContentType.rcdata,
-    SgmlContentType.mixed,
-    SgmlContentType.element),
-
-  verbose := false,
+  verbose := false
   self
 }
-;
 
+}

@@ -1,0 +1,37 @@
+<assign name=title>Tycoon Web Server Configuration</assign>
+
+<tycoon>
+   success := try({
+     server := formFields["server"],
+     
+     let host = formFields["host"].trim,
+     let port = formFields["port"].trim,
+     let user = formFields["user"].trim,
+     let group = formFields["group"].trim,
+     let documentRoot = formFields["documentRoot"].trim,
+
+     properties.host := host,
+     properties.port := port.asInt,
+     properties.user := user != "" ? { user } : { nil },
+     properties.group := group != "" ? { group } : { nil },
+     properties.documentRoot := documentRoot,
+     properties.url := URL.fromString(""), (*##formFields["url"],*)
+     properties.save,
+     true
+   }, fun(e :Exception) {
+        errorMsg := e.printString,
+	false
+   })
+</tycoon>
+
+<if true=success>
+  <assign name=msg>
+    <p><b><ref name=server>tyhttpd-X</ref></b> configured
+  </assign>
+<else>
+  <assign name=msg>
+    <p><tycoon/ SgmlEntityOutput.new(out) << errorMsg /
+  </assign>
+</if>
+
+

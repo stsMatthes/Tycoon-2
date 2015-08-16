@@ -1,3 +1,5 @@
+class MimeMessageClass
+super ConcreteClass(MimeMessage)
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -29,48 +31,51 @@
 	update :GB 01.10.97: remove header registry,
 	                     instead use MimeHeaderRegistry 
 *)
+meta MetaClass
+{
+code7Bit :String
+  (* encoding mechanism used by MimeMessage::"contentTransferEncoding:=" *)
+{ "7bit" }
 
-class MimeMessageClass
+code8Bit :String
+  (* *)
+{ "8bit" }
 
-super ConcreteClass(MimeMessage)
+codeBinary :String
+  (* *)
+{ "binary" }
 
-metaclass MetaClass
+codeQuotedPrintable :String
+  (* *)
+{ "quoted-printable" }
 
-public methods
-
-(* encoding mechanism used by MimeMessage::"contentTransferEncoding:=" *)  
-code7Bit :String { "7bit" }
-code8Bit :String { "8bit" }
-codeBinary :String { "binary" }
-codeQuotedPrintable :String { "quoted-printable" }
-codeBase64 :String { "base64" }
+codeBase64 :String
+  (* *)
+{ "base64" }
 
 new :MimeMessage
-(* ------------------------------------------------------------ *)  
-  { new2(MimeHeaderDictionary.new, nil) }
+  (* ------------------------------------------------------------ *)
+{ new2(MimeHeaderDictionary.new, nil) }
 
-  
 new2(headers :MimeHeaderDictionary(MimeHeaderValue),
      body    :Input) :MimeMessage
-
-  require headers.isNotNil
-(* ------------------------------------------------------------ *)  
+  (* ------------------------------------------------------------ *)
+require headers.isNotNil
+  
   {
-    let instance = _new,
-    instance._init2(headers, body),
+    instance ::= _new
+    instance._init2(headers, body)
     instance
   }
 
-
-init
-(* ------------------------------------------------------------ *)  
-  {
-    MimeHeaderRegistry.instance.registerHeader("mime-version", MimeString),
-    MimeHeaderRegistry.instance.registerHeader("content-type", MediaTypeHeader),
-    MimeHeaderRegistry.instance.registerHeader("content-transfer-encoding", MimeToken),
-    MimeHeaderRegistry.instance.registerHeader("content-id", MimeString),
+init :Void
+  (* ------------------------------------------------------------ *)
+{
+    MimeHeaderRegistry.instance.registerHeader("mime-version", MimeString)
+    MimeHeaderRegistry.instance.registerHeader("content-type", MediaTypeHeader)
+    MimeHeaderRegistry.instance.registerHeader("content-transfer-encoding", MimeToken)
+    MimeHeaderRegistry.instance.registerHeader("content-id", MimeString)
     MimeHeaderRegistry.instance.registerHeader("content-description", MimeString)
   }
 
-;
-
+}

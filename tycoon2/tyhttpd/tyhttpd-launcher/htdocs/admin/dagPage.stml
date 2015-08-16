@@ -1,0 +1,71 @@
+<!doctype stml system>
+<!-- file: twlDAGPart.stml
+   author: Axel Wienberg, Jens Wahlen
+     date: ??-Jul-1997
+  purpose: produce a partial view of the Tycoon inheritance tree
+ -->
+
+<stml processor="HtmlFormProcessor">
+<HTML>
+<HEAD>
+  <TITLE>TWL Class Hierarchy Browser</TITLE>
+</HEAD>
+
+<BODY>
+
+<tycoon>
+  let classManager = tycoon.tl.classManager,
+  let nodes = StringBuilderOutput.new,
+  let dontVisit = Set(:String).new,
+  multiFormFields.includesKey("exclude")
+  ? { dontVisit.addAll(multiFormFields["exclude"]) },
+
+  let visited = Set(:String).new,
+  let recur :Fun1(String, Void) = nil,
+  recur :=
+    fun(className:String) {
+      !visited.includes(className) && { !dontVisit.includes(className) } ? {
+        let c = classManager.get(className),
+        c.supers.do(fun(t :TL2CPLType) {
+	  recur[t.className]
+	}),
+        c.supers.some(fun(t :TL2CPLType) {
+          dontVisit.includes(t.className)
+        }) ? {
+          dontVisit.add(className)
+        } : {
+	  c."metaclass" == AbstractClass
+	  ? { nodes.write('$') },
+	  nodes << className << '-',
+	  c.supers.doBetween(fun(t :TL2CPLType) {
+	    nodes << t.className
+	  }, {
+	    nodes << ','
+	  }),
+	  nodes << ' ',
+	  visited.add(className)
+        }
+      }
+    },
+  tycoon.tl.classManager.classTable.keys.do(recur),
+  dontVisit := Set(:String).new,
+
+  formFields.includesKey("meta")
+  ? { (* add metaclasses for all classes added up to now *)
+      let copyVisited = Set(:String).new,
+      visited.do(fun(className :String) { copyVisited.add( className ) } ),
+      copyVisited.do( fun(className :String) { 
+	let c = classManager.get(className),
+	let metaC = c."metaclass" ,
+	recur[metaC.name]
+      } ) }
+</tycoon>
+
+<APPLET archive="java/applet.jar" code="DAG.class" width=5000 height=5000>
+<PARAM name=urlPrefix  value="/admin/interface.stml?class=">
+<PARAM name=urlPostfix value="">
+<PARAM name=nodes  value="`nodes.contents`"> 
+Sorry, Java enabled browser required.
+</APPLET>
+</BODY>
+</HTML>

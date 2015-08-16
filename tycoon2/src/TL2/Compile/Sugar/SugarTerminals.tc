@@ -1,3 +1,5 @@
+class SugarTerminals
+super Sugar
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -17,7 +19,8 @@
  * 
  * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
  *
- File: SugarTerminals.tc
+
+   File: SugarTerminals.tc
  Author: Axel Wienberg
    Date: ??-Jun-1996
 Purport: a singleton storing all terminal symbols, decoupling the parser from
@@ -25,71 +28,72 @@ Purport: a singleton storing all terminal symbols, decoupling the parser from
 	 The symbols are entered and read by SugarGram and read by 
 	 SugarScannerBuilder.
 *)
+meta SimpleConcreteClass(SugarTerminals)
+{
+ident :ValueTerminal(String)
 
-class SugarTerminals
-super Sugar
-metaclass SimpleConcreteClass(SugarTerminals)
-public
+string :ValueTerminal(String)
 
-ident :ValueTerminal(String),
-string :ValueTerminal(String),
-int :ValueTerminal(String),
-char :ValueTerminal(String),
-real :ValueTerminal(String),
-space :ValueTerminal(String),
+int :ValueTerminal(String)
 
-symbols :Dictionary(String, ValueTerminal(String)),
+char :ValueTerminal(String)
+
+real :ValueTerminal(String)
+
+space :ValueTerminal(String)
+
+symbols :Dictionary(String, ValueTerminal(String))
+
 keywords :Dictionary(String, ValueTerminal(String))
 
-methods
-
-(* return the Terminal representing keyword <name>.
-   <name> must match idRegExp.
-   Multiple calls with the same <name> argument return the same 
-   SimpleTerminal object.
- *)
 keyword(name :String) :ValueTerminal(String)
+  (* return the Terminal representing keyword <name>.
+     <name> must match idRegExp.
+     Multiple calls with the same <name> argument return the same 
+     SimpleTerminal object.
+   *)
 {
   keywords.lookup(name,
     fun(s :ValueTerminal(String)) {
       s
     },
-    { let s = ValueTerminal.new(name),
-      keywords[name] := s,
+    { s ::= ValueTerminal.new(name)
+      keywords[name] := s
       s
     }
   )
 }
 
-(* return the Terminal representing the simple Symbol <name>.
-   <name> may not match any other regexp (esp. idRegExp!)
-   Multiple calls with the same <name> return the same SimpleTerminal object.
- *)
 symbol(name :String) :ValueTerminal(String)
+  (* return the Terminal representing the simple Symbol <name>.
+     <name> may not match any other regexp (esp. idRegExp!)
+     Multiple calls with the same <name> return the same SimpleTerminal object.
+   *)
 {
   symbols.lookup(name,
     fun(term :ValueTerminal(String)) {
       term
     },
-    { let term = ValueTerminal.new(name),
-      symbols[name] := term,
+    { term ::= ValueTerminal.new(name)
+      symbols[name] := term
       term
     }
   )
 }
 
-private methods
+private
 
 _init :Void
-{ super._init,
-  ident := ValueTerminal.new("ident"),
-  string := ValueTerminal.new("string"),
-  char := ValueTerminal.new("char"),
-  int := ValueTerminal.new("int"),
-  real := ValueTerminal.new("real"),
-  space := ValueTerminal.new("space"),
-  symbols := Dictionary.new,
-  keywords := Dictionary.new,
-  self
+  (* *)
+{ super._init
+  ident := ValueTerminal.new("ident")
+  string := ValueTerminal.new("string")
+  char := ValueTerminal.new("char")
+  int := ValueTerminal.new("int")
+  real := ValueTerminal.new("real")
+  space := ValueTerminal.new("space")
+  symbols := Dictionary.new
+  keywords := Dictionary.new
 }
-;
+
+}

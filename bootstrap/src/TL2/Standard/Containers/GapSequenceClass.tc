@@ -55,6 +55,12 @@ new(initialCapacity :Int) :Seq
   _new2(initialCapacity, 0)
 }
 
+new(initialCapacity :Int) @:Seq
+  (* ensure result.size = 0 *)
+{
+  fetch(_new2(initialCapacity, 0))@
+}
+
 new2(initialSize :Int, initialCapacity :Int) :Seq
   require initialCapacity >= initialSize
   ensure result.size = initialSize

@@ -21,10 +21,10 @@
 /*
   Copyright (c) 1996 Higher-Order GmbH, Hamburg. All rights reserved.
 
-  tm.c 1.16 98/05/18 Andreas Gawecki, Marc Weikard
+  $File: //depot/tycoon2/stsmain/tycoon2/src/tm/tm.c $ $Revision: #3 $ $Date: 2003/10/01 $ Andreas Gawecki, Marc Weikard
 
   Tycoon Machine Main
-
+  
 */
 
 #include <stdio.h>
@@ -49,13 +49,13 @@ char *  tm_pszProg;
 int tm_main(int argc, char *argv[])
 {
   tsp_ErrorCode wErrorCode;
-
+  
   tm_nArguments = argc;
   tm_pArguments = argv;
   tm_pszProg = argv[0];
 
   tos_init();
-
+  
 #ifdef BOOTSTRAP
   if(argc <= 1) {
     fprintf(stderr, "Usage: %s store [arguments] || %s -bootstrap dump\n",
@@ -79,7 +79,7 @@ int tm_main(int argc, char *argv[])
     tmdebug_init();
     tsp_setEnumRootPtr(tyc_enumRootPtr);
     tsp_setEnumAmbiguousRootPtr(tyc_enumAmbiguousRootPtr);
-
+    
     tmthread_restart();
   }
 #else
@@ -100,7 +100,7 @@ int tm_main(int argc, char *argv[])
   tmdebug_init();
   tsp_setEnumRootPtr(tyc_enumRootPtr);
   tsp_setEnumAmbiguousRootPtr(tyc_enumAmbiguousRootPtr);
-
+  
   tmthread_restart();
 #endif
 

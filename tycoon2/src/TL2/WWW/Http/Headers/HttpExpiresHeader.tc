@@ -1,5 +1,5 @@
 class HttpExpiresHeader
-
+super MimeDate
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -23,24 +23,23 @@ class HttpExpiresHeader
    except that date parse errors should be interpreted as
    'expires in the past' according to RFC 2068
 *)
+meta MimeHeaderValueImplClass(Date)
+{
+private
 
-super MimeDate
-
-metaclass MimeHeaderValueImplClass(Date)
-
-private methods
-
-parseValue(s: String): Date {
+parseValue(s: String): Date
+  (* *)
+{
   try({
     super.parseValue(s)
-  }, fun(e :Exception) {
-    e.clazz !== CoerceError ? { e.raise },
-    (* expire yesterday: *)
-    let expireDate = Date.now,
-    expireDate.day := expireDate.day-1,
-    expireDate.normalize,
+  } else: fun(e :Exception) {
+    if( e.clazz !== CoerceError then: { e.raise })
+    ; expire yesterday: 
+    expireDate ::= Date.now
+    expireDate.day := expireDate.day-1
+    expireDate.normalize
     expireDate      
   })
 }
-  
-;
+
+}

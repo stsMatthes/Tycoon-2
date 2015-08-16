@@ -33,13 +33,19 @@ tycoon.tl.loader.update;
 
 (* type check everything *)
 
-tycoon.tl.typeChecker.ignore(ThreadClass);
-tycoon.tl.typeChecker.ignore(WeakRefClass);
-
 tycoon.tl.typeChecker.maxDepth := tycoon.tl.typeChecker.maxDepth.max(75000);
 
 tycoon.tl.typeChecker.check;
 tycoon.tl.typeChecker.finalize;
+
+(* alternatively, assume all classes are typechecked: *)
+(*
+Array.fromContainer(tycoon.tl.typeChecker.agenda).do(
+  fun(c :TL2ClassPublic) {
+    tycoon.tl.typeChecker.ignore(c)
+  }
+);
+*)
 
 tycoon.commit(
       (* ifCommitted *) {

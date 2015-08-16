@@ -1,15 +1,20 @@
 class SgmlElement
 super AbstractSgmlElement(SgmlComponent)
-public
-name :String,
-contentType :SgmlContentType,
+(**)
+meta SgmlElementClass()
+
+{
+name :String
+
+contentType :SgmlContentType
+
 defAttrVal :Dictionary(String, String)
-methods
 
 build( startPosition	:SgmlPos,
        endPosition	:SgmlPos,
        attributes	:Dictionary(String, String),
        components	:GapArray(SgmlComponent)) :SgmlComponent
+  (* *)
 { SgmlComposite.new(
     startPosition,
     endPosition,
@@ -17,4 +22,5 @@ build( startPosition	:SgmlPos,
     attributes,
     components.asArray)
 }
-;
+
+}

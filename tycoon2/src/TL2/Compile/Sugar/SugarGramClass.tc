@@ -1,13 +1,15 @@
 class SugarGramClass
 super ConcreteClass(SugarGram)
-metaclass MetaClass
-public methods
-
-new(terminals :SugarTerminals) :SugarGram
+(**)
+meta MetaClass
 {
-  let instance = _new,
-  instance.terminals := terminals,
-  instance._init,
+new(terminals :SugarTerminals) :SugarGram
+  (* *)
+{
+  instance ::= _new
+  instance.terminals := terminals
+  instance._init
   instance
 }
-;
+
+}

@@ -1,11 +1,10 @@
 class HttpEntityMessageClass
 super ConcreteClass(HttpEntityMessage)
-metaclass MetaClass
-
-public methods
-
+(**)
+meta MetaClass
+{
 new :HttpEntityMessage
-(*
+  (*
  * This file is part of the Tycoon-2 system.
  *
  * The Tycoon-2 system is free software; you can redistribute it and/or
@@ -24,29 +23,25 @@ new :HttpEntityMessage
  * 
  * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
  *
- ------------------------------------------------------------ *)  
-  { new2(MimeHeaderDictionary.new, nil) }
+ ------------------------------------------------------------ *)
+{ new2(MimeHeaderDictionary.new, nil) }
 
-  
 new2(headers :MimeHeaderDictionary(MimeHeaderValue),
      body    :Input) :HttpEntityMessage
-     
-  require headers.isNotNil
-(* ------------------------------------------------------------ *)  
+  (* ------------------------------------------------------------ *)
+require headers.isNotNil
+  
   {
-    let instance = _new,
-    instance._init2(headers, body),
+    instance ::= _new
+    instance._init2(headers, body)
     instance
   }
 
-  
-init
-(* ------------------------------------------------------------ *)  
-  {
-    MimeHeaderRegistry.instance.registerHeader("content-length", MimeInt),
+init :Void
+  (* ------------------------------------------------------------ *)
+{
+    MimeHeaderRegistry.instance.registerHeader("content-length", MimeInt)
     MimeHeaderRegistry.instance.registerHeader("last-modified", MimeDate)
   }
 
-;
-
-  
+}

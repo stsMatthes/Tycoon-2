@@ -1,14 +1,14 @@
 class BasicProtectionRealmClass
 super ConcreteClass(BasicProtectionRealm)
-metaclass MetaClass
-
-public methods
-
-  new(name :String) :BasicProtectionRealm
-  {
-    let instance = _new,
-    instance._init1(name),
+(**)
+meta MetaClass
+{
+new(name :String) :BasicProtectionRealm
+  (* *)
+{
+    instance ::= _new
+    instance._init1(name)
     instance
   }
 
-;
+}

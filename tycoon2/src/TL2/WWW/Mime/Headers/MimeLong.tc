@@ -1,10 +1,12 @@
 class MimeLong
 super MimeHeaderValueImpl(Long)
-metaclass MimeHeaderValueImplClass(Long)
+(**)
+meta MimeHeaderValueImplClass(Long)
+{
+private
 
-private methods
-
-(*
+parseValue(s :String) :Long
+  (*
  * This file is part of the Tycoon-2 system.
  *
  * The Tycoon-2 system is free software; you can redistribute it and/or
@@ -25,13 +27,14 @@ private methods
  *
  ## Restricting the value to Int ...
       no parsing methods in Long *)
-
-parseValue(s :String) :Long {
+{
   s.asInt.asLong
 }
 
-unparseValue(i :Long) :String {
+unparseValue(i :Long) :String
+  (* *)
+{
   i.asInt.printString
 }
 
-;
+}

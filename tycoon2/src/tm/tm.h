@@ -21,10 +21,10 @@
 /*
   Copyright (c) 1996 Higher-Order GmbH, Hamburg. All rights reserved.
 
-  tm.h 1.5 98/05/18 Marc Weikard
+  $File: //depot/tycoon2/stsmain/tycoon2/src/tm/tm.h $ $Revision: #3 $ $Date: 2003/10/01 $ Marc Weikard
 
   Tycoon Machine Main
-
+  
 */
 
 #ifndef TM_H
@@ -48,3 +48,4 @@ extern int tm_main(int argc, char *argv[]);
 #endif
 
 #endif
+

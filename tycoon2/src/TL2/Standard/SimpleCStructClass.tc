@@ -30,4 +30,11 @@ new :Instance
   instance
 }
 
+new @:Instance
+  (* This is the type of an instance of the receiver *)
+{
+  instance @::= _new@
+  instance._init
+  instance@
+}
 }

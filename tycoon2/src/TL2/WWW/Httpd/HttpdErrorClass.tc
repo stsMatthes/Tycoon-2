@@ -1,14 +1,14 @@
 class HttpdErrorClass
 super ConcreteClass(HttpdError)
-metaclass MetaClass
-
-public methods
-
-new(response :HttpResponse): HttpdError
+(**)
+meta MetaClass
 {
-  let result = _new,
-  result.response := response,
+new(response :HttpResponse): HttpdError
+  (* *)
+{
+  result ::= _new
+  result.response := response
   result
 }
-;
 
+}

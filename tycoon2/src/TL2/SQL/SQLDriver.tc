@@ -1,3 +1,5 @@
+class SQLDriver
+super SQL
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -22,23 +24,18 @@ Author:  Michael Skusa
 Date:    6-May-1997
 Updates: (Date)	  (Name)	(Description)
 *)
+meta AbstractClass
+{
+acceptsURL(url:URL):Bool
+  (* *)
+deferred
 
-class SQLDriver
-
-super SQL
-
-metaclass AbstractClass
-
-public methods
-
-acceptsURL(url:URL):Bool deferred
+connect(url:URL):SQLConnection
   (*
      Returns true, if current instance of SQLConnection can handle url,
      false otherwise
-   *)
+   
 
-connect(url:URL):SQLConnection
-   (*
      Uses url to establish a database-connection. Returns nil, if url
      does not specify a protocol (e.g. odbc), which is known by the
      current SQLDriver. Raises SQLError, if the protocol-
@@ -46,13 +43,14 @@ connect(url:URL):SQLConnection
      or invalid connection-parameters (e.g. wrong password).
    *)
 {
-  acceptsURL(url) ? { newConnection(url) }
-                  : { nil }
+  if( acceptsURL(url) then: { newConnection(url) }
+                  else: { nil })
 }
 
-private methods
+private
 
-newConnection(url:URL):SQLConnection deferred
+newConnection(url:URL):SQLConnection
+  (* *)
+deferred
 
-;
-
+}

@@ -1,0 +1,159 @@
+class DebugTest
+super Object
+(*;
+tycoon.tl.loader.registerFile("Test/DebugTest.tc");
+tycoon.tl.loader.update, tycoon.tl.typeChecker.finalize;
+tycoon.tl.typeChecker.checkClass(DebugTest);
+DebugTest.init;
+DebugTest.instance.installDebugger;
+DebugTest.instance.startTracer;
+
+DebugTest.instance.startWorker;
+DebugTest.instance.debugWorker;
+DebugTest.instance.stopWorker;
+DebugTest.instance.undebugWorker;
+
+DebugTest.instance.stopTracer;
+
+*)
+meta SingletonClass(DebugTest)
+{
+
+installDebugger :Void
+{
+  tycoon.tl.root.debugger := TL2Debugger.new
+}
+
+deinstallDebugger :Void
+{
+  tycoon.tl.root.debugger := nil
+}
+
+;; ----------
+
+startTracer :Void
+{
+  _stopTracing := false
+  tracer := Thread.new({
+    tycoon.stdout << "Tracing started"
+    traceLoop
+  })
+}
+
+stopTracer :Void
+{
+  _stopTracing := true
+}
+
+traceLoop :Void
+{
+  if(!_stopTracing then: {
+    t ::= tycoon.tl.root.debugger.readStoppedThread
+    ev ::= t.debugEvent
+    out ::= StringBuilderOutput.new
+    out << "\nTrace: Thread=" << t.name.printString << " event: "
+    if( ev = Thread.TRACE_SEND then: {
+      selector ::= t.inspectSendSelector
+      receiver ::= t.inspectStack(selector.arity)
+      args ::= MutableArray(:Object).new(selector.arity)
+      for(0 to: selector.arity-1 do: fun(i:Int) {
+        args[i] := t.inspectStack(selector.arity-1-i)
+      })
+      out << "send "
+      printBrief(receiver, out)
+      out << "."<<selector.symbol<<"("
+      args.doBetween(fun(o:Object) {
+        printBrief(o, out)
+      }, {
+        out << ", "
+      })
+      out << ")"
+    } else: {
+      if( ev = Thread.TRACE_RETURN then: {
+        out << "return "
+        returnValue ::= t.inspectStack(0)
+	printBrief(returnValue, out)
+      } else: {
+        if( ev = Thread.TRACE_EXCEPTION then: {
+	  out << "exception "
+	  exception ::= t.inspectStack(0)
+	  printBrief(exception, out)
+	} else: {
+	  out << "unknown ("<<ev<<")"
+	})
+      })
+    })
+    out << "..."
+    tycoon.stdout << out.contents
+    Thread.sleep(2L)
+    tycoon.stdout << " Resuming.\n"
+    t.resume
+    traceLoop
+  } else: {
+    tycoon.stdout << "\nTracing stopped.\n"
+  })
+}
+
+printBrief(o :Object, out :Output) :Void
+{
+  cn ::= o."class".name
+  if( cn = "Int"
+   || cn = "Char"
+   || cn = "True"
+   || cn = "False"
+   || cn = "Nil"
+   || cn = "MutableString" && _typeCast(o,:String).size < 30 then: {
+    o.printOn(out)
+  } else: {
+    out << if( cn[0].isVowel then: {"an "} else: {"a "}) << cn
+  })
+}
+
+_stopTracing :Bool
+
+tracer :Thread(Void)
+
+;; ----------
+
+startWorker :Void
+{
+  _stopWorking := false
+  worker := Thread.new({
+    Thread.this.name := "Worker"
+    workLoop
+  })
+}
+
+debugWorker :Void
+{
+  worker.traceFlags :=
+    Thread.TRACE_SEND | Thread.TRACE_RETURN | Thread.TRACE_EXCEPTION
+    | Thread.TRACE_NONCOMPONENT
+}
+
+undebugWorker :Void
+{
+  worker.traceFlags := 0
+}
+
+stopWorker :Void
+{
+  _stopWorking := true
+}
+
+workLoop :Void
+{
+  if(!_stopWorking then: {
+    tycoon.stdout << "work...\n"
+    Thread.sleep(2L)
+    workLoop
+  } else: {
+    tycoon.stdout << "worker stopped\n"
+  })
+}
+
+worker :Thread(Void)
+
+_stopWorking :Bool
+
+}
