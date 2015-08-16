@@ -60,6 +60,7 @@ static SystemTable _systemInfo[] = {
   {"Win95_i386",     tosSystem_LITTLE_ENDIAN},
   {"Win98_i386",     tosSystem_LITTLE_ENDIAN},
   {"Darwin_PPC",     tosSystem_BIG_ENDIAN},
+  {"Darwin_i386",    tosSystem_LITTLE_ENDIAN},
   {"Unknown",        -1}
 };
 
@@ -108,6 +109,12 @@ void tosSystem_init()
 
 #elif defined(rt_LIB_Darwin_PPC)
   _hostID = tosSystem_ID_MACOSX;
+  #ifdef tos_DEBUG
+     tosLog_debug("tosSystem", "init", "Starting on Host %s\n", _systemInfo[_hostID].pszName);
+  #endif
+
+#elif defined(rt_LIB_Darwin_i386)
+  _hostID = tosSystem_ID_MACOSX_386;
   #ifdef tos_DEBUG
      tosLog_debug("tosSystem", "init", "Starting on Host %s\n", _systemInfo[_hostID].pszName);
   #endif

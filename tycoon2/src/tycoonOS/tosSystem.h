@@ -53,7 +53,8 @@ extern "C" {
 #define tosSystem_ID_WIN95        6
 #define tosSystem_ID_WIN98        7
 #define tosSystem_ID_MACOSX       8
-#define tosSystem_ID_UNKNOWN      9
+#define tosSystem_ID_MACOSX_386   9
+#define tosSystem_ID_UNKNOWN      10
 
 /*
  * tosSystem_getID
@@ -91,7 +92,7 @@ extern String tosSystem_getName(void);
 
 /* static detection */
 
-#if defined(rt_LIB_Nextstep_i386) || defined(rt_LIB_Linux_i386) || defined(rt_LIB_Win32_i386)
+#if defined(rt_LIB_Nextstep_i386) || defined(rt_LIB_Linux_i386) || defined(rt_LIB_Win32_i386) || defined(rt_LIB_Darwin_i386)
   #define tosSystem_BYTEORDER tosSystem_LITTLE_ENDIAN
 #else
   #define tosSystem_BYTEORDER tosSystem_BIG_ENDIAN

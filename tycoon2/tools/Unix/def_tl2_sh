@@ -53,7 +53,11 @@ case "${MYOS}" in
             PLATFORM=Linux_i386 ;;
   Darwin*)  PROCESSOR=`uname -p`
   	    VERSION=`uname -r`
-	    PLATFORM=Darwin_PPC ;;
+        PROCESSOR=`uname -m`
+        case "${PROCESSOR}" in
+          x86_64*) PLATFORM=Darwin_x86_64 ;;
+          *) PLATFORM=Darwin_PPC ;;
+        esac ;;
   *) ;;
 esac
 

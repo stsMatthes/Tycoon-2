@@ -77,7 +77,7 @@ void tosLog_debug(char *module, char *fun, char *msg, ...)
    if (dbgout == NULL) {
       dbgout = fopen("tycoon2.dbg", "wb");
       if (dbgout == NULL) {
-         tosLog_error("tosLog", "debug", "Can´t open ""tycoon2.dbg""");
+         tosLog_error("tosLog", "debug", "Can't open ""tycoon2.dbg""");
       }
    }
 

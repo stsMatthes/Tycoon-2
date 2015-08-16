@@ -189,6 +189,7 @@ static ArchTable archTable[] = {
   {"Win95_i386",     littleEndian, alignTable_i386},
   {"Win98_i386",     littleEndian, alignTable_i386},
   {"Darwin_PPC",     bigEndian,    alignTable_SPARC},
+  {"Darwin_i386",    littleEndian, alignTable_i386},
   {NULL, 0, NULL}
 };
   
@@ -430,7 +431,7 @@ static void unmap_old_pages(void)
 
 static void init_mmap(void)
 {
-#if defined(rt_LIB_Linux_i386) || defined(rt_LIB_Darwin_PPC)
+#if defined(rt_LIB_Linux_i386) || defined(rt_LIB_Darwin_PPC) || defined(rt_LIB_Darwin_i386)
   mmap_pagesize = getpagesize();
 #else
   mmap_pagesize = sysconf(_SC_PAGESIZE);

@@ -102,14 +102,29 @@ switch $(OS)
   }
 
   case MACOSX : {
-    HOX_CC_FLAGS   = -Drt_LIB_Darwin_PPC -Wall -pipe -fno-builtin -D_REENTRANT -D_GNU_SOURCE -DHAS_MMAP -Dtvm_THREADED_CODE ;
-    HOX_COMPILER   = GCC ;
-    HOX_LINK_FLAGS = -i -lpthread -ldl -lm ;
-    HOX_COPT_FLAGS = -O2 -fomit-frame-pointer ;
-    HOX_CDBG_FLAGS = -g ;
-
-    # needed for shared libraries on linux
-    LDSHARE_FLAGS  += -dynamic -r ;
+    switch $(HOX_HOST)
+    {
+      case Darwin_PPC : {
+        HOX_CC_FLAGS   = -Drt_LIB_Darwin_PPC -Wall -pipe -fno-builtin -D_REENTRANT -D_GNU_SOURCE -DHAS_MMAP -Dtvm_THREADED_CODE ;
+        HOX_COMPILER   = GCC ;
+        HOX_LINK_FLAGS = -i -lpthread -ldl -lm ;
+        HOX_COPT_FLAGS = -O2 -fomit-frame-pointer ;
+        HOX_CDBG_FLAGS = -g ;
+    
+        # needed for shared libraries on linux
+        LDSHARE_FLAGS  += -dynamic -r ;
+      }
+      case Darwin_x86_64 : {
+        HOX_CC_FLAGS   = -Drt_LIB_Darwin_i386 -Wall -pipe -fno-builtin -D_REENTRANT -D_GNU_SOURCE -DHAS_MMAP -Dtvm_THREADED_CODE -m32 ;
+        HOX_COMPILER   = GCC ;
+        HOX_LINK_FLAGS = -i -lpthread -ldl -lm -m32 ;
+        HOX_COPT_FLAGS = -O2 -fomit-frame-pointer ;
+        HOX_CDBG_FLAGS = -g ;
+    
+        # needed for shared libraries on linux
+        LDSHARE_FLAGS  += -dynamic -r ;
+      }
+    }
   }
 }
 

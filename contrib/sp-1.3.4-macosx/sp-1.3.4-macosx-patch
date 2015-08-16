@@ -6,8 +6,8 @@ This patch was obtained from http://csusap.csu.edu.au/~nclapham/patch.html
 * To Patch: patch -p1 -s < ./sp-1.3.4-macosx.patch
 
 diff -u --recursive sp-1.3.4/Makefile sp-1.3.4.macosx/Makefile
---- sp-1.3.4/Makefile	Sat Oct 10 14:15:02 1998
-+++ sp-1.3.4.macosx/Makefile	Fri Oct 22 10:19:42 2004
+--- sp-1.3.4/Makefile	1998-10-10 06:15:02.000000000 +0200
++++ sp-1.3.4.macosx/Makefile	2015-08-12 22:43:27.000000000 +0200
 @@ -1,19 +1,20 @@
  # Copyright (c) 1994, 1995 James Clark
  # See the file COPYING for copying permission.
@@ -32,11 +32,13 @@ diff -u --recursive sp-1.3.4/Makefile sp-1.3.4.macosx/Makefile
  WARN=#-Wall -Wno-reorder -Wwrite-strings -Wpointer-arith -Wnested-externs -Woverloaded-virtual -Wbad-function-cast
  # Executables will be *very* large if you use -g.
  DEBUG=
-@@ -34,7 +35,7 @@
+@@ -33,8 +34,8 @@
+ # Add -Dsig_atomic_t=int on SunOS 4.1.x with g++ (or any other platform
  #  which doesn't appropriately define sig_atomic_t).
  # Add -DJADE_MIF to include the Jade MIF backend
- XDEFINES=
+-XDEFINES=
 -DEFINES=-DSP_HAVE_BOOL -DSP_ANSI_CLASS_INST -DSP_MULTI_BYTE $(XDEFINES)
++XDEFINES=-DSP_HAVE_TYPENAME
 +DEFINES=-DSP_HAVE_BOOL -DSP_MUTEX_PTHREADS -DSP_ANSI_CLASS_INST -DSP_MULTI_BYTE $(XDEFINES)
  CXXFLAGS=-ansi $(DEBUG) $(WARN)
  # Flag to pass to CXX to make it output list of dependencies as a Makefile.
@@ -50,9 +52,10 @@ diff -u --recursive sp-1.3.4/Makefile sp-1.3.4.macosx/Makefile
  M4=m4
  # perl is needed if you change or add messages
  PERL=perl
+Only in sp-1.3.4.macosx: Makefile.rej
 diff -u --recursive sp-1.3.4/include/Text.h sp-1.3.4.macosx/include/Text.h
---- sp-1.3.4/include/Text.h	Fri Oct  2 19:11:02 1998
-+++ sp-1.3.4.macosx/include/Text.h	Fri Oct 22 10:22:56 2004
+--- sp-1.3.4/include/Text.h	1998-10-02 11:11:02.000000000 +0200
++++ sp-1.3.4.macosx/include/Text.h	2004-12-06 21:42:41.000000000 +0100
 @@ -52,6 +52,7 @@
  class SP_API Text {
  public:
@@ -62,8 +65,8 @@ diff -u --recursive sp-1.3.4/include/Text.h sp-1.3.4.macosx/include/Text.h
    void swap(Text &to);
    void addChar(Char c, const Location &);
 diff -u --recursive sp-1.3.4/include/config.h sp-1.3.4.macosx/include/config.h
---- sp-1.3.4/include/config.h	Wed Oct 13 15:02:46 1999
-+++ sp-1.3.4.macosx/include/config.h	Fri Oct 22 10:11:16 2004
+--- sp-1.3.4/include/config.h	1999-10-13 07:02:46.000000000 +0200
++++ sp-1.3.4.macosx/include/config.h	2004-12-06 21:42:41.000000000 +0100
 @@ -26,7 +26,8 @@
  #endif
  #if __GNUC__ > 2 || (__GNUC__ == 2 && __GNUC_MINOR__ >= 8)
@@ -77,9 +80,16 @@ diff -u --recursive sp-1.3.4/include/config.h sp-1.3.4.macosx/include/config.h
 Only in sp-1.3.4.macosx/lib: Makefile.dep
 Only in sp-1.3.4.macosx/nsgmls: Makefile.dep
 diff -u --recursive sp-1.3.4/nsgmls/nsgmls.cxx sp-1.3.4.macosx/nsgmls/nsgmls.cxx
---- sp-1.3.4/nsgmls/nsgmls.cxx	Fri Apr 11 22:27:05 1997
-+++ sp-1.3.4.macosx/nsgmls/nsgmls.cxx	Fri Oct 22 10:19:39 2004
-@@ -61,7 +61,7 @@
+--- sp-1.3.4/nsgmls/nsgmls.cxx	1997-04-11 14:27:05.000000000 +0200
++++ sp-1.3.4.macosx/nsgmls/nsgmls.cxx	2015-08-12 22:47:14.000000000 +0200
+@@ -55,13 +55,13 @@
+ 		    const StringC &filenameStr,
+ 		    const OutputCodingSystem *,
+ 		    CmdLineApp *,
+-		    Messenger *messenger);
++		    ::Messenger *messenger);
+   ~XRastEventHandler();
+   void message(MessageEvent *);
    void truncateOutput();
    void allLinkTypesActivated();
  private:

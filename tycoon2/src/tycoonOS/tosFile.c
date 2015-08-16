@@ -98,6 +98,8 @@ int tosFile_open(char *pszPath, int flags)
                   "O_SYNC file mode not implemented on Windows NT");
 #elif rt_LIB_Darwin_PPC
   if (flags & TYC_O_SYNC  ) os_flags |= O_FSYNC  ;
+#elif rt_LIB_Darwin_i386
+  if (flags & TYC_O_SYNC  ) os_flags |= O_FSYNC  ;
 #else
   if (flags & TYC_O_SYNC  ) os_flags |= O_SYNC  ;
 #endif
