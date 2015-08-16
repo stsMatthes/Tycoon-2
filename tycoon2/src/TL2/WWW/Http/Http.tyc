@@ -1,18 +1,14 @@
-(*
-DO load "../TWL/WWW/Http/Http.tyc";
-*)
+;; DO load "../TWL/WWW/Http/Http.tyc" ?
 
-(*
-  Needs: WWW
-         WWW/Mime
-         WWW/Html
-*)
+;; Needs: WWW
+;;        WWW/Mime
+;;        WWW/Html
 
-tycoon.tl.loader.registerDirectory("WWW/Http/Headers");
-tycoon.tl.loader.registerDirectory("WWW/Http");
-tycoon.tl.loader.update;
-tycoon.tl.typeChecker.check;
+tycoon.tl.loader.registerDirectory("WWW/Http/Headers") ?
+tycoon.tl.loader.registerDirectory("WWW/Http") ?
+tycoon.tl.loader.update ?
+tycoon.tl.typeChecker.check ?
 
-DO load "WWW/Http/Init.tyc";
+DO load "WWW/Http/Init.tyc" ?
 
 

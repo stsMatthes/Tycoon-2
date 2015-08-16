@@ -190,13 +190,14 @@ handleAgenda :Void
   if( verbose then: {
     block.oid.printOn(out)   out.tab
     block.size.printOn(out)   out.tab
+    block.immu.printOn(out)   out.tab
     block.hasch.printOn(out)   out.tab
     out.writeString(root.classTable[block.classId].name) out.tab
   })
   
   writePtr := 0
   writeUInt(block.size)
-  writeUInt(block.hasch."<<"(12) + block.classId)
+  writeUInt(if(block.immu then:{0x40000000}else:{0})+block.hasch."<<"(12) + block.classId)
 
   try({
     block.contents[]
@@ -298,7 +299,7 @@ allocateOid(o :Object) :Int
   descr.allocate(o, tl2Class) 
 }
 
-allocate(o :Object, bytes :Int, classId :Int, hash :Int, contents :Fun():Void) :Int
+allocate(o :Object, bytes :Int, classId :Int, immutable :Bool, hash :Int, contents :Fun():Void) :Int
   (* return an OID for <bytes> bytes of memory with classId <classId>.
    <contents> will be called later and calls back to dumpOID / dumpC
    to produce the desired contents. *)
@@ -306,6 +307,7 @@ allocate(o :Object, bytes :Int, classId :Int, hash :Int, contents :Fun():Void) :
   block ::= MemBlock.new
   block.oid := allocOid
   block.size := bytes
+  block.immu := immutable
   block.hasch := hash & 16383
   block.classId := classId
   block.contents := contents

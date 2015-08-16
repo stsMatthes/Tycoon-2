@@ -1,13 +1,13 @@
-(* installation of the store descriptors must be done
-   before the classes are registered or loaded for the first time
-   (no way to change this later) *)
+;; installation of the store descriptors must be done
+;; before the classes are registered or loaded for the first time
+;; (no way to change this later)
 
-DO load "Compile/TL2/Descriptors.tyc";
+DO load "Compile/TL2/Descriptors.tyc" ?
 
-tycoon.tl.loader.registerDirectory("Compile/TL2");
-(*tycoon.tl.loader.registerDirectory("Compile/TL2/Old");*)
-tycoon.tl.loader.registerDirectory("Compile/TL2/New");
-tycoon.tl.loader.registerDirectory("Compile/TL2/BackEnd");
-tycoon.tl.loader.update;
+tycoon.tl.loader.registerDirectory("Compile/TL2") ?
+;; tycoon.tl.loader.registerDirectory("Compile/TL2/Old") ?
+tycoon.tl.loader.registerDirectory("Compile/TL2/New") ?
+tycoon.tl.loader.registerDirectory("Compile/TL2/BackEnd") ?
+tycoon.tl.loader.update ?
 
-DO load "Compile/TL2/Init.tyc";
+DO load "Compile/TL2/Init.tyc" ?

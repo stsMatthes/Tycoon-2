@@ -54,10 +54,8 @@ int tosError_getCodeDetail()
   switch (errno) {
     case EWIN32API:
          return (int) GetLastError();
-         break;
     case EWINSOCKET:
          return (int) WSAGetLastError();
-         break;
     default:
          return 0;
   }

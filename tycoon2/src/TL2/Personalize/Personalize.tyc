@@ -1,10 +1,8 @@
-(*
-DO load "Personalize/Personalize.tyc";
-*)
+;; DO load "Personalize/Personalize.tyc" ?
 
-tycoon.tl.loader.registerDirectory("Personalize");
-tycoon.tl.loader.update;
-tycoon.tl.typeChecker.check;
+tycoon.tl.loader.registerDirectory("Personalize") ?
+tycoon.tl.loader.update ?
+tycoon.tl.typeChecker.check ?
 
 
 

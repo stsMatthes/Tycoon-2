@@ -43,9 +43,9 @@
 
 static tosFilepos_T __tos_lseek(int fd, tosFilepos_T pos, int whence)
 {
-#if defined(rt_LIB_Win32_i386)
+#if defined(rt_LIB_Win32_i386) && defined(_MSC_VER)
   return _lseeki64(fd, pos, whence);
-
+  /* ### how to reach __llseek using BCC ? */
 #else
   /* check for overflow: */
   if (((Long) ((long) pos)) != pos) {

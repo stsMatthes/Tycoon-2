@@ -62,6 +62,13 @@ fromSequence(sequence :Sequence(E)) :Instance
      at the time of creation, in the same order. *)
 deferred
 
+fromSequenceWithMap(F <:Object, sequence :Sequence(F), map :Fun(:F):E) :Instance
+  (* result will contain exactly the elements contained in sequence
+     mapped through the given function at the time of creation, 
+     in the same order.
+     result.keys.all(fun(i:Int){ result[i]=map[sequence[i]] }) *)
+deferred
+
 fromSubSequence(sequence :Sequence(E), start :Int, n :Int) :Instance
   (* result will contain the n elements contained in sequence
      starting at position start at creation time, in the same order. *) 

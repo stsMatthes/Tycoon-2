@@ -1,4 +1,4 @@
-oci:=OCI.new;
-oci.open;
-OCIDriver.init;
-SQLDriverManager.instance.registerDriver(OCIDriver.instance);
+oci:=OCI.new ?
+oci.open ?
+OCIDriver.init ?
+SQLDriverManager.instance.registerDriver(OCIDriver.instance) ?

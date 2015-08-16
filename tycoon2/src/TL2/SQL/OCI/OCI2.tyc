@@ -1,13 +1,12 @@
-(* File   : OCI2.tyc
-   Author : Michael Skusa
-   Date   : 12-Sep-1996
-   Purpose: Declarations of TWL ODBC-classes
-*)
+;; File   : OCI2.tyc
+;; Author : Michael Skusa
+;; Date   : 12-Sep-1996
+;; Purpose: Declarations of TWL ODBC-classes
 
-tycoon.tl.loader.registerDirectory("SQL/OCI");
-tycoon.tl.loader.update;
+tycoon.tl.loader.registerDirectory("SQL/OCI") ?
+tycoon.tl.loader.update ?
 
-define oci:OCI;
-tycoon.tl.typeChecker.check;
+define oci:OCI ?
+tycoon.tl.typeChecker.check ?
 
-DO load "SQL/OCI/Init.tyc";
+DO load "SQL/OCI/Init.tyc" ?

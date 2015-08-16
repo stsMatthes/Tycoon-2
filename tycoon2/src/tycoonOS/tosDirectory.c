@@ -94,7 +94,7 @@ int tosDirectory_realpath(char *pszPath,
 
 int tosDirectory_chroot(char *pszRoot)
 {
-  int res = 0;
+  int res;
   char systemPath[tosFilename_MAXLEN];
 
   tosFilename_normalize(pszRoot, systemPath, tosFilename_MAXLEN);
@@ -307,7 +307,7 @@ static int __readDir(tosDirectory_T *pDir, char **foundFile)
 
 char * tosDirectory_read(tosDirectory_T *pDir)
 {
-  int   res = 0;
+  int   res;
   char *foundFile;
   do
     {

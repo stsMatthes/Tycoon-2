@@ -1,12 +1,10 @@
-(*
-DO load "Personalize/Stml/PersonalizeStml.tyc";
-DO load "WWW/Stml/Stml2.tyc";
-*)
+;; DO load "Personalize/Stml/PersonalizeStml.tyc";
+;; DO load "WWW/Stml/Stml2.tyc";
 
-tycoon.tl.loader.registerDirectory("Personalize");
-tycoon.tl.loader.registerDirectory("Personalize/Stml");
-tycoon.tl.loader.update;
-tycoon.tl.typeChecker.check;
+tycoon.tl.loader.registerDirectory("Personalize") ?
+tycoon.tl.loader.registerDirectory("Personalize/Stml") ?
+tycoon.tl.loader.update ?
+tycoon.tl.typeChecker.check ?
 
 
 

@@ -120,7 +120,7 @@ int tosMutex_lock(tosMutex_T *mx)
   int res = 0;
 
   #ifdef rt_LIB_Win32_i386
-     DWORD rc = 0;
+     DWORD rc;
 
      #ifdef tosMutex_DEBUG
         tosLog_debug("tosMutex",

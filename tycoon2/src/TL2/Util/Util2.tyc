@@ -1,29 +1,24 @@
-(*
-DO load "../TWL/Util/Util2.tyc";
-*)
+;; DO load "../TWL/Util/Util2.tyc" ?
 
-tycoon.tl.loader.registerDirectory("Util");
+tycoon.tl.loader.registerDirectory("Util") ?
 
-tycoon.tl.loader.update;
-tycoon.tl.typeChecker.check;
+tycoon.tl.loader.update ?
+tycoon.tl.typeChecker.check ?
 
-DO load "Util/Init.tyc";
+DO load "Util/Init.tyc" ?
 
-(*
+??  ;; end of automated script
 
-define pt :PropertyHolderTest;
+define pt :PropertyHolderTest ?
 
-pt := PropertyHolderTest.new;
-pt.x;
-pt.y;
-pt.x.parseAndUpdate(" 11 ");
-pt.y.parseAndUpdate(" -22 ");
-pt.x;
-pt.y;
-pt.x.value;
-pt.y.value;
-List.fromReader(pt.properties);
-List.fromReader(pt.properties.map(fun(p :Property(Object)) { p.name }));
-
-
-*)
+pt := PropertyHolderTest.new ?
+pt.x ?
+pt.y ?
+pt.x.parseAndUpdate(" 11 ") ?
+pt.y.parseAndUpdate(" -22 ") ?
+pt.x ?
+pt.y ?
+pt.x.value ?
+pt.y.value ?
+List.fromReader(pt.properties) ?
+List.fromReader(pt.properties.map(fun(p :Property(Object)) { p.name })) ?

@@ -24,8 +24,9 @@ super X_Cross
 oid :Int
 
 size :Int
-
   (* in bytes *)
+
+immu :Bool
 
 hasch :Int
 

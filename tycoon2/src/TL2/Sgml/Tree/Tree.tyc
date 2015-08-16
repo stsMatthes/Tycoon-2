@@ -1,52 +1,52 @@
 
-(* ------------------------------------------------------------ *)
-(* SgmlTreeBuilder
-   an application of SgmlTreeBuilder: just a tree, no chrome *)
+;; ------------------------------------------------------------
+;; SgmlTreeBuilder
+;; an application of SgmlTreeBuilder: just a tree, no chrome
 
-tycoon.tl.loader.registerDirectory("Sgml/Tree");
-tycoon.tl.loader.update;
-tycoon.tl.typeChecker.check;
+tycoon.tl.loader.registerDirectory("Sgml/Tree") ?
+tycoon.tl.loader.update ?
+tycoon.tl.typeChecker.check ?
 
-
+??
 ;;
 ;; end of automated script
 ;;
 
-define tb :SgmlTreeBuilder;
-tb := SgmlTreeBuilder.new;
-tb.defineElement("HTML", SgmlContentType.mixed, Dictionary.new);
+define tb :SgmlTreeBuilder ?
+tb := SgmlTreeBuilder.new ?
+tb.defineElement("HTML", SgmlContentType.mixed, Dictionary.new) ?
 d ::= Dictionary.new
 d["name"] := "value"
-tb.startElement("HTML", d);
-tb.writeString("lala");
-tb.endElement("HTML");
-tb.tree;
+tb.startElement("HTML", d) ?
+tb.writeString("lala") ?
+tb.endElement("HTML") ?
+tb.tree ?
 
 ;; ------------------------------------------------------------ 
 ;;
 
-define sgml_dir :String;
-sgml_dir := tycoon.ansiC.getenv("SGML_DIR");
-define sp :SgmlsParser;
-sp := SgmlsParser.new;
+define sgml_dir :String ?
+sgml_dir := tycoon.ansiC.getenv("SGML_DIR") ?
+define sp :SgmlsParser ?
+sp := SgmlsParser.new ?
 
-DO set measureTime true;
-sp.verbose := true;
+DO set measureTime true ?
+sp.verbose := true ?
 
-tb := SgmlTreeBuilder.new;
-sp.parse(List.with0, sgml_dir + "/demos/tabl1.sgml", tb);
+tb := SgmlTreeBuilder.new ?
+sp.parse(List.with0, sgml_dir + "/demos/tabl1.sgml", tb) ?
 
-tb := SgmlTreeBuilder.new;
-sp.parse(List.with1(sgml_dir+"/doctype-html"), sgml_dir+"/demos/index-ok.html", tb);
+tb := SgmlTreeBuilder.new ?
+sp.parse(List.with1(sgml_dir+"/doctype-html"), sgml_dir+"/demos/index-ok.html", tb) ?
 
-tb := SgmlTreeBuilder.new;
-tb.interestedInComments := true;
-sp.parse(List.with0, tycoon.hoxHome+"/htdocs/stml/HA/masken_kfz_pkw2.stml", tb);
+tb := SgmlTreeBuilder.new ?
+tb.interestedInComments := true ?
+sp.parse(List.with0, tycoon.hoxHome+"/htdocs/stml/HA/masken_kfz_pkw2.stml", tb) ?
 
-tb := SgmlTreeBuilder.new;
-tb.interestedInComments := true;
-sp.parse(List.with0, "/local/doc/hox/stml/stml.sgml", tb);
-tb.tree;
+tb := SgmlTreeBuilder.new ?
+tb.interestedInComments := true ?
+sp.parse(List.with0, "/local/doc/hox/stml/stml.sgml", tb) ?
+tb.tree ?
 
 
 ;; ------------------------------------------------------------ 
@@ -54,40 +54,40 @@ tb.tree;
 ;;  ### not up to date
 ;;
 
-define fw :File;
-fw := File.openWrite("schwupp");
-tb.tree.printOn(fw);
-fw.close;
+define fw :File ?
+fw := File.openWrite("schwupp") ?
+tb.tree.printOn(fw) ?
+fw.close ?
 
-sp.additionalFiles := Array.with2(sgml_dir+"/nitf.decl", sgml_dir+"/doctype-nitf");
-tb.reset;
-sp.parse("schwupp", tb);
+sp.additionalFiles := Array.with2(sgml_dir+"/nitf.decl", sgml_dir+"/doctype-nitf") ?
+tb.reset ?
+sp.parse("schwupp", tb) ?
 
-fw := File.openWrite("schwupp1");
-tb.tree.printOn(fw);
-fw.close;
-tycoon.ansiC.system("diff schwupp schwupp1");
+fw := File.openWrite("schwupp1") ?
+tb.tree.printOn(fw) ?
+fw.close ?
+tycoon.ansiC.system("diff schwupp schwupp1") ?
 
 ;; ------------------------------------------------------------
 ;; HTML test
 ;;
 
-tb := SgmlTreeBuilder.new;
-sp.parse(Array.with1(sgml_dir+"/doctype-html"), sgml_dir+"/demos/index.html", tb);  (* ==> Exception *)
-tb.reset;
-sp.parse(sgml_dir+"/demos/index-ok.html", tb);
-co := tb.tree, nil;
+tb := SgmlTreeBuilder.new ?
+sp.parse(Array.with1(sgml_dir+"/doctype-html"), sgml_dir+"/demos/index.html", tb) ? ;; ==> Exception
+tb.reset ?
+sp.parse(sgml_dir+"/demos/index-ok.html", tb) ?
+co := tb.tree, nil ?
 
-define fw :File;
-fw := File.openWrite("schwupp");
-co.printOn(fw);
-fw.close;
+define fw :File ?
+fw := File.openWrite("schwupp") ?
+co.printOn(fw) ?
+fw.close ?
 
-tb.clear;
-sp.parse("schwupp", tb);
-co := tb.tree, nil;
+tb.clear ?
+sp.parse("schwupp", tb) ?
+co := tb.tree, nil ?
 
-fw := File.openWrite("schwupp1");
-co.printOn(fw);
-fw.close;
-tycoon.ansiC.system("diff schwupp schwupp1");
+fw := File.openWrite("schwupp1") ?
+co.printOn(fw) ?
+fw.close ?
+tycoon.ansiC.system("diff schwupp schwupp1") ?

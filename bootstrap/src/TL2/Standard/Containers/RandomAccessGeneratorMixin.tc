@@ -72,6 +72,12 @@ fromSequence(sequence :Sequence(E)) :Instance
   fromSubSequence(sequence, 0, sequence.size)
 }
 
+fromSequenceWithMap(F <:Object, sequence :Sequence(F), map :Fun(:F):E) :Instance
+  (* *)
+{
+  fromContainerWithMap(sequence,map)
+}
+
 fromSubSequence(sequence :Sequence(E), start :Int, n :Int) :Instance
   (* *)
 {

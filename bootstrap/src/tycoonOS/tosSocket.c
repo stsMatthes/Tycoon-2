@@ -19,7 +19,7 @@
  *
  */
 /*
-   $File: //depot/tycoon2/stsmain/bootstrap/src/tycoonOS/tosSocket.c $ $Revision: #3 $ $Date: 2003/10/02 $ Andreas Gawecki, Andre Willomat
+   $File: //depot/tycoon2/stsmain/bootstrap/src/tycoonOS/tosSocket.c $ $Revision: #4 $ $Date: 2003/11/03 $ Andreas Gawecki, Andre Willomat
 
    Interface to Portable Tycoon-2 operating system (TycoonOS)
 
@@ -181,7 +181,7 @@ tosSocket_T tosSocket_newServerSocket(void)
 
 int tosSocket_close(tosSocket_T s)
 {
-   int res = 0;
+   int res;
    
    #ifdef rt_LIB_Win32_i386
       if (closesocket((tosSocket_system_T)s) != 0) {
@@ -189,7 +189,7 @@ int tosSocket_close(tosSocket_T s)
          res   = -1;
       }
    #else
-      close((tosSocket_system_T)s);
+      res = close((tosSocket_system_T)s);
    #endif
 
    #ifdef tosSocket_DEBUG
@@ -212,7 +212,7 @@ int tosSocket_connect(tosSocket_T  s,
                       int          cbIPAddress,
                       int          port)
 {
-   int res = 0;
+   int res;
    struct sockaddr_in sa;
 
    /* avoid initialization problems (coming up on HP-UX!) */
@@ -292,7 +292,7 @@ int tosSocket_bind(tosSocket_T  s,
    * address. A zero port value chooses any available port
    */
 {
-   int res = 0;
+   int res;
    struct sockaddr_in sa;
    assert(sizeof(sizeof(sa.sin_addr)) == tosNet_IPADDR_LENGTH);
 
@@ -411,7 +411,7 @@ tosSocket_T tosSocket_accept(tosSocket_T s)
 
 int tosSocket_read(tosSocket_T s, void *pBuffer, int start, int n)
 {
-   int res = 0;
+   int res;
 
 #ifdef rt_LIB_Win32_i386
    res = recv((tosSocket_system_T)s, ((char *)pBuffer)+start, n, 0);
@@ -430,7 +430,7 @@ int tosSocket_write(tosSocket_T s, const void * pBuffer, int start, int n)
    * errno is not set by the systems 'write' function
    */
 {
-   int res = 0;
+   int res;
 
    tosError_reset();
 
@@ -480,7 +480,7 @@ int tosSocket_address(tosSocket_T  s,
 {
    struct sockaddr_in sa;
    int len = sizeof(sa);
-   int res = 0;
+   int res;
 
    tosError_reset();
 
@@ -536,7 +536,7 @@ int tosSocket_remoteAddress(tosSocket_T  s,
 {
    struct sockaddr_in sa;
    int len = sizeof(sa);
-   int res = 0;
+   int res;
 
    tosError_reset();
 
@@ -590,7 +590,7 @@ int tosSocket_port(tosSocket_T s)
 {
    struct sockaddr_in sa;
    int len = sizeof(sa);
-   int res = 0;
+   int res;
 
    res = getsockname((tosSocket_system_T)s, (void *) &sa, &len);
 #ifdef rt_LIB_Win32_i386
@@ -610,7 +610,7 @@ int tosSocket_port(tosSocket_T s)
       #ifdef tosSocket_DEBUG
          tosLog_debug("tosSocket",
                       "port",
-                      "Get socket port, s=%d, port=%s, res=(0:%d:%d)",
+                      "Get socket port, s=%d, port=%d, res=(0:%d:%d)",
                       s,
                       ntohs(sa.sin_port),
                       tosError_getCode(),
@@ -636,7 +636,7 @@ int tosSocket_remotePort(tosSocket_T s)
 {
    struct sockaddr_in sa;
    int len = sizeof(sa);
-   int res = 0;
+   int res;
 
    tosError_reset();
    res = getpeername((tosSocket_system_T)s, (void *) &sa, &len);
@@ -657,7 +657,7 @@ int tosSocket_remotePort(tosSocket_T s)
       #ifdef tosSocket_DEBUG
          tosLog_debug("tosSocket",
                       "remotePort",
-                      "Get socket peer port, s=%d, port=%s, res=(0:%d:%d)",
+                      "Get socket peer port, s=%d, port=%d, res=(0:%d:%d)",
                       s,
                       ntohs(sa.sin_port),
                       tosError_getCode(),

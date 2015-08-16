@@ -26,10 +26,24 @@ D.h.: Die beim Bootstrap aktive Klasse und die im Bootstrap enthaltene Klasse
 Am Bootstrap beteiligt sind u.a. viele Containerklassen und fast alle
     Klassen aus TL2.
 
-Vorgehen: siehe Compile/TL2/bootstrap2.tyc
-
 Im Verzeichnis src/next_tm muss die Beschreibung der
     Zielmaschine stehen.
+
+Vorgehen:
+
+cd $HOX_HOME
+
+;; launch store including programming environment
+tycoon2 TL2.ts
+;; create and dump a new memory image
+DO load "Compile/TL2/bootstrap2.tyc" ?
+DO exit ?
+;; turn dump into store
+tycoon2 -bootstrap dump
+;; unfold store
+;; update paths, type check, save system and exit
+;; (may want to do this manually to fix small errors during development)
+tycoon2 Bootstrap.ts < src/TL2/Compile/TL2/post-bootstrap.tyc
 
 ----------
 
@@ -63,17 +77,17 @@ p4 submit
 
 # jetzt mit Ergebnis des globalen Search&Replace überschreiben
 
-tycoon.tl.loader.registerDirectory("Util");
-tycoon.tl.loader.update;
-DO load "Util/Init.tyc";
+tycoon.tl.loader.registerDirectory("Util") ?
+tycoon.tl.loader.update ?
+DO load "Util/Init.tyc" ?
 
-define aBulkRename :BulkRename;
-aBulkRename := BulkRename.new;
-aBulkRename.parseTable(tycoon.hoxHome+"/src/TL2/Compile/bootstrap-rename.tab")  true;
-(* umgekehrte Paare hinzufügen *)
+define aBulkRename :BulkRename ?
+aBulkRename := BulkRename.new
+aBulkRename.parseTable(tycoon.hoxHome+"/src/TL2/Compile/bootstrap-rename.tab")
+;; umgekehrte Paare hinzufügen
 aBulkRename.table.copy.keysAndElementsDo(fun(sansX :String, conX :String) {
   aBulkRename.table[conX] := sansX
-});
+}) ?
 
 cp -R src/TL2/Compile/TL2 src/TL2/Compile/X_TL2 
 rm -rf src/TL2/Compile/X_TL2/Tools
@@ -82,13 +96,13 @@ cp -R src/TL2/Cross src/TL2/X_Cross
 find src/TL2/X_Cross src/TL2/Compile/X_TL2 -name "*~" | xargs rm
 
 aBulkRename.filterDirectory(tycoon.hoxHome+"/src/TL2/Compile/X_TL2",
-                  fun(:String){true}, ".org");
+                  fun(:String){true}, ".org")?
 aBulkRename.filterDirectory(tycoon.hoxHome+"/src/TL2/Compile/X_TL2/BackEnd",
-                  fun(:String){true}, ".org");
+                  fun(:String){true}, ".org")?
 aBulkRename.filterDirectory(tycoon.hoxHome+"/src/TL2/Compile/X_TL2/New",
-                  fun(:String){true}, ".org");
+                  fun(:String){true}, ".org")?
 aBulkRename.filterDirectory(tycoon.hoxHome+"/src/TL2/X_Cross",
-                  fun(:String){true}, ".org");
+                  fun(:String){true}, ".org")?
 
 # .org-Dateien löschen:
 find src/TL2/X_Cross src/TL2/Compile/X_TL2 -name "*.org" | xargs rm
@@ -116,14 +130,13 @@ Array.with1(tycoon.hoxHome+"/../bootstrap/src/TL2/X_Cross").do(fun(subdir:String
       })
     })
   })
-});
+})?
 
 
 mv src/TL2/Compile/X_TL2/TL2.tyc  src/TL2/Compile/X_TL2/X_TL2.tyc
 mv src/TL2/Compile/X_TL2/Descriptors.tyc  src/TL2/Compile/X_TL2/X_Descriptors.tyc
 mv src/TL2/Compile/X_TL2/x-bootstrap.tyc  src/TL2/Compile/X_TL2/bootstrap.tyc
 rm src/TL2/Compile/X_TL2/bootstrap2.tyc
-rm src/TL2/Compile/X_TL2/upgrade.tyc
 
 # Dateien im bootstrap-"workspace" ersetzen:
 
@@ -148,14 +161,33 @@ Systemtracer durchgehen
 Maschine anpassen (classids.h)
 Bootstrap machen, der ein System erzeugt, das mit X_TL2 laeuft:
 
-  wie beschrieben in Compile/TL2/x-bootstrap.tyc
+# make sure the descriptors are up to date
+cd ../bootstrap
+. ../tycoon2/tools/Unix/def_tl2_sh
+jam
+jam Boot
 
-cd bootstrap
+# launch simple store 
+cd ../tycoon2
+. tools/Unix/def_tl2_sh
+tycoon2 TL2.ts
+# create and dump a new memory image 
+DO load "Compile/TL2/x-bootstrap.tyc" ?
+;; tycoon.saveSystem?
+DO exit ?
+
+# turn dump into store ON NEW (X-) MACHINE 
+cd ../bootstrap
+. ../tycoon2/tools/Unix/def_tl2_sh
+tycoon2 -bootstrap ../tycoon2/dump
+# unfold store 
+tycoon2 Bootstrap.ts < src/TL2/Compile/X_TL2/post-bootstrap.tyc 
+
 p4 edit Clean.ts
 mv Bootstrap.ts Clean.ts
 
 # conserve network bandwidth and server disk space
-# tycoon.tl.classManager.finalize
+# tycoon.tl.classManager.finalize ?
 
 p4 submit
 
@@ -176,22 +208,22 @@ bringover twl -> bootstrap  mit Cross (Tracer) und Compile/TL2
 in Compile/TL2/TL2.tyc TL2StructDescriptor durch X_TL2StructDescriptor ersetzen
    ### besser: Methode TL2ClassManager::declareStruct, kann auch warnen
 ./X_TL2.ts
-tycoon.tl.loader.registerDirectory("Cross");
-DO load "Compile/TL2/TL2.tyc";
+tycoon.tl.loader.registerDirectory("Cross") ?
+DO load "Compile/TL2/TL2.tyc" ?
 
 (* evtl. ist dafuer auch ein update der Standard-Bibliothek noetig
    - das ist natuerlich nicht so gut, weil dadurch evtl. die ganze Stabilitaet
    den Bach runter geht.  Dann lieber ALLES mit X_ verdoppeln und neuen
    Bootstrap von Compile/X_TL2/bootstrap.tyc *)
 
-tycoon.tl.typeChecker.check;
+tycoon.tl.typeChecker.check ?
 Deskriptoren fuer die Zielmaschine kopieren:
 cp /local/tw3/awienber/twl/hox/src/tm/classids.tyc /local/tw2/awienber/bootstrap/hox/src/next_tm/
 cp /local/tw3/awienber/twl/hox/src/tm/opcodes.tab /local/tw2/awienber/bootstrap/hox/src/next_tm/
 cp /local/tw3/awienber/twl/hox/src/tm/builtins.tab /local/tw2/awienber/bootstrap/hox/src/next_tm/
 cp /local/tw3/awienber/twl/hox/src/tm/storeDescriptors.tab /local/tw2/awienber/bootstrap/hox/src/next_tm/
 
-DO load "Compile/TL2/bootstrap2.tyc";
+DO load "Compile/TL2/bootstrap2.tyc" ?
 (* echter bootstrap, bei dem die TL2-Klassen sich selbst uebersetzen *)
 
 cp  /local/tw2/awienber/bootstrap/hox/dump /local/tw3/awienber/twl/hox/
@@ -199,7 +231,7 @@ exit
 tw twl
 tycoon2 -bootstrap dump
 ./Bootstrap.ts
-DO load "Compile/TL2/post-bootstrap.tyc";
+DO load "Compile/TL2/post-bootstrap.tyc" ?
 (* etc. *)
 
 Es soll KEIN update der Maschine im bootstrap-workspace stattfinden, es darf

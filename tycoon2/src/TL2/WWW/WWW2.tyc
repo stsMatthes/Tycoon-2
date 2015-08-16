@@ -1,13 +1,11 @@
-tycoon.tl.loader.registerFile("WWW/WWW.tc");
-tycoon.tl.loader.registerFile("WWW/URLError.tc");
-tycoon.tl.loader.registerFile("WWW/URLErrorClass.tc");
-tycoon.tl.loader.registerFile("WWW/URL.tc");
-tycoon.tl.loader.registerFile("WWW/URLClass.tc");
+tycoon.tl.loader.registerFile("WWW/WWW.tc") ?
+tycoon.tl.loader.registerFile("WWW/URLError.tc") ?
+tycoon.tl.loader.registerFile("WWW/URLErrorClass.tc") ?
+tycoon.tl.loader.registerFile("WWW/URL.tc") ?
+tycoon.tl.loader.registerFile("WWW/URLClass.tc") ?
 
-tycoon.tl.loader.update;
-tycoon.tl.typeChecker.check;
+tycoon.tl.loader.update ?
+tycoon.tl.typeChecker.check ?
 
-(*
-  tycoon.tl.loader.registerFile("WWW/TestURL.tc");
-  TestURL.new.do_tests;
-*)
+;;  tycoon.tl.loader.registerFile("WWW/TestURL.tc") ?
+;;  TestURL.new.do_tests ?

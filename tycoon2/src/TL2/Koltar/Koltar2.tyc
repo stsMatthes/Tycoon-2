@@ -1,15 +1,15 @@
-tycoon.tl.loader.registerDirectory("Koltar");
-tycoon.tl.loader.update;
-tycoon.tl.typeChecker.check;
-tycoon.tl.typeChecker.finalize;
+tycoon.tl.loader.registerDirectory("Koltar") ?
+tycoon.tl.loader.update ?
+tycoon.tl.typeChecker.check ?
+tycoon.tl.typeChecker.finalize ?
 
-define tyhttpd :Httpd;
-tyhttpd := Httpd.new;
-tyhttpd.home := tycoon.hoxHome + "/tyhttpd/tyhttpd-koltar";
-tyhttpd.configure;
+define tyhttpd :Httpd ?
+tyhttpd := Httpd.new ?
+tyhttpd.home := tycoon.hoxHome + "/tyhttpd/tyhttpd-koltar" ?
+tyhttpd.configure ?
 
-define koltarApplication :KoltarApplication;
-koltarApplication := KoltarApplication.new;
+define koltarApplication :KoltarApplication ?
+koltarApplication := KoltarApplication.new ?
 resourceFactory ::= HttpFunResourceFactory.new
 resourceFactory.generators["jump"] :=
   fun(file:File){
@@ -21,11 +21,8 @@ resourceFactory.generators["stml"] :=
   }
 dir ::= tyhttpd.root.lookupDirectory(EmptyList.new)
 dir.resourceFactory := resourceFactory
-dir["stop"] := HttpShutdownResource.new(tyhttpd);
+dir["stop"] := HttpShutdownResource.new(tyhttpd) ?
 
-(*;
+;; tyhttpd.root.reindex ?
+;; tyhttpd.serve ?
 
-tyhttpd.root.reindex;
-tyhttpd.serve;
-
-*)

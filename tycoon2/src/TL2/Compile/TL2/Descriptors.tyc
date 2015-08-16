@@ -1,6 +1,6 @@
-(* installation of the store descriptors must be done
-   before the classes are registered or loaded for the first time
-   (no way to change this later) *)
+;; installation of the store descriptors must be done
+;; before the classes are registered or loaded for the first time
+;; (no way to change this later)
 
 d ::= fun(name :String, format :String) {
   tycoon.tl.classManager.declareStructClass(name, format)
@@ -30,4 +30,4 @@ d["TL2DeferredMethod"     , "ooooooiiioi"]
 d["TL2UnimplementedMethod", "ooooooiiioi"]
 d["TL2Slot"               , "ooooiio"]
 d["TL2Root"               , "ooooooooiiooio"]
-true;
+true ?

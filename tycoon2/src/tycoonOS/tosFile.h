@@ -37,7 +37,6 @@
 extern "C" {
 #endif
 
-
 /*== Standard files =======================================================*/
 
 extern int tosFile_stdin(void);

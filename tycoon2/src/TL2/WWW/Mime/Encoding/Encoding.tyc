@@ -1,8 +1,7 @@
-(*
-DO load "WWW/Mime/Encoding/Encoding.tyc";
-*)
-tycoon.tl.loader.registerDirectory("WWW/Mime/Encoding");
-tycoon.tl.loader.update;
-tycoon.tl.typeChecker.check;
+;; DO load "WWW/Mime/Encoding/Encoding.tyc" ?
 
-DO load "WWW/Mime/Encoding/Init.tyc";
+tycoon.tl.loader.registerDirectory("WWW/Mime/Encoding") ?
+tycoon.tl.loader.update ?
+tycoon.tl.typeChecker.check ?
+
+DO load "WWW/Mime/Encoding/Init.tyc" ?

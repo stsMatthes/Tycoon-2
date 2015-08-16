@@ -1,20 +1,19 @@
-(*
-DO load "At/TBCAgent/makeTBC.tyc";
-*)
+;; DO load "At/TBCAgent/makeTBC.tyc" ?
 
-tycoon.tl.loader.registerDirectory("At/TBCAgent/Agent");
-tycoon.tl.loader.registerDirectory("At/TBCAgent/Content");
-tycoon.tl.loader.registerDirectory("At/TBCAgent/ContentSpec");
-tycoon.tl.loader.registerDirectory("At/TBCAgent/Cv");
-tycoon.tl.loader.registerDirectory("At/TBCAgent/CvSpec");
-tycoon.tl.loader.registerDirectory("At/TBCAgent/Error");
-tycoon.tl.loader.registerDirectory("At/TBCAgent/ITC");
-tycoon.tl.loader.registerDirectory("At/TBCAgent/Misc");
-tycoon.tl.loader.registerDirectory("At/TBCAgent/Msg");
-tycoon.tl.loader.registerDirectory("At/TBCAgent/Test");
 
-tycoon.tl.loader.update;
+tycoon.tl.loader.registerDirectory("At/TBCAgent/Agent") ?
+tycoon.tl.loader.registerDirectory("At/TBCAgent/Content") ?
+tycoon.tl.loader.registerDirectory("At/TBCAgent/ContentSpec") ?
+tycoon.tl.loader.registerDirectory("At/TBCAgent/Cv") ?
+tycoon.tl.loader.registerDirectory("At/TBCAgent/CvSpec") ?
+tycoon.tl.loader.registerDirectory("At/TBCAgent/Error") ?
+tycoon.tl.loader.registerDirectory("At/TBCAgent/ITC") ?
+tycoon.tl.loader.registerDirectory("At/TBCAgent/Misc") ?
+tycoon.tl.loader.registerDirectory("At/TBCAgent/Msg") ?
+tycoon.tl.loader.registerDirectory("At/TBCAgent/Test") ?
 
-tycoon.tl.typeChecker.check;
+tycoon.tl.loader.update ?
 
-(* tycoon.saveSystem; *)
+tycoon.tl.typeChecker.check ?
+
+;; tycoon.saveSystem ?

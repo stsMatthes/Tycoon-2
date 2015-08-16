@@ -55,7 +55,7 @@ int tosTLS_keyCreate(tosTLS_T *key)
   
   #ifdef rt_LIB_Win32_i386
      *key = TlsAlloc();
-     if (*key == -1)
+     if (*key == TLS_OUT_OF_INDEXES)
         res = EWIN32API;
   #else
      #if defined(rt_LIB_HPUX_PARISC) && defined(tmthread_DRAFT_INTERFACE)

@@ -155,7 +155,7 @@ extern void tosThread_sleep(Word sec);
 
 /*== Initializing =========================================================*/
 
-extern void tosThread_init();
+extern void tosThread_init(void);
 
 
 #ifdef __cplusplus

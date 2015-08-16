@@ -91,16 +91,45 @@ _readlnOutput(out :Output) :Bool
    result = false if it was terminated by end of input. *)
 {
   newlinePos ::= _buffer.locateChar2('\n', _position, _bufferSize)
-  if( newlinePos.isNil
-  then: { ; no newline in the buffer - collect it all 
+  if( newlinePos.isNil then: {
+    if( _bufferSize == _position || _buffer[_bufferSize-1]!='\r' then: {
+      ; no newline in the buffer - collect it all 
       out.writeBuffer(_buffer, _position, _bufferSize - _position)
       _position := _bufferSize
-      if( _moreBuffer(80)
-      then: { _readlnOutput(out) }
-      else: { false }) }
-  else: { out.writeBuffer(_buffer, _position, newlinePos - _position)
-      _position := newlinePos + 1
-      true })
+      if( _moreBuffer(80) then: { 
+	_readlnOutput(out)
+      } else: { 
+	false
+      })
+    } else: {
+      ;; nasty special case - buffer ends with carriage return
+      ;; '\r' has to be ignored if next buffer full starts with '\n'
+      out.writeBuffer(_buffer, _position, _bufferSize - _position - 1)
+      _position := _bufferSize
+      if( _moreBuffer(80) then: {
+        if( _buffer[_position] = '\n' then: {
+	  _position := _position + 1
+	  true
+	} else: {
+	  out.write('\r')
+	  _readlnOutput(out)
+        })
+      } else: { 
+	out.write('\r')
+	false
+      })
+    })
+  } else: { 
+    lineLen ::=
+      if( newlinePos > _position && _buffer[newlinePos-1]='\r' then: {
+        newlinePos - _position - 1
+      } else: {
+        newlinePos - _position
+      })
+    out.writeBuffer(_buffer, _position, lineLen)
+    _position := newlinePos + 1
+    true
+  })
 }
 
 }

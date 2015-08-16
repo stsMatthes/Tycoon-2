@@ -31,6 +31,9 @@
 #include <stdio.h>
 #include <stdarg.h>
 
+#if defined(__BORLANDC__)
+#include "tosFile.h"
+#endif
 
 /*== Output files =========================================================*/
 
@@ -49,7 +52,14 @@ void tosLog_error(char *module, char *fun, char *msg, ...)
    va_list VaList;
    va_start(VaList, msg);
 
-   if (errout == NULL) errout = stderr;
+   if (errout == NULL) {
+#if defined(__BORLANDC__)
+     errout = fdopen(tosFile_stderr(), "w");
+     setvbuf(errout, NULL, _IONBF, 0);
+#else
+     errout = stderr;
+#endif
+   }
 
    fprintf (errout, "ERR: %s.%s - ", module, fun);
    vfprintf(errout, msg, VaList);

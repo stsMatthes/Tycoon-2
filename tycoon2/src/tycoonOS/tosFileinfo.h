@@ -43,7 +43,13 @@ extern "C" {
 /*== Constants / Types ====================================================*/
 
 #ifdef rt_LIB_Win32_i386
-  typedef struct _stati64 tosFileinfo_Buffer;
+#  ifdef _MSC_VER
+     typedef struct _stati64 tosFileinfo_Buffer;
+#  elif defined(__BORLANDC__)
+     typedef struct stati64 tosFileinfo_Buffer;
+#  else
+#    error MSVC or BORLANDC expected
+#  endif
 #else
   typedef struct stat tosFileinfo_Buffer;
 #endif

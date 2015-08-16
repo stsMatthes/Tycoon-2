@@ -54,7 +54,7 @@ int main(int argc, char *argv[])
     const char *packageName = classids[i].packageName;
     if(strcmp(packageName, "BUILTIN") == 0)
       packageName = "";
-    fprintf(f, "class %s%s meta AbstractClass {};\n", packageName, name);
+    fprintf(f, "class %s%s meta AbstractClass {} ?\n", packageName, name);
   }
   fclose(f);
 

@@ -28,6 +28,7 @@ BUILDMODE    = rt ;
 #TVM_DEBUG = ON ;
 #TSP_DEBUG = ON ;
 #TVM_TRACE = ON ;
+#TSP_SUPERCOMPONENTS = ON ;
 #ASSERTIONS = ON ;
 BOOTSTRAP = ON ;
 
@@ -43,12 +44,10 @@ switch $(OS)
 
   case NT : {
     HOX_CC_FLAGS  = -Drt_LIB_WinNT_i386 -D_WINNT -D_WIN32_WINNT=0x0400 ;
+    # HOX_COMPILER  = BCC32 ;
     HOX_COMPILER  = MSVC ;
     WINSOCKLIBS   = ws2_32.lib mswsock.lib ;
     SECURITYLIBS  = advapi32.lib ;
-
-    HOX_COPT_FLAGS = /MD /Od ;
-    HOX_CDBG_FLAGS = /MDd /Zi /Od -D_DEBUG -D_CRTDBG_MAP_ALLOC ;
   }
 
   case WIN95 : {
@@ -117,14 +116,41 @@ makeDirName HOX_BIN	: $(HOX_HOME) bin $(HOX_HOST) ;
 switch $(HOX_COMPILER)
 {
   case MSVC : {
-    #
-    # For all win 32 API's
-    #
+    # win95, win98, winNT,...
     HOX_CC_FLAGS += -Drt_LIB_Win32_i386 ;
+
+    HOX_COPT_FLAGS = /MD /Od ;
+    HOX_CDBG_FLAGS = /MDd /Zi /Od -D_DEBUG -D_CRTDBG_MAP_ALLOC ;
+
+    HOX_DBGSYM_SUFFIX = .pdb ;
 
     if $(BUILDMODE) = debug {
        HOX_LINK_FLAGS ?= /DEBUG /DEBUGTYPE:BOTH ;
        LDSHARE_FLAGS  += /DEBUG /DEBUGTYPE:BOTH ;
+    }
+  }
+
+  case BCC32 : {
+    # win95, win98, winNT,...
+    HOX_CC_FLAGS += -Drt_LIB_Win32_i386 ;
+
+    #
+    # -q means "no banner"
+    # -v- means "no debug info" (overridden below)
+    # -w means "warnings on"
+    # -tWM means "multithreaded runtime library (interface)"
+    #
+    HOX_CC_FLAGS += -q -v- -w -tWM ;
+    HOX_LINK_FLAGS = -tWM ;
+
+    HOX_COPT_FLAGS = -O2 ;
+    HOX_CDBG_FLAGS = -v -D_DEBUG -D_CRTDBG_MAP_ALLOC ;
+
+    HOX_DBGSYM_SUFFIX = .tds ;
+
+    if $(BUILDMODE) = debug {
+       HOX_LINK_FLAGS ?= /v ;
+       LDSHARE_FLAGS  += /v ;
     }
   }
 }
@@ -145,6 +171,7 @@ if $(TSP_DEBUG)    = ON { HOX_CC_FLAGS += -Dtsp_DEBUG ;    }
 if $(TVM_TRACE)    = ON { HOX_CC_FLAGS += -Dtvm_TRACE ;    }
 if ! $(ASSERTIONS) = ON { HOX_CC_FLAGS += -DNDEBUG ;       }
 if $(BOOTSTRAP)    = ON { HOX_CC_FLAGS += -DBOOTSTRAP ;    }
+if $(TSP_SUPERCOMPONENTS) = ON { HOX_CC_FLAGS += -Dtsp_STORED_SUPERCOMPONENT ;    }
 
 if $(BUILDMODE) = debug {
    HOX_CC_FLAGS += -DBUILDMODE_DEBUG ;
@@ -192,16 +219,34 @@ if $(UNIX)
    LDSHARE_FLAGS  ?= -G ;
    SUFLIBSHR      ?= .so ;
    ECHO            = echo ;
+   rule MainFromObjectsAndShlibs {
+	MainFromObjects $(<) : $(>) $(LIBPREFIX)$(3)$(SUFLIBSHR) ;
+   }
 }
 else if $(NT) || $(WIN95) || $(WIN98)
 {
    CD              = cd ;
    PUSHD           = pushd ;
    POPD            = popd ;
-   LDSHARE        ?= $(MSLINK) ;
-   LDSHARE_FLAGS  += /DLL ;
+   if $(HOX_COMPILER) = BCC32 {
+     LDSHARE        ?= ilink32 ;
+     # DLL output, case sensitive linking, generate import library, no state files
+     LDSHARE_FLAGS  += /Tpd /c /Gi /Gn ;
+     LINKSTARTUP     = c0d32 ;
+     # import lib for windows32 api, import lib for multithreaded runtime
+     LINKLIBSLAST    = import32.lib cw32mti.lib ;
+   } else if $(HOX_COMPILER) = MSVC {
+     LDSHARE        ?= $(MSLINK) ;
+     LDSHARE_FLAGS  += /DLL ;
+   }
    SUFLIBSHR       = .dll ;
-   ECHO            = echo. ;
+   # ilink32 cannot handle newline at end of response file
+   ECHO            = cygecho -n ;
+   rule MainFromObjectsAndShlibs {
+	MainFromObjects $(<) : $(>) ;
+	# link import libraries
+	LinkLibraries $(<) : $(LIBPREFIX)$(3) ;
+   }
 }
 
 makeDirName LIBDIR : $(HOX_LIB) ;
@@ -237,6 +282,11 @@ rule LibMember
         #
         # The RemoveTarget rule has to be invoked once only,
         # and before any of the EchoToFile rules are invoked.
+      if $(LINKSTARTUP) {
+	# some initial content for the linker list file
+        NOTFILE $(LINKSTARTUP) ;
+        EchoToFile $(l) : $(LINKSTARTUP) ;
+      }
    }
 
    o = $(2:S=$(SUFOBJ):G=:D=lib$(1)) ;
@@ -328,7 +378,11 @@ rule BuildLib
        {
             local def ;
             def = $(3:G=copied) ;
-            File $(def) : $(3) ;
+	    if $(HOX_COMPILER) = MSVC {
+              File $(def) : ms$(3) ;
+	    } else if $(HOX_COMPILER) = BCC32 {
+              File $(def) : bo$(3) ;
+            }
             LOCATE on $(def) = $(LIBDIR) ;
             DEFFILE on $(DLL$(1)) = $(def:G=) ;
             Depends $(DLL$(1)) : $(def) ;
@@ -372,10 +426,10 @@ rule BuildLib
    if $(NT) || $(WIN95) || $(WIN98) {
       MakeLocate $(LIBPREFIX)$(1).exp : $(LIBDIR) ;
       MakeLocate $(LIBPREFIX)$(1).map : $(LIBDIR) ;
-      MakeLocate $(LIBPREFIX)$(1).pdb : $(LIBDIR) ;
+      MakeLocate $(LIBPREFIX)$(1)$(HOX_DBGSYM_SUFFIX) : $(LIBDIR) ;
       Clean clean : $(LIBPREFIX)$(1).exp
                     $(LIBPREFIX)$(1).map
-                    $(LIBPREFIX)$(1).pdb ;
+                    $(LIBPREFIX)$(1)$(HOX_DBGSYM_SUFFIX) ;
    }
 }
 
@@ -418,6 +472,7 @@ if $(UNIX)
 }
 else if $(NT)
 {
+  if $(HOX_COMPILER) = MSVC {
     actions LinkDynamicLib
     {
         set LIB=$(NTLIBPATH);%LIB%||exit
@@ -433,6 +488,23 @@ else if $(NT)
         $(MSLIB) /out:$(<:BS) @$(LIBLIST) || goto :link_failed
         $(POPD)
     }
+  } else if $(HOX_COMPILER) = BCC32 {
+    actions LinkDynamicLib
+    {
+        set LIB=$(NTLIBPATH);%LIB%||exit
+        $(PUSHD) $(<:D) || goto :cd_failed
+        $(LDSHARE) $(LDSHARE_FLAGS) @$(LIBLIST) , $(<:BS) , , $(NEEDLIBS:BS) $(LINKSYSLIBS) $(LINKLIBSLAST) , $(DEFFILE),  || goto :link_failed
+        $(CP) $(<:B).tds $(HOX_BIN) >NUL
+        $(POPD)
+    }
+
+    actions ArchiveStaticLib
+    {
+        $(PUSHD) $(<:D) || goto :cd_failed
+        TLIB $(<:BS) @$(LIBLIST) || goto :link_failed
+        $(POPD)
+    }
+  }
 }
 else if $(WIN95) || $(WIN98)
 {

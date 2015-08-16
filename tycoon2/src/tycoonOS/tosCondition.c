@@ -224,7 +224,7 @@ int tosCondition_wait(tosCondition_T *cond, tosMutex_T *mx)
       * Unsafe non-atomic release of the mutex on Windows 95/98 systems
       * or safe, atomic release and wait function on Windows NT
       */
-     DWORD rc = 0;
+     DWORD rc;
      if (tosSystem_getID() != tosSystem_ID_WINNT) {
         #ifdef tosCondition_DEBUG
            tosLog_debug("tosCondition",
@@ -287,7 +287,7 @@ int tosCondition_timedwait(tosCondition_T *cond, tosMutex_T *mx, Long mseconds)
       * Unsafe non-atomic release of the mutex on Windows 95/98 systems
       * or safe, atomic release and wait function on Windows NT
       */
-     DWORD rc = 0;
+     DWORD rc;
      if (tosSystem_getID() != tosSystem_ID_WINNT) {
         #ifdef tosCondition_DEBUG
            tosLog_debug("tosCondition",

@@ -21,7 +21,7 @@
 /*
   Copyright (c) 1996 Higher-Order GmbH, Hamburg. All rights reserved.
 
-  $File: //depot/tycoon2/stsmain/bootstrap/src/tm/tvm.c $ $Revision: #6 $ $Date: 2003/10/20 $  Andreas Gawecki, Marc Weikard
+  $File: //depot/tycoon2/stsmain/bootstrap/src/tm/tvm.c $ $Revision: #9 $ $Date: 2003/11/03 $  Andreas Gawecki, Marc Weikard
 
   component and debugging extensions (c) 1998 Axel Wienberg
 
@@ -492,7 +492,11 @@ static tsp_OID getTracedComponent(tsp_OID o)
       return tyc_NIL;
     if(tsp_isTracedComponent(o))
       return o;
+#ifdef tsp_STORED_SUPERCOMPONENT
     o = tsp_superComponent(o);
+#else
+    o = tyc_NIL;
+#endif
   }
   return o;
 }
@@ -580,11 +584,12 @@ void tvm_raise(void * pException)
   }
   sp = ((tsp_OID*) fp);
   /* no exception handler found */
-  fprintf(stderr,"\nTVM error: uncaught exception %s.\n",
-	         tyc_CLASS(tsp_classId(pException))->pszName);
+  tosLog_error("tvm", "raise", 
+	       "uncaught exception: %s",
+	       tyc_CLASS(tsp_classId(pException))->pszName);
   tsp_setPrintDepth(2, 5);
   tsp_printObject(pException);
-  tmdebug_backTrace(pThread, stdout);
+  tmdebug_backTrace(pThread, tmdebug_stderr);
   /* kill thread */
   SAVE_REGS();
   tmthread_exit(FALSE);
@@ -676,9 +681,14 @@ void  tvm_raiseTypeError(tsp_OID p, tsp_ClassId id)
   RAISE_TypeError(p, id);
 }
 
+static Bool tyc_immutable(tsp_OID p)
+{
+  return tyc_IS_NIL(p) || tsp_IS_IMMEDIATE(p) || tsp_immutable(p);
+}
 
 /* component handling */
 
+#ifdef tsp_STORED_SUPERCOMPONENT
 /* Is a direct or indirect supercomponent of or identical to b ? */
 static Bool isSuperComponentOf(tsp_OID a, tsp_OID b)
 {
@@ -695,14 +705,14 @@ static Bool isSuperComponentOf(tsp_OID a, tsp_OID b)
 static void assert_superComponent(tsp_OID expectedSuperComponent, tsp_OID obj)
 {
   tsp_OID actualSuper; 
-  assert(!tyc_IS_NIL(obj));
-  assert(!tsp_IS_IMMEDIATE(obj));
-  actualSuper = tsp_superComponent(obj);
-  if(actualSuper != expectedSuperComponent) {
-    tosLog_error("tvm", "assert_superComponent", "object %s@%p has super component %s@%p, expected super component %s@%p",
-		 tyc_CLASS(tyc_CLASSID(obj))->pszName, obj,
-		 tyc_CLASS(tyc_CLASSID(actualSuper))->pszName, actualSuper,
-		 tyc_CLASS(tyc_CLASSID(expectedSuperComponent))->pszName, expectedSuperComponent);
+  if(!tyc_immutable(obj)) {
+    actualSuper = tsp_superComponent(obj);
+    if(actualSuper != expectedSuperComponent) {
+      tosLog_error("tvm", "assert_superComponent", "object %s@%p has super component %s@%p, expected super component %s@%p",
+		   tyc_CLASS(tyc_CLASSID(obj))->pszName, obj,
+		   tyc_CLASS(tyc_CLASSID(actualSuper))->pszName, actualSuper,
+		   tyc_CLASS(tyc_CLASSID(expectedSuperComponent))->pszName, expectedSuperComponent);
+    }
   }
 }
 
@@ -710,7 +720,7 @@ static void assert_superComponent(tsp_OID expectedSuperComponent, tsp_OID obj)
 static void zapComponent(tsp_OID superComponent, tsp_OID *pp)
 {
   tsp_OID obj = *pp;
-  if (obj != NULL) {
+  if (!tyc_immutable(obj)) {
     assert_superComponent(superComponent, obj);
     /* not necessary: *pp = NULL; */
     tsp_setSuperComponent(obj, NULL);
@@ -723,7 +733,7 @@ static void moveToComponent(tsp_OID destSuperComp, tsp_OID *dest, tyc_Thread *pT
 {
   tsp_OID obj = *sp;
   zapComponent(destSuperComp, dest);
-  if(!tyc_IS_NIL(obj)) {
+  if(!tyc_immutable(obj)) {
     assert_superComponent(pThread, obj);
     /* not necessary: *sp = NULL; */
     tsp_setSuperComponent(obj, destSuperComp);
@@ -736,13 +746,23 @@ static void takeFromComponent(tyc_Thread *pThread, tsp_OID *sp, tsp_OID srcSuper
 {
   tsp_OID obj = *src;
   /* NOT: zapComponent(pThread, sp) */
-  if(!tyc_IS_NIL(obj)) {
+  if(!tyc_immutable(obj)) {
     assert_superComponent(srcSuperComp, obj);
     tsp_setSuperComponent(obj, pThread);
     *src = NULL;
   }
   *sp = obj;
 }
+
+#else  /* tsp_STORED_SUPERCOMPONENT */
+
+#define isSuperComponentOf(sub, super) 			   0
+#define assert_superComponent(expectedSuperComponent, obj) ((void)0)
+#define zapComponent(superComponent, pp) 		   ((void)0)
+#define moveToComponent(destSuperComp, dest, pThread, sp)  (*(dest)=*(sp))
+#define takeFromComponent(pThread, sp, srcSuperComp, src)  (*(sp)=*(src))
+
+#endif
 
 #define DEBUG_KW_REORDER 0
 
@@ -778,8 +798,8 @@ static int computePermutation(unsigned char *permutation,
   assert(kmSize > 0);
   assert(tsp_size(pKeywordDefaults)==kmSize*sizeof(tsp_OID));
   assert(kmSize-ksSize == 0 || tsp_size(pFillWords)==(kmSize-ksSize)*sizeof(tsp_OID));
-  assert(wSortsM < (1<<kmSize));
-  assert(wSortsS < (1<<ksSize));
+  assert(wSortsM < (1U<<kmSize));
+  assert(wSortsS < (1U<<ksSize));
 #if DEBUG_KW_REORDER
   tosLog_debug("tvm", "computePermutation", "enter, kmSize=%d, ksSize=%d", kmSize, ksSize);
   for(im=0;im<kmSize;++im) {
@@ -881,14 +901,14 @@ static int computePermutation(unsigned char *permutation,
 
       cycleSizePatch = permutation;
       *permutation++ = 0; /* placeholder for cycle length (patched later) */
-      *permutation++ = kmSize-1-im;  /* count from end */
+      *permutation++ = (unsigned char)(kmSize-1-im);  /* count from end */
       current = posInMsg[im];
       posInMsg[im] = im;  /* mark seen */
       do {
 	int next;
-	*permutation++ = kmSize-1-current; /* count from end */
+	*permutation++ = (unsigned char)(kmSize-1-current); /* count from end */
 #if DEBUG_KW_REORDER
-	tosLog_debug("tvm","computePermutation", "   permute %d - %d", permutation[-2], permutation[-1]);
+	tosLog_debug("tvm","computePermutation", "   permute %d - %d", kmSize-1-permutation[-2], kmSize-1-permutation[-1]);
 #endif
 	next = posInMsg[current];
 	posInMsg[current] = current; /* mark seen */
@@ -897,7 +917,7 @@ static int computePermutation(unsigned char *permutation,
 #if DEBUG_KW_REORDER
       tosLog_debug("tvm","computePermutation", "  cycle length was %d", (int)(permutation-cycleSizePatch-1));
 #endif
-      *cycleSizePatch = permutation-cycleSizePatch-2;
+      *cycleSizePatch = (unsigned char)(permutation-cycleSizePatch-2);
     }
   }
 #if DEBUG_KW_REORDER
@@ -988,8 +1008,7 @@ static tsp_OID run(void)
 	*--sp = ((tsp_OID*)(fp + 1))[argidx];
 	((tsp_OID*)(fp + 1))[argidx] = tyc_NIL;
 	/* superComponent is not modified */
-	if(!tyc_IS_NIL(*sp))
-	  assert_superComponent(pThread, *sp);
+	assert_superComponent(pThread, *sp);
 	}
 	ip += 2;
 	NEXT();
@@ -1004,8 +1023,7 @@ static tsp_OID run(void)
 	*--sp = ((tsp_OID*)fp)[-idx];
 	((tsp_OID*)fp)[-idx] = tyc_NIL;
 	/* superComponent is not modified */
-	if(!tyc_IS_NIL(*sp))
-	  assert_superComponent(pThread, *sp);
+	assert_superComponent(pThread, *sp);
 	}
 	ip += 2;
 	NEXT();
@@ -1064,16 +1082,14 @@ static tsp_OID run(void)
 	NEXT();
       LABEL(tvm_Op_moveToLocal):
 	/* superComponent is not modified */
-	if(!tyc_IS_NIL(*sp))
-	  assert_superComponent(pThread, *sp);
+	assert_superComponent(pThread, *sp);
 	((tsp_OID*)fp)[-(ip[1])] = *sp;
 	*sp = tyc_NIL;
 	ip += 2;
 	NEXT();
       LABEL(tvm_Op_moveToArgument):
 	/* superComponent is not modified */
-	if(!tyc_IS_NIL(*sp))
-	  assert_superComponent(pThread, *sp);
+	assert_superComponent(pThread, *sp);
 	((tsp_OID*)(fp + 1))[ip[1]] = *sp;
 	*sp = tyc_NIL;
 	ip += 2;
@@ -1127,6 +1143,7 @@ static tsp_OID run(void)
       LABEL(tvm_Op_moveToCell):
 	{
 	tsp_OID * pCell = *sp++;
+	assert(!tyc_immutable(pCell));
 	assert_superComponent(tyc_NIL, pCell);
 	assert(*sp != pCell);
 	moveToComponent(pCell, pCell, pThread, sp);
@@ -1269,7 +1286,7 @@ noBool:
 	  assert(nArgs <= FUN_MAXARGS && wSorts == 0 && !fReturnsComponent);
 	  wClassId = tyc_ClassId_Fun_FUNC_MAXARGS - FUNC_MAXARGS + nArgs;
 	} else {
-	  assert(wSorts < (1 << nArgs));
+	  assert(wSorts < (1U << nArgs));
 	  wClassId = tyc_ClassId_Fun0 - 2 + ((fReturnsComponent?3:2)<<nArgs) + wSorts;
 	}
 	pClosure = tsp_newArray(wClassId, nSlots + 1);
@@ -1503,7 +1520,7 @@ super0:
 	{
 	tyc_Class * pSuperClass = fp->pCode->pClass;
 	if((pMethod = tvm_methodSuperLookup(idSelector, idClass,
-					    pSuperClass))) {
+					    pSuperClass)) != NULL) {
 	  pSuperEntry->superKey = idSuperClass;
 	  pEntry = &pSuperEntry->cache;
 	  /* invalidate, to avoid half-written entry 
@@ -1670,7 +1687,7 @@ nonrec_methodcall:
 	    /* slot access */
 	    Int i = ((tyc_SlotMethod*)pMethod)->iOffset;
 	    assert(!tsp_IS_IMMEDIATE(pReceiver) && !tyc_IS_NIL(pReceiver));
-	    assert(i >= 0 && i < (tsp_size(pReceiver) / sizeof(tsp_OID)));
+	    assert(i >= 0 && (Word)i < (tsp_size(pReceiver) / sizeof(tsp_OID)));
 	    *sp = ((tsp_OID*)pReceiver)[i];
 	    BNEXT();	       /* continue interpreter loop */
 	  }
@@ -1680,7 +1697,7 @@ nonrec_methodcall:
 	    /* slot access */
 	    Int i = ((tyc_SlotMethod*)pMethod)->iOffset;
 	    assert(!tsp_IS_IMMEDIATE(pReceiver) && !tyc_IS_NIL(pReceiver));
-	    assert(i >= 0 && i < (tsp_size(pReceiver) / sizeof(tsp_OID)));
+	    assert(i >= 0 && (Word)i < (tsp_size(pReceiver) / sizeof(tsp_OID)));
 	    takeFromComponent(pThread, sp, pReceiver, &((tsp_OID*)pReceiver)[i]);
 	    BNEXT();
 	  }
@@ -1691,7 +1708,7 @@ nonrec_methodcall:
 	    tsp_OID pArgument = *sp;
 	    Int i = ((tyc_SlotMethod*)pMethod)->iOffset;
 	    assert(!tsp_IS_IMMEDIATE(pReceiver) && !tyc_IS_NIL(pReceiver));
-	    assert(i >= 0 && i < (tsp_size(pReceiver) / sizeof(tsp_OID)));
+	    assert(i >= 0 && (Word)i < (tsp_size(pReceiver) / sizeof(tsp_OID)));
 	    ((tsp_OID*)pReceiver)[i] = pArgument;
 	    *++sp = pArgument;
 	    BNEXT();
@@ -1702,11 +1719,13 @@ nonrec_methodcall:
 	    /* slot update */
 	    Int i = ((tyc_SlotMethod*)pMethod)->iOffset;
 	    assert(!tsp_IS_IMMEDIATE(pReceiver) && !tyc_IS_NIL(pReceiver));
-	    assert(i >= 0 && i < (tsp_size(pReceiver) / sizeof(tsp_OID)));
+	    assert(i >= 0 && (Word)i < (tsp_size(pReceiver) / sizeof(tsp_OID)));
+#ifdef tsp_STORED_SUPERCOMPONENT
 	    if(isSuperComponentOf(*sp, pReceiver)) {
 	      SAVE_REGS();
 	      RAISE_CyclicComponent(*sp, pReceiver);
 	    }
+#endif
 	    moveToComponent(pReceiver, &((tsp_OID*)pReceiver)[i], pThread, sp);
 	    *++sp = tyc_NIL;
 	    BNEXT();
@@ -1923,13 +1942,15 @@ divisionbyzero:
 	      BLABEL(tvm_Builtin_Object_fetchAt):
 		{
 		tsp_OID v = *sp;
-		if (!tyc_IS_NIL(v)) {
-		  if (tsp_IS_IMMEDIATE(v) || tsp_superComponent(v) != tyc_NIL) {
+#ifdef tsp_STORED_SUPERCOMPONENT
+		if (!tyc_immutable(v)) {
+		  if (tsp_superComponent(v) != tyc_NIL) {
 		    SAVE_REGS();
 		    RAISE_FetchBoundComponent(v);
 		  }
 		  tsp_setSuperComponent(v, pThread);
 		}
+#endif
 		*++sp = v;
 		}
 		BNEXT();
@@ -1952,14 +1973,14 @@ divisionbyzero:
 		RAISE_TypeError(pArgument, tyc_ClassId_Int);
 		}
 	      BLABEL(tvm_Builtin_Object_superComponent):
-		if(tyc_IS_NIL(pReceiver)) {
-		  SAVE_REGS();
-		  RAISE_TypeError(pReceiver, tyc_ClassId_Object);
-		}
-		if (tyc_IS_TAGGED_INT(pReceiver))
-		  *sp = tyc_pRoot;
+#ifdef tsp_STORED_SUPERCOMPONENT
+		if (tyc_immutable(pReceiver))
+		  *sp = tyc_NIL;
 		else
 		  *sp = tsp_superComponent(pReceiver);
+#else
+	        *sp = tyc_NIL;  /* ### */
+#endif
 		BNEXT();
 	      BLABEL(tvm_Builtin_Object_isImmutable):
 		if(tyc_IS_NIL(pReceiver) || tyc_IS_TAGGED_INT(pReceiver))
@@ -1967,9 +1988,13 @@ divisionbyzero:
 		else
 		  *sp = tyc_boxBool(tsp_immutable(pReceiver));
 		BNEXT();
-	      BLABEL(tvm_Builtin_Object_setImmutable):
-		if(!tyc_IS_NIL(pReceiver) && !tyc_IS_TAGGED_INT(pReceiver))
+	      BLABEL(tvm_Builtin_Object__setImmutable):
+		if(!tyc_immutable(pReceiver)) {
 		  tsp_setImmutable(pReceiver);
+#ifdef tsp_STORED_SUPERCOMPONENT
+		  tsp_setSuperComponent(pReceiver, tyc_NIL);
+#endif
+		}
 		*sp = tyc_TRUE;
 		BNEXT();
 	      BLABEL(tvm_Builtin_Object_isTracedComponent):
@@ -2029,7 +2054,7 @@ divisionbyzero:
 		    SAVE_REGS();
 		    RAISE_IndexOutOfBounds(pReceiver, pArgument);
 		  } else if(!tsp_isCStruct(pReceiver)) {
-		    if(i >= 0 && i < (tsp_size(pReceiver) / sizeof(tsp_OID))) {
+		    if(i >= 0 && (Word)i < (tsp_size(pReceiver) / sizeof(tsp_OID))) {
 		      *++sp = ((tsp_OID*)pReceiver)[i];
 		      BNEXT();
 		    }
@@ -2038,7 +2063,7 @@ divisionbyzero:
 		    RAISE_IndexOutOfBounds(pReceiver, pArgument);
 		  }
 		  else {
-		    if(i >= 0 && i < tsp_getCSize(pReceiver)) {
+		    if(i >= 0 && (Word)i < tsp_getCSize(pReceiver)) {
 		      tsp_OID pSlot;
 		      SAVE_REGS();
 		      pSlot = tsp_getCSlot(pReceiver, i);
@@ -2059,24 +2084,22 @@ divisionbyzero:
 		{
 		tsp_OID pElement =  sp[0];
 		tsp_OID pPosition = sp[1];
-		if(tyc_IS_NIL(pReceiver)
-		   || tsp_IS_IMMEDIATE(pReceiver)
-		   || tsp_immutable(pReceiver)) {
+		if(tyc_immutable(pReceiver)) {
 		  SAVE_REGS();
 		  RAISE_WriteToImmutable(pReceiver);
 		}
 		if(tyc_IS_TAGGED_INT(pPosition)) {
 		  Int i = tyc_TAGGED_INT_VALUE(pPosition);
 		  if(!tsp_isCStruct(pReceiver)) {
-		    if(i >= 0 && i < (tsp_size(pReceiver) / sizeof(tsp_OID))) {
+		    if(i >= 0 && (Word)i < (tsp_size(pReceiver) / sizeof(tsp_OID))) {
+#ifdef tsp_STORED_SUPERCOMPONENT
 		      tyc_Class *pClass = tyc_CLASS(tyc_CLASSID(pReceiver));
 		      if((i < tyc_UNTAG_INT(pClass->wInstanceSize)
 			  && pClass->slotMap[i]->isComponent)
 			 || tyc_CLASSID(pReceiver) == tyc_ClassId_AtArray) {
 			  /* put to component slot => element is magically fetched */
-			  if (!tyc_IS_NIL(pElement)) {
-			      if (tsp_IS_IMMEDIATE(pElement)
-				  || tsp_superComponent(pElement) != tyc_NIL) {
+			  if (!tyc_immutable(pElement)) {
+			      if (tsp_superComponent(pElement) != tyc_NIL) {
 				  SAVE_REGS();
 				  RAISE_FetchBoundComponent(pElement);
 			      }
@@ -2087,6 +2110,7 @@ divisionbyzero:
 			      tsp_setSuperComponent(pElement, pReceiver);
 			  }
 		      }
+#endif
 		      ((tsp_OID*)pReceiver)[i] = pElement;
 		      sp += 2;
 		      *sp = pElement;
@@ -2097,14 +2121,14 @@ divisionbyzero:
 		    RAISE_IndexOutOfBounds(pReceiver, pPosition);
 		  }
 		  else {
-		    if(i >= 0 && i < tsp_getCSize(pReceiver)) {
+		    if(i >= 0 && (Word)i < tsp_getCSize(pReceiver)) {
+#ifdef tsp_STORED_SUPERCOMPONENT
 		      tyc_Class *pClass = tyc_CLASS(tyc_CLASSID(pReceiver));
 		      int fMoved = FALSE;
 		      if(pClass->slotMap[i]->isComponent) {
 			  /* put to component slot => element is magically fetched */
-			  if (!tyc_IS_NIL(pElement)) {
-			      if (tsp_IS_IMMEDIATE(pElement)
-				  || tsp_superComponent(pElement) != tyc_NIL) {
+			  if (!tyc_immutable(pElement)) {
+			      if (tsp_superComponent(pElement) != tyc_NIL) {
 				  SAVE_REGS();
 				  RAISE_FetchBoundComponent(pElement);
 			      }
@@ -2116,15 +2140,18 @@ divisionbyzero:
 			      fMoved = TRUE;
 			  }
 		      }
+#endif
 		      if(tsp_setCSlot(pReceiver, pElement, i)) {
 			sp += 2;
 			*sp = pElement;
 			BNEXT();
 		      }
+#ifdef tsp_STORED_SUPERCOMPONENT
 		      if (fMoved) {
 			  assert_superComponent(pReceiver, pElement);
 			  tsp_setSuperComponent(pElement, tyc_NIL);
 		      }
+#endif
 		      /* slot type mismatch */
 		      SAVE_REGS();
 		      RAISE_TypeError(pElement, tyc_ClassId_Object);
@@ -2148,9 +2175,9 @@ divisionbyzero:
 		  Word wArity = pSelector->wArity;
 		  Word wSorts = pSelector->wSorts;
 		  tyc_Symbol *apKeywords = pSelector->apKeywords;
-		  int nKeywords4;
+		  Word wNbKeywords4;
 		  assert(apKeywords);
-		  nKeywords4 = tsp_size(apKeywords);
+		  wNbKeywords4 = tsp_size(apKeywords);
 		  if(((tyc_BuiltinMethod*)pMethod)->iNumber ==
 		     tvm_Builtin_Object__performAt)
 		    assert(pSymbol[tsp_size(pSymbol)-2] == '@');
@@ -2169,8 +2196,8 @@ divisionbyzero:
 			 pCacheLine->wArity == wArity &&
 			 pCacheLine->wSorts == wSorts &&
 			 (pCacheLine->apKeywords == apKeywords
-			 || (tsp_size(pCacheLine->apKeywords) == nKeywords4 &&
-			     memcmp(pCacheLine->apKeywords, apKeywords, nKeywords4)==0))) {
+			 || (tsp_size(pCacheLine->apKeywords) == wNbKeywords4 &&
+			     memcmp(pCacheLine->apKeywords, apKeywords, wNbKeywords4)==0))) {
 			idSelector = pCacheLine->idSelector;
 		      }
 		      else {
@@ -2185,8 +2212,8 @@ divisionbyzero:
 			     pSelector->wArity == wArity &&
 			     pSelector->wSorts == wSorts &&
 			     (pSelector->apKeywords == apKeywords
-			      || (tsp_size(pSelector->apKeywords) == nKeywords4 &&
-			          memcmp(pSelector->apKeywords, apKeywords, nKeywords4)==0))) {
+			      || (tsp_size(pSelector->apKeywords) == wNbKeywords4 &&
+			          memcmp(pSelector->apKeywords, apKeywords, wNbKeywords4)==0))) {
 			    break;
 			  }
 			}
@@ -2205,6 +2232,7 @@ divisionbyzero:
 		      }
 		      tmthread_performUnlock();
 
+#ifdef tsp_STORED_SUPERCOMPONENT
 		      /* fetch component arguments */
 		      for(i = 0; i < wArity; i++) {
 			tsp_OID v = pArray[i];
@@ -2223,6 +2251,7 @@ divisionbyzero:
 			  tsp_setSuperComponent(v, pThread);
 			}
 		      }
+#endif
 
 		      CLEAR_PAST_EVENT(pThread);
 		      /* build return continuation for generated send */
@@ -2245,8 +2274,8 @@ divisionbyzero:
 		      fp->pCode = (tyc_CompiledMethod*)pMethod;
 		      ip = fp->pByteCode = pThread->pPerformCodeBuffer;
 		      ip[0] = tvm_Op_sendTail;
-		      ip[1] = idSelector & 0xff;
-		      ip[2] = idSelector >> 8;
+		      ip[1] = (unsigned char)(idSelector & 0xff);
+		      ip[2] = (unsigned char)(idSelector >> 8);
 		      ip[3] = tvm_Op_return;
 
 		      /* ### check for stack overflow? */
@@ -2283,10 +2312,12 @@ divisionbyzero:
 		wSorts = pSelector->wSorts;
 		while(nArgs-- > 0) {
 		  tsp_OID obj = *sp++;
+#ifdef tsp_STORED_SUPERCOMPONENT
 		  if(obj != tyc_NIL && (wSorts & (1 << nArgs)) != 0) {
 		    assert_superComponent(pThread, obj);
 		    tsp_setSuperComponent(obj, tyc_NIL);
 		  }
+#endif
 		  pArray[nArgs] = obj;
 		}
 		tsp_setImmutable(pArray);
@@ -2334,7 +2365,7 @@ divisionbyzero:
 		       tyc_CLASSID(pReceiver) == tyc_ClassId_Symbol);
 		if(tyc_IS_TAGGED_INT(pArgument)) {
 		  Int i = tyc_TAGGED_INT_VALUE(pArgument);
-		  if(i >= 0 && i < (tsp_size(pReceiver) - 1)) {
+		  if(i >= 0 && (Word)i < (tsp_size(pReceiver) - 1)) {
 		    *++sp = tyc_boxChar(((Char*)pReceiver)[i]);
 		    BNEXT();
 		  }
@@ -2360,7 +2391,7 @@ divisionbyzero:
 		   tyc_CLASSID(pChar) == tyc_ClassId_Char) {
 		    if(!tsp_immutable(pReceiver)) {
 			Int i = tyc_TAGGED_INT_VALUE(pPosition);
-			if( i >= 0 && i < (tsp_size(pReceiver) - 1)) {
+			if( i >= 0 && (Word)i < (tsp_size(pReceiver) - 1)) {
 			    ((Char*)pReceiver)[i] = tyc_CHAR_VALUE(pChar);
 			    sp += 2;
 			    *sp = pChar;
@@ -2420,8 +2451,8 @@ divisionbyzero:
 		    Int at = tyc_TAGGED_INT_VALUE(pAt);
 		    Int n = tyc_TAGGED_INT_VALUE(pN);
 		    Int startAt = tyc_TAGGED_INT_VALUE(pStartAt);
-		    if(n >= 0 && at >= 0 && (at + n) < tsp_size(pReceiver) &&
-		       startAt >= 0 && (startAt + n) < tsp_size(pWith)) {
+		    if(n >= 0 && at >= 0 && (Word)(at + n) < tsp_size(pReceiver) &&
+		       startAt >= 0 && (Word)(startAt + n) < tsp_size(pWith)) {
 		      memmove((Char*)pReceiver + at, (Char*)pWith + startAt,
 			      n * sizeof(Char));
 		      sp += 4;
@@ -2430,7 +2461,7 @@ divisionbyzero:
 		    }
 		    /* index out of bounds */
 		    SAVE_REGS();
-		    if(startAt < 0 || (startAt + n) >= tsp_size(pWith)) {
+		    if(startAt < 0 || (Word)(startAt + n) >= tsp_size(pWith)) {
 		      if(startAt < 0)
 			RAISE_IndexOutOfBounds(pWith, pStartAt);
 		      else
@@ -2459,7 +2490,7 @@ divisionbyzero:
 		       tyc_CLASSID(pReceiver) == tyc_ClassId_AtArray);
 		if(tyc_IS_TAGGED_INT(pArgument)) {
 		  Int i = tyc_TAGGED_INT_VALUE(pArgument);
-		  if(i >= 0 && i < (tsp_size(pReceiver) / sizeof(tsp_OID))) {
+		  if(i >= 0 && (Word)i < (tsp_size(pReceiver) / sizeof(tsp_OID))) {
 		    *++sp = ((tsp_OID*)pReceiver)[i];
 		    BNEXT();
 		  }
@@ -2482,7 +2513,7 @@ divisionbyzero:
 		assert(tyc_CLASSID(pReceiver) == tyc_ClassId_AtArray);
 		if(tyc_IS_TAGGED_INT(pArgument)) {
 		  Int i = tyc_TAGGED_INT_VALUE(pArgument);
-		  if(i >= 0 && i < (tsp_size(pReceiver) / sizeof(tsp_OID))) {
+		  if(i >= 0 && (Word)i < (tsp_size(pReceiver) / sizeof(tsp_OID))) {
 		    ++sp;
 		    takeFromComponent(pThread, sp, pReceiver, &((tsp_OID*)pReceiver)[i]);
 		    BNEXT();
@@ -2511,8 +2542,8 @@ divisionbyzero:
 		    Int n = tyc_TAGGED_INT_VALUE(pN);
 		    Int startAt = tyc_TAGGED_INT_VALUE(pStartAt);
 		    if(n >= 0 && at >= 0 && startAt >= 0 &&
-		       (at + n) <= (tsp_size(pReceiver) / sizeof(tsp_OID)) &&
-		       (startAt + n) <= (tsp_size(pWith) / sizeof(tsp_OID))) {
+		       (Word)(at + n) <= (tsp_size(pReceiver) / sizeof(tsp_OID)) &&
+		       (Word)(startAt + n) <= (tsp_size(pWith) / sizeof(tsp_OID))) {
 		      memmove((tsp_OID*)pReceiver + at,
 			      (tsp_OID*)pWith + startAt, n * sizeof(tsp_OID));
 		      sp += 4;
@@ -2521,7 +2552,7 @@ divisionbyzero:
 		    }
 		    /* index out of bounds */
 		    SAVE_REGS();
-		    if(startAt < 0 || (startAt + n) > tsp_size(pWith) / sizeof(tsp_OID)) {
+		    if(startAt < 0 || (Word)(startAt + n) > tsp_size(pWith) / sizeof(tsp_OID)) {
 		      if(startAt < 0)
 			RAISE_IndexOutOfBounds(pWith, pStartAt);
 		      else
@@ -2549,7 +2580,7 @@ divisionbyzero:
 		tsp_OID pPosition = sp[1];
 		if(tyc_IS_TAGGED_INT(pPosition)) {
 		  Int i = tyc_TAGGED_INT_VALUE(pPosition);
-		  if(i >= 0 && i < (tsp_size(pReceiver) / sizeof(tsp_OID))) {
+		  if(i >= 0 && (Word)i < (tsp_size(pReceiver) / sizeof(tsp_OID))) {
 		    if(!isSuperComponentOf(*sp, pReceiver)) {
 		      moveToComponent(pReceiver, &((tsp_OID*)pReceiver)[i], pThread, sp);
 		      sp += 2;
@@ -2574,7 +2605,7 @@ divisionbyzero:
 		if(!tsp_immutable(pReceiver)) {
 		  if(tyc_IS_TAGGED_INT(pPosition)) {
 		    Int i = tyc_TAGGED_INT_VALUE(pPosition);
-		    if(i >= 0 && i < (tsp_size(pReceiver) / sizeof(tsp_OID))) {
+		    if(i >= 0 && (Word)i < (tsp_size(pReceiver) / sizeof(tsp_OID))) {
 		      ((tsp_OID*)pReceiver)[i] = pElement;
 		      sp += 2;
 		      *sp = pElement;
@@ -2598,7 +2629,7 @@ divisionbyzero:
 		assert(tyc_CLASSID(pReceiver) == tyc_ClassId_ ## t ## Array); \
 		if(tyc_IS_TAGGED_INT(pArgument)) { \
 		  Int i = tyc_TAGGED_INT_VALUE(pArgument); \
-		  if(i >= 0 && i < (tsp_size(pReceiver) / sizeof(t))) { \
+		  if(i >= 0 && (Word) i < (tsp_size(pReceiver) / sizeof(t))) { \
 		    *++sp = tyc_TAG_INT(((t*)pReceiver)[i]); \
 		    BNEXT(); \
 		  } \
@@ -2620,8 +2651,8 @@ divisionbyzero:
 		if(tyc_IS_TAGGED_INT(pPosition) && \
 		   tyc_CLASSID(pInt) == tyc_ClassId_Int) { \
 		  Int i = tyc_TAGGED_INT_VALUE(pPosition); \
-		  if( i >= 0 && i < (tsp_size(pReceiver) / sizeof(t))) { \
-		    ((t*)pReceiver)[i] = tyc_TAGGED_INT_VALUE(pInt); \
+		  if( i >= 0 && (Word)i < (tsp_size(pReceiver) / sizeof(t))) { \
+		    ((t*)pReceiver)[i] = (t)tyc_TAGGED_INT_VALUE(pInt); \
 		    sp += 2; \
 		    *sp = pInt; \
 		    BNEXT(); \
@@ -2648,7 +2679,7 @@ divisionbyzero:
 		assert(tyc_CLASSID(pReceiver) == tyc_ClassId_IntArray);
 		if(tyc_IS_TAGGED_INT(pArgument)) {
 		  Int i = tyc_TAGGED_INT_VALUE(pArgument);
-		  if(i >= 0 && i < (tsp_size(pReceiver) / sizeof(Int))) {
+		  if(i >= 0 && (Word)i < (tsp_size(pReceiver) / sizeof(Int))) {
 		    SAVE_REGS();
 		    pNew = tyc_TAG_MAYBEBOXED(((Int*)pReceiver)[i]);
 		    FETCH_THREAD();
@@ -2669,7 +2700,7 @@ divisionbyzero:
 		assert(tyc_CLASSID(pReceiver) == tyc_ClassId_LongArray);
 		if(tyc_IS_TAGGED_INT(pArgument)) {
 		  Int i = tyc_TAGGED_INT_VALUE(pArgument);
-		  if(i >= 0 && i < (tsp_size(pReceiver) / sizeof(Long))) {
+		  if(i >= 0 && (Word)i < (tsp_size(pReceiver) / sizeof(Long))) {
 		    SAVE_REGS();
 		    pNew = tyc_boxLong(((Long*)pReceiver)[i]);
 		    FETCH_THREAD();
@@ -2692,7 +2723,7 @@ divisionbyzero:
 		if(tyc_IS_TAGGED_INT(pPosition) &&
 		   tyc_CLASSID(pLong) == tyc_ClassId_Long) {
 		  Int i = tyc_TAGGED_INT_VALUE(pPosition);
-		  if( i >= 0 && i < (tsp_size(pReceiver) / sizeof(Long))) {
+		  if( i >= 0 && (Word)i < (tsp_size(pReceiver) / sizeof(Long))) {
 		    ((Long*)pReceiver)[i] = tyc_LONG_VALUE(pLong);
 		    sp += 2;
 		    *sp = pLong;
@@ -2769,7 +2800,7 @@ divisionbyzero:
 		    id == tyc_ClassId_MutableString ||
 		    id == tyc_ClassId_Symbol) {
 		  SAVE_REGS();
-		  if(!(handle = rtdll_open(pPath))) {
+		  if((handle = rtdll_open(pPath))==0) {
 		    /* raise exception */
 		    RAISE_DLLOpenError(pReceiver);
 		  }
@@ -2859,7 +2890,7 @@ divisionbyzero:
 	      BLABEL(tvm_Builtin_Tycoon_backTrace):
 		assert(tyc_CLASSID(pReceiver) == tyc_ClassId_Tycoon);
 		SAVE_REGS();
-		tmdebug_backTrace(pThread, stdout);
+		tmdebug_backTrace(pThread, tmdebug_stdout);
 		*sp = tyc_NIL;
 		BNEXT();
 	      BLABEL(tvm_Builtin_Tycoon__rollback):
@@ -2893,8 +2924,9 @@ divisionbyzero:
 		tmthread_criticalUnlock();
 		/* check return code and raise exception if commit failed */
 		if(wErrorCode) {
-		  fprintf(stderr,"\nTSP error: commit failed: %s.\n",
-			  tsp_errorCode(wErrorCode));
+		  tosLog_error("tvm", "Tycoon::_commit",
+			       "TSP error: commit failed: %s",
+			       tsp_errorCode(wErrorCode));
 		  tvm_raise(tyc_pCommitError);
 		}
 		FETCH_THREAD();
@@ -2947,8 +2979,10 @@ divisionbyzero:
 		  assert(tsp_classId(pNew) == tyc_ClassId_AtArray);
 		  FETCH_THREAD();
 		  LOAD_REGS();
+#ifdef tsp_STORED_SUPERCOMPONENT
 		  assert_superComponent(tyc_NIL, pNew);
 		  tsp_setSuperComponent(pNew, pThread);
+#endif
 		  *++sp = pNew;
 		  BNEXT();
 		}
@@ -3488,8 +3522,8 @@ divisionbyzero:
 		  rValue = tosMutex_unlock(hOSMutex);
 		}
 		else {
-		  fprintf(stderr,
-			  "TVM error: trying to unlock foreign mutex.\n");
+		  tosLog_error("tvm", "Mutex::unlock",
+			       "TVM error: trying to unlock foreign mutex.");
 		  rValue = -1;
 		}
 		*sp = tyc_boxBool(rValue == 0);
@@ -3624,17 +3658,19 @@ divisionbyzero:
 #ifdef tvm_THREADED_CODE
 	      BLABEL(tvm_Builtin_Undefined):
 		/* (undefined builtin) */
-		fprintf(stderr,"\nTVM warning: unknown builtin %s.%s.\n",
-		       tyc_CLASS(tyc_CLASSID(pReceiver))->pszName,
-		       tyc_SELECTOR(idSelector));
+		tosLog_error("tvm", "run", 
+			     "warning: unknown builtin %s::%s",
+			     tyc_CLASS(tyc_CLASSID(pReceiver))->pszName,
+			     tyc_SELECTOR(idSelector));
 		/* call method body */
 		goto methodcall;
 #else
 	      default:
 		/* (undefined builtin) */
-		fprintf(stderr,"\nTVM warning: unknown builtin %s.%s.\n",
-		       tyc_CLASS(tyc_CLASSID(pReceiver))->pszName,
-		       tyc_SELECTOR(idSelector));
+		tosLog_error("tvm", "run",
+			     "warning: unknown builtin %s::%s",
+			     tyc_CLASS(tyc_CLASSID(pReceiver))->pszName,
+			     tyc_SELECTOR(idSelector));
 		/* call method body */
 		goto methodcall;
 	      }
@@ -3697,7 +3733,7 @@ divisionbyzero:
 		  case tsp_Field_ULong:
 		    pResult = tyc_boxChar(*((long*)pAddress)); break;
 		  case tsp_Field_LongLong:
-		    pResult = tyc_boxChar(*((Long*)pAddress)); break;
+		    pResult = tyc_boxChar((Word)*((Long*)pAddress)); break;
 		  default:
 		    tosError_ABORT();
 		  }
@@ -3724,7 +3760,7 @@ divisionbyzero:
 		  case tsp_Field_ULong:
 		    i = *((unsigned long*)pAddress); break;
 		  case tsp_Field_LongLong:
-		    i = *((Long*)pAddress); break;
+		    i = (Int)*((Long*)pAddress); break;
 		  default:
 		    tosError_ABORT();
 		  }
@@ -3846,10 +3882,10 @@ divisionbyzero:
 		  {
 		  case tsp_Field_Char:
 		  case tsp_Field_UChar:
-		    *((char*)pAddress) = f; break;
+		    *((char*)pAddress) = (char)f; break;
 		  case tsp_Field_Short:
 		  case tsp_Field_UShort:
-		    *((short*)pAddress) = f; break;
+		    *((short*)pAddress) = (short)f; break;
 		  case tsp_Field_Int:
 		  case tsp_Field_UInt:
 		    *((int*)pAddress) = f; break;
@@ -3897,10 +3933,10 @@ divisionbyzero:
 		    {
 		    case tsp_Field_Char:
 		    case tsp_Field_UChar:
-		      *((char*)pAddress) = i;	break;
+		      *((char*)pAddress) = (char)i; break;
 		    case tsp_Field_Short:
 		    case tsp_Field_UShort:
-		      *((short*)pAddress) = i; break;
+		      *((short*)pAddress) = (short)i; break;
 		    case tsp_Field_Int:
 		    case tsp_Field_UInt:
 		      *((int*)pAddress) = i; break;
@@ -3924,16 +3960,16 @@ divisionbyzero:
 		    {
 		    case tsp_Field_Char:
 		    case tsp_Field_UChar:
-		      *((char*)pAddress) = l; break;
+		      *((char*)pAddress) = (char)l; break;
 		    case tsp_Field_Short:
 		    case tsp_Field_UShort:
-		      *((short*)pAddress) = l; break;
+		      *((short*)pAddress) = (short)l; break;
 		    case tsp_Field_Int:
 		    case tsp_Field_UInt:
-		      *((int*)pAddress) = l; break;
+		      *((int*)pAddress) = (int)l; break;
 		    case tsp_Field_Long:
 		    case tsp_Field_ULong:
-		      *((long*)pAddress) = l;	break;
+		      *((long*)pAddress) = (long)l; break;
 		    case tsp_Field_LongLong:
 		      *((Long*)pAddress) = l; break;
 		    default:
@@ -4045,9 +4081,10 @@ divisionbyzero:
 	  default:
 	  {
 	    /* no valid method */
-	    fprintf(stderr,"\nTVM warning: unknown method type for %s.%s.\n",
-		    tyc_CLASS(tyc_CLASSID(pReceiver))->pszName,
-		    tyc_SELECTOR(idSelector));
+	    tosLog_error("tvm","run",
+			 "warning: unknown method type for %s::%s",
+			 tyc_CLASS(tyc_CLASSID(pReceiver))->pszName,
+			 tyc_SELECTOR(idSelector));
 	    goto dontUnderstand;
 	  }
 	}
@@ -4114,7 +4151,7 @@ methodEnd:
 	}
 	/* 2nd level cache miss */
 	{
-	if((pMethod = tvm_methodLookup(idSelector, idClass))) {
+	if((pMethod = tvm_methodLookup(idSelector, idClass)) != NULL) {
 	  /* check signatures (no. of positional arguments, keywords, sorts) */
 	  tyc_Selector *pSelector;
 	  tyc_ReorderMethod *pReorderMethod;
@@ -4130,15 +4167,21 @@ methodCandidateFound:
 	    int kmSize = tsp_size(pMethod->apKeywords)/sizeof(tsp_OID);
 	    int ksSize = tsp_size(pSelector->apKeywords)/sizeof(tsp_OID);
 	    tyc_Array pFillWords;
-	    if(ksSize != kmSize
-	       || memcmp(pMethod->apKeywords, pSelector->apKeywords, ksSize*sizeof(tsp_OID)) != 0) {
-	      /* keyword lists are not identical */
+	    if(ksSize == kmSize
+	       && memcmp(pMethod->apKeywords, pSelector->apKeywords, ksSize*sizeof(tsp_OID)) == 0) {
+	      /* keyword lists are equal */
+	      /* sorts and arity must match */
+	      if( pMethod->nArgs != pSelector->wArity || pMethod->wSorts != pSelector->wSorts)
+		goto wrongSignature;
+	    } else {
+	      /* keyword lists are not equal */
 	      /* need to generate a reorder method (or bail out) */
 	      tyc_Selector *pDelegateSelector;
 	      int idDelegateSelector;
 	      Bool fIsPrivate;
 	      int nPositional = pMethod->nArgs-kmSize;
-	      if( nPositional != pSelector->wArity-ksSize
+	      assert(nPositional >= 0);
+	      if( (Word)nPositional != pSelector->wArity-ksSize
 		  || (pMethod->wSorts & ((1<<nPositional)-1))
 		     != (pSelector->wSorts & ((1<<nPositional)-1))
 		  || kmSize < ksSize ) {
@@ -4159,7 +4202,9 @@ methodCandidateFound:
 	      default:
 		/* ### to do: ExternalMethod (see also pKeywordDefaults below) */
 		/* other method types cannot have keyword parameters */
-		tosLog_error("tvm", "keyword reordering", "unimplemented method class: id=%d", tsp_classId(pMethod));
+		tosLog_error("tvm", "keyword reordering", 
+			     "unimplemented method class: id=%d", 
+			     tsp_classId(pMethod));
 		tosError_ABORT();  /* unimplemented */
 	      }
 	      fIsPrivate = pMethod->fIsPrivate;
@@ -4290,9 +4335,10 @@ methodCandidateFound:
 	  default:
 	  {
 	    /* no valid method */
-	    fprintf(stderr,"\nTVM warning: unknown method type for %s.%s.\n",
-		    tyc_CLASS(tyc_CLASSID(pReceiver))->pszName,
-		    tyc_SELECTOR(idSelector));
+	    tosLog_error("tvm","run",
+			 "warning: unknown method type for %s::%s",
+			 tyc_CLASS(tyc_CLASSID(pReceiver))->pszName,
+			 tyc_SELECTOR(idSelector));
 	    goto dontUnderstand;
 	  }
 #endif
@@ -4321,7 +4367,7 @@ methodCandidateFound:
 	}
 dontUnderstand:
 	/* find builtin __doesNotUnderstand in Object */
-	if((pMethod = tvm_methodLookup(idDoesNotUnderstand, idClass))) {
+	if((pMethod = tvm_methodLookup(idDoesNotUnderstand, idClass)) != NULL) {
 	  /* check no. of arguments */
 	  tyc_Selector *pSelector = tyc_pRoot->apSelectorTable[idDoesNotUnderstand];
 	  if(pMethod->nArgs != pSelector->wArity || pMethod->wSorts != pSelector->wSorts) {
@@ -4516,7 +4562,7 @@ void tvm_debugSuperSend(tyc_ClassId idClass, tyc_ClassId idSuperClass,
   { \
     tosLog_error("tvm",\
 		 "DEBUG",\
-		 "TMV Error: Machine not configured for debugging");\
+		 "TVM Error: Machine not configured for debugging");\
   }
 
 DEBUG_ERROR(tvm_setTrace)

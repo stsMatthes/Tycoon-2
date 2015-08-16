@@ -1,55 +1,51 @@
-tycoon.tl.loader.registerDirectory("At");
-tycoon.tl.loader.update;
+tycoon.tl.loader.registerDirectory("At") ?
+tycoon.tl.loader.update ?
 
-;;
-;; end of automated script
-;;
+??   ;; end of automated script
 
-define aa :AtArray(String);
-define s :String;
-s := "hallo";
+define aa :AtArray(String) ?
+define s :String ?
+s := "hallo" ?
 
-aa := ref(AtArray.new(2)@);
-s.superComponent;  (* nil *)
-aa[0] := fetch(s)@;
-s.superComponent; (* == aa *)
-MutableArray.new(2000000)  nil;  (* provoke GC *)
-s.superComponent; (* == aa *)
-aa := nil;
-s.superComponent; (* probably still == aa *)
-MutableArray.new(2000000) nil;  (* GC, tvm debug info: component becomes orphan *)
-s.superComponent; (* nil *)
+aa := ref(AtArray.new(2)@) ?
+s.superComponent ?  ;; nil 
+aa[0] := fetch(s)@ ?
+s.superComponent ? ;; == aa 
+MutableArray.new(2000000)  nil ?  ;; provoke GC 
+s.superComponent ? ;; == aa 
+aa := nil ?
+s.superComponent ? ;; probably still == aa 
+MutableArray.new(2000000) nil ?  ;; GC, tvm debug info: component becomes orphan 
+s.superComponent ? ;; nil 
 
-aa := ref(AtArray.new(2)@);
-aa[0] := fetch(s)@;
-aa; (* AtArray{"hallo", nil} *)
-s.superComponent == aa; (* true *)
-aa[1] := fetch(s)@;
+aa := ref(AtArray.new(2)@) ?
+aa[0] := fetch(s)@ ?
+aa ? ;; AtArray{"hallo", nil} 
+s.superComponent == aa ? ;; true 
+aa[1] := fetch(s)@ ?
     (* Exception: Fetch bound component: "hallo" *)
-aa;  (* unchanged *)
-aa[1] := aa[0]@;
-aa;  (* ArArray{nil, "hallo"} *)
-s.superComponent;  (* == aa *)
-ref(aa[1]@);  (* "hallo" *)
-aa;  (* AtArray{nil,nil} *)
-s.superComponent;  (* nil *)
+aa ?  ;; unchanged 
+aa[1] := aa[0]@ ?
+aa ?  ;; ArArray{nil, "hallo"} 
+s.superComponent ?  ;; == aa 
+ref(aa[1]@) ?  ;; "hallo" 
+aa ?  ;; AtArray{nil,nil} 
+s.superComponent ?  ;; nil 
 
-foo(fetch(s)@, 1/0); (* exception: DivisionByZero *)
-s.superComponent; (* nil *)
-foo(fetch(s)@, fetch(s)@); (* exception: FetchBoundComponent *)
-s.superComponent; (* nil *)
+foo(fetch(s)@, 1/0) ? ;; exception: DivisionByZero 
+s.superComponent ? ;; nil 
+foo(fetch(s)@, fetch(s)@) ? ;; exception: FetchBoundComponent 
+s.superComponent ? ;; nil 
 
 try({
   yourself(fetch(s)@, s.superComponent)
 } else: fun(e:WrongSignature){
   e.arguments
-});  (* Array{"hallo", a Thread} *)
-s.superComponent; (* nil *)
+}) ?  ;; Array{"hallo", a Thread} 
+s.superComponent ? ;; nil 
 
-define ad :AtDictionary(Int, String);
-ad := ref(AtDictionary.new@);
-ad[0] := fetch("null".copy)@;
-ad[1] := fetch("eins".copy)@;
-ad[2] := fetch("zwei".copy)@;
-
-*)
+define ad :AtDictionary(Int, String) ?
+ad := ref(AtDictionary.new@) ?
+ad[0] := fetch("null".copy)@ ?
+ad[1] := fetch("eins".copy)@ ?
+ad[2] := fetch("zwei".copy)@ ?

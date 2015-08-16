@@ -84,7 +84,7 @@ allocate(o :Object, tl2Class :X_TL2Class) :Int
 require o."class".name = tl2Class.name
 {
   bytes ::= objectSize(o)
-  _tracer.allocate(o, bytes, tl2Class.id, o.identityHash, {
+  _tracer.allocate(o, bytes, tl2Class.id, o.isImmutable, o.identityHash, {
     dumpInstance(o)
   })
 }

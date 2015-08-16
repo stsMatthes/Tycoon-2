@@ -21,7 +21,7 @@
 /*
   Copyright (c) 1996 Higher-Order GmbH, Hamburg. All rights reserved.
 
-  $File: //depot/tycoon2/stsmain/bootstrap/src/tm/builtins.h $ $Revision: #4 $ $Date: 2003/10/02 $ Marc Weikard
+  $File: //depot/tycoon2/stsmain/bootstrap/src/tm/builtins.h $ $Revision: #5 $ $Date: 2003/10/29 $ Marc Weikard
 
   Tycoon Virtual Machine Builtins
 
@@ -54,7 +54,7 @@
   TVM_BUILTIN(Object,"class",class,0)
   TVM_BUILTIN(Object,"superComponent",superComponent,0)
   TVM_BUILTIN(Object,"isImmutable",isImmutable,0)
-  TVM_BUILTIN(Object,"setImmutable",setImmutable,0)
+  TVM_BUILTIN(Object,"_setImmutable",_setImmutable,0)
   TVM_BUILTIN(Object,"true",true,0)
   TVM_BUILTIN(Object,"false",false,0)
   TVM_BUILTIN(Object,"nil",nil,0)  

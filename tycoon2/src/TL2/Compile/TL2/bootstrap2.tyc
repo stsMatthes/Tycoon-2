@@ -1,87 +1,70 @@
-(*
-script for a "lightweight" bootstrap from within a TL2-System
+;; script for a "lightweight" bootstrap from within a TL2-System
+;; see doc/bootstrap/bootstrap.txt for usage description
 
-cd $HOX_HOME
+Date.now ?
 
-;; launch store including programming environment
-tycoon2 TL2.ts
-;; create and dump a new memory image
-DO load "Compile/TL2/bootstrap2.tyc";
-DO exit;
-;; turn dump into store
-tycoon2 -bootstrap dump
-;; unfold store
-;; update paths, type check, save system and exit
-;; (may want to do this manually to fix small errors during development)
-tycoon2 Bootstrap.ts < src/TL2/Compile/TL2/post-bootstrap.tyc
-*)
-Date.now;
+tycoon.tl.loader.registerDirectory("SystemTracer") ?
+tycoon.tl.loader.update ?
 
-tycoon.tl.loader.registerDirectory("SystemTracer");
-tycoon.tl.loader.update;
-
-define newTL :TL2TL;
+define newTL :TL2TL ?
 root ::= TL2Root.new(tycoon.hoxHome+"/src/next_tm/storeDescriptors.tab")
 pool ::= TL2Pool.new
 vmInterface ::=
   TL2VMInterface.new(
     tycoon.hoxHome+"/src/next_tm/builtins.tab",
     tycoon.hoxHome+"/src/next_tm/opcodes.tab")
-newTL := TL2TL.new(root,pool,vmInterface);
+newTL := TL2TL.new(root,pool,vmInterface) ?
 
-(* Hack: pretend that AbstractClass is already known *)
-newTL.typeManager.newClassSignature("AbstractClass");
+;; Hack: pretend that AbstractClass is already known
+newTL.typeManager.newClassSignature("AbstractClass") ?
 
 f ::= File.openRead(tycoon.hoxHome+"/src/next_tm/classids.tyc")
 script ::= f.readString(f.size.asInt)
 f.close
-newTL.topLevel.string(script+";");
+newTL.topLevel.string(script+";") ?
 
-newTL.topLevel.file("SystemTracer/BootStrap.tyc");
-newTL.loader.unregisterClass("Class");
-newTL.loader.unregisterClass("AbstractClass");
-newTL.loader.unregisterClass("MetaClass");
+newTL.topLevel.file("SystemTracer/BootStrap.tyc") ?
+newTL.loader.unregisterClass("Class") ?
+newTL.loader.unregisterClass("AbstractClass") ?
+newTL.loader.unregisterClass("MetaClass") ?
 
-Date.now;
+Date.now ?
 
-(* ------------------------------------------------------------ *)
-(* newTL is functional now.
-   Here come the actual classes needed for bootstrap:
- *)
+;; ------------------------------------------------------------
+;; newTL is functional now.
+;; Here come the actual classes needed for bootstrap:
 
-newTL.loader.registerDirectory("Standard");
-newTL.loader.registerDirectory("Standard/Containers");
-newTL.loader.registerFile("Util/Util.tc");
-newTL.loader.registerFile("Util/StandardDateParser.tc");
-newTL.loader.registerFile("Util/MD5.tc");
-newTL.loader.registerFile("Util/MD5Class.tc");
-newTL.loader.registerDirectory("Util/Graphs");
-newTL.loader.registerDirectory("Util/Graphs/Simple");
-(*newTL.loader.update;*)
-newTL.loader.registerDirectory("Compile");
-newTL.loader.registerDirectory("Compile/Scan");
-newTL.loader.registerDirectory("Compile/Scan/Eager");
-newTL.loader.registerDirectory("Compile/Parse");
-newTL.loader.registerDirectory("Compile/Parse/Compact");
-(*newTL.loader.update;*)
-newTL.loader.registerDirectory("Compile/TL2");
-newTL.loader.registerDirectory("Compile/TL2/New");
-newTL.loader.registerDirectory("Compile/TL2/BackEnd");
-newTL.loader.unregisterClass("TL2Root");
-newTL.loader.unregisterClass("TL2Class");
-newTL.loader.unregisterClass("TL2MetaClass");
-newTL.loader.registerClassFile("Class", "Compile/TL2/TL2Class.tc");
-newTL.loader.registerClassFile("MetaClass", "Compile/TL2/TL2MetaClass.tc");
-newTL.loader.registerClassFile("Root", "Compile/TL2/TL2Root.tc");
+newTL.loader.registerDirectory("Standard") ?
+newTL.loader.registerDirectory("Standard/Containers") ?
+newTL.loader.registerFile("Util/Util.tc") ?
+newTL.loader.registerFile("Util/StandardDateParser.tc") ?
+newTL.loader.registerFile("Util/MD5.tc") ?
+newTL.loader.registerFile("Util/MD5Class.tc") ?
+newTL.loader.registerDirectory("Util/Graphs") ?
+newTL.loader.registerDirectory("Util/Graphs/Simple") ?
+newTL.loader.registerDirectory("Compile") ?
+newTL.loader.registerDirectory("Compile/Scan") ?
+newTL.loader.registerDirectory("Compile/Scan/Eager") ?
+newTL.loader.registerDirectory("Compile/Parse") ?
+newTL.loader.registerDirectory("Compile/Parse/Compact") ?
+newTL.loader.registerDirectory("Compile/TL2") ?
+newTL.loader.registerDirectory("Compile/TL2/New") ?
+newTL.loader.registerDirectory("Compile/TL2/BackEnd") ?
+newTL.loader.unregisterClass("TL2Root") ?
+newTL.loader.unregisterClass("TL2Class") ?
+newTL.loader.unregisterClass("TL2MetaClass") ?
+newTL.loader.registerClassFile("Class", "Compile/TL2/TL2Class.tc") ?
+newTL.loader.registerClassFile("MetaClass", "Compile/TL2/TL2MetaClass.tc") ?
+newTL.loader.registerClassFile("Root", "Compile/TL2/TL2Root.tc") ?
 
-newTL.loader.update;
+newTL.loader.update ?
 
-Date.now;
+Date.now ?
 
-newTL.topLevel.string("define tycoon :Tycoon");
+newTL.topLevel.string("define tycoon :Tycoon") ?
 
-(* manually run the compiler on the startup code
-   and pass the root,pool and vmInterface objects in *)
+;; manually run the compiler on the startup code
+;; and pass the root,pool and vmInterface objects in
 path ::= tycoon.hoxHome+"/src/TL2/Compile/TL2/startup.tyc"
 errorLog ::= ErrorLog.new
 f ::= File.openRead(path)
@@ -103,43 +86,42 @@ funExpr ::=
         TL2LiteralValue.new(nil, newTL.pool),
         TL2LiteralValue.new(nil, newTL.vmInterface))))
 newTL.compiler.simpleEval(nil, newTL.classManager.get("Nil"), funExpr, errorLog)
-(* as a side effect, funExpr is compiled. *)
-newTL.root.thread := _typeCast(funExpr);
+;; as a side effect, funExpr is compiled.
+newTL.root.thread := _typeCast(funExpr) ?
 
 if( tycoon.ansiC.getenv("TYCOON_FINALIZE").isNotNil then: {
   newTL.classManager.finalize
-});
+}) ?
 
-newTL.root.symbolTable := tycoon.tl.root.symbolTable.as(Set)  true;
-(* Tracer.new.collectSymbols(newTL.root); *)
+newTL.root.symbolTable := tycoon.tl.root.symbolTable.as(Set)  true ?
+;; Tracer.new.collectSymbols(newTL.root) ?
 
-Date.now.print;
+Date.now.print ?
 newTL.root.classes.do(fun(c:TL2Class) {
   c.classManager := nil
-});
-newTL.pool.observers.remove(newTL.classManager);
-newTL.pool.observers.remove(newTL.typeChecker);
-Tracer.new.traceToFile(newTL.root, "dump");
+}) ?
+newTL.pool.observers.remove(newTL.classManager) ?
+newTL.pool.observers.remove(newTL.typeChecker) ?
+Tracer.new.traceToFile(newTL.root, "dump") ?
 newTL.root.classes.do(fun(c:TL2Class) {
   c.classManager := newTL.classManager
-});
-newTL.pool.observers.add(newTL.classManager);
-newTL.pool.observers.add(newTL.typeChecker);
-Date.now.print;
-(*DO exit;*)
+}) ?
+newTL.pool.observers.add(newTL.classManager) ?
+newTL.pool.observers.add(newTL.typeChecker) ?
+Date.now.print ?
+;; DO exit ?
+
+??
 
 ;;
 ;; end of automated script
 ;;
 
-(*;
-define t1 :Thread;
-t1 := Thread.new({  Tracer.new.traceToFile(newTL.root, "dump")  });
-t1.join;
-*)
-(*
+define t1 :Thread ?
+t1 := Thread.new({  Tracer.new.traceToFile(newTL.root, "dump")  }) ?
+t1.join ?
+
 Timer.new(tycoon.cpuClock).time({
   try({ Tracer.new.traceToFile(newTL.root, "dump") }
   else: fun(e:Exception){ e })
-});
-*)
+}) ?

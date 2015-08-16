@@ -1,53 +1,44 @@
-(*
-DO load "WWW/Stml/Stml2.tyc";
-*)
+;; DO load "WWW/Stml/Stml2.tyc" ?
 
-tycoon.tl.loader.registerDirectory("Net");
-tycoon.tl.loader.registerDirectory("Util");
-tycoon.tl.loader.registerDirectory("Sgml");
-tycoon.tl.loader.registerDirectory("WWW");
-tycoon.tl.loader.registerDirectory("WWW/Html");
-tycoon.tl.loader.registerDirectory("WWW/Mime");
-tycoon.tl.loader.registerDirectory("WWW/Mime/Encoding");
-tycoon.tl.loader.registerDirectory("WWW/Mime/Headers");
+tycoon.tl.loader.registerDirectory("Net") ?
+tycoon.tl.loader.registerDirectory("Util") ?
+tycoon.tl.loader.registerDirectory("Sgml") ?
+tycoon.tl.loader.registerDirectory("WWW") ?
+tycoon.tl.loader.registerDirectory("WWW/Html") ?
+tycoon.tl.loader.registerDirectory("WWW/Mime") ?
+tycoon.tl.loader.registerDirectory("WWW/Mime/Encoding") ?
+tycoon.tl.loader.registerDirectory("WWW/Mime/Headers") ?
 
-tycoon.tl.loader.registerDirectory("WWW/Http");
-tycoon.tl.loader.registerDirectory("WWW/Http/Headers");
-tycoon.tl.loader.registerDirectory("WWW/Httpd/HttpResources");
-tycoon.tl.loader.registerDirectory("WWW/Httpd");
-  (*##hack, Hubertus hat bugfix!*)
-  (* ### warning: may crash your tvm *)
-  (* Pool.instance._poolCells._grow;
-     Pool.instance._poolMethods._grow;  *)
-tycoon.tl.loader.registerDirectory("WWW/Stml");
+tycoon.tl.loader.registerDirectory("WWW/Http") ?
+tycoon.tl.loader.registerDirectory("WWW/Http/Headers") ?
+tycoon.tl.loader.registerDirectory("WWW/Httpd/HttpResources") ?
+tycoon.tl.loader.registerDirectory("WWW/Httpd") ?
+tycoon.tl.loader.registerDirectory("WWW/Stml") ?
 
-tycoon.tl.loader.update;
+tycoon.tl.loader.update ?
 
-DO load "Util/Init.tyc";
-DO load "Sgml/Init.tyc";
-DO load "WWW/Mime/Init.tyc";
-DO load "WWW/Http/Init.tyc";
-DO load "WWW/Httpd/HttpResources/Init.tyc";
-DO load "WWW/Stml/Init.tyc";
+DO load "Util/Init.tyc" ?
+DO load "Sgml/Init.tyc" ?
+DO load "WWW/Mime/Init.tyc" ?
+DO load "WWW/Http/Init.tyc" ?
+DO load "WWW/Httpd/HttpResources/Init.tyc" ?
+DO load "WWW/Stml/Init.tyc" ?
 
-;;
-;; end of automatic script
-;;
+??  ;; end of automatic script
 
-(* In a new workspace, create your own copy of
-      tyhttpd/tyhttpd-launcher/conf/tyhttpd.conf
-   from the template, and
-      mkdir tyhttpd/tyhttpd-launcher/log
-*)
+;; In a new workspace, create your own copy of
+;;    tyhttpd/tyhttpd-launcher/conf/tyhttpd.conf
+;; from the template, and
+;;    mkdir tyhttpd/tyhttpd-launcher/log
 
-(* Create Web Server Object and configure: *)
-define tyhttpd :Httpd;
-tyhttpd := Httpd.new;
-tyhttpd.home := tycoon.hoxHome + "/tyhttpd/tyhttpd-launcher";
-tyhttpd.configure;
+;; Create Web Server Object and configure:
+define tyhttpd :Httpd ?
+tyhttpd := Httpd.new ?
+tyhttpd.home := tycoon.hoxHome + "/tyhttpd/tyhttpd-launcher" ?
+tyhttpd.configure ?
 
-define stmlApplication :SimpleStmlApplication;
-stmlApplication := SimpleStmlApplication.new;
+define stmlApplication :SimpleStmlApplication ?
+stmlApplication := SimpleStmlApplication.new ?
 resourceFactory = HttpFunResourceFactory.new
 resourceFactory.generators["jump"] :=
   fun(file:File){
@@ -60,47 +51,47 @@ resourceFactory.generators["stml"] :=
 dir ::= tyhttpd.root.lookupDirectory(EmptyList.new)
 dir.resourceFactory := resourceFactory
 dir["stop"] := HttpShutdownResource.new(tyhttpd)
-tyhttpd.serve;
+tyhttpd.serve ?
 
-(*some tests;
+;; -------------------------------------------------
+;; some tests
 
-define tb :StmlTreeBuilder;
-define sgml_dir :String;
-define sgmlsParser :SgmlsParser;
+define tb :StmlTreeBuilder ?
+define sgml_dir :String ?
+define sgmlsParser :SgmlsParser ?
 
-tb := StmlTreeBuilder.new;
-sgml_dir := tycoon.ansiC.getenv("SGML_DIR");
-sgmlsParser := SgmlsParser.new;
-sgmlsParser.additionalFiles := Array.with2(sgml_dir + "/html.decl", sgml_dir + "/doctype-stml");
-sgmlsParser.verbose := true;
-tb := StmlTreeBuilder.new, sgmlsParser.parse("../TWL/WWW/Stml/examples/tbo.tbo", tb);
+tb := StmlTreeBuilder.new ?
+sgml_dir := tycoon.ansiC.getenv("SGML_DIR") ?
+sgmlsParser := SgmlsParser.new ?
+sgmlsParser.additionalFiles := Array.with2(sgml_dir + "/html.decl", sgml_dir + "/doctype-stml") ?
+sgmlsParser.verbose := true ?
+tb := StmlTreeBuilder.new, sgmlsParser.parse("../TWL/WWW/Stml/examples/tbo.tbo", tb) ?
 
-tb.tree;
-tb.tree.isStml;
-tb.tree.asStml.computeAllTypes;
-tb.tree.asStml.compileAll, true;
-tb.tree.asStml.compileAll;
+tb.tree ?
+tb.tree.isStml ?
+tb.tree.asStml.computeAllTypes ?
+tb.tree.asStml.compileAll, true ?
+tb.tree.asStml.compileAll ?
 
-tb := StmlTreeBuilder.new, sgmlsParser.parse("../TWL/WWW/Stml/examples/numbers.tbo", tb);
-tb.tree.computeAllTypes;
-tb.tree.compileAll;
+tb := StmlTreeBuilder.new, sgmlsParser.parse("../TWL/WWW/Stml/examples/numbers.tbo", tb) ?
+tb.tree.computeAllTypes ?
+tb.tree.compileAll ?
 
-DO load "../TWL/WWW/Stml/SimpleStmlApplication.tc";
+DO load "../TWL/WWW/Stml/SimpleStmlApplication.tc" ?
 
-define sa :SimpleStmlApplication;
-sa := SimpleStmlApplication.new;
-define spro :Fun0(StmlProcessor(SimpleStmlApplication));
+define sa :SimpleStmlApplication ?
+sa := SimpleStmlApplication.new ?
+define spro :Fun0(StmlProcessor(SimpleStmlApplication)) ?
 t ::= Timer.new(tycoon.cpuClock)
 t.start
 spro := sa.compiler.compile(tycoon.hoxHome+"/src/TL2/WWW/Stml/examples/stml.stml", nil, ErrorLog.new)
 t.stop
-t;
-spro.emitFun;
-spro := sa.compiler.compile(tycoon.hoxHome+"/src/TL2/WWW/Stml/examples/numbers.stml", nil, ErrorLog.new);
+t ?
+spro.emitFun ?
+spro := sa.compiler.compile(tycoon.hoxHome+"/src/TL2/WWW/Stml/examples/numbers.stml", nil, ErrorLog.new) ?
 s ::= spro[]
 s.out := tycoon.stdout
-s.process;
-*)
+s.process ?
 
 
 

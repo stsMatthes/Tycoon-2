@@ -102,7 +102,7 @@ Int tosSecurity_uidToString(tosSecurity_SID *uid,
                             char            *resUid,
                             Int             *sizeOfRes)
 {
-  Int res = 0;
+  Int res;
   
 #ifdef rt_LIB_Win32_i386
   res = __SIDToString((PSID)uid, resUid, sizeOfRes);
@@ -128,8 +128,10 @@ Int tosSecurity_uidToString(tosSecurity_SID *uid,
         res        = -1;
         errno      = ERANGE;
      }
-     else
+     else {
+        res = 0;
         strcpy(resUid, pwd.pw_name);
+     }
   }
   else res = -1;
 #endif
@@ -152,7 +154,7 @@ Int tosSecurity_gidToString(tosSecurity_SID *gid,
                             char            *resGid,
                             Int             *sizeOfRes)
 {
-  Int res = 0;
+  Int res;
 
 #ifdef rt_LIB_Win32_i386
   res = __SIDToString((PSID)gid, resGid, sizeOfRes);
@@ -178,8 +180,10 @@ Int tosSecurity_gidToString(tosSecurity_SID *gid,
         res        = -1;
         errno      = ERANGE;
      }
-     else
+     else {
+        res = 0;
         strcpy(resGid, grp.gr_name);
+     }
   }
   else res = -1;
 #endif
@@ -202,7 +206,7 @@ Int tosSecurity_uidFromString(char            *uname,
                               tosSecurity_SID *resUid,
                               Int             *sizeOfSID)
 {
-  int res = 0;
+  int res;
 
 #ifdef rt_LIB_Win32_i386
   res = __stringToSID(uname, &((PSID)resUid), sizeOfSID);
@@ -218,8 +222,10 @@ Int tosSecurity_uidFromString(char            *uname,
         res        = -1;
         errno      = ERANGE;
      }
-     else
+     else {
+        res = 0;
         *resUid = (tosSecurity_UID)(pwd->pw_uid);
+     }
   }
 #endif
 
@@ -246,7 +252,7 @@ Int tosSecurity_gidFromString(char            *gname,
                               tosSecurity_SID *resGid,
                               Int             *sizeOfSID)
 {
-  Int res = 0;
+  Int res;
 
 #ifdef rt_LIB_Win32_i386
   res = __stringToSID(gname, &((PSID)resGid), sizeOfSID);
@@ -262,8 +268,10 @@ Int tosSecurity_gidFromString(char            *gname,
         res        = -1;
         errno      = ERANGE;
      }
-     else
+     else {
+        res = 0;
         *resGid = (tosSecurity_GID)(grp->gr_gid);
+     }
   }
 #endif
 
@@ -313,7 +321,7 @@ Int tosSecurity_getCurrentUID(tosSecurity_SID *resUid,
        errno = EWIN32API;
     }
     else {
-       if (*sizeOfSID != GetLengthSid(ptu->User.Sid)) {
+       if (*sizeOfSID != (Int) GetLengthSid(ptu->User.Sid)) {
           *sizeOfSID = GetLengthSid(ptu->User.Sid);
           res        = -1;
           errno      = ERANGE;
@@ -377,7 +385,7 @@ Int tosSecurity_getCurrentGID(tosSecurity_SID *resGid,
        errno = EWIN32API;
     }
     else {
-       if (*sizeOfSID != GetLengthSid(ptu->PrimaryGroup)) {
+       if (*sizeOfSID != (Int) GetLengthSid(ptu->PrimaryGroup)) {
           *sizeOfSID = GetLengthSid(ptu->PrimaryGroup);
           res        = -1;
           errno      = ERANGE;
@@ -421,7 +429,7 @@ Int tosSecurity_getCurrentGID(tosSecurity_SID *resGid,
 
 Int tosSecurity_setCurrentUID(tosSecurity_SID *uid)
 {
-  Int res = 0;
+  Int res;
 
 #ifdef rt_LIB_WinNT_i386
   tosLog_error("tosSecurity",
@@ -450,7 +458,7 @@ Int tosSecurity_setCurrentUID(tosSecurity_SID *uid)
 
 Int tosSecurity_setCurrentGID(tosSecurity_SID *gid)
 {
-  Int res = 0;
+  Int res;
 
 #ifdef rt_LIB_WinNT_i386
   tosLog_error("tosSecurity",
@@ -483,7 +491,7 @@ Int tosSecurity_chown(const char      *path,
                       tosSecurity_SID *owner,
                       tosSecurity_SID *group)
 {
-  Int res = 0;
+  Int res;
   char systemPath[tosFilename_MAXLEN];
 
   tosFilename_normalize(path, systemPath, tosFilename_MAXLEN);
@@ -542,7 +550,7 @@ void tosSecurity_init(void)
   tosSecurity_gidToString(id, group, &size);
   free(id);
 
-  fprintf(stderr, "Current user and group: %s.%s\n", user, group);
+  tosLog_debug("tosSecurity", "init", "Current user and group: %s.%s\n", user, group);
 
   /* If we got security errors (Win95) ... */
   tosError_reset();

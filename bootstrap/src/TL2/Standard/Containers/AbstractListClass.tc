@@ -107,6 +107,19 @@ fromSequence(sequence :Sequence(E)) :Instance
   fromSubSequence(sequence, 0, sequence.size)
 }
 
+fromSequenceWithMap(F <:Object, sequence :Sequence(F), map :Fun(:F):E) :Instance
+  (* result will contain exactly the elements contained in sequence
+     mapped through the given function at the time of creation, 
+     in the same order.
+     result.keys.all(fun(i:Int){ result[i]=map[sequence[i]] }) *)
+{
+  result ::= new
+  sequence.reverseDo(fun(f:F){
+    result := cons(map[f], result)
+  })
+  result
+}
+
 fromSubSequence(sequence :Sequence(E), start :Int, n :Int) :Instance
   (* *)
 {

@@ -55,7 +55,7 @@ TL2CompiledFun	Struct	ooooooiiioiooioooiiooi
 Function	Array	
 TL2DeferredMethod	Struct	ooooooiiioi
 TL2UnimplementedMethod	Struct	ooooooiiioi
-TL2ReorderMethod	Struct	ooooooiiioiioiiCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+TL2ReorderMethod	Struct	ooooooiiioiioioCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 TL2Slot	Struct	ooooiio
 TypeError	Array	
 DoesNotUnderstand	Array	

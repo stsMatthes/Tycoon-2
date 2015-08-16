@@ -37,15 +37,6 @@ extern "C" {
 #endif
 
 
-/*== OS DEFINES ===========================================================*/
-
-#ifdef rt_LIB_Win32_i386
-  #define tosDll_STD_LIBC "msvcrt"
-#else
-  #define tosDll_STD_LIBC "libc"
-#endif
-
-
 /*== Open / Close =========================================================*/
 
 extern void *tosDll_open(char *pszPath);

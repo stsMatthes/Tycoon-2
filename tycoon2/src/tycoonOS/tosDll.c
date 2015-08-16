@@ -38,7 +38,6 @@
 
 /*== OS DEFINES ===========================================================*/
 
-
 #if   defined(rt_LIB_Win32_i386)
 
     #include <windows.h>
@@ -52,6 +51,12 @@
     #define tosDll_ERROR(fun)          errno = EWIN32API; \
                                        tosError_log(tosError_getCode(), \
                                                     tosError_getCodeDetail());
+#if defined(_MSC_VER)
+    #define tosDll_STD_LIBC            "msvcrt"
+#endif
+#if defined(__BORLANDC__)
+    #define tosDll_STD_LIBC            "cc3250mt"
+#endif
 
 #elif defined(rt_LIB_HPUX_PARISC)
 
@@ -62,9 +67,11 @@
     #define tosDll_NIL                 NULL
     #define tosDll_OPEN(dll)           shl_load(dll, BIND_DEFERRED, 0)
     #define tosDll_CLOSE(dll)          shl_unload(dll)
-    #define tosDll_LOOKUP(s, dll, id)  if(shl_findsym(&dll, id, TYPE_PROCEDURE, &s)) \
+    #define tosDll_LOOKUP(s, dll, id)  s = NULL; \
+                                       if(shl_findsym(&dll, id, TYPE_PROCEDURE, &s)) \
                                          s = NULL;
     #define tosDll_ERROR(fun)
+    #define tosDll_STD_LIBC            "libc"
 
 #else
 
@@ -78,6 +85,7 @@
     #define tosDll_LOOKUP(s, dll, id)  s = dlsym(dll, id);
     #define tosDll_ERROR(fun)          char *msg = dlerror(); \
                                        if (msg) tosLog_error("tosDll", fun, msg)
+    #define tosDll_STD_LIBC            "libc"
 
 #endif
 
@@ -99,10 +107,6 @@ static void tosDll_convName(const char *pszFromPath, char *pszToPath, int n)
   if (strcmp(dllName, "libc") == 0) {
      tosFilename_setName(pszToPath, tosDll_STD_LIBC);
   }
-
-  /* Until next bootstrap ... */
-  if (strcmp(dllName, "librts") == 0)
-     tosFilename_setName(pszToPath, "libtos");
 }
 
 
@@ -152,13 +156,28 @@ Int tosDll_close(void *hDLL)
 void *tosDll_lookup(void *hDLL, char *pszSym)
 {
    tosDll_HANDLE h = hDLL;
-   void * sym = NULL;
+   void * sym;
 
    if (h == tosDll_NIL) {
       tosLog_error("tosDll", "lookup", "Library for symbol %s not open", pszSym);
       errno = EINVAL;
       return NULL;
    }
+
+#if defined(__BORLANDC__)
+   {
+     char *pszUScSym;
+     pszUScSym = malloc(strlen(pszSym)+2);
+     if(pszUScSym == NULL) {
+       tosLog_error("tosDll", "lookup", "cannot allocate %d bytes for _%s",
+		    strlen(pszSym)+2, pszSym);
+       return NULL;
+     }
+     pszUScSym[0] = '_';
+     strcpy(pszUScSym+1, pszSym);
+     pszSym = pszUScSym;
+   }
+#endif
 
    tosDll_LOOKUP(sym, h, pszSym);
 
@@ -173,6 +192,10 @@ void *tosDll_lookup(void *hDLL, char *pszSym)
       tosDll_ERROR("lookup");
       tosLog_error("tosDll", "lookup", "%s: lookup failed", pszSym);
    }
+
+#if defined(__BORLANDC__)
+   free(pszSym);
+#endif
 
    return sym;
 }

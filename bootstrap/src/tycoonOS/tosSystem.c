@@ -38,6 +38,7 @@
 #include "tosSystem.h"
 #include "tos.h"
 #include "tosError.h"
+#include "tosLog.h"
 
 
 /*== Multiple architecture support ========================================*/
@@ -95,25 +96,25 @@ void tosSystem_init()
 #if   defined(rt_LIB_Solaris2_SPARC)
   _hostID = tosSystem_ID_SOLARIS2;
   #ifdef tos_DEBUG
-     fprintf(stderr, "Starting on Host %s\n", _systemInfo[_hostID].pszName);
+     tosLog_debug("tosSystem", "init", "Starting on Host %s\n", _systemInfo[_hostID].pszName);
   #endif
  
 #elif defined(rt_LIB_Linux_i386)
   _hostID = tosSystem_ID_LINUX;
   #ifdef tos_DEBUG
-     fprintf(stderr, "Starting on Host %s\n", _systemInfo[_hostID].pszName);
+     tosLog_debug("tosSystem", "init", "Starting on Host %s\n", _systemInfo[_hostID].pszName);
   #endif
 
 #elif defined(rt_LIB_HPUX_PARISC)
   _hostID = tosSystem_ID_HPUX;
   #ifdef tos_DEBUG
-     fprintf(stderr, "Starting on Host %s\n", _systemInfo[_hostID].pszName);
+     tosLog_debug("tosSystem", "init", "Starting on Host %s\n", _systemInfo[_hostID].pszName);
   #endif
 
 #elif defined(rt_LIB_Nextstep_i386)
   _hostID = tosSystem_ID_NEXTSTEP;
   #ifdef tos_DEBUG
-     fprintf(stderr, "Starting on Host %s\n", _systemInfo[_hostID].pszName);
+     tosLog_debug("tosSystem", "init", "Starting on Host %s\n", _systemInfo[_hostID].pszName);
   #endif
 
 #elif defined(rt_LIB_Win32_i386)
@@ -131,7 +132,7 @@ void tosSystem_init()
    if (osVersion.dwPlatformId == VER_PLATFORM_WIN32_NT) {
       _hostID = tosSystem_ID_WINNT;
       #ifdef tos_DEBUG
-         fprintf(stderr,
+         tosLog_debug("tosSystem", "init",
                  "Starting on Host %s, V%d.%d, Build:  %u, CSD Version:  %s\n",
                  _systemInfo[_hostID].pszName,
                  osVersion.dwMajorVersion,
@@ -148,7 +149,7 @@ void tosSystem_init()
            _hostID = tosSystem_ID_WIN95;
 
         #ifdef tos_DEBUG
-          fprintf(stderr,
+          tosLog_debug("tosSystem", "init",
                  "Starting on Host %s, V%d.%d, Build:  %d.%d.%d\n",
                   _systemInfo[_hostID].pszName,
                   osVersion.dwMajorVersion,

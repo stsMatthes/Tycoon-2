@@ -61,6 +61,15 @@ __deepHollowCopy(mapping: IdDictionary(Object, Object)) :Void
   mapping[self] := __hollowCopy
 }
 
+setImmutable :Void
+  (* set the immutable flag. *)
+{
+  if(!isImmutable then: {
+    ;; arrays usually do not contain components (redefined in AtArray)
+    _setImmutable
+  })
+}
+
 private
 
 }

@@ -23,14 +23,13 @@ super ConcreteClass(NewTL2ScannerState)
 meta MetaClass
 {
 new( reservedWords :KeyedContainer(String, ValueTerminal(SourcePos)),
-     where :String, semicolonIsEoI :Bool,
+     where :String,
      errorLog :ErrorLog) :NewTL2ScannerState
   (* *)
 {
   s ::= _new
   s.reservedWords := reservedWords
   s.where := where
-  s.semicolonIsEoI := semicolonIsEoI
   s.errorLog := errorLog
   s._init
   s

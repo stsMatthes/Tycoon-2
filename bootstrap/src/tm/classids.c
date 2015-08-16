@@ -17,7 +17,7 @@
  * 
  * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
  *
- * $File: //depot/tycoon2/stsmain/bootstrap/src/tm/classids.c $ $Revision: #3 $ $Date: 2003/10/07 $  Marc Weikard
+ * $File: //depot/tycoon2/stsmain/bootstrap/src/tm/classids.c $ $Revision: #4 $ $Date: 2003/10/29 $  Marc Weikard
  */
 #include <stdio.h>
 #include <string.h>
@@ -55,7 +55,7 @@ int main(int argc, char *argv[])
     const char *packageName = classids[i].packageName;
     if(strcmp(packageName, "BUILTIN") == 0)
       packageName = "";
-    fprintf(f, "class %s%s meta AbstractClass {};\n", packageName, name);
+    fprintf(f, "class %s%s meta AbstractClass {} ?\n", packageName, name);
   }
   fclose(f);
 

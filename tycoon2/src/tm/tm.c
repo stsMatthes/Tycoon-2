@@ -21,7 +21,7 @@
 /*
   Copyright (c) 1996 Higher-Order GmbH, Hamburg. All rights reserved.
 
-  $File: //depot/tycoon2/stsmain/tycoon2/src/tm/tm.c $ $Revision: #3 $ $Date: 2003/10/01 $ Andreas Gawecki, Marc Weikard
+  $File: //depot/tycoon2/stsmain/tycoon2/src/tm/tm.c $ $Revision: #4 $ $Date: 2003/11/01 $ Andreas Gawecki, Marc Weikard
 
   Tycoon Machine Main
   
@@ -49,7 +49,7 @@ char *  tm_pszProg;
 int tm_main(int argc, char *argv[])
 {
   tsp_ErrorCode wErrorCode;
-  
+
   tm_nArguments = argc;
   tm_pArguments = argv;
   tm_pszProg = argv[0];
@@ -58,15 +58,16 @@ int tm_main(int argc, char *argv[])
   
 #ifdef BOOTSTRAP
   if(argc <= 1) {
-    fprintf(stderr, "Usage: %s store [arguments] || %s -bootstrap dump\n",
+    tosLog_error("tm", "main", "Usage: %s store [arguments] || %s -bootstrap dump\n",
             argv[0], argv[0]);
     exit(-1);
   }
   if(strcmp(argv[1], "-bootstrap") == 0) {
+    tmdebug_init();
     return tsp_createFromFile(argv[2]);
   }
   else {
-    if ((wErrorCode = tsp_open(argv[1]))) {
+    if ((wErrorCode = tsp_open(argv[1])) != 0) {
       tosLog_error("tm", "main", "Cannot open store %s: %s", argv[1], tsp_errorCode(wErrorCode));
       tosError_ABORT();
     }
@@ -84,7 +85,7 @@ int tm_main(int argc, char *argv[])
   }
 #else
   if(argc <= 1) {
-    fprintf(stderr, "Usage: %s store [arguments]\n", argv[0]);
+    tosLog_error("tm", "main", "Usage: %s store [arguments]\n", argv[0]);
     exit(-1);
   }
   if ((wErrorCode = tsp_open(argv[1]))) {

@@ -292,7 +292,7 @@ parseFile(syntax :X_AbstractTL2Syntax,
  
     try({
       parseUnit ::=
-        syntax.scanAndParse(relPath, input, errorLog)  ; bufferCapacity=1024 ? 
+        syntax.scanAndParse(relPath, input, errorLog bufferCapacity: 1024)
       if( parseUnit.isNotNil then: {
 	parseUnit.accept(X_TL2FunParseUnitVisitor.new
 	  .ifClass(fun(pu :X_TL2PUClass) {

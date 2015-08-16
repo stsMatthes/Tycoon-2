@@ -40,15 +40,15 @@ fromChar(ch :Char) :Instance
   (* *)
 { with1(ch) }
 
-fromUpperCase(container :Container(Char)) :Instance
+fromUpperCase(sequence :Sequence(Char)) :Instance
   (* *)
 {
-  fromContainerWithMap(container, fun(c :Char) { c.asUpperCase })
+  fromSequenceWithMap(sequence, fun(c :Char) { c.asUpperCase })
 }
 
-fromLowerCase(container :Container(Char)) :Instance
+fromLowerCase(sequence :Sequence(Char)) :Instance
   (* *)
 {
-  fromContainerWithMap(container, fun(c :Char) { c.asLowerCase })
+  fromSequenceWithMap(sequence, fun(c :Char) { c.asLowerCase })
 }
 }

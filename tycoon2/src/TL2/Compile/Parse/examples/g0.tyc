@@ -1,121 +1,116 @@
-(* construction of an example grammar *)
+;; construction of an example grammar
 
-(*
-  [S ::= E $;]
 
-  E ::= Prefix '(' E ')'
-      | 'v' Tail
-      ;
+;;  [S ::= E $;]
+;;
+;;  E ::= Prefix '(' E ')'
+;;	| 'v' Tail
+;;	;
+;;
+;;  Prefix ::= 'f'
+;;	     |
+;;	     ;
+;;
+;;  Tail ::= '+' E
+;;	   |
+;;	   ;
 
-  Prefix ::= 'f'
-	   |
-	   ;
+define eG :MutableNonterminal(Object) ?
+define prefixG :MutableNonterminal(Object) ?
+define tailG :MutableNonterminal(Object) ?
 
-  Tail ::= '+' E
-         |
-         ;
+eG := MutableNonterminal.new("E") ?
+prefixG := MutableNonterminal.new("Prefix") ?
+tailG := MutableNonterminal.new("Tail") ?
 
-*)
-define eG :MutableNonterminal(Object);
-define prefixG :MutableNonterminal(Object);
-define tailG :MutableNonterminal(Object);
-
-eG := MutableNonterminal.new("E");
-prefixG := MutableNonterminal.new("Prefix");
-tailG := MutableNonterminal.new("Tail");
-
-define t :Dictionary(Char, SimpleTerminal);
-t := Dictionary.new;
-t['('] := SimpleTerminal.new("(");
-t[')'] := SimpleTerminal.new(")");
-t['v'] := SimpleTerminal.new("v");
-t['f'] := SimpleTerminal.new("f");
-t['+'] := SimpleTerminal.new("+");
+define t :Dictionary(Char, SimpleTerminal) ?
+t := Dictionary.new ?
+t['('] := SimpleTerminal.new("(") ?
+t[')'] := SimpleTerminal.new(")") ?
+t['v'] := SimpleTerminal.new("v") ?
+t['f'] := SimpleTerminal.new("f") ?
+t['+'] := SimpleTerminal.new("+") ?
 
 eG.addRule4(
 	prefixG, t['('], eG, t[')'],
-	fun(:Object,:Object,:Object,:Object){nil});
+	fun(:Object,:Object,:Object,:Object){nil}) ?
 eG.addRule2(
 	t['v'], tailG,
-	fun(:Object,:Object){nil});
+	fun(:Object,:Object){nil}) ?
 
 prefixG.addRule1(
 	t['f'],
-	fun(:Object){nil});
+	fun(:Object){nil}) ?
 prefixG.addRule0(
-	{nil});
+	{nil}) ?
 
 tailG.addRule2(
 	t['+'], eG,
-	fun(:Object, :Object){nil});
+	fun(:Object, :Object){nil}) ?
 tailG.addRule0(
-	{nil});
+	{nil}) ?
 
-define g :Grammar(Object);
-g := Grammar.new(eG);
+define g :Grammar(Object) ?
+g := Grammar.new(eG) ?
 
-(* let's have a look *);
-g.startSymbol;
-g.rules;
-g.nonterminals;
-g.terminals;
-eG.rules;
+;; let's have a look
+g.startSymbol ?
+g.rules ?
+g.nonterminals ?
+g.terminals ?
+eG.rules ?
 
-(* ------------------------------------------------------------ *)
+;; ------------------------------------------------------------
 
-(* select "back end" *)
-define strategy :NaiveParserBuilder;
-strategy := NaiveParserBuilder.new;
+;; select "back end"
+define strategy :NaiveParserBuilder ?
+strategy := NaiveParserBuilder.new ?
 
-(* instantiate parser generator *)
-define parserGen :ParserGen(NaiveParser);
-parserGen := ParserGen(:NaiveParser).new(strategy);
+;; instantiate parser generator
+define parserGen :ParserGen(NaiveParser) ?
+parserGen := ParserGen(:NaiveParser).new(strategy) ?
 
-(* generate parser *)
-define p :NaiveParser(Object);
-p := parserGen.generate(g);
+;; generate parser
+define p :NaiveParser(Object) ?
+p := parserGen.generate(g) ?
 
-(* test input *)
+;; test input
 
-define testInput :List(Token(Object));
+define testInput :List(Token(Object)) ?
 
-(* f(v+(v)) *)
+;; f(v+(v))
 testInput := 
     "f(v+(v))"
-        .map(fun(c :Char){t[c].token}).as(List);
+        .map(fun(c :Char){t[c].token}).as(List) ?
 
-define errHandler :Fun(:Token(Object)):Void;
-errHandler := fun(t:Token(Object)) { tycoon.stdout << "Error on "<<t<<"\n" };
+define errHandler :Fun(:Token(Object)):Void ?
+errHandler := fun(t:Token(Object)) { tycoon.stdout << "Error on "<<t<<"\n" } ?
 
 p.logging := true
-p.parse(testInput.reader, errHandler);
+p.parse(testInput.reader, errHandler) ?
 
-(*
-S5			f
-	R2		Prefix
-S3			Prefix (
-S6			Prefix ( v
-S10			Prefix ( v +
-	R3		Prefix ( v + Prefix
-S3			Prefix ( v + Prefix (
-S6			Prefix ( v + Prefix ( v
-	R6		Prefix ( v + Prefix ( v Tail
-	R4		Prefix ( v + Prefix ( E
-S8			Prefix ( v + Prefix ( E )
-	R1		Prefix ( v + E
-	R5		Prefix ( v Tail
-	R4		Prefix ( E
-S8			Prefix ( E )
-	R1		E
-A
-*)
 
-define badInput :List(Token(Object));
+;; S5			f
+;; 	   R2		Prefix
+;; S3			Prefix (
+;; S6			Prefix ( v
+;; S10			Prefix ( v +
+;; 	   R3		Prefix ( v + Prefix
+;; S3			Prefix ( v + Prefix (
+;; S6			Prefix ( v + Prefix ( v
+;; 	   R6		Prefix ( v + Prefix ( v Tail
+;; 	   R4		Prefix ( v + Prefix ( E
+;; S8			Prefix ( v + Prefix ( E )
+;; 	   R1		Prefix ( v + E
+;; 	   R5		Prefix ( v Tail
+;; 	   R4		Prefix ( E
+;; S8			Prefix ( E )
+;; 	   R1		E
+;; A
+
+define badInput :List(Token(Object)) ?
 badInput := 
     "f(v+)v))"
-      .map(fun(c :Char){t[c].token}).as(List);
+      .map(fun(c :Char){t[c].token}).as(List) ?
 
-(*;
- p.parse(badInput.reader, errHandler);
- *)
-(* Error on <")"> *)
+;; p.parse(badInput.reader, errHandler) ?   ;; Error on <")">

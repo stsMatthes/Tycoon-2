@@ -1,55 +1,55 @@
-tycoon.tl.topLevel.typeCheck := false;
-(* All defines can be :Void since we are in Smalltalk-mode now :-*)
+tycoon.tl.topLevel.typeCheck := false ?
+;; All defines can be :Void since we are in Smalltalk-mode now :-)
 
-define newTypeIde :Void;
-newTypeIde := fun(name :String, type :X_TL2Type) { X_TL2TypeIde.new(nil, name, type) };
+define newTypeIde :Void ?
+newTypeIde := fun(name :String, type :X_TL2Type) { X_TL2TypeIde.new(nil, name, type) } ?
 
-define newSubTypeIde :Void;
-newSubTypeIde := fun(name :String, type :X_TL2Type) { X_TL2SubTypeIde.new(nil, name, type) };
+define newSubTypeIde :Void ?
+newSubTypeIde := fun(name :String, type :X_TL2Type) { X_TL2SubTypeIde.new(nil, name, type) } ?
 
-define newIdeType :Void;
-newIdeType := fun(ide :X_TL2TypeIde) { X_TL2IdeType.new(ide) };
+define newIdeType :Void ?
+newIdeType := fun(ide :X_TL2TypeIde) { X_TL2IdeType.new(ide) } ?
 
-define printTS :Void;
-printTS := fun(t :X_TL2Type, s :X_TL2Subst) { tycoon.stdout << t << s << "\n" };
+define printTS :Void ?
+printTS := fun(t :X_TL2Type, s :X_TL2Subst) { tycoon.stdout << t << s << "\n" } ?
 
-define N :Void;
-N := X_TL2NilType.instance;
+define N :Void ?
+N := X_TL2NilType.instance ?
 
-define es :Void;
-es := X_TL2EmptySubst.instance;
+define es :Void ?
+es := X_TL2EmptySubst.instance ?
 
-define V :Void;
-V := X_TL2VoidType.instance;
+define V :Void ?
+V := X_TL2VoidType.instance ?
 
-(* T <: Void *)
-define T_ide :Void; 
-define T :Void;
-T_ide := newSubTypeIde["T", V];
-T := newIdeType[T_ide];
+;; T <: Void 
+define T_ide :Void ?
+define T :Void ?
+T_ide := newSubTypeIde["T", V] ?
+T := newIdeType[T_ide] ?
 
-(* The identity TypeOp: \-/ X<:Void . X *)
-define IO :Void;
-IO := ( X ::= newSubTypeIde["X", V]  X_TL2OperType.new(List.with1(X), newIdeType[X]) );
+;; The identity TypeOp: \-/ X<:Void . X 
+define IO :Void ?
+IO := ( X ::= newSubTypeIde["X", V]  X_TL2OperType.new(List.with1(X), newIdeType[X]) ) ?
 
-IO.apply(List.with1(T), es, es, false, printTS);
+IO.apply(List.with1(T), es, es, false, printTS) ?
 
-(* something nice with F-Bound *)
-define NO :Void;
+;; something nice with F-Bound 
+define NO :Void ?
 NO := (
-  (* T <: IO(T) *)
+  ;; T <: IO(T) 
   T ::= newSubTypeIde["T", N]
   T.type := X_TL2ApplyType.new(IO, List.with1(newIdeType[T]))
 
-  (* U <: T *)
+  ;; U <: T 
   U ::= newSubTypeIde["U", newIdeType[T]]
 
   X_TL2OperType.new(List.with2(T, U), X_TL2ApplyType.new(IO, List.with1(newIdeType[U])))
-);
+) ?
 
 
 
-define typify :Fun():Void;
+define typify :Fun():Void ?
 giveType ::= fun(c :Class) {
   c.typeIde.type := 
   if( c.domain.isEmpty then: {
@@ -61,7 +61,7 @@ giveType ::= fun(c :Class) {
 typify := {
     tycoon.tl.classManager.classTable.do(fun(c :Class) { giveType[c] })
   }
-;
+ ?
 
 
 
@@ -69,7 +69,7 @@ t ::= X_TL2ApplyType.new(Dictionary.typeIde.type, List.with2(String.typeIde.type
 s ::= Symbol.new("includes")
 for(1 to: 1000 do: fun(:Int) { 
   t.lookup(s, es, false, fun(:X_TL2Type, :X_TL2Subst) {})
-});
+}) ?
 
 X_TL2ApplyType.new(Dictionary.typeIde.type,
 	      List.with2(String.typeIde.type, Int.typeIde.type)).
@@ -77,47 +77,47 @@ X_TL2ApplyType.new(Dictionary.typeIde.type,
 		   s ::= Symbol.new("includes")
 		   t.lookup(s, subst, false, printTS)
 		})
-nil;
+nil ?
 		
 X_TL2ApplyType.new(List.typeIde.type,
 	      List.with1(String.typeIde.type)).
 	        lookup(Symbol.new("tail"), es, false, printTS
 
-		(* fun(:X_TL2Type, s :X_TL2Subst) {
+		;; fun(:X_TL2Type, s :X_TL2Subst) {
 
-	           X_TL2IdeType.new(AbstractList.typeIde.type.domain[0]).expose(s, true, printTS)
-		} *)
-);
+	        ;;   X_TL2IdeType.new(AbstractList.typeIde.type.domain[0]).expose(s, true, printTS)
+		;; }
+) ?
 
 
 		
-class A(PA <: Object) metaclass AbstractClass public methods a :A(Int) deferred;
+class A(PA <: Object) metaclass AbstractClass public methods a :A(Int) deferred ?
 
-class M super A(Char) metaclass AbstractClass;
-class N super M metaclass AbstractClass;
+class M super A(Char) metaclass AbstractClass ?
+class N super M metaclass AbstractClass ?
 
-typify[];
+typify[] ?
 
-X_TL2IdeType.new(N.typeIde).checkSubType(X_TL2IdeType.new(M.typeIde), es, es);
+X_TL2IdeType.new(N.typeIde).checkSubType(X_TL2IdeType.new(M.typeIde), es, es) ?
 
 
-X_TL2IdeType.new(B.typeIde).checkSubType(X_TL2IdeType.new(A.typeIde), es, es);
+X_TL2IdeType.new(B.typeIde).checkSubType(X_TL2IdeType.new(A.typeIde), es, es) ?
 
-class D metaclass AbstractClass public methods d :String deferred;
-class E metaclass AbstractClass public methods d :Void deferred;
+class D metaclass AbstractClass public methods d :String deferred ?
+class E metaclass AbstractClass public methods d :Void deferred ?
 
-X_TL2IdeType.new(D.typeIde).checkSubType(X_TL2IdeType.new(E.typeIde), es, es);
+X_TL2IdeType.new(D.typeIde).checkSubType(X_TL2IdeType.new(E.typeIde), es, es) ?
 
-class F metaclass AbstractClass public methods m :Self deferred;
-class G metaclass AbstractClass public methods m :Self deferred   g :G deferred;
+class F metaclass AbstractClass public methods m :Self deferred ?
+class G metaclass AbstractClass public methods m :Self deferred   g :G deferred ?
 
-typify[];
+typify[] ?
 
-X_TL2IdeType.new(G.typeIde).checkSubType(X_TL2IdeType.new(F.typeIde), es, es);
+X_TL2IdeType.new(G.typeIde).checkSubType(X_TL2IdeType.new(F.typeIde), es, es) ?
 
-X_TL2IdeType.new(Symbol.typeIde).checkSubType(X_TL2IdeType.new(String.typeIde), es, es);
+X_TL2IdeType.new(Symbol.typeIde).checkSubType(X_TL2IdeType.new(String.typeIde), es, es) ?
 
-(* B(String) <: A(String) *)
+;; B(String) <: A(String)
 
 X_TL2ApplyType.new(X_TL2IdeType.new(List.typeIde),
 	      List.with1(X_TL2IdeType.new(Symbol.typeIde))).
@@ -125,7 +125,7 @@ checkSubType(
   X_TL2ApplyType.new(X_TL2IdeType.new(List.typeIde),
 	        List.with1(X_TL2IdeType.new(String.typeIde))),
   es,
-  es);
+  es) ?
   
 X_TL2ApplyType.new(X_TL2IdeType.new(List.typeIde),
 	      List.with1(X_TL2IdeType.new(String.typeIde))).
@@ -133,7 +133,7 @@ checkSubType(
   X_TL2ApplyType.new(X_TL2IdeType.new(List.typeIde),
 	        List.with1(X_TL2IdeType.new(Symbol.typeIde))),
   es,
-  es);
+  es) ?
   
 	      
 
@@ -141,23 +141,23 @@ checkSubType(
 		  printTS[t, s],
 		  X_TL2IdeType.new(Object.selfTypeSig).expose(s, false, printTS)
 		}
-);
+) ?
 
 theSelf ::= X_TL2IdeType.new(List.typeIde.type.range.selfTypeSig)
 theSubst ::= X_TL2ConsSubst.new(List.typeIde.type.domain[0], X_TL2IdeType.new(String.typeIde), X_TL2EmptySubst.instance)
-theSelf.lookup(Symbol.new("head"), theSubst, fun(t :X_TL2Method, s :X_TL2Subst) { t.methodType.range.expose(s, false, printTS) });
+theSelf.lookup(Symbol.new("head"), theSubst, fun(t :X_TL2Method, s :X_TL2Subst) { t.methodType.range.expose(s, false, printTS) }) ?
 
 
 
-define stdinValue :Void;
-stdinValue := { tycoon.tl.topLevel.parser.parse(tycoon.tl.topLevel.scanner.scan(nil, tycoon.stdin, nil), nil).b };
+define stdinValue :Void ?
+stdinValue := { tycoon.tl.topLevel.parser.parse(tycoon.tl.topLevel.scanner.scan(nil, tycoon.stdin, nil), nil).b } ?
 
 
 
 
 
 
-define fixPoolMethods :Void;
+define fixPoolMethods :Void ?
 fixPoolMethods := {
   s ::= X_TL2Scoper.new
   s.currentClassSig := tycoon.tl.classManager.get("Nil").typeIde
@@ -165,9 +165,9 @@ fixPoolMethods := {
   tycoon.tl.pool.poolMethods.do(fun(pm :X_TL2Method) {
     pm.methodType := s.scope(pm.methodType)
   })
-};
+} ?
 
-define fixSlotUpdateMethods :Void;
+define fixSlotUpdateMethods :Void ?
 fixSlotUpdateMethods := {
     tycoon.tl.classManager.classTable.do(fun(c :Class) {
       c.methodDictionaries.do(fun(dict :X_TL2MethodDictionary) {
@@ -179,10 +179,10 @@ fixSlotUpdateMethods := {
       })
     })
   }
-;
+ ?
 
-define errors :StringBuilderOutput;
-define checkAllClasses :Void;
+define errors :StringBuilderOutput ?
+define checkAllClasses :Void ?
 checkAllClasses := {
     errors := StringBuilderOutput.new,
     
@@ -192,26 +192,26 @@ checkAllClasses := {
       }, fun(e :Exception) { errors.writeln(e.printString) })
     })
   }
-;
+ ?
 
-define inspectDB :Void;
+define inspectDB :Void ?
 inspectDB := {
  tycoon.tl.typeManager.typeChecker.subTypeDB._elements.do(fun(e :Void) { tycoon.stdout.write(e.isNil ? {'.'} : {'X'}) })
-};
+} ?
 
-(* in X_TL2LetValueClass ? *)
-define _replaceUnifyTypeVisitor :Void;
+;; in X_TL2LetValueClass ?
+define _replaceUnifyTypeVisitor :Void ?
 _replaceUnifyTypeVisitor :=
   X_TL2FunTypeVisitor.new.
     ifUnifyType(fun(:X_TL2UnifyType) { X_TL2UnifyType.new }).
-    otherwise(fun(t :X_TL2Type) { t });
+    otherwise(fun(t :X_TL2Type) { t }) ?
 
 
-define _storeTypeVisitor :Void;
-define _typeHashVisitor :Void;
-define _equalTypesVisitor :Void;
+define _storeTypeVisitor :Void ?
+define _typeHashVisitor :Void ?
+define _equalTypesVisitor :Void ?
 
-define fixSelfIdes :Void;
+define fixSelfIdes :Void ?
 fixSelfIdes := {
     tycoon.tl.classManager.classTable.do(fun(c :Class) {
       c.methodDictionary.do(fun(m :X_TL2Method) {
@@ -221,9 +221,9 @@ fixSelfIdes := {
       })
     })
   }
-;
+ ?
 
-define fixSelfIdesInValue :Void;
+define fixSelfIdesInValue :Void ?
 fixSelfIdesInValue := fun(c :Class, v :X_TL2Value) {
   if( v."class" == X_TL2IdeValue then: {
     if( v.ide.name = "self" then: {
@@ -232,13 +232,13 @@ fixSelfIdesInValue := fun(c :Class, v :X_TL2Value) {
   })
 
   v.children.do(fun(v :X_TL2Value) { fixSelfIdesInValue[c, v] })
-};
+} ?
 
 Thread.new({
 errors ::= File.openWrite("typeCheckErrors.txt")
 tycoon.tl.classManager.classTable.do(fun(c :Class) { try({ tycoon.tl.typeManager.checkClass(c) }, fun(e :Exception) { errors << e << "\n" }) })
 errors.close
-});
+}) ?
 
 
 
@@ -259,16 +259,16 @@ X_TL2Root.instance.classes.do(fun(c :Class) {
       })
     })
   })
-});
+}) ?
 
 s ::= X_TL2Scoper.new
 s.currentClassSig := tycoon.tl.classManager.get("Nil").typeIde
 s.errorLog := ErrorLog.new
 X_TL2Pool.instance.poolMethods.do(fun(m :X_TL2Method) { m.scopeMethod(s) })
-;
+ ?
 
 class MyAppend super Object metaclass AbstractClass
 public methods
   myAppend { l :List(Int) := List.with1(3)
 	     List.append(l, List.with1(10)) }
-;
+ ?

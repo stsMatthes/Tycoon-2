@@ -1,46 +1,42 @@
-(*
-DO load "WWW/HttpdAdmin/HttpdAdmin2.tyc";
-tycoon.tl.typeChecker.check;
-*)
+;; DO load "WWW/HttpdAdmin/HttpdAdmin2.tyc" ?
+;; tycoon.tl.typeChecker.check ?
 
-DO load "Util/Util2.tyc";
-DO load "WWW/Stml/Stml2.tyc";
+DO load "Util/Util2.tyc" ?
+DO load "WWW/Stml/Stml2.tyc" ?
 
-tycoon.tl.loader.registerDirectory("Debug");
-tycoon.tl.loader.registerDirectory("Compile/TL2/Tools");
-tycoon.tl.loader.registerDirectory("WWW/HttpdAdmin");
+tycoon.tl.loader.registerDirectory("Debug") ?
+tycoon.tl.loader.registerDirectory("Compile/TL2/Tools") ?
+tycoon.tl.loader.registerDirectory("WWW/HttpdAdmin") ?
 
-tycoon.tl.loader.update;
-tycoon.tl.typeChecker.check;
-tycoon.tl.topLevel.file("Debug/Init.tyc");
+tycoon.tl.loader.update ?
+tycoon.tl.typeChecker.check ?
+tycoon.tl.topLevel.file("Debug/Init.tyc") ?
 
-;;
-;; end of automatic script
-;;
+?? ;; end of automatic script
 
-tycoon.saveSystem;
+tycoon.saveSystem ?
 
-tycoon.debug := true;
+tycoon.debug := true ?
 
-DO load "WWW/HttpdAdmin/launch-launcher.tyc";
-(* Server loop (outside script, or it will remain open): *)
-tyhttpd.serve;
+DO load "WWW/HttpdAdmin/launch-launcher.tyc" ?
+;; Server loop (outside script, or it will remain open):
+tyhttpd.serve ?
 
-DO load "WWW/HttpdAdmin/launch-test.tyc";
-(* Server loop (outside script, or it will remain open): *)
-tyhttpd.serve;
+DO load "WWW/HttpdAdmin/launch-test.tyc" ?
+;; Server loop (outside script, or it will remain open):
+tyhttpd.serve ?
 
   
 tyhttpd.commit; 
 
-(*
-  Start jetzt mit
-     tycoon2 store home-directory
-   also z.B.
-     tycoon2 tyhttpd-launcher.ts $HOX_HOME/tyhttpd/tyhttpd-launcher
+;;
+;; Start jetzt mit
+;;    tycoon2 store home-directory
+;;  also z.B.
+;;    tycoon2 tyhttpd-launcher.ts $HOX_HOME/tyhttpd/tyhttpd-launcher
+;; 
+;; Vorher am besten den Logfile-Monitor starten:
+;;   hoxlogmon launcher
+;;  
 
-  Vorher am besten den Logfile-Monitor starten:
-    hoxlogmon launcher
-    
-*)
 

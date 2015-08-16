@@ -21,7 +21,7 @@
 /*
   Copyright (c) 1996 Higher-Order GmbH, Hamburg. All rights reserved.
 
-  $File: //depot/tycoon2/stsmain/bootstrap/src/tm/classids.h $ $Revision: #5 $ $Date: 2003/10/17 $ Marc Weikard
+  $File: //depot/tycoon2/stsmain/bootstrap/src/tm/classids.h $ $Revision: #6 $ $Date: 2003/10/29 $ Marc Weikard
 
   Tycoon Predefined ClassIds
 
@@ -105,7 +105,7 @@
   TYC_CLASSID(BUILTIN, Function,            Array,  NULL)       
   TYC_CLASSID(X_TL2 , DeferredMethod,      Struct, "ooooooiiioi")
   TYC_CLASSID(X_TL2 , UnimplementedMethod, Struct, "ooooooiiioi")
-  TYC_CLASSID(X_TL2 , ReorderMethod, 	 Struct, "ooooooiiioiioiiCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC")
+  TYC_CLASSID(X_TL2 , ReorderMethod, 	 Struct, "ooooooiiioiioioCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC")
   TYC_CLASSID(X_TL2 , Slot, 		 Struct, "ooooiio")
 
   /* exceptions raised by TVM */

@@ -1,126 +1,91 @@
-(*  Script for "Big" Bootstrap
-    generate a new X-Store
+;;  Script for "Big" Bootstrap
+;;  generate a new X-Store
+;;  see doc/bootstrap/bootstrap.txt for usage description
 
-cd ../bootstrap
-. ../tycoon2/tools/Unix/def_tl2_sh
-# make sure the descriptors are up to date
-jam
-jam Boot
+Date.now ?
 
-cd ../tycoon2
-. tools/Unix/def_tl2_sh
+;; the destination workspace
 
-# launch simple store 
-tycoon2 TL2.ts
-# create and dump a new memory image 
-DO load "Compile/TL2/x-bootstrap.tyc";
-DO exit;
+define x_home :String ?
+x_home := tycoon.hoxHome+"/../bootstrap" ?
 
-cd ../bootstrap
-. ../tycoon2/tools/Unix/def_tl2_sh
+define x_tl2Path :String ?
+x_tl2Path := x_home+"/src/TL2/" ?
 
-# turn dump into store ON NEW (X-) MACHINE 
-tycoon2 -bootstrap ../tycoon2/dump
-# unfold store 
-# tycoon2 Bootstrap.ts < src/TL2/Compile/X_TL2/post-bootstrap.tyc 
-tycoon2 Bootstrap.ts
-# assume all classes are typechecked 
-Array.fromContainer(tycoon.tl.typeChecker.agenda).do(
-  fun(c :X_TL2ClassPublic) {
-    tycoon.tl.typeChecker.ignore(c)
-  }
-);
-# that`s all
-tycoon.saveSystem;
+;; load X-Environment
 
-*)
-Date.now;
+tycoon.tl.topLevel.file(x_tl2Path+"Compile/X_TL2/X_Descriptors.tyc") ?
 
-(* the destination workspace *)
+tycoon.tl.loader.registerDirectory(x_tl2Path+"Compile/X_TL2") ?
+tycoon.tl.loader.registerDirectory(x_tl2Path+"Compile/X_TL2/New") ?
+tycoon.tl.loader.registerDirectory(x_tl2Path+"Compile/X_TL2/BackEnd") ?
+tycoon.tl.loader.update ?
 
-define x_home :String;
-x_home := tycoon.hoxHome+"/../bootstrap";
+tycoon.tl.topLevel.file(x_tl2Path+"Compile/X_TL2/Init.tyc") ?
 
-define x_tl2Path :String;
-x_tl2Path := x_home+"/src/TL2/";
+tycoon.tl.loader.registerDirectory("Cross") ?
+tycoon.tl.loader.update ?
 
-(* load X-Environment *)
-
-tycoon.tl.topLevel.file(x_tl2Path+"Compile/X_TL2/X_Descriptors.tyc");
-
-tycoon.tl.loader.registerDirectory(x_tl2Path+"Compile/X_TL2");
-tycoon.tl.loader.registerDirectory(x_tl2Path+"Compile/X_TL2/New");
-tycoon.tl.loader.registerDirectory(x_tl2Path+"Compile/X_TL2/BackEnd");
-tycoon.tl.loader.update;
-
-tycoon.tl.topLevel.file(x_tl2Path+"Compile/X_TL2/Init.tyc");
-
-tycoon.tl.loader.registerDirectory("Cross");
-tycoon.tl.loader.update;
-
-define newTL :X_TL2TL;
+define newTL :X_TL2TL ?
 root ::= X_TL2Root.new(x_home+"/src/tm/storeDescriptors.tab")
 pool ::= X_TL2Pool.new
 vmInterface ::=
   X_TL2VMInterface.new(
     x_home+"/src/tm/builtins.tab",
     x_home+"/src/tm/opcodes.tab")
-newTL := X_TL2TL.new(root,pool,vmInterface);
+newTL := X_TL2TL.new(root,pool,vmInterface) ?
 
-(* Hack: pretend that AbstractClass is already known *)
-newTL.typeManager.newClassSignature("AbstractClass");
+;; Hack: pretend that AbstractClass is already known
+newTL.typeManager.newClassSignature("AbstractClass") ?
 
 f ::= File.openRead(x_home+"/src/tm/classids.tyc")
 script ::= f.readString(f.size.asInt)
 f.close
-newTL.topLevel.string(script+";");
+newTL.topLevel.string(script+";") ?
 
-newTL.topLevel.file(x_tl2Path+"X_Cross/BootStrap.tyc");
-newTL.loader.unregisterClass("Class");
-newTL.loader.unregisterClass("AbstractClass");
-newTL.loader.unregisterClass("MetaClass");
+newTL.topLevel.file(x_tl2Path+"X_Cross/BootStrap.tyc") ?
+newTL.loader.unregisterClass("Class") ?
+newTL.loader.unregisterClass("AbstractClass") ?
+newTL.loader.unregisterClass("MetaClass") ?
 
-Date.now;
+Date.now ?
 
-(* ------------------------------------------------------------ *)
-(* newTL is functional now.
-   Here come the actual classes needed for bootstrap:
- *)
+;; ------------------------------------------------------------
+;; newTL is functional now.
+;; Here come the actual classes needed for bootstrap:
 
-newTL.loader.registerDirectory(x_tl2Path+"Standard");
-newTL.loader.registerDirectory(x_tl2Path+"Standard/Containers");
-newTL.loader.registerFile(x_tl2Path+"Util/Util.tc");
-newTL.loader.registerFile(x_tl2Path+"Util/StandardDateParser.tc");
-newTL.loader.registerFile(x_tl2Path+"Util/MD5.tc");
-newTL.loader.registerFile(x_tl2Path+"Util/MD5Class.tc");
-newTL.loader.registerDirectory(x_tl2Path+"Util/Graphs");
-newTL.loader.registerDirectory(x_tl2Path+"Util/Graphs/Simple");
-(*newTL.loader.update;*)
-newTL.loader.registerDirectory(x_tl2Path+"Compile");
-newTL.loader.registerDirectory(x_tl2Path+"Compile/Scan");
-newTL.loader.registerDirectory(x_tl2Path+"Compile/Scan/Eager");
-newTL.loader.registerDirectory(x_tl2Path+"Compile/Parse");
-newTL.loader.registerDirectory(x_tl2Path+"Compile/Parse/Compact");
-(*newTL.loader.update;*)
-newTL.loader.registerDirectory(x_tl2Path+"Compile/X_TL2");
-newTL.loader.registerDirectory(x_tl2Path+"Compile/X_TL2/New");
-newTL.loader.registerDirectory(x_tl2Path+"Compile/X_TL2/BackEnd");
-newTL.loader.unregisterClass("X_TL2Root");
-newTL.loader.unregisterClass("X_TL2Class");
-newTL.loader.unregisterClass("X_TL2MetaClass");
-newTL.loader.registerClassFile("Class", x_tl2Path+"Compile/X_TL2/X_TL2Class.tc");
-newTL.loader.registerClassFile("MetaClass", x_tl2Path+"Compile/X_TL2/X_TL2MetaClass.tc");
-newTL.loader.registerClassFile("Root", x_tl2Path+"Compile/X_TL2/X_TL2Root.tc");
+newTL.loader.registerDirectory(x_tl2Path+"Standard") ?
+newTL.loader.registerDirectory(x_tl2Path+"Standard/Containers") ?
+newTL.loader.registerFile(x_tl2Path+"Util/Util.tc") ?
+newTL.loader.registerFile(x_tl2Path+"Util/StandardDateParser.tc") ?
+newTL.loader.registerFile(x_tl2Path+"Util/MD5.tc") ?
+newTL.loader.registerFile(x_tl2Path+"Util/MD5Class.tc") ?
+newTL.loader.registerDirectory(x_tl2Path+"Util/Graphs") ?
+newTL.loader.registerDirectory(x_tl2Path+"Util/Graphs/Simple") ?
+newTL.loader.registerDirectory(x_tl2Path+"Compile") ?
+newTL.loader.registerDirectory(x_tl2Path+"Compile/Scan") ?
+newTL.loader.registerDirectory(x_tl2Path+"Compile/Scan/Eager") ?
+newTL.loader.registerDirectory(x_tl2Path+"Compile/Parse") ?
+newTL.loader.registerDirectory(x_tl2Path+"Compile/Parse/Compact") ?
+newTL.loader.registerDirectory(x_tl2Path+"Compile/X_TL2") ?
+newTL.loader.registerDirectory(x_tl2Path+"Compile/X_TL2/New") ?
+newTL.loader.registerDirectory(x_tl2Path+"Compile/X_TL2/BackEnd") ?
+newTL.loader.unregisterClass("X_TL2Root") ?
+newTL.loader.unregisterClass("X_TL2Class") ?
+newTL.loader.unregisterClass("X_TL2MetaClass") ?
+newTL.loader.registerClassFile("Class", x_tl2Path+"Compile/X_TL2/X_TL2Class.tc") ?
+newTL.loader.registerClassFile("MetaClass", x_tl2Path+"Compile/X_TL2/X_TL2MetaClass.tc") ?
+newTL.loader.registerClassFile("Root", x_tl2Path+"Compile/X_TL2/X_TL2Root.tc") ?
 
-Date.now;
-newTL.loader.update;
+Date.now ?
+newTL.loader.update ?
 
-Date.now;
+Date.now ?
 
-newTL.topLevel.string("define tycoon :Tycoon");
+newTL.topLevel.string("define tycoon :Tycoon") ?
 
-(* manually run the compiler on the startup code
-   and pass the root,pool and vmInterface objects in *)
+;; manually run the compiler on the startup code
+;; and pass the root,pool and vmInterface objects in
 path ::= x_tl2Path+"Compile/X_TL2/startup.tyc"
 errorLog ::= ErrorLog.new
 f ::= File.openRead(path)
@@ -142,26 +107,27 @@ funExpr ::=
         X_TL2LiteralValue.new(nil, newTL.pool),
         X_TL2LiteralValue.new(nil, newTL.vmInterface))))
 newTL.compiler.simpleEval(nil, newTL.classManager.get("Nil"), funExpr, errorLog)
-(* as a side effect, funExpr is compiled. *)
-newTL.root.thread := _typeCast(funExpr);
+;; as a side effect, funExpr is compiled.
+newTL.root.thread := _typeCast(funExpr) ?
 
-newTL.root.symbolTable := tycoon.tl.root.symbolTable.as(Set)  true;
-(* CrossTracer.new.collectSymbols(newTL.root); *)
+newTL.root.symbolTable := tycoon.tl.root.symbolTable.as(Set)  true ?
+;; alternatively (if you''ve got some spare time)
+;; CrossTracer.new.collectSymbols(newTL.root) ?
 
-Date.now.print;
+Date.now.print ?
 newTL.root.classes.do(fun(c:X_TL2Class) {
   c.classManager := nil
-});
-newTL.pool.observers.remove(newTL.classManager);
-newTL.pool.observers.remove(newTL.typeChecker);
+}) ?
+newTL.pool.observers.remove(newTL.classManager) ?
+newTL.pool.observers.remove(newTL.typeChecker) ?
 Timer.new(tycoon.cpuClock).time({
   try({ CrossTracer.new.traceToFile(newTL.root, "dump") }
   else: fun(e:Exception){ e })
-});
+}) ?
 newTL.root.classes.do(fun(c:X_TL2Class) {
   c.classManager := newTL.classManager
-});
-newTL.pool.observers.add(newTL.classManager);
-newTL.pool.observers.add(newTL.typeChecker);
-Date.now.print;
-(*DO exit;*)
+}) ?
+newTL.pool.observers.add(newTL.classManager) ?
+newTL.pool.observers.add(newTL.typeChecker) ?
+Date.now.print ?
+;; DO exit ?

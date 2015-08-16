@@ -22,16 +22,16 @@ super NewTL2
 *)
 meta ReentrantNewTL2ScannerClass
 {
-scan(where :String, input :Input, semicolonIsEoI :Bool, errorLog :ErrorLog ) :NewTL2Scanner
+scan(where :String, input :Input, errorLog :ErrorLog ) :NewTL2Scanner
   (*, bufferCapacity :=100*)
-{ scan1(where, input, semicolonIsEoI, errorLog, 100) }
+{ scan1(where, input, errorLog, 100) }
 
-scan1(where :String, input :Input, semicolonIsEoI :Bool, errorLog :ErrorLog, bufferCapacity :Int) :NewTL2Scanner
+scan1(where :String, input :Input, errorLog :ErrorLog, bufferCapacity :Int) :NewTL2Scanner
   (* *)
 {
   s ::=
     UserScanner.new1(tables, input, bufferCapacity,
-      NewTL2ScannerState.new(terminals.reservedWords, where, semicolonIsEoI, errorLog))
+      NewTL2ScannerState.new(terminals.reservedWords, where, errorLog))
   s.errorHandler :=   ; ### should become an argument when optional parameters are available 
     fun(ch :Char){ s.userState.error(ch) }
   s.userState.scanner := s  ; backward reference for source positions 
@@ -219,14 +219,9 @@ _init :Void
         s.userState.newline
         idx := token.locateChar1('\n', idx+1)
       })
-      if( !s.userState.semicolonIsEoI then: {
-	docString.token(Positioned.new(pos,
-	  token.subString(2, token.size-4)
-	))
-      } else: {
-        ;; on toplevel, interpret as whitespace
-        s.read
-      })
+      docString.token(Positioned.new(pos,
+	token.subString(2, token.size-4)
+      ))
     })
 
   sb.addToken("\\(\\*", fun(s :NewTL2Scanner) {
@@ -239,11 +234,7 @@ _init :Void
   ;; 1.5 Single Line Comments 
   sb.addToken(";[^\n]*",
     fun(s :NewTL2Scanner) {
-      if( !s.userState.semicolonIsEoI then: {
-        s.read ;; skip whitespace
-      } else: {
-        nil    ;; end-of-input marker on toplevel
-      })
+      s.read ;; skip whitespace
     })
 
   ;; 1.6 Other tokens 
@@ -252,6 +243,12 @@ _init :Void
       sb.addToken(quoteRE(name), fun(s:NewTL2Scanner) {
         term.token(s.userState.position)
       })
+    })
+
+  ;; toplevel: start evaluation
+  sb.addToken("\\?",
+    fun( :NewTL2Scanner) {
+      nil
     })
 
   ; ... and go 

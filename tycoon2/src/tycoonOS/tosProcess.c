@@ -19,7 +19,7 @@
  *
  */
 /*
-  $File: //depot/tycoon2/stsmain/tycoon2/src/tycoonOS/tosProcess.c $ $Revision: #3 $ $Date: 2003/10/01 $ Andreas Gawecki, Andre Willomat
+  $File: //depot/tycoon2/stsmain/tycoon2/src/tycoonOS/tosProcess.c $ $Revision: #4 $ $Date: 2003/11/01 $ Andreas Gawecki, Andre Willomat
 
   Interface to Portable Tycoon-2 operating system (TycoonOS)
 
@@ -57,7 +57,16 @@ Int tosProcess_getpid(void)
   int res;
 
   #ifdef rt_LIB_Win32_i386
-    res = _getpid();
+    tosLog_error("tosProcess",
+                 "signal",
+                 "Not implemented on Win32 API");
+
+    SetLastError(120); /* not implemented */
+    errno = EWIN32API;
+    res   = -1;
+
+    // doesn't work with borland's shared multithreaded libs
+    // res = _getpid();
   #else
     res = getpid();
   #endif

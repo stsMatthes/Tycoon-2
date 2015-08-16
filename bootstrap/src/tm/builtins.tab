@@ -20,7 +20,7 @@ Object	==	1	0
 Object	class	0	0
 Object	superComponent	0	0
 Object	isImmutable	0	0
-Object	setImmutable	0	0
+Object	_setImmutable	0	0
 Object	true	0	0
 Object	false	0	0
 Object	nil	0	0

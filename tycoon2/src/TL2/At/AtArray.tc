@@ -59,11 +59,22 @@ __deepHollowCopy(mapping: IdDictionary(Object, Object)) :Void
      and set mapping[original] := hollow copy.
      Helper method for componentCopy. *)
 {
-  ;; arrays usually do not contain components (redefined in AtArray)
+  ;; all elements of an AtArray are subcomponents
   mapping[self] := __hollowCopy
   for(0 to: size-1 do: fun(i:Int) {
     self[i].__deepHollowCopy(mapping)
   })
 }
 
+setImmutable :Void
+  (* set the immutable flag. *)
+{
+  if(!isImmutable then: {
+    ;; all elements of an AtArray are subcomponents
+    for(0 to: size-1 do: fun(i:Int) {
+      self[i].setImmutable
+    })
+    _setImmutable
+  })
+}
 }

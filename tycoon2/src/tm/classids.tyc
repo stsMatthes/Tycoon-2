@@ -1,97 +1,97 @@
-class Unused meta AbstractClass {};
-class WeakRef meta AbstractClass {};
-class Array meta AbstractClass {};
-class String meta AbstractClass {};
-class ByteArray meta AbstractClass {};
-class ShortArray meta AbstractClass {};
-class IntArray meta AbstractClass {};
-class LongArray meta AbstractClass {};
-class Thread meta AbstractClass {};
-class TVMStack meta AbstractClass {};
-class MutableArray meta AbstractClass {};
-class MutableString meta AbstractClass {};
-class Symbol meta AbstractClass {};
-class True meta AbstractClass {};
-class False meta AbstractClass {};
-class Bool meta AbstractClass {};
-class Char meta AbstractClass {};
-class Int meta AbstractClass {};
-class Long meta AbstractClass {};
-class Real meta AbstractClass {};
-class Nil meta AbstractClass {};
-class Fun3 meta AbstractClass {};
-class Fun4 meta AbstractClass {};
-class Fun5 meta AbstractClass {};
-class Fun6 meta AbstractClass {};
-class Fun7 meta AbstractClass {};
-class Fun8 meta AbstractClass {};
-class Fun9 meta AbstractClass {};
-class Fun10 meta AbstractClass {};
-class EmptyList meta AbstractClass {};
-class List meta AbstractClass {};
-class Class meta AbstractClass {};
-class TL2MethodDictionary meta AbstractClass {};
-class DLL meta AbstractClass {};
-class TL2Selector meta AbstractClass {};
-class TL2Method meta AbstractClass {};
-class TL2CompiledMethod meta AbstractClass {};
-class TL2BuiltinMethod meta AbstractClass {};
-class TL2ExternalMethod meta AbstractClass {};
-class TL2SlotMethod meta AbstractClass {};
-class TL2SlotAccessMethod meta AbstractClass {};
-class TL2SlotUpdateMethod meta AbstractClass {};
-class TL2PoolMethod meta AbstractClass {};
-class TL2PoolAccessMethod meta AbstractClass {};
-class TL2PoolUpdateMethod meta AbstractClass {};
-class TL2CSlotAccessMethod meta AbstractClass {};
-class TL2CSlotUpdateMethod meta AbstractClass {};
-class TL2SlotReferenceMethod meta AbstractClass {};
-class TL2SlotTakeFromMethod meta AbstractClass {};
-class TL2SlotMoveToMethod meta AbstractClass {};
-class TL2CSlotReferenceMethod meta AbstractClass {};
-class TL2CSlotTakeFromMethod meta AbstractClass {};
-class TL2CSlotMoveToMethod meta AbstractClass {};
-class TL2CompiledFun meta AbstractClass {};
-class Function meta AbstractClass {};
-class TL2DeferredMethod meta AbstractClass {};
-class TL2UnimplementedMethod meta AbstractClass {};
-class TL2ReorderMethod meta AbstractClass {};
-class TL2Slot meta AbstractClass {};
-class TypeError meta AbstractClass {};
-class DoesNotUnderstand meta AbstractClass {};
-class MustBeBoolean meta AbstractClass {};
-class DLLOpenError meta AbstractClass {};
-class DLLCallError meta AbstractClass {};
-class DivisionByZero meta AbstractClass {};
-class IndexOutOfBounds meta AbstractClass {};
-class BlockingCallInterrupt meta AbstractClass {};
-class ThreadCancelled meta AbstractClass {};
-class CommitError meta AbstractClass {};
-class UnknownSelectorError meta AbstractClass {};
-class WrongSignature meta AbstractClass {};
-class FetchBoundComponent meta AbstractClass {};
-class PerformArityMismatch meta AbstractClass {};
-class WriteToImmutable meta AbstractClass {};
-class CyclicComponent meta AbstractClass {};
-class Root meta AbstractClass {};
-class Tycoon meta AbstractClass {};
-class TL2Debugger meta AbstractClass {};
-class Object meta AbstractClass {};
-class Mutex meta AbstractClass {};
-class Condition meta AbstractClass {};
-class BroadcastingCondition meta AbstractClass {};
-class AtArray meta AbstractClass {};
-class Fun0 meta AbstractClass {};
-class FunC meta AbstractClass {};
-class Fun1 meta AbstractClass {};
-class FunCR meta AbstractClass {};
-class FunRC meta AbstractClass {};
-class FunCC meta AbstractClass {};
-class Fun2 meta AbstractClass {};
-class FunCRR meta AbstractClass {};
-class FunRCR meta AbstractClass {};
-class FunCCR meta AbstractClass {};
-class FunRRC meta AbstractClass {};
-class FunCRC meta AbstractClass {};
-class FunRCC meta AbstractClass {};
-class FunCCC meta AbstractClass {};
+class Unused meta AbstractClass {} ?
+class WeakRef meta AbstractClass {} ?
+class Array meta AbstractClass {} ?
+class String meta AbstractClass {} ?
+class ByteArray meta AbstractClass {} ?
+class ShortArray meta AbstractClass {} ?
+class IntArray meta AbstractClass {} ?
+class LongArray meta AbstractClass {} ?
+class Thread meta AbstractClass {} ?
+class TVMStack meta AbstractClass {} ?
+class MutableArray meta AbstractClass {} ?
+class MutableString meta AbstractClass {} ?
+class Symbol meta AbstractClass {} ?
+class True meta AbstractClass {} ?
+class False meta AbstractClass {} ?
+class Bool meta AbstractClass {} ?
+class Char meta AbstractClass {} ?
+class Int meta AbstractClass {} ?
+class Long meta AbstractClass {} ?
+class Real meta AbstractClass {} ?
+class Nil meta AbstractClass {} ?
+class Fun3 meta AbstractClass {} ?
+class Fun4 meta AbstractClass {} ?
+class Fun5 meta AbstractClass {} ?
+class Fun6 meta AbstractClass {} ?
+class Fun7 meta AbstractClass {} ?
+class Fun8 meta AbstractClass {} ?
+class Fun9 meta AbstractClass {} ?
+class Fun10 meta AbstractClass {} ?
+class EmptyList meta AbstractClass {} ?
+class List meta AbstractClass {} ?
+class Class meta AbstractClass {} ?
+class TL2MethodDictionary meta AbstractClass {} ?
+class DLL meta AbstractClass {} ?
+class TL2Selector meta AbstractClass {} ?
+class TL2Method meta AbstractClass {} ?
+class TL2CompiledMethod meta AbstractClass {} ?
+class TL2BuiltinMethod meta AbstractClass {} ?
+class TL2ExternalMethod meta AbstractClass {} ?
+class TL2SlotMethod meta AbstractClass {} ?
+class TL2SlotAccessMethod meta AbstractClass {} ?
+class TL2SlotUpdateMethod meta AbstractClass {} ?
+class TL2PoolMethod meta AbstractClass {} ?
+class TL2PoolAccessMethod meta AbstractClass {} ?
+class TL2PoolUpdateMethod meta AbstractClass {} ?
+class TL2CSlotAccessMethod meta AbstractClass {} ?
+class TL2CSlotUpdateMethod meta AbstractClass {} ?
+class TL2SlotReferenceMethod meta AbstractClass {} ?
+class TL2SlotTakeFromMethod meta AbstractClass {} ?
+class TL2SlotMoveToMethod meta AbstractClass {} ?
+class TL2CSlotReferenceMethod meta AbstractClass {} ?
+class TL2CSlotTakeFromMethod meta AbstractClass {} ?
+class TL2CSlotMoveToMethod meta AbstractClass {} ?
+class TL2CompiledFun meta AbstractClass {} ?
+class Function meta AbstractClass {} ?
+class TL2DeferredMethod meta AbstractClass {} ?
+class TL2UnimplementedMethod meta AbstractClass {} ?
+class TL2ReorderMethod meta AbstractClass {} ?
+class TL2Slot meta AbstractClass {} ?
+class TypeError meta AbstractClass {} ?
+class DoesNotUnderstand meta AbstractClass {} ?
+class MustBeBoolean meta AbstractClass {} ?
+class DLLOpenError meta AbstractClass {} ?
+class DLLCallError meta AbstractClass {} ?
+class DivisionByZero meta AbstractClass {} ?
+class IndexOutOfBounds meta AbstractClass {} ?
+class BlockingCallInterrupt meta AbstractClass {} ?
+class ThreadCancelled meta AbstractClass {} ?
+class CommitError meta AbstractClass {} ?
+class UnknownSelectorError meta AbstractClass {} ?
+class WrongSignature meta AbstractClass {} ?
+class FetchBoundComponent meta AbstractClass {} ?
+class PerformArityMismatch meta AbstractClass {} ?
+class WriteToImmutable meta AbstractClass {} ?
+class CyclicComponent meta AbstractClass {} ?
+class Root meta AbstractClass {} ?
+class Tycoon meta AbstractClass {} ?
+class TL2Debugger meta AbstractClass {} ?
+class Object meta AbstractClass {} ?
+class Mutex meta AbstractClass {} ?
+class Condition meta AbstractClass {} ?
+class BroadcastingCondition meta AbstractClass {} ?
+class AtArray meta AbstractClass {} ?
+class Fun0 meta AbstractClass {} ?
+class FunC meta AbstractClass {} ?
+class Fun1 meta AbstractClass {} ?
+class FunCR meta AbstractClass {} ?
+class FunRC meta AbstractClass {} ?
+class FunCC meta AbstractClass {} ?
+class Fun2 meta AbstractClass {} ?
+class FunCRR meta AbstractClass {} ?
+class FunRCR meta AbstractClass {} ?
+class FunCCR meta AbstractClass {} ?
+class FunRRC meta AbstractClass {} ?
+class FunCRC meta AbstractClass {} ?
+class FunRCC meta AbstractClass {} ?
+class FunCCC meta AbstractClass {} ?

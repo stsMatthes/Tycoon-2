@@ -21,7 +21,7 @@
 /*
   Copyright (c) 1996 Higher-Order GmbH, Hamburg. All rights reserved.
 
-  $File: //depot/tycoon2/stsmain/bootstrap/src/tm/tsp.h $ $Revision: #3 $ $Date: 2003/10/02 $ Andreas Gawecki, Marc Weikard
+  $File: //depot/tycoon2/stsmain/bootstrap/src/tm/tsp.h $ $Revision: #4 $ $Date: 2003/10/29 $ Andreas Gawecki, Marc Weikard
 
   Tycoon Store Protocol
   
@@ -178,8 +178,10 @@ extern tsp_ClassId tsp_classId(tsp_OID p);
 extern Word	   tsp_hash(tsp_OID p);
 extern void        tsp_setHash(tsp_OID p, Word h);
 
+#ifdef tsp_STORED_SUPERCOMPONENT
 extern tsp_OID	   tsp_superComponent(tsp_OID p);
 extern void        tsp_setSuperComponent(tsp_OID p, tsp_OID superComponent);
+#endif
 extern Bool	   tsp_immutable(tsp_OID p);
 extern void        tsp_setImmutable(tsp_OID p);
 extern Bool	   tsp_isTracedComponent(tsp_OID p);
@@ -193,8 +195,10 @@ extern void        tsp_setIsTracedComponent(tsp_OID p, Bool b);
 #define tsp_setHash(p, h) ((((Word*)(p))[-1]) = ((((Word*)(p))[-1]) \
 			   & 0xfc000fff) | (((h) << 12) & 0x03fff000))
 
+#ifdef tsp_STORED_SUPERCOMPONENT
 #define tsp_superComponent(p)       (((tsp_OID*)(p))[-3])
 #define tsp_setSuperComponent(p, superComponent)  (((tsp_OID*)(p))[-3] = (superComponent))
+#endif
 #define tsp_immutable(p)  (((Word*)(p))[-1] & 0x40000000)
 #define tsp_setImmutable(p)  (((Word*)(p))[-1] |= 0x40000000)
 #define tsp_isTracedComponent(p)  (((Word*)(p))[-1] & 0x08000000)

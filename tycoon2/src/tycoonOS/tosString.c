@@ -19,7 +19,7 @@
  *
  */
 /*
-  $File: //depot/tycoon2/stsmain/tycoon2/src/tycoonOS/tosString.c $ $Revision: #3 $ $Date: 2003/10/01 $  Andreas Gawecki, Andre Willomat
+  $File: //depot/tycoon2/stsmain/tycoon2/src/tycoonOS/tosString.c $ $Revision: #5 $ $Date: 2003/11/02 $  Andreas Gawecki, Andre Willomat
 
   Interface to Portable Tycoon-2 operating system (TycoonOS)
 
@@ -38,7 +38,7 @@
 
 char * tosString_strdup(const char * s)
 {
-#if defined(rt_LIB_Win32_i386)
+#if defined(rt_LIB_Win32_i386) && defined(_MSC_VER)
   return _strdup(s);
 
 #elif defined(rt_LIB_Nextstep_i386)

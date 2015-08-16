@@ -21,7 +21,7 @@
 /*
   Copyright (c) 1996 Higher-Order GmbH, Hamburg. All rights reserved.
 
-  $File: //depot/tycoon2/stsmain/tycoon2/src/tm/tmccall.c $ $Revision: #3 $ $Date: 2003/10/01 $ Marc Weikard
+  $File: //depot/tycoon2/stsmain/tycoon2/src/tm/tmccall.c $ $Revision: #4 $ $Date: 2003/11/01 $ Marc Weikard
 
   CCall Interface
   
@@ -228,7 +228,7 @@ tsp_OID tmccall_execute(tyc_ExternalMethod * pMethod, tsp_OID * pArguments)
             case tsp_Field_UInt:
             case tsp_Field_Long:
             case tsp_Field_ULong:
-              *pCCArgs++ = l; break;
+              *pCCArgs++ = (Word) l; break;
             case tsp_Field_LongLong:
               {
               Word * p = (Word*) &l;
@@ -414,7 +414,7 @@ tsp_OID tmccall_execute(tyc_ExternalMethod * pMethod, tsp_OID * pArguments)
         case tsp_Field_ULong:
           pResult = tyc_boxChar(*pAddress); break;
         case tsp_Field_LongLong:
-          pResult = tyc_boxChar(*((Long*)pAddress)); break;
+          pResult = tyc_boxChar((Word)*((Long*)pAddress)); break;
         default:
           raiseConversionError(NULL, cTycoonResult, cCResult);
         }
@@ -441,7 +441,7 @@ tsp_OID tmccall_execute(tyc_ExternalMethod * pMethod, tsp_OID * pArguments)
         case tsp_Field_ULong:
           i = (unsigned long)*pAddress; break;
         case tsp_Field_LongLong:
-          i = *((Long*)pAddress); break;
+          i = (Int)*((Long*)pAddress); break;
         default:
           raiseConversionError(NULL, cTycoonResult, cCResult);
         }

@@ -1,40 +1,40 @@
-tycoon.tl.loader.registerDirectory("Net");
-tycoon.tl.loader.registerDirectory("WWW");
-tycoon.tl.loader.registerDirectory("WWW/Html");
-tycoon.tl.loader.registerDirectory("WWW/Mime");
-tycoon.tl.loader.registerDirectory("WWW/Mime/Encoding");
-tycoon.tl.loader.registerDirectory("WWW/Mime/Headers");
+tycoon.tl.loader.registerDirectory("Net") ?
+tycoon.tl.loader.registerDirectory("WWW") ?
+tycoon.tl.loader.registerDirectory("WWW/Html") ?
+tycoon.tl.loader.registerDirectory("WWW/Mime") ?
+tycoon.tl.loader.registerDirectory("WWW/Mime/Encoding") ?
+tycoon.tl.loader.registerDirectory("WWW/Mime/Headers") ?
 
-tycoon.tl.loader.registerDirectory("WWW/Http");
-tycoon.tl.loader.registerDirectory("WWW/Http/Headers");
-tycoon.tl.loader.registerDirectory("WWW/Http/HttpClientel");
+tycoon.tl.loader.registerDirectory("WWW/Http") ?
+tycoon.tl.loader.registerDirectory("WWW/Http/Headers") ?
+tycoon.tl.loader.registerDirectory("WWW/Http/HttpClientel") ?
 
-tycoon.tl.loader.registerDirectory("Sgml");
+tycoon.tl.loader.registerDirectory("Sgml") ?
 
-tycoon.tl.loader.update;
+tycoon.tl.loader.update ?
 
-tycoon.tl.loader.registerDirectory("WWW/HttpdTest");
-tycoon.tl.loader.update;
+tycoon.tl.loader.registerDirectory("WWW/HttpdTest") ?
+tycoon.tl.loader.update ?
 
-tycoon.tl.typeChecker.ignore(Input);
-tycoon.tl.loader.update;
-tycoon.debug := false;
-tycoon.tl.typeChecker.check;
-tycoon.debug := true;
+tycoon.tl.typeChecker.ignore(Input) ?
+tycoon.tl.loader.update ?
+tycoon.debug := false ?
+tycoon.tl.typeChecker.check ?
+tycoon.debug := true ?
 
-tycoon.tl.typeManager.newClasses.clear;
+tycoon.tl.typeManager.newClasses.clear ?
 
-tycoon.saveSystem;
-
-
-define httpdTest :HttpdTest;
-httpdTest := HttpdTest.new;
-httpdTest.uriListPath := "/home/agawecki/tycoon/testuris.txt";
-httpdTest.server := IPAddress.byName("126.1.1.1");
-httpdTest.port := 5000;
+tycoon.saveSystem ?
 
 
-httpdTest.run(4);
+define httpdTest :HttpdTest ?
+httpdTest := HttpdTest.new ?
+httpdTest.uriListPath := "/home/agawecki/tycoon/testuris.txt" ?
+httpdTest.server := IPAddress.byName("126.1.1.1") ?
+httpdTest.port := 5000 ?
 
-httpdTest.stop := true;
+
+httpdTest.run(4) ?
+
+httpdTest.stop := true ?
 

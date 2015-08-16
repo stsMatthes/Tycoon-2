@@ -28,7 +28,7 @@ SRCS += tosLong.c tosReal.c tosInt32.c    tosMemory.c tosFileinfo.c tosFilepos.c
 #
 if $(NT) || $(WIN95) || $(WIN98)
 {
-  LINKSYSLIBS += $(WINSOCKLIBS) ;
+  LINKSYSLIBS on $(LIBPREFIX)tos$(SUFLIBSHR) += $(WINSOCKLIBS) ;
 }
 
 #
@@ -36,7 +36,7 @@ if $(NT) || $(WIN95) || $(WIN98)
 #
 if $(NT)
 {
-  LINKSYSLIBS += $(SECURITYLIBS) ;
+  LINKSYSLIBS on $(LIBPREFIX)tos$(SUFLIBSHR) += $(SECURITYLIBS) ;
 }
 
 
@@ -48,6 +48,11 @@ if $(HOX_COMPILER) = MSVC {
    makeDirName VC50PDB : $(HOX_HOME) src tycoonOS vc50.pdb ;
    makeDirName VC60PDB : $(HOX_HOME) src tycoonOS vc60.pdb ;
    Clean clean : $(DBG_TOS) $(VC50PDB) $(VC60PDB) ;
+}
+
+if $(HOX_COMPILER) = BCC32 {
+   makeDirName DBG_TOS : $(HOX_BIN) libtos.tds ;
+   Clean clean : $(DBG_TOS) ;
 }
 
 

@@ -1,7 +1,5 @@
-(*
-DO load "WWW/Html/Html.tyc";
-*)
+;; DO load "WWW/Html/Html.tyc" ?
 
-tycoon.tl.loader.registerDirectory("WWW/Html");
-tycoon.tl.loader.update;
-tycoon.tl.typeChecker.check;
+tycoon.tl.loader.registerDirectory("WWW/Html") ?
+tycoon.tl.loader.update ?
+tycoon.tl.typeChecker.check ?

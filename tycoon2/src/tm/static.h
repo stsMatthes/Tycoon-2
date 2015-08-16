@@ -21,9 +21,12 @@
 /*
   Copyright (c) 1996 Higher-Order GmbH, Hamburg. All rights reserved.
 
-  $File: //depot/tycoon2/stsmain/tycoon2/src/tm/static.h $ $Revision: #3 $ $Date: 2003/10/01 $ Andreas Gawecki, Marc Weikard, Andre Willomat
+  $File: //depot/tycoon2/stsmain/tycoon2/src/tm/static.h $ $Revision: #4 $ $Date: 2003/11/01 $ Andreas Gawecki, Marc Weikard, Andre Willomat
 
   List of statically linked symbols
+
+  only strictly necessary on platforms that do not handle dynamic libs well
+  (HPUX?)
   
   Add lines in the form
 
@@ -151,7 +154,7 @@
 
 /* Declare static TycoonOS symbols */
 
-  LIB(libTOS,so)
+  LIB(libtos,so)
 
   SYM(tos_init)
 

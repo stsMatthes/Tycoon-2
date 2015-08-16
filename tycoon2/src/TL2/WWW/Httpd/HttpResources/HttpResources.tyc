@@ -1,5 +1,5 @@
-tycoon.tl.loader.registerDirectory("WWW/Httpd/HttpResources");
-tycoon.tl.loader.update;
-tycoon.tl.typeChecker.check;
+tycoon.tl.loader.registerDirectory("WWW/Httpd/HttpResources") ?
+tycoon.tl.loader.update ?
+tycoon.tl.typeChecker.check ?
 
-DO load "WWW/Httpd/HttpResources/Init.tyc";
+DO load "WWW/Httpd/HttpResources/Init.tyc" ?

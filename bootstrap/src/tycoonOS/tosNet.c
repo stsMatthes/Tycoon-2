@@ -19,7 +19,7 @@
  *
  */
 /*
-  $File: //depot/tycoon2/stsmain/bootstrap/src/tycoonOS/tosNet.c $ $Revision: #3 $ $Date: 2003/10/02 $ Andreas Gawecki, Andre Willomat
+  $File: //depot/tycoon2/stsmain/bootstrap/src/tycoonOS/tosNet.c $ $Revision: #4 $ $Date: 2003/11/03 $ Andreas Gawecki, Andre Willomat
 
   Interface to Portable Tycoon-2 operating system (TycoonOS)
 
@@ -79,7 +79,7 @@ int tosNet_getMaxHostNameLen(void) {
 
 int tosNet_getHostName(char * pszName, int cbName)
 {
-  int res = 0;
+  int res;
   res = gethostname(pszName, cbName);
 
 #ifdef rt_LIB_Win32_i386
@@ -184,10 +184,11 @@ void tosNet_init(void)
   }
 
   #ifdef tos_DEBUG
-     fprintf(stderr,
-             "Binding WinSocket DLL Version %d.%d\n",
-             LOBYTE(wsaData.wVersion),
-             HIBYTE(wsaData.wVersion));
+     tosLog_debug("tosNet", 
+		  "init",
+		  "Binding WinSocket DLL Version %d.%d\n",
+		  LOBYTE(wsaData.wVersion),
+		  HIBYTE(wsaData.wVersion));
   #endif
 
 #endif

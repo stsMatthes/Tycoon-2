@@ -1,4 +1,4 @@
-tycoon.tl.loader.registerDirectory("Compile/Scan/Lazy");
-tycoon.tl.loader.update;
-DO load "Compile/Scan/Lazy/Init.tyc";
+tycoon.tl.loader.registerDirectory("Compile/Scan/Lazy") ?
+tycoon.tl.loader.update ?
+DO load "Compile/Scan/Lazy/Init.tyc" ?
 

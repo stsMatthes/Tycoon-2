@@ -41,12 +41,6 @@ these cases, try running "tycoon.tl.typeChecker.finalize" (which
 flushes all caches) and then check the suspicious classes manually
 using "tycoon.tl.typeChecker.checkClass(SuspiciousClass)"
 
-o The interpretation of comments on the toplevel differs from the
-interpretation inside class files.  On the toplevel, a one-line
-comment instructs the toplevel to stop parsing and begin evaluation of
-the expression so far.  Documentation strings are completely ignored
-on the toplevel.
-
 2. Language Extensions
 
 Tycoon 1.0.3 contains support for component bindings, as described in

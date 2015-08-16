@@ -1,2 +1,2 @@
-tycoon.tl.loader.registerDirectory("Compile/TL2/Tools");
-tycoon.tl.loader.update;
+tycoon.tl.loader.registerDirectory("Compile/TL2/Tools") ?
+tycoon.tl.loader.update ?

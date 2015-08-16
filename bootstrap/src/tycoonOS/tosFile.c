@@ -50,6 +50,7 @@
 
 /*== Standard files =======================================================*/
 
+#if !defined(__BORLANDC__)
 #if !defined(STDIN_FILENO)
   #define STDIN_FILENO  fileno(stdin)
 #endif
@@ -58,6 +59,11 @@
 #endif
 #if !defined(STDERR_FILENO)
   #define STDERR_FILENO fileno(stderr)
+#endif
+#else
+#define STDIN_FILENO  0
+#define STDOUT_FILENO 1
+#define STDERR_FILENO 2
 #endif
 
 int tosFile_stdin(void)  { return STDIN_FILENO;  }
@@ -202,7 +208,7 @@ int tosFile_writeChar(int fd, char ch)
 
 Bool tosFile_exists(char *pszPath)
 {
-  int res = 0;
+  int res;
   char systemPath[tosFilename_MAXLEN];
 
 #ifdef rt_LIB_Win32_i386
@@ -244,7 +250,7 @@ Bool tosFile_isCharacterDevice(int fd)
 
 int tosFile_copy(char *from, char *to)
 {
-  int  res = 0;
+  int  res;
   char systemPathFrom[tosFilename_MAXLEN];
   char systemPathTo  [tosFilename_MAXLEN];
 
@@ -307,7 +313,7 @@ int tosFile_copy(char *from, char *to)
 
 int tosFile_rename(char *from, char *to)
 {
-  int  res = 0;
+  int  res;
   char systemPathFrom[tosFilename_MAXLEN];
   char systemPathTo  [tosFilename_MAXLEN];
 #ifdef rt_LIB_Win32_i386
@@ -330,7 +336,9 @@ int tosFile_rename(char *from, char *to)
      rc = MoveFile(systemPathFrom, systemPathTo);
   }
 
-  if (!rc) {
+  if (rc) {
+     res = 0;
+  } else {
      errno = EWIN32API;
      res   = -1;
   }
@@ -354,7 +362,7 @@ int tosFile_rename(char *from, char *to)
 
 int tosFile_remove(char *path)
 {
-  int  res = 0;
+  int  res;
   char systemPath[tosFilename_MAXLEN];
 
   tosFilename_normalize(path, systemPath, tosFilename_MAXLEN);
@@ -377,7 +385,7 @@ int tosFile_remove(char *path)
 
 int tosFile_mkSymLink(char *name1, char *name2)
 {
-  int  res = 0;
+  int  res;
   char systemName1[tosFilename_MAXLEN];
   char systemName2[tosFilename_MAXLEN];
 

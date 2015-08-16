@@ -21,7 +21,7 @@
 /*
   Copyright (c) 1996 Higher-Order GmbH, Hamburg. All rights reserved.
 
-  $File: //depot/tycoon2/stsmain/tycoon2/src/tm/tm.h $ $Revision: #3 $ $Date: 2003/10/01 $ Marc Weikard
+  $File: //depot/tycoon2/stsmain/tycoon2/src/tm/tm.h $ $Revision: #4 $ $Date: 2003/11/01 $ Marc Weikard
 
   Tycoon Machine Main
   
@@ -31,6 +31,7 @@
 #define TM_H
 
 #include "tsp.h"
+#include <stdio.h>
 
 #ifdef __cplusplus
 extern "C" {

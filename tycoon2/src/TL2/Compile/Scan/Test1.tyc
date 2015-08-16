@@ -1,40 +1,40 @@
-tycoon.tl.loader.registerDirectory("Compile/Scan/Lazy");
-tycoon.tl.loader.update;
-DO load "Compile/Scan/Lazy/Init.tyc";
+tycoon.tl.loader.registerDirectory("Compile/Scan/Lazy") ?
+tycoon.tl.loader.update ?
+DO load "Compile/Scan/Lazy/Init.tyc" ?
 
-define sg :ScannerBuilder(String, Void);
+define sg :ScannerBuilder(String, Void) ?
 
-sg := LazyScannerBuilder.new;
+sg := LazyScannerBuilder.new ?
 
-sg.acceptable := fun(ch :Char) { let i = ch.asInt, i <= 255 };
+sg.acceptable := fun(ch :Char) { ch.asInt <= 255 } ?
 
 sg.addToken("%% *[0-9]+ *% *[^%]* *%[A-Za-z0-9]+%([^%]|%[^%])*",
  fun(s :Scanner(String)) {
-   s.token });
+   s.token }) ?
 
 sg.addToken(" |[^ ]",
  fun(s :Scanner(String)) {
    s.token
-   });
+   }) ?
    
-define s :ScannerTables(String);
-let t = Timer.new(tycoon.cpuClock),
-t.start,
-s := sg.generate,
-t.stop,
-t;
+define s :ScannerTables(String) ?
+t ::= Timer.new(tycoon.cpuClock)
+t.start
+s := sg.generate
+t.stop
+t ?
 
 
-let t = Timer.new(tycoon.cpuClock),
-t.start,
-let f = File.openRead("/local/tw/gbremer/twl/hox/hha/txt/2004onl.txt"),
-let scanner = Scanner.new(s, f),
+t ::= Timer.new(tycoon.cpuClock)
+t.start
+f ::= File.openRead("/local/tw/gbremer/twl/hox/hha/txt/2004onl.txt")
+scanner ::= Scanner.new(s, f)
 scanner.do(fun(s :String) {
   tycoon.stdout.write('.')
-}),
-f.close,
-t.stop,
-t;
+})
+f.close
+t.stop
+t ?
 
 
 

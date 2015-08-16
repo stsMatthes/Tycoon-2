@@ -74,7 +74,7 @@ compile(where :String, input :Input, closeWhenFinished :Bool, prompt :Bool) :Voi
   (* *)
 {
   errorLog.reset
-  s ::= syntax.scan1(where, input, true, errorLog)
+  s ::= syntax.scan(where, input, errorLog)
 
   protect({
     parseLoop(s, prompt)

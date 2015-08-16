@@ -35,12 +35,15 @@
 #include "tosError.h"
 #include "tosFilename.h"
 
+#ifdef rt_LIB_Win32_i386
+#include <io.h>
+#endif
 
 /*== Get / set the file mode ==============================================*/
 
 int tosFilemode_get(char *pszPath, tosFilemode_T *mode)
 {
-  int res = 0;
+  int res;
   char systemPath[tosFilename_MAXLEN];
 
 #ifdef rt_LIB_Win32_i386
@@ -74,7 +77,7 @@ int tosFilemode_get(char *pszPath, tosFilemode_T *mode)
 
 int tosFilemode_set(char *pszPath, tosFilemode_T mode)
 {
-  int res = 0;
+  int res;
   char systemPath[tosFilename_MAXLEN];
 
   tosFilename_normalize(pszPath, systemPath, tosFilename_MAXLEN);

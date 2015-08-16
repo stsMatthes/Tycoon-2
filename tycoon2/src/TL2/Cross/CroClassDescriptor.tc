@@ -49,7 +49,7 @@ require o."class".name = tl2Class.name
   assert({ o.__basicSize = tl2Class.instanceSize })
 
   bytes ::= objectSize(o) + extraSlots * 4
-  _tracer.allocate(o, bytes, classId, o.identityHash, {
+  _tracer.allocate(o, bytes, classId, o.isImmutable, o.identityHash, {
     dumpInstance(o)
     for(1 to:extraSlots do:fun(i:Int) {
       _tracer.dumpOID(nil)

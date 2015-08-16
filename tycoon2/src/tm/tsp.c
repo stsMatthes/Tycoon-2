@@ -21,7 +21,7 @@
 /*
   Copyright (c) 1996 Higher-Order GmbH, Hamburg. All rights reserved.
 
-  $File: //depot/tycoon2/stsmain/tycoon2/src/tm/tsp.c $ $Revision: #3 $ $Date: 2003/10/01 $ Andreas Gawecki, Marc Weikard
+  $File: //depot/tycoon2/stsmain/tycoon2/src/tm/tsp.c $ $Revision: #5 $ $Date: 2003/11/01 $ Andreas Gawecki, Marc Weikard
 
   Tycoon Store Protocol
 
@@ -92,7 +92,7 @@ typedef struct Page {
   Word nNext;		        /* link to next page # in gc queue */
   Byte * pb;	       	        /* the virtual memory address of the page */
   Byte * pbFree, * pbEnd;       /* address of unallocated space */
-  Int age;
+  Word age;
     /* the 'age' of the page. pages with age = store.age are in
     'fromSpace', pages with age = store.newAge are in 'toSpace'.
     pages with other ages are free (if not FOREIGN!). */
@@ -223,7 +223,7 @@ static ArchTable * lookupArch(String pszName)
   return NULL; 
 }
 
-static ArchTable * initArch()
+static ArchTable * initArch(void)
 {
   ArchTable * pTable = lookupArch(tosSystem_getName());
   if(pTable != NULL) {
@@ -233,6 +233,7 @@ static ArchTable * initArch()
                "initArch",
                "Cannot run on this architecture: %s", tosSystem_getName());
   tosError_ABORT();
+  return NULL;
 }
 
 
@@ -291,7 +292,9 @@ static Bool fCompacting = FALSE;   /* Flag if GC should copy large objects */
 
 
 typedef struct Header {
+#ifdef tsp_STORED_SUPERCOMPONENT
   tsp_OID superComponent;
+#endif
   union {
     Word wSize;		     /* Object size in bytes */
     tsp_OID pForward;	     /* Forwarding pointer to relocated object */
@@ -339,8 +342,10 @@ typedef struct Header {
 #define SIZE(p)	      (PHEADER(p)->u.wSize)
 #define SET_SIZE(p,s) (PHEADER(p)->u.wSize = (s))
 
+#ifdef tsp_STORED_SUPERCOMPONENT
 #define SUPERCOMPONENT(p)	(PHEADER(p)->superComponent)
 #define SET_SUPERCOMPONENT(p,s) (PHEADER(p)->superComponent = (s))
+#endif
 
 #define IS_IMMUTABLE(p)	   (PHEADER(p)->bitfield &  IMMUTABLE_BIT)
 #define FLAG_IMMUTABLE(p)  (PHEADER(p)->bitfield |= IMMUTABLE_BIT)
@@ -425,16 +430,20 @@ static void init_mmap(void)
   if(mmap_fd == 0) {
     /* zero device must be opened */
     if((mmap_fd = open("/dev/zero", O_RDONLY)) == 0) {
-      fprintf(stderr, "TSP error: opening zero device for mmap failed.\n");
+      tosLog_error("tsp", "init_mmap", "TSP error: opening zero device for mmap failed.");
     }
   }
 }
 #endif /* HAS_MMAP */
 
 
-void tsp_init()
+void tsp_init(void)
 {
-  assert(sizeof(Header) == 3 * sizeof(Word));  /*axe:where is this exploited?*/
+#ifdef tsp_STORED_SUPERCOMPONENT
+  assert(sizeof(Header) == 3 * sizeof(Word));
+#else
+  assert(sizeof(Header) == 2 * sizeof(Word));
+#endif
   assert(sizeof(tsp_OID) == sizeof(Word));
   assert(TRUE == 1);
   
@@ -544,7 +553,9 @@ static void visitPtr(tsp_OID * pp)
     Word wSize = SIZE(*pp);
     tsp_OID pNew = tsp_new(CLASSID(*pp), wSize);
     SET_HASH(pNew, HASH(*pp));    /* copy identity hash */
+#ifdef tsp_STORED_SUPERCOMPONENT
     SET_SUPERCOMPONENT(pNew, SUPERCOMPONENT(*pp));
+#endif
     if( IS_IMMUTABLE(*pp) )
       FLAG_IMMUTABLE(pNew);
     if( IS_TRACED(*pp) )
@@ -596,7 +607,9 @@ static void visitWeakRefPtr(tsp_OID * pp)
     Word wSize = SIZE(*pp);
     tsp_OID pNew = tsp_new(CLASSID(*pp), wSize);
     SET_HASH(pNew, HASH(*pp));    /* copy identity hash */
+#ifdef tsp_STORED_SUPERCOMPONENT
     SET_SUPERCOMPONENT(pNew, SUPERCOMPONENT(*pp));
+#endif
     if(IS_IMMUTABLE(*pp))
       FLAG_IMMUTABLE(pNew);
     if(IS_TRACED(*pp))
@@ -788,7 +801,7 @@ static void visitPtrFields(tsp_OID p)
 }
 
 
-static void scanPages()
+static void scanPages(void)
 /* Sweep across promoted pages and copy their objects */
 {
   while (store.queue.nHead != 0) {
@@ -809,6 +822,7 @@ static void scanPages()
   }
 }
 
+#ifdef tsp_STORED_SUPERCOMPONENT
 static void updateSuperComponent(tsp_OID p)
 {
   tsp_OID superComponent = SUPERCOMPONENT(p);
@@ -820,9 +834,10 @@ static void updateSuperComponent(tsp_OID p)
     SET_SUPERCOMPONENT(p, PFORWARD(superComponent));
     return;
   }
-  fprintf(stderr,"TSP debug info: component becomes orphan\n");
+  tosLog_debug("tsp", "updateSuperComponent", "component becomes orphan");
   SET_SUPERCOMPONENT(p, NULL);
 }
+#endif
 
 void tsp_gc(Bool fCompact)
 {
@@ -871,8 +886,10 @@ void tsp_gc(Bool fCompact)
   
   scanPages();
   
+#ifdef tsp_STORED_SUPERCOMPONENT
   /* update/zap weak superComponent pointers */
   tsp_scanObjects(updateSuperComponent);
+#endif
 
   /* sweep and copy phase is complete at this point, switch to new space
      (and schedule WeakRefs) */
@@ -973,7 +990,7 @@ static void expandHeap(const Word n)
   assert(p);
   
 #ifdef tsp_DEBUG
-  printf("\n## Expand by %d Pages.  ",n);
+  fprintf(tmdebug_stdout, "\n## Expand by %d Pages.  ",n);
 #endif
   
   /* align on page boundary */
@@ -1016,7 +1033,7 @@ static void expandHeap(const Word n)
     store.nRealPages += n;
     
 #ifdef tsp_DEBUG
-    printf("grow up ##\n\n");
+    fprintf(tmdebug_stdout, "grow up ##\n\n");
 #endif
 
     if(tmdebug_fShowStoreGrow) {
@@ -1043,6 +1060,8 @@ static void expandHeap(const Word n)
       tosError_ABORT();
     }
     store.aPages = aPages;
+    /* move the existing page descriptors up */
+    memmove(aPages+(nPage-store.nFirstPage+1),aPages, (store.nLastPage-nPage) * sizeof(Page));
     /* initialize 'foreign gap' between new pages and current heap pages*/
     for(; nPage > nNewPage; nPage--) {
       memset(PPAGE(nPage), 0, sizeof(Page));
@@ -1059,7 +1078,7 @@ static void expandHeap(const Word n)
     store.nRealPages += n;
     
 #ifdef tsp_DEBUG
-    printf("grow down ##\n\n");
+    fprintf(tmdebug_stdout, "grow down ##\n\n");
 #endif
     if(tmdebug_fShowStoreGrow) {
       tmdebug_showStoreGrow(n, 0);
@@ -1080,7 +1099,7 @@ static void expandHeap(const Word n)
     store.nRealPages += n;
     
 #ifdef tsp_DEBUG
-    printf("grow between ##\n\n");
+    fprintf(tmdebug_stdout, "grow between ##\n\n");
 #endif
     if(tmdebug_fShowStoreGrow) {
       tmdebug_showStoreGrow(n, 2);
@@ -1099,7 +1118,7 @@ static void expandHeap(const Word n)
   return;
 }
 
-static void allocatePages(Int n)
+static void allocatePages(Word n)
 /* allocate n consecutive pages. set up store.current appropriately. */
 {
   Bool fLoop = FALSE; /* allocation loop after gc */
@@ -1109,16 +1128,16 @@ static void allocatePages(Int n)
     if (store.nAllocatedPages >= store.nRealPages / 2) {
 
 #ifdef tsp_DEBUG
-      fflush(stdout);
+      fflush(tmdebug_stdout);
       tsp_storeStatus();
-      printf("\n-- Garbage Collection 1 --\n");
+      fprintf(tmdebug_stdout, "\n-- Garbage Collection 1 --\n");
 #endif
 
       tsp_gc(FALSE);
       
 #ifdef tsp_DEBUG
       tsp_storeStatus();
-      fflush(stdout);
+      fflush(tmdebug_stdout);
 #endif
 
       /* expand memory if less than MEMRESERVE pages are free */
@@ -1130,6 +1149,11 @@ static void allocatePages(Int n)
 	/* start allocation at first free page */
 	store.current.nPage = store.nLastPage;
 	store.current.pPage = &invalidPage;	
+#ifdef tsp_DEBUG
+	fflush(tmdebug_stdout);
+	tsp_storeStatus();
+	fflush(tmdebug_stdout);
+#endif
       }
       }
     }
@@ -1189,16 +1213,16 @@ static void allocatePages(Int n)
     else {
     
 #ifdef tsp_DEBUG
-      fflush(stdout);
+      fflush(tmdebug_stdout);
       tsp_storeStatus();
-      printf("\n-- Garbage Collection 2 --\n");
+      fprintf(tmdebug_stdout, "\n-- Garbage Collection 2 --\n");
 #endif
 
       tsp_gc(FALSE);	        /* now there MAY be n consecutive pages... */
       
 #ifdef tsp_DEBUG
       tsp_storeStatus();
-      fflush(stdout);
+      fflush(tmdebug_stdout);
 #endif
       /* expand memory if less than MEMRESERVE pages are free */
       {
@@ -1241,7 +1265,9 @@ static tsp_OID tsp_new(tsp_ClassId classId, Word wSize)
   SET_SIZE(pb, wSize);
   SET_CLASSID(pb, classId);
   SET_HASH(pb, (Word)pb >> 4);    /* initialize identity hash */
+#ifdef tsp_STORED_SUPERCOMPONENT
   assert(SUPERCOMPONENT(pb) == NULL);
+#endif
   return pb;
 }
 
@@ -1448,6 +1474,7 @@ void tsp_setHash(tsp_OID p, Word h)
   SET_HASH(p, h);
 }
 
+#ifdef tsp_STORED_SUPERCOMPONENT
 tsp_OID tsp_superComponent(tsp_OID p)
 {
   assert(p && !tsp_IS_IMMEDIATE(p));
@@ -1459,6 +1486,7 @@ void tsp_setSuperComponent(tsp_OID p, tsp_OID superComponent)
   assert(p && !tsp_IS_IMMEDIATE(p));
   SET_SUPERCOMPONENT(p, superComponent);
 }
+#endif
 
 Bool tsp_immutable(tsp_OID p)
 {
@@ -1600,22 +1628,22 @@ Bool tsp_setCSlot(tsp_OID p, tsp_OID v, Word i)
       }
       switch(field) {
       case tsp_Field_Char:
-	  *(char *)pAddress = val;
+	  *(char *)pAddress = (char) val;
 	  break;
       case tsp_Field_UChar:
-	  *(unsigned char *)pAddress = val;
+	  *(unsigned char *)pAddress = (unsigned char) val;
 	  break;
       case tsp_Field_Short:
-	  *(short *)pAddress = val;
+	  *(short *)pAddress = (short)val;
 	  break;
       case tsp_Field_UShort:
-	  *(unsigned short *)pAddress = val;
+	  *(unsigned short *)pAddress = (unsigned short) val;
 	  break;
       case tsp_Field_Int:
       case tsp_Field_UInt:
       case tsp_Field_Long:
       case tsp_Field_ULong:
-	  *(int *)pAddress = val;
+	  *(int *)pAddress = (int)val;
 	  break;
       case tsp_Field_LongLong:
 	  *(Long *)pAddress = val;
@@ -1648,7 +1676,7 @@ static int calcOffsets(tsp_ClassId wClassId)
   tsp_CType bType, * pszType = DESCRIPTOR(wClassId)->pzString;
   tsp_Offset * pOffset = DESCRIPTOR(wClassId)->pzOffsets;
   assert(pOffset && pszType);
-  while((bType = *pszType++)) {
+  while((bType = *pszType++) != 0) {
     pAlign = lookupAlign(bType, pHostArch->pAlignTable);
     /* align to next boundary and save offset */ 
     iPosition = (iPosition + (pAlign->wAlign - 1)) & ~(pAlign->wAlign - 1);
@@ -1972,7 +2000,7 @@ static void realignStruct(tsp_OID p)
     /* copy and clear struct */
     memcpy(m, p, DESCRIPTOR(wClassId)->wSize);
     memset(p, 0, DESCRIPTOR(wClassId)->wSize);
-    while((bType = *pszType++)) {
+    while((bType = *pszType++) != 0) {
       AlignTable * pFrom = lookupAlign(bType, pStoreArch->pAlignTable);
       AlignTable * pTo   = lookupAlign(bType, pHostArch->pAlignTable);
       Word nFrom = pFrom->nBytes, nTo = pTo->nBytes;
@@ -2012,7 +2040,7 @@ static void realignStruct(tsp_OID p)
   if(fSwap) {
     tsp_CType bType, * pszType = pszDescriptor;
     tsp_Offset * pOffset = DESCRIPTOR(wClassId)->pzOffsets;
-    while((bType = *pszType++)) {
+    while((bType = *pszType++) != 0) {
       AlignTable * pAlign = lookupAlign(bType, pHostArch->pAlignTable);
       switch(pAlign->nBytes) {
         case 1:
@@ -2220,7 +2248,9 @@ static void adjustPage(Word nPage, Int nOffset)
   while(p <= pp) {
     /* adjust header incl. objects with size 0 at end of page (<=) */
     Header *h = PHEADER(p);
+#ifdef tsp_STORED_SUPERCOMPONENT
     adjustOid(&h->superComponent, nOffset);
+#endif
     if(fSwap) {
       swapWord(&h->u.wSize);
       swapWord(&h->bitfield);
@@ -2245,7 +2275,7 @@ static Int restorePages(tosStdio_T * file)
   nSavedRange = storeHeader.nLastPage - storeHeader.nFirstPage + 1;
   /* print warning if saved range exceeds needed amount */
   if(nPages < nSavedRange) {
-    fprintf(stderr,"TSP warning: reserved space exceeds needs by %d kb\n",
+    tosLog_error("tsp", "restorePages", "warning: reserved space exceeds needs by %d kb\n",
 	    ((nSavedRange - nPages) * PAGE_SIZE) / 1024);
   }
   nPages = max(nPages, nSavedRange);
@@ -2322,7 +2352,7 @@ static Int restorePages(tosStdio_T * file)
 static Int loadStore(tosStdio_T * file)
 {
   char storeFormat[tosSystem_NAME_SIZE];
-  Word success = 0;
+  Word success;
   assert(sizeof(Word) == ALIGN_WORD);
   /* skip exec header */
   tosStdio_seek(file, EXECSTRING_SIZE, tosStdio_SEEK_SET);
@@ -2363,7 +2393,7 @@ static Int loadStore(tosStdio_T * file)
 
 Int tsp_open(String szName)
 {
-  Word success = 0;
+  Word success;
   char realName[tosFilename_MAXLEN];
 
   /* get real filename */
@@ -2381,7 +2411,7 @@ Int tsp_open(String szName)
   }
   if(setvbuf(pFile, pbIOBuffer, _IOFBF, FILEBUFFER_SIZE) != 0) {
     return tsp_ERROR_BUFFERALLOC;
-  }
+  } 
   tsp_init();
   store.szName = tosString_strdup(realName);
   /* load store */
@@ -2539,7 +2569,7 @@ static Int saveStore(tosStdio_T * file)
 {
   char thisOS[tosSystem_NAME_SIZE];
   char execHeader[EXECSTRING_SIZE];
-  Word success = 0;
+  Word success;
   /* write exec header */
   strncpy(execHeader, execString, EXECSTRING_SIZE);
   if(writeBytes(file, execHeader, EXECSTRING_SIZE)) {
@@ -2578,7 +2608,7 @@ static Int saveStore(tosStdio_T * file)
 
 Int tsp_commit(void)
 {
-  Word success = 0;
+  Word success;
   char * fname;
   tosFilemode_T fmode;
 
@@ -2710,10 +2740,10 @@ static void printRec(tsp_OID p, Int depth)
 {
   tsp_ClassId wClassId = CLASSID(p);
 
-  printf("%s(0x%x){", tyc_CLASS(wClassId)->pszName, (Word)p);
+  fprintf(tmdebug_stdout, "%s(0x%x){", tyc_CLASS(wClassId)->pszName, (Word)p);
 
   if(depth == 0) {
-    printf("...");
+    fprintf(tmdebug_stdout, "...");
     goto recEnd;
   }
 
@@ -2728,48 +2758,48 @@ static void printRec(tsp_OID p, Int depth)
 	switch(*pszType++)
 	  {
 	  case 0:
-	    printf("}");
-	    fflush(stdout);
+	    fprintf(tmdebug_stdout, "}");
+	    fflush(tmdebug_stdout);
 	    return;
 	  case tsp_Field_Char:
-	    printf("%c ", *(signed char*)pp);
+	    fprintf(tmdebug_stdout, "%c ", *(signed char*)pp);
 	    break;
 	  case tsp_Field_UChar:
-	    printf("%c ", *(unsigned char*)pp);
+	    fprintf(tmdebug_stdout, "%c ", *(unsigned char*)pp);
 	    break;
 	  case tsp_Field_Short:
-	    printf("%d ", *(signed short*)pp);
+	    fprintf(tmdebug_stdout, "%d ", *(signed short*)pp);
 	    break;
 	  case tsp_Field_UShort:
-	    printf("%du ", *(unsigned short*)pp);
+	    fprintf(tmdebug_stdout, "%du ", *(unsigned short*)pp);
 	    break;
 	  case tsp_Field_Int:
-	    printf("%d ", *(signed int*)pp);
+	    fprintf(tmdebug_stdout, "%d ", *(signed int*)pp);
 	    break;
 	  case tsp_Field_UInt:
-	    printf("%du ", *(unsigned int*)pp);
+	    fprintf(tmdebug_stdout, "%du ", *(unsigned int*)pp);
 	    break;
 	  case tsp_Field_Long:
-	    printf("%ld ", *(signed long*)pp);
+	    fprintf(tmdebug_stdout, "%ld ", *(signed long*)pp);
 	    break;
 	  case tsp_Field_ULong: 
-	    printf("%lu ", *(unsigned long*)pp);
+	    fprintf(tmdebug_stdout, "%lu ", *(unsigned long*)pp);
 	    break;
 	  case tsp_Field_LongLong:
-	    printf("%ld|%ld ", *(unsigned long*)pp, *(unsigned long*)(pp + 1));
+	    fprintf(tmdebug_stdout, "%ld|%ld ", *(unsigned long*)pp, *(unsigned long*)(pp + 1));
 	    break;
 	  case tsp_Field_Float:
-	    printf("%f ", *(float*)pp);
+	    fprintf(tmdebug_stdout, "%f ", *(float*)pp);
 	    break;
 	  case tsp_Field_Double:
-	    printf("%f ", *(double*)pp);
+	    fprintf(tmdebug_stdout, "%f ", *(double*)pp);
 	    break;
 	  case tsp_Field_OID:
 	    if(tsp_IS_IMMEDIATE(*pp)) {
-	      printf("%d ", tyc_UNTAG_INT(*pp));
+	      fprintf(tmdebug_stdout, "%d ", tyc_UNTAG_INT(*pp));
 	    }
 	    else if(tyc_IS_NIL(*pp)) {
-	      printf("nil ");
+	      fprintf(tmdebug_stdout, "nil ");
 	    }
 	    else {
 	      printRec(*pp, depth - 1);
@@ -2787,14 +2817,14 @@ static void printRec(tsp_OID p, Int depth)
       tsp_OID * pp = p;
       for(i = 0; i < (SIZE(p) / sizeof(tsp_OID)); i++, pp++) {
 	if(i == objWidth) {
-	  printf("...");
+	  fprintf(tmdebug_stdout, "...");
 	  goto recEnd;
 	}
 	if(tsp_IS_IMMEDIATE(*pp)) {
-	  printf("%d ", tyc_UNTAG_INT(*pp));
+	  fprintf(tmdebug_stdout, "%d ", tyc_UNTAG_INT(*pp));
 	}
 	else if(tyc_IS_NIL(*pp)) {
-	  printf("nil ");
+	  fprintf(tmdebug_stdout, "nil ");
 	}
 	else {
 	  printRec(*pp, depth - 1);
@@ -2808,15 +2838,15 @@ static void printRec(tsp_OID p, Int depth)
       Byte * pp = p;
       if(wClassId == tyc_ClassId_String || wClassId == tyc_ClassId_Symbol ||
 	 wClassId == tyc_ClassId_MutableString) {
-	printf("\"%s\" ", pp);
+	fprintf(tmdebug_stdout, "\"%s\" ", pp);
       }
       else {
 	for(i = 0; i < (SIZE(p) / sizeof(Byte)); i++, pp++) {
 	  if(i == objWidth) {
-	    printf("...");
+	    fprintf(tmdebug_stdout, "...");
 	    goto recEnd;
 	  }
-	  printf("%d ", *pp);
+	  fprintf(tmdebug_stdout, "%d ", *pp);
 	}
       }
       }
@@ -2827,10 +2857,10 @@ static void printRec(tsp_OID p, Int depth)
       Short * pp = p;
       for(i = 0; i < (SIZE(p) / sizeof(Short)); i++, pp++) {
 	if(i == objWidth) {
-	  printf("...");
+	  fprintf(tmdebug_stdout, "...");
 	  goto recEnd;
 	}
-	printf("%d ", *pp);
+	fprintf(tmdebug_stdout, "%d ", *pp);
       }
       }
       break;
@@ -2838,21 +2868,21 @@ static void printRec(tsp_OID p, Int depth)
     case tsp_Object_Thread:
       break;
     default:
-      printf("unknown object type");
+      fprintf(tmdebug_stdout, "unknown object type");
       break;
     }
 recEnd:
 
-  printf("} ");
-  fflush(stdout);
+  fprintf(tmdebug_stdout, "} ");
+  fflush(tmdebug_stdout);
   return;
 }
 
 void tsp_printObject(tsp_OID p)
 {
-  printf("\n");
+  fprintf(tmdebug_stdout, "\n");
   printRec(p, recDepth);
-  printf("\n");
+  fprintf(tmdebug_stdout, "\n");
 }
 
 void tsp_setPrintDepth(Int depth, Int width)
@@ -2894,24 +2924,24 @@ void tsp_scanObjects(void (*pFun)(tsp_OID))
 
 void showStoreStruct(void)
 {
-  printf("\n\nStore:   %s\n", store.szName);
-  printf("---------------------\n");
-  printf("nPages     : %d\n", store.nPages);
-  printf("First Page : %d\n", store.nFirstPage);
-  printf("Last Page  : %d\n", store.nLastPage);
-  printf("Allocated  : %d\n", store.nAllocatedPages);
-  printf("Current Age: %d\n", store.age);
-  printf("StoreBase  : 0x%x\n",  (Word)NPAGE_TO_PTR(store.nFirstPage));
-  printf("Descriptors: %d\n", store.nDescriptors);
-  printf("\n");
-  printf("Page in Use: %d\n", store.current.nPage);
-  printf("Base:        0x%x\n",  (Word)NPAGE_TO_PTR(store.current.nPage));
-  printf("\n");
+  fprintf(tmdebug_stdout, "\n\nStore:   %s\n", store.szName);
+  fprintf(tmdebug_stdout, "---------------------\n");
+  fprintf(tmdebug_stdout, "nPages     : %d\n", store.nPages);
+  fprintf(tmdebug_stdout, "First Page : %d\n", store.nFirstPage);
+  fprintf(tmdebug_stdout, "Last Page  : %d\n", store.nLastPage);
+  fprintf(tmdebug_stdout, "Allocated  : %d\n", store.nAllocatedPages);
+  fprintf(tmdebug_stdout, "Current Age: %d\n", store.age);
+  fprintf(tmdebug_stdout, "StoreBase  : 0x%x\n",  (Word)NPAGE_TO_PTR(store.nFirstPage));
+  fprintf(tmdebug_stdout, "Descriptors: %d\n", store.nDescriptors);
+  fprintf(tmdebug_stdout, "\n");
+  fprintf(tmdebug_stdout, "Page in Use: %d\n", store.current.nPage);
+  fprintf(tmdebug_stdout, "Base:        0x%x\n",  (Word)NPAGE_TO_PTR(store.current.nPage));
+  fprintf(tmdebug_stdout, "\n");
 }
 
 void showWeakRef(tsp_WeakRef * p)
 {
-  printf("Object:: ClassId: %d  Size: %d\n",
+  fprintf(tmdebug_stdout, "Object:: ClassId: %d  Size: %d\n",
 	 CLASSID(p), SIZE(p));
 }
 
@@ -2921,7 +2951,7 @@ void showObjects(Word nPage)
   Byte * pp = PPAGE(nPage)->pbFree;
   while(p <= pp) {
     /* show objects with size 0 at end of page (<=) */
-    printf("Object:: ClassId: %d  Size: %d  At: %d 0x%x\n",
+    fprintf(tmdebug_stdout, "Object:: ClassId: %d  Size: %d  At: %d 0x%x\n",
 	   CLASSID(p), SIZE(p), (Word)p - (Word)NPAGE_TO_PTR(nPage), (Word)p);
     p += ALIGN_UP_OBJECT(SIZE(p) + sizeof(Header));
   }
@@ -2930,24 +2960,24 @@ void showObjects(Word nPage)
 void showPages(void)
 {
   Word nPage = store.nFirstPage;
-  printf("\nStarting Pagedump");
-  printf("\n-----------------\n");
+  fprintf(tmdebug_stdout, "\nStarting Pagedump");
+  fprintf(tmdebug_stdout, "\n-----------------\n");
   for(; nPage <= store.nLastPage; nPage++) {
-    printf("\n");
+    fprintf(tmdebug_stdout, "\n");
     if(PPAGE(nPage)->type == PageType_Foreign) {
-      printf("%d: 0x%x  Foreign\n", nPage, (Word)NPAGE_TO_PTR(nPage));
+      fprintf(tmdebug_stdout, "%d: 0x%x  Foreign\n", nPage, (Word)NPAGE_TO_PTR(nPage));
       continue;
     }
     if(PPAGE(nPage)->age != store.age) {
-      printf("%d: 0x%x  Free\n", nPage, (Word)NPAGE_TO_PTR(nPage));
+      fprintf(tmdebug_stdout, "%d: 0x%x  Free\n", nPage, (Word)NPAGE_TO_PTR(nPage));
       continue;
     }
     if(PPAGE(nPage)->type == PageType_Continued) {
-      printf("%d: 0x%x  Continued\n", nPage, (Word)NPAGE_TO_PTR(nPage));
+      fprintf(tmdebug_stdout, "%d: 0x%x  Continued\n", nPage, (Word)NPAGE_TO_PTR(nPage));
       continue;
     }
-    printf("%d: 0x%x  Page Content:\n", nPage, (Word)NPAGE_TO_PTR(nPage));
-    printf("--------------------\n");
+    fprintf(tmdebug_stdout, "%d: 0x%x  Page Content:\n", nPage, (Word)NPAGE_TO_PTR(nPage));
+    fprintf(tmdebug_stdout, "--------------------\n");
     showObjects(nPage);
   }
 }
@@ -2969,29 +2999,30 @@ void showLayout(Word nPage)
     nAlloc++;
   }
   if(nForeign > 50) {
-    putchar('X');
+    fputc('X', tmdebug_stdout);
   }
   else {
     nAlloc = max(0, (nAlloc + nCont) - 1) / (GROUP_NPAGES/10);
-    putchar('0' + nAlloc);
+    fputc('0' + nAlloc, tmdebug_stdout);
   }
   return;
 }
 
-void storeLayout()
+void storeLayout(void)
 {
   Word n = store.nFirstPage;
-  printf("\n---------------------------\n");
+  fprintf(tmdebug_stdout, "\n---------------------------\n");
   for(; n <= store.nLastPage; n += GROUP_NPAGES) {
     showLayout(n);
   }
-  printf("\n---------------------------\n");
+  fprintf(tmdebug_stdout, "\n---------------------------\n");
 }
 
 void tsp_storeStatus()
 {
   Word n, nFree = 0, nForeign = 0, nAlloc = 0, nCont = 0;
-  printf("\nStore Status:\n");
+  storeLayout();
+  fprintf(tmdebug_stdout, "\nStore Status:\n");
   for(n = store.nFirstPage; n <= store.nLastPage; n++) {
     if(PPAGE(n)->type == PageType_Foreign) {
       nForeign++; continue;
@@ -3004,14 +3035,13 @@ void tsp_storeStatus()
     }
     nAlloc++;
   }
-  printf("Total: %d  Real: %d  First: %d  Last: %d\n",
+  fprintf(tmdebug_stdout, "Total: %d  Real: %d  First: %d  Last: %d\n",
 	 store.nPages, store.nRealPages, store.nFirstPage, store.nLastPage);
-  printf("Allocated: %d  Continued: %d  Free: %d  Foreign: %d\n",
+  fprintf(tmdebug_stdout, "Allocated: %d  Continued: %d  Free: %d  Foreign: %d\n",
 	 nAlloc, nCont, nFree, nForeign); 
   assert((nForeign + store.nRealPages) == store.nPages);
   assert((nCont + nAlloc) == store.nAllocatedPages);
   assert((nFree + nAlloc + nCont) == store.nRealPages);
-  storeLayout();
 }
 
 
@@ -3166,7 +3196,9 @@ static boot_DefinedClass definedClasses[boot_ClassId_nPredefined + 1] = {
 static void replaceNumbers(tsp_OID p)
 {
   Word wClassId = CLASSID(p);
+#ifdef tsp_STORED_SUPERCOMPONENT
   assert(SUPERCOMPONENT(p) == NULL);
+#endif
   switch(DESCRIPTOR(wClassId)->wLayout)
     {
     case tsp_Object_Struct:
@@ -3210,7 +3242,7 @@ static void replaceNumbers(tsp_OID p)
   return;
 }
 
-static void sweep()
+static void sweep(void)
 {
   Word n;
   /* sweep store and replace object numbers with OIDs */
@@ -3260,7 +3292,9 @@ static tsp_OID createNew(Word wClassId, Word wSize)
       case tsp_Object_WeakRef:
       default:
 	pNew = NULL;
-	fprintf(stderr,"\nTSP error: unsupported object type %d.\n",
+	tosLog_error("tsp", 
+		     "createNew",
+		     "unsupported object type %d.",
 		definedClasses[wClassId].wObjectType);
         tosError_ABORT();
       }
@@ -3282,6 +3316,7 @@ static void readObjects(Word nObjects, Word nClassIds, Word nBytes)
 {
   Word i;
   Word wHash, wSize, wClassId;
+  Word fImmutable;
   BootHeader objectHeader;
   tsp_OID pNew;
   /* read n objects */
@@ -3291,6 +3326,7 @@ static void readObjects(Word nObjects, Word nClassIds, Word nBytes)
     wSize = objectHeader.wSize;
     wClassId = objectHeader.bitfield & CLASSID_MASK;
     wHash = (objectHeader.bitfield & HASH_MASK) >> 12;
+    fImmutable = objectHeader.bitfield & IMMUTABLE_BIT;
     assert(wClassId >= 0 && wClassId < nClassIds);
     pNew = createNew(wClassId, wSize);
     /* insert into translation table */
@@ -3298,14 +3334,17 @@ static void readObjects(Word nObjects, Word nClassIds, Word nBytes)
     /* set hash */
     SET_HASH(pNew, wHash);
     assert(HASH(pNew) == wHash);
+#ifdef tsp_STORED_SUPERCOMPONENT
     assert(SUPERCOMPONENT(pNew) == NULL);
-    /* ### immutability... */
+#endif
+    if (fImmutable)
+      FLAG_IMMUTABLE(pNew);
     /* read object (extended to word boundary) */
     tosStdio_read(pNew, sizeof(Byte),
           (wSize + (sizeof(Word) - 1)) & ~(sizeof(Word) - 1), bootFile);
     /* debugging output */
     if((i % 1000) == 0) {
-      printf("."); fflush(stdout);
+      fprintf(tmdebug_stdout, "."); fflush(tmdebug_stdout);
     }
   }
   assert(tosStdio_tell(bootFile) == nBytes);
@@ -3343,10 +3382,10 @@ Int tsp_createFromFile(String szFileName)
   tosStdio_read(&nObjects, sizeof(Word), 1, bootFile);
   tosStdio_seek(bootFile, 0, tosStdio_SEEK_SET);
   /* output status */
-  printf("\n --- Reading Bootstrap File ---\n\n");
-  printf("Size: %u   Objects: %u   ClassIds: %u\n",
+  fprintf(tmdebug_stdout, "\n --- Reading Bootstrap File ---\n\n");
+  fprintf(tmdebug_stdout, "Size: %u   Objects: %u   ClassIds: %u\n",
          wFileSize, nObjects, nClassIds);
-  printf("\n ------------------------------\n\n");
+  fprintf(tmdebug_stdout, "\n ------------------------------\n\n");
   /* create empty store */
   tsp_create("Bootstrap.ts");
   /* allocate address translation table */
@@ -3357,14 +3396,14 @@ Int tsp_createFromFile(String szFileName)
   /* register classids (predefined and generic) */
   registerClassIds(nClassIds);
   /* read objects and set table entries */
-  printf("reading objects...\n");
+  fprintf(tmdebug_stdout, "reading objects...\n");
   tsp_inhibitGc();
   readObjects(nObjects, nClassIds, wFileSize);
   /* set root object */
   pRoot = (tyc_Root*)translationTable[1];
   tsp_setRoot(pRoot);
   /* sweep through store and set OIDs */
-  printf("\nadjusting OIDs...\n");
+  fprintf(tmdebug_stdout, "\nadjusting OIDs...\n");
   sweep();
   /* create single thread */
   pFun = (tyc_CompiledFun*)(pRoot->pThread);
@@ -3373,7 +3412,7 @@ Int tsp_createFromFile(String szFileName)
   /* free translation table */
   free(translationTable);
   /* save store */
-  printf("\nwriting store...\n");
+  fprintf(tmdebug_stdout, "\nwriting store...\n");
   return tsp_commit();
 }
 

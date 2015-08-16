@@ -266,6 +266,7 @@ finalize :Void
   subTypeDB := X_TL2SubTypeDB.new
   varianceDB := Dictionary.new
   unificationDB.reset
+  nil
 }
 
 classManager :X_TL2ClassManager
@@ -342,7 +343,7 @@ getVariance(operIde :X_TL2TypeIde) :List(Int)
 		})
 	      })
 	      retractTo(unistate)
-	      tycoon.stdout << "{variance of operator "<<operIde.name<<" in "<<param.name<<": "<<vari<<"}\n"
+	      tycoon.stdout << "{variance of operator "<<operIde.name<<" in "<<param.name<<": "<<#("In","Co","Contra","Ign")[vari]<<"}\n"
 	      vari
 	    }).as(List)
 	  tycoon.stdout << "}\n"

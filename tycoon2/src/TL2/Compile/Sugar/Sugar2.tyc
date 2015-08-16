@@ -1,36 +1,38 @@
-tycoon.tl.loader.registerDirectory("Util");
-tycoon.tl.loader.registerDirectory("Compile/Sugar");
-tycoon.tl.loader.update;
-DO load "Compile/Sugar/Init.tyc";
-(*;
-(* create the transformer tool *)
-define sugarMain :SugarMain;
-sugarMain := SugarMain.new;
-define victimPath :String;
-victimPath := tycoon.hoxHome+"/src/TL2/Benchmarks";
+tycoon.tl.loader.registerDirectory("Util") ?
+tycoon.tl.loader.registerDirectory("Compile/Sugar") ?
+tycoon.tl.loader.update ?
+DO load "Compile/Sugar/Init.tyc" ?
 
-(* make sure that all files in <victimPath> are checked in,
-   then feed the following lines to Tycoon: *)
-(* check out everything *)
-tycoon.os.exec("p4 edit "+victimPath+"/%1.tc");
+??
 
-(* make sure the files type check before the conversion *)
-tycoon.tl.loader.registerDirectory(victimPath);
-tycoon.tl.loader.update;
-tycoon.tl.typeChecker.check;
+;; create the transformer tool 
+define sugarMain :SugarMain ?
+sugarMain := SugarMain.new ?
+define victimPath :String ?
+victimPath := tycoon.hoxHome+"/src/TL2/Benchmarks" ?
 
-(* transform all *.tc files *)
-sugarMain.filterDirectory(victimPath, Matcher.new1("[^.][^]*\\.tc", true), ".OLD");
-(* tell the compiler that files in this directory use the new syntax *)
-tycoon.os.exec("echo this file activates the new TL2 syntax on this directory > "+victimPath+"/SYNTAX10");
-tycoon.os.exec("p4 add "+victimPath+"/SYNTAX10");
-(* try to load the files *)
-tycoon.tl.loader.update;
-(* make sure the semantics is the same *)
-tycoon.tl.typeChecker.check;
+;; make sure that all files in <victimPath> are checked in,
+;; then feed the following lines to Tycoon: 
+;; check out everything 
+tycoon.os.exec("p4 edit "+victimPath+"/%1.tc") ?
 
-(* if this produced no errors, then go on: *)
-(* check it all in: *)
-(* tycoon.os.exec("cd "+victimPath+"; sccs delget -y\'Second Syntax conversion\' SCCS"); *)
-(* p4 submit ... *)
-*)
+;; make sure the files type check before the conversion 
+tycoon.tl.loader.registerDirectory(victimPath) ?
+tycoon.tl.loader.update ?
+tycoon.tl.typeChecker.check ?
+
+;; transform all *.tc files 
+sugarMain.filterDirectory(victimPath, Matcher.new1("[^.][^]*\\.tc", true), ".OLD") ?
+;; tell the compiler that files in this directory use the new syntax 
+tycoon.os.exec("echo this file activates the new TL2 syntax on this directory > "+victimPath+"/SYNTAX10") ?
+tycoon.os.exec("p4 add "+victimPath+"/SYNTAX10") ?
+;; try to load the files 
+tycoon.tl.loader.update ?
+;; make sure the semantics is the same 
+tycoon.tl.typeChecker.check ?
+
+;; if this produced no errors, then go on: 
+;; check it all in: 
+;; tycoon.os.exec("cd "+victimPath+"; sccs delget -y\'Second Syntax conversion\' SCCS"); 
+;; p4 submit ... 
+

@@ -66,16 +66,16 @@ applyArgs(T <: Void,
 	      (OperSubst o Replace(Oper.domain by: TL2SubstType(Args, ArgsSubst)))[Oper.range]
 
 
- point of application 
- formal parameters 
- actual parameters 
- applying to domain and range 
- applying to args 
- formal result type 
- check the actual vs the formal parameters ? 
- generate error messages 
- types in <args> are synthesized IdeTypes 
- continuation *)
+ pos	      - point of application 
+ domain       - formal parameters 
+ args         - actual parameters 
+ subst        - applying to domain and range 
+ argsSubst    - applying to args 
+ range        - formal result type 
+ check        - check the actual vs the formal parameters ? 
+ genMsg       - generate error messages 
+ synthIdeArgs - types in <args> are synthesized IdeTypes 
+ cont         - continuation *)
 {
     ; make arguments assignable 
     domain ::= domain

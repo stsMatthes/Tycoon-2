@@ -63,6 +63,8 @@
 
 */
 
+#define PROTOTYPES 1
+
 #ifndef TOSMD5_H
 #define TOSMD5_H
 

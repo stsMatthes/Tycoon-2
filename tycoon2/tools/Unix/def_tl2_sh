@@ -62,7 +62,7 @@ case "${PLATFORM}" in
                 ;;
 esac
 
-echo $PLATFORM
+echo HOX_HOST=$PLATFORM
 
 #
 # Set variables
@@ -124,4 +124,5 @@ esac
 export SGML_SEARCH_PATH
 
 #env|grep $HOX_HOME
+echo HOX_HOME=$HOX_HOME
 

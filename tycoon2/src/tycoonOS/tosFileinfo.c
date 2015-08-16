@@ -46,7 +46,7 @@ Int tosFileinfo_bufferSize(void)
 
 Int tosFileinfo_getBuffer(char *path, tosFileinfo_Buffer *buf)
 {
-  int res = 0;
+  int res;
   char systemPath[tosFilename_MAXLEN];
 
   tosFilename_normalize(path, systemPath, tosFilename_MAXLEN);

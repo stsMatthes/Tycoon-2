@@ -21,7 +21,7 @@
 /*
   Copyright (c) 1996 Higher-Order GmbH, Hamburg. All rights reserved.
 
-  $File: //depot/tycoon2/stsmain/bootstrap/src/tm/tmdebug.c $ $Revision: #3 $ $Date: 2003/10/02 $ Marc Weikard
+  $File: //depot/tycoon2/stsmain/bootstrap/src/tm/tmdebug.c $ $Revision: #4 $ $Date: 2003/11/03 $ Marc Weikard
 
   Simple Debugging
   
@@ -35,6 +35,7 @@
 #include "tos.h"
 #include "tosLog.h"
 #include "tosDate.h"
+#include "tosFile.h"
 #include "tosError.h"
 
 #include "tyc.h"
@@ -79,6 +80,9 @@ Byte abTest[] = {
 
 #endif
 
+FILE * tmdebug_stdout;
+FILE * tmdebug_stderr;
+
 void disassemble(Byte * pCode, FILE * out)
 {
   Word nArgs, ip = 0, nBytes = tsp_size(pCode);
@@ -102,7 +106,7 @@ void disassemble(Byte * pCode, FILE * out)
       case tvm_Op_ifFalse16:
       case tvm_Op_jump16:
         {
-        Short v = *pCode++;
+        Int v = *pCode++;
         v |= *pCode++ << 8;
 	fprintf(out, "%d: \t %s ", ip, opcodes[bOpcode].pszName); 
 	fprintf(out, "%d\n", ip + v); 	
@@ -274,7 +278,7 @@ void tmdebug_showBackTrace(tyc_Thread * pThread, Word wClassId)
     Word wIndex = wClassId - tyc_ClassId_TypeError;
     if((wExceptionMask & (1 << wIndex))) {
       printf("\n### DEBUG: Backtrace\n");
-      tmdebug_backTrace(pThread, stdout);
+      tmdebug_backTrace(pThread, tmdebug_stdout);
       printf("\n###\n");
     }
   }
@@ -326,9 +330,6 @@ void tmdebug_showObjectCount(void)
 2. scan for objects using locked mutexes
 */
 
-
-FILE * tmdebug_stdout;
-FILE * tmdebug_stderr;
 
 static tsp_OID mutexOID;
 
@@ -450,12 +451,18 @@ void tmdebug_systemInfo(FILE * out)
 }
 
 
-void tmdebug_init(void)
+void tmdebug_init()
 {
   char * pszDebug = getenv("HOX_DEBUG");
 
+#if defined(__BORLANDC__)
+  // hack for borlandC
+  tmdebug_stdout = fdopen(tosFile_stdout(), "w");
+  tmdebug_stderr = fdopen(tosFile_stderr(), "w");
+#else
   tmdebug_stdout = stdout;
   tmdebug_stderr = stderr;
+#endif
 
   if(pszDebug) {
     if(strcmp(pszDebug, "all") == 0) {

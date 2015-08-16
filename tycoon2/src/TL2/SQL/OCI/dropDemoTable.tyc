@@ -1,19 +1,14 @@
-(* open database-connection *)
+;; open database-connection
 
 connection ::= SQLDriverManager.instance.connect(
   URL.fromString("tysql:/oci/DBIS;user=scott;password=tiger"))
  
-(* create statement *)
+;; create statement
 statement::=connection.newStatement
 
-(* delete table *)
+;; delete table
 statement.executeDirectUpdate("drop table testtable")
 
-(* close statement and disconnect user hoxdba *)
+;; close statement and disconnect user hoxdba
 statement.close
-connection.close;
-
-
-
-
-
+connection.close ?

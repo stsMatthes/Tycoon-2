@@ -1,16 +1,14 @@
-tycoon.tl.loader.registerDirectory("WWW/FTP");
+tycoon.tl.loader.registerDirectory("WWW/FTP") ?
 
-tycoon.tl.loader.update;
+tycoon.tl.loader.update ?
 
+?? ;; end of automated script
 
-(*;
+define client :FTPClient ?
 
-define client :FTPClient;
+client := FTPClient.new(IPAddress.byName("hoxsun01"), "test", "kodak", true) ?
+client.open ?
 
-client := FTPClient.new(IPAddress.byName("hoxsun01"), "test", "kodak", true);
-client.open;
-
-(* client;
 client.list(".", fun(in :Input) {
   buffer ::= MutableString.new(200)
   n ::= in.readBuffer(buffer, 0, buffer.size)
@@ -18,7 +16,7 @@ client.list(".", fun(in :Input) {
     tycoon.stdout.writeBuffer(buffer, 0, n)
     n := in.readBuffer(buffer, 0, buffer.size)
   })
-});
+}) ?
 
 client.nameList(".", fun(in :Input) {
   tokenizer ::= Tokenizer.new(in, "\n")
@@ -27,21 +25,19 @@ client.nameList(".", fun(in :Input) {
     tycoon.stdout.writeln("Next File: "+fileName)
     fileName := tokenizer.read
   })
-});
+}) ?
 
-client.binary;
-client.get("/var/adm/messages", File.openWrite("/tmp/t"));
+client.binary ?
+client.get("/var/adm/messages", File.openWrite("/tmp/t")) ?
 
-client.makeDirectory("/home/test/tmp");
-client.put("/home/test/tmp/t", File.openRead("/tmp/t"));
-client.get("/home/test/tmp/t", File.openWrite("/tmp/t2"));
-client.removeDirectory("/home/test/tmp");
-client.delete("/home/test/tmp/t");
-client.removeDirectory("/home/test/tmp");
+client.makeDirectory("/home/test/tmp") ?
+client.put("/home/test/tmp/t", File.openRead("/tmp/t")) ?
+client.get("/home/test/tmp/t", File.openWrite("/tmp/t2")) ?
+client.removeDirectory("/home/test/tmp") ?
+client.delete("/home/test/tmp/t") ?
+client.removeDirectory("/home/test/tmp") ?
 
-client.currentDirectory;
-client.changeDirectory("/home");
+client.currentDirectory ?
+client.changeDirectory("/home") ?
 
-client.close;
-
-*)
+client.close ?

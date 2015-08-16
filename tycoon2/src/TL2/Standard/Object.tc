@@ -65,17 +65,28 @@ copy :Self
   shallowCopy
 }
 
+copy @:Self
+{
+  componentCopy@
+}
+
 componentCopy @: Self
   (* return a deep copy of the receiver, recursively following
      component links, but keeping reference links between subcomponents
      intact. *)
 {
-  mapping ::= IdDictionary(:Object, :Object).new
-  __deepHollowCopy(mapping)
-  mapping.keysAndElementsDo(fun(org:Object, cc:Object){
-    cc.__copyFrom(org, mapping)
-  })
-  fetch(_typeCast(mapping[self], :Self))@
+  if( isImmutable then: {
+    ;; sharing of immutable objects
+    ;; (disable for better tracing results)
+    fetch(self)@
+  } else: {
+    mapping ::= IdDictionary(:Object, :Object).new
+    __deepHollowCopy(mapping)
+    mapping.keysAndElementsDo(fun(org:Object, cc:Object){
+      cc.__copyFrom(org, mapping)
+    })
+    fetch(_typeCast(mapping[self], :Self))@
+  })@
 }
 
 identityHash :Int
@@ -218,7 +229,7 @@ __copyFrom(original :Object, mapping :IdDictionary(Object,Object)) :Void
     originalValue ::= original.__basicAt(i)
     __basicAtPut(i, mapping.lookup(originalValue, fun(o:Object){ o }, { originalValue }))
   })
-  if( original.isImmutable then: { setImmutable })
+  if( original.isImmutable then: { _setImmutable })
 }
 
 isImmutable :Bool
@@ -227,7 +238,18 @@ isImmutable :Bool
 
 setImmutable :Void
   (* set the immutable flag. *)
-  builtin
+{
+  if(!isImmutable then: {
+    ;; default implementation, unsuitable for classes with varying size (arrays)
+    assert({ __basicSize == self."class".slotMap.size })
+    self."class".slotMap.keysAndElementsDo(fun(i:Int, slot :TL2Slot) {
+      if( slot.isComponent then: {
+	__basicAt(i).setImmutable
+      })
+    })
+    _setImmutable
+  })
+}
 
 isTracedComponent :Bool
   (* If set, a Thread with the TRACE_INTERCOMPONENT_ONLY flag signals events
@@ -251,14 +273,17 @@ _init :Void
 true :Bool
   (* *)
 builtin
+{ tycoon.tl.root.true_ }
 
 false :Bool
   (* *)
 builtin
+{ tycoon.tl.root.false_ }
 
 nil :Nil
   (* *)
 builtin
+{ tycoon.tl.root.nil_ }
 
 nil @: Nil
   (* *)
@@ -428,6 +453,10 @@ builtin
 __hollowCopy : Self
   (* *)
 builtin
+
+_setImmutable :Void
+  (* set the immutable flag. *)
+  builtin
 
 _typeCast(x :Object, T <:Object) :T
   (*## will be replaced by safe downcast some day *)

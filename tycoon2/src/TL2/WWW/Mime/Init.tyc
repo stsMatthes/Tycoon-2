@@ -1,2 +1,2 @@
-MimeHeaderRegistry.init;
-MimeMessage.init;
+MimeHeaderRegistry.init ?
+MimeMessage.init ?

@@ -57,12 +57,11 @@ BuildLib tm2 : tos : libtm2.def ;
 #
 # Build Tycoon2 executable:
 # - Set up filename in variable $(TYCOON2)
-# - Use sources tycoon.c and rtstatic.c
-# - Link libraries tm2 and rts
+# - source tycoon.c
+# - Link libraries tm2 and tos
 #
-Main $(TYCOON2) : tycoon.c rtstatic.c ;
-LinkLibraries $(TYCOON2) : $(LIBPREFIX)tm2
-                           $(LIBPREFIX)tos ;
+MainFromObjectsAndShlibs $(TYCOON2) : tycoon$(SUFOBJ) : tm2 tos ;
+Objects tycoon.c ;
 
 
 #
@@ -170,3 +169,16 @@ if $(HOX_COMPILER) = MSVC {
                  $(DBG_CLASSIDS) ;
 }
 
+if $(HOX_COMPILER) = BCC32 {
+   makeDirName DBG_TM2      : $(HOX_BIN) libtm2.tds ;
+   makeDirName DBG_TYCOON2  : $(HOX_BIN) tycoon2.tds ;
+   makeDirName DBG_OPCODES  : $(HOX_BIN) opcodes.tds  ;
+   makeDirName DBG_BUILTINS : $(HOX_BIN) builtins.tds ;
+   makeDirName DBG_CLASSIDS : $(HOX_BIN) classids.tds ;
+
+   Clean clean : $(DBG_TM2)
+                 $(DBG_TYCOON2)
+                 $(DBG_OPCODES)
+                 $(DBG_BUILTINS)
+                 $(DBG_CLASSIDS) ;
+}

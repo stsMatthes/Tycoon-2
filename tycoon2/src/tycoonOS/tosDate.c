@@ -19,7 +19,7 @@
  *
  */
 /*
-  $File: //depot/tycoon2/stsmain/tycoon2/src/tycoonOS/tosDate.c $ $Revision: #3 $ $Date: 2003/10/01 $ Andreas Gawecki, Andre Willomat
+  $File: //depot/tycoon2/stsmain/tycoon2/src/tycoonOS/tosDate.c $ $Revision: #4 $ $Date: 2003/11/01 $ Andreas Gawecki, Andre Willomat
 
   Interface to Portable Tycoon-2 operating system (TycoonOS)
 
@@ -55,7 +55,8 @@
   #endif
 #endif
 
-#if   defined(rt_LIB_Nextstep_i386)
+#if   defined(rt_LIB_Nextstep_i386) || defined(__BORLANDC__)
+  /* borland C has problems accessing _tz... from a DLL */
   static int tosDate_timezone = 0;
   static char *tosDate_tzname[] = {"GMT", NULL};
 
@@ -63,13 +64,15 @@
   #define tosDate_timezone (int)_timezone
   #define tosDate_tzname _tzname
 
-  static tosMutex_T mxDate; /* needed for localtime */
-
 #else
   #define tosDate_timezone (int)timezone
   #define tosDate_tzname tzname
 #endif
 
+
+#if defined(rt_LIB_Win32_i386)
+  static tosMutex_T mxDate; /* needed for localtime */
+#endif
 
 /*== Timestamps ===========================================================*/
 
@@ -139,8 +142,8 @@ int tosDate_fromString(struct tosDate_tm *ptm, char *buf, char *fmt)
      return -1;
   }
   tosDate_normalize(ptm);
-#endif
   return 0;
+#endif
 }
 
 
