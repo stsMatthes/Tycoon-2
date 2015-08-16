@@ -376,7 +376,7 @@ static void unmap(unsigned long linear_start, unsigned long linear_end)
   if(linear_start < linear_end) {
     prot = PROT_READ | PROT_WRITE | PROT_EXEC;
     flags = MAP_FIXED | MAP_PRIVATE;
-#if defined(rt_LIB_Darwin_PPC)
+#if defined(rt_LIB_Darwin_PPC) || defined(rt_LIB_Darwin_i386)
     flags |= MAP_ANON;
     fd = -1;
 #else

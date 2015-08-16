@@ -1,4 +1,4 @@
-# first steps to a running tycoon-2 system under Linux (sh)
+# first steps to a running tycoon-2 system under Linux or Darwin (sh)
 
 # compile our customized Jam
 
@@ -12,6 +12,9 @@ cd ../..
 # make sure that nsgmls (version 1.3.4) is in your path.
 # Should print something like:  
 # nsgmls:I: OpenSP version "1.3.4"
+# If unavailable as a pre-built package, sources can be obtained from
+#   http://www.jclark.com/sp/howtoget.htm
+# with necessary macosx patches under contrib/sp-1.3.4-macosx
 
 nsgmls -v </dev/null
 
@@ -45,19 +48,19 @@ tycoon2 TL2.ts
 #   web server with web toplevel
 # this will take some time...
 
-DO load "WWW/HttpdAdmin/HttpdAdmin2.tyc";
+DO load "WWW/HttpdAdmin/HttpdAdmin2.tyc"?
 
 # save a stable system state
 
-tycoon.saveSystem;
+tycoon.saveSystem?
 
 # if port 8001 is already used on your machine, edit 
 #    tyhttpd/tyhttpd-launcher/conf/tyhttpd.conf
 
 # configure and start the web server
 
-DO load "WWW/HttpdAdmin/launch-launcher.tyc";
-tyhttpd.serve;
+DO load "WWW/HttpdAdmin/launch-launcher.tyc"?
+tyhttpd.serve?
 
 # now access 
 #  http://localhost:8001/

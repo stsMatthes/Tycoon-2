@@ -1,7 +1,8 @@
 bootstrap/bin/**
 bootstrap/lib/**
 tycoon2/bin/**
-tycoon2/lib/**
+# keep lib/sgml
+tycoon2/lib/*_*/**
 contrib/Jam-2.2/bin.solaris/**
 contrib/Jam-2.2/bin.linuxx86/**
 contrib/Jam-2.2/bin.macosx/**
