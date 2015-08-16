@@ -115,7 +115,7 @@ understoodDo1(c :TL2ClassPublic, f :Fun(:TL2Selector, :TL2Method):Void) :Void
   c.methodDictionaries.do(fun(md :TL2MethodDictionaryPublic) {
     if( md !== poolDict then: {
       md.do(fun(m :TL2Method) {
-        selector ::= TL2Selector.new1(m.selector, m.arity, m.sorts)
+        selector ::= TL2Selector.new1(m.selector, m.arity, m.sorts, m.keywords)
 	if( !seen.includes(selector)
 	then: { seen.add(selector)
 	        f[selector, m] })

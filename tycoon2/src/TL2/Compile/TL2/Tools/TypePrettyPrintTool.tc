@@ -53,7 +53,7 @@ visitMethodType(t :TL2MethodType) :Void
   (* *)
 {
   printSelector(t.selectorSansAt)
-  if( !t.domain.isEmpty then: {
+  if( !t.positionalDomain.isEmpty || t.hasKeywords then: {
     out << '('
     printDomain(t)  ;; from SignaturePrintMixin
     out << ')'

@@ -131,7 +131,7 @@ reverseDo(statement :Fun(:E):Void) :Void
   (* Perform statement for each e in the receiver,
      in reverse order. *)
 {
-  forDownto(size-1,0,fun(i :Int) {
+  forDown(size-1 to:0 do:fun(i :Int) {
     statement[self[i]]
   })
 }

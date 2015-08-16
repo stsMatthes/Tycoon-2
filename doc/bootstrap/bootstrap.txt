@@ -69,7 +69,7 @@ DO load "Util/Init.tyc";
 
 define aBulkRename :BulkRename;
 aBulkRename := BulkRename.new;
-aBulkRename.parseTable(tycoon.hoxHome+"/src/TL2/Compile/bootstrap-rename.tab"), true;
+aBulkRename.parseTable(tycoon.hoxHome+"/src/TL2/Compile/bootstrap-rename.tab")  true;
 (* umgekehrte Paare hinzufügen *)
 aBulkRename.table.copy.keysAndElementsDo(fun(sansX :String, conX :String) {
   aBulkRename.table[conX] := sansX
@@ -77,14 +77,13 @@ aBulkRename.table.copy.keysAndElementsDo(fun(sansX :String, conX :String) {
 
 cp -R src/TL2/Compile/TL2 src/TL2/Compile/X_TL2 
 rm -rf src/TL2/Compile/X_TL2/Tools
+rm -rf src/TL2/Compile/X_TL2/Old
 cp -R src/TL2/Cross src/TL2/X_Cross
 find src/TL2/X_Cross src/TL2/Compile/X_TL2 -name "*~" | xargs rm
 
 aBulkRename.filterDirectory(tycoon.hoxHome+"/src/TL2/Compile/X_TL2",
                   fun(:String){true}, ".org");
 aBulkRename.filterDirectory(tycoon.hoxHome+"/src/TL2/Compile/X_TL2/BackEnd",
-                  fun(:String){true}, ".org");
-aBulkRename.filterDirectory(tycoon.hoxHome+"/src/TL2/Compile/X_TL2/Old",
                   fun(:String){true}, ".org");
 aBulkRename.filterDirectory(tycoon.hoxHome+"/src/TL2/Compile/X_TL2/New",
                   fun(:String){true}, ".org");
@@ -99,27 +98,26 @@ Array.with1(tycoon.hoxHome+"/../bootstrap/src/TL2/X_Cross").do(fun(subdir:String
   let dir = Directory.new(subdir),
 *)
 
-Array.with6("Compile/X_TL2/", "Compile/X_TL2/BackEnd/",
-            "Compile/X_TL2/Old/", "Compile/X_TL2/New/",
-            "X_Cross/").do(fun(subdir:String) {
-  let dir = Directory.new(tycoon.hoxHome+"/src/TL2/"+subdir),
-  tycoon.stdout << "Directory "<<dir.path<<"\n",
+#("Compile/X_TL2/", "Compile/X_TL2/BackEnd/",
+  "Compile/X_TL2/New/", "X_Cross/").do(fun(subdir:String) {
+  dir ::= Directory.new(tycoon.hoxHome+"/src/TL2/"+subdir)
+  tycoon.stdout << "Directory "<<dir.path<<"\n"
   dir.do(fun(dc :DirectoryContents) {
-    tycoon.os.fs.pathExtension(dc.path) = "tc" ? {
-      let baseName = tycoon.os.fs.lastArc(tycoon.os.fs.pathBase(dc.path)),
-      tycoon.stdout << "Base name: "<<baseName<<"\n",
+    if( tycoon.os.fs.pathExtension(dc.path) = "tc" then: {
+      baseName ::= tycoon.os.fs.lastArc(tycoon.os.fs.pathBase(dc.path))
+      tycoon.stdout << "Base name: "<<baseName<<"\n"
       aBulkRename.table.lookup(baseName, fun(newName :String) {
-        let fullFrom = dc.path,
-        let fullTo = tycoon.os.fs.composePath(
-                                      Array.with2(dir.path, newName+".tc")),
-        tycoon.stdout << "  --> " << fullTo << "\n",
+        fullFrom ::= dc.path
+        fullTo ::= tycoon.os.fs.composePath(#(dir.path, newName+".tc"))
+        tycoon.stdout << "  --> " << fullTo << "\n"
         dc.rename(fullTo)
       }, {
         tycoon.stdout << "  nicht umbenannt\n"
       })
-    }
+    })
   })
 });
+
 
 mv src/TL2/Compile/X_TL2/TL2.tyc  src/TL2/Compile/X_TL2/X_TL2.tyc
 mv src/TL2/Compile/X_TL2/Descriptors.tyc  src/TL2/Compile/X_TL2/X_Descriptors.tyc
@@ -155,6 +153,9 @@ Bootstrap machen, der ein System erzeugt, das mit X_TL2 laeuft:
 cd bootstrap
 p4 edit Clean.ts
 mv Bootstrap.ts Clean.ts
+
+# conserve network bandwidth and server disk space
+# tycoon.tl.classManager.finalize
 
 p4 submit
 

@@ -1,5 +1,5 @@
-class X_TL2Scanner
-super UserScanner(Token(Object), X_TL2ScannerState)
+class UnknownSelectorError
+super Exception
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -19,7 +19,7 @@ super UserScanner(Token(Object), X_TL2ScannerState)
  * 
  * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
  *
- just a type definition *)
-meta AbstractClass
+ raised if builtin commit fails *)
+meta SimpleConcreteClass(UnknownSelectorError)
 {
 }

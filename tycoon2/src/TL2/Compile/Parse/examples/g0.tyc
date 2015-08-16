@@ -1,4 +1,4 @@
-(* Aufbau einer Beispiel-Grammatik *)
+(* construction of an example grammar *)
 
 (*
   [S ::= E $;]
@@ -52,7 +52,7 @@ tailG.addRule0(
 	{nil});
 
 define g :Grammar(Object);
-g := Grammar(:Object).new(eG);
+g := Grammar.new(eG);
 
 (* let's have a look *);
 g.startSymbol;
@@ -64,12 +64,12 @@ eG.rules;
 (* ------------------------------------------------------------ *)
 
 (* select "back end" *)
-define strat :NaiveParserBuilder;
-strat := NaiveParserBuilder.new;
+define strategy :NaiveParserBuilder;
+strategy := NaiveParserBuilder.new;
 
 (* instantiate parser generator *)
 define parserGen :ParserGen(NaiveParser);
-parserGen := ParserGen(:NaiveParser).new(strat);
+parserGen := ParserGen(:NaiveParser).new(strategy);
 
 (* generate parser *)
 define p :NaiveParser(Object);
@@ -81,11 +81,14 @@ define testInput :List(Token(Object));
 
 (* f(v+(v)) *)
 testInput := 
-  List.fromReader(
     "f(v+(v))"
-        .reader.map(fun(c :Char){t[c].token}));
+        .map(fun(c :Char){t[c].token}).as(List);
 
-p.parse(testInput.reader);
+define errHandler :Fun(:Token(Object)):Void;
+errHandler := fun(t:Token(Object)) { tycoon.stdout << "Error on "<<t<<"\n" };
+
+p.logging := true
+p.parse(testInput.reader, errHandler);
 
 (*
 S5			f
@@ -109,10 +112,10 @@ A
 
 define badInput :List(Token(Object));
 badInput := 
-  List.fromReader(
     "f(v+)v))"
-      .reader.map(fun(c :Char){t[c].token}));
+      .map(fun(c :Char){t[c].token}).as(List);
 
 (*;
- p.parse(badInput.reader);
+ p.parse(badInput.reader, errHandler);
  *)
+(* Error on <")"> *)

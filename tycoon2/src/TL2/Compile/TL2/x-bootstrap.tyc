@@ -5,31 +5,32 @@ cd ../bootstrap
 . ../tycoon2/tools/Unix/def_tl2_sh
 # make sure the descriptors are up to date
 jam
+jam Boot
 
 cd ../tycoon2
 . tools/Unix/def_tl2_sh
 
-(* launch simple store *)
+# launch simple store 
 tycoon2 TL2.ts
-(* create and dump a new memory image *)
+# create and dump a new memory image 
 DO load "Compile/TL2/x-bootstrap.tyc";
 DO exit;
 
 cd ../bootstrap
 . ../tycoon2/tools/Unix/def_tl2_sh
 
-(* turn dump into store ON NEW (X-) MACHINE *)
+# turn dump into store ON NEW (X-) MACHINE 
 tycoon2 -bootstrap ../tycoon2/dump
-(* unfold store *)
-(* tycoon2 Bootstrap.ts < src/TL2/Compile/X_TL2/post-bootstrap.tyc *)
+# unfold store 
+# tycoon2 Bootstrap.ts < src/TL2/Compile/X_TL2/post-bootstrap.tyc 
 tycoon2 Bootstrap.ts
-(* assume all classes are typechecked *)
+# assume all classes are typechecked 
 Array.fromContainer(tycoon.tl.typeChecker.agenda).do(
   fun(c :X_TL2ClassPublic) {
     tycoon.tl.typeChecker.ignore(c)
   }
 );
-(* that`s all *)
+# that`s all
 tycoon.saveSystem;
 
 *)
@@ -48,7 +49,6 @@ x_tl2Path := x_home+"/src/TL2/";
 tycoon.tl.topLevel.file(x_tl2Path+"Compile/X_TL2/X_Descriptors.tyc");
 
 tycoon.tl.loader.registerDirectory(x_tl2Path+"Compile/X_TL2");
-tycoon.tl.loader.registerDirectory(x_tl2Path+"Compile/X_TL2/Old");
 tycoon.tl.loader.registerDirectory(x_tl2Path+"Compile/X_TL2/New");
 tycoon.tl.loader.registerDirectory(x_tl2Path+"Compile/X_TL2/BackEnd");
 tycoon.tl.loader.update;
@@ -59,20 +59,20 @@ tycoon.tl.loader.registerDirectory("Cross");
 tycoon.tl.loader.update;
 
 define newTL :X_TL2TL;
-let root = X_TL2Root.new(x_home+"/src/tm/storeDescriptors.tab"),
-let pool = X_TL2Pool.new,
-let vmInterface =
+root ::= X_TL2Root.new(x_home+"/src/tm/storeDescriptors.tab")
+pool ::= X_TL2Pool.new
+vmInterface ::=
   X_TL2VMInterface.new(
     x_home+"/src/tm/builtins.tab",
-    x_home+"/src/tm/opcodes.tab"),
+    x_home+"/src/tm/opcodes.tab")
 newTL := X_TL2TL.new(root,pool,vmInterface);
 
 (* Hack: pretend that AbstractClass is already known *)
 newTL.typeManager.newClassSignature("AbstractClass");
 
-let f = File.openRead(x_home+"/src/tm/classids.tyc"),
-let script = f.readString(f.size.asInt),
-f.close,
+f ::= File.openRead(x_home+"/src/tm/classids.tyc")
+script ::= f.readString(f.size.asInt)
+f.close
 newTL.topLevel.string(script+";");
 
 newTL.topLevel.file(x_tl2Path+"X_Cross/BootStrap.tyc");
@@ -103,7 +103,6 @@ newTL.loader.registerDirectory(x_tl2Path+"Compile/Parse");
 newTL.loader.registerDirectory(x_tl2Path+"Compile/Parse/Compact");
 (*newTL.loader.update;*)
 newTL.loader.registerDirectory(x_tl2Path+"Compile/X_TL2");
-newTL.loader.registerDirectory(x_tl2Path+"Compile/X_TL2/Old");
 newTL.loader.registerDirectory(x_tl2Path+"Compile/X_TL2/New");
 newTL.loader.registerDirectory(x_tl2Path+"Compile/X_TL2/BackEnd");
 newTL.loader.unregisterClass("X_TL2Root");
@@ -122,31 +121,31 @@ newTL.topLevel.string("define tycoon :Tycoon");
 
 (* manually run the compiler on the startup code
    and pass the root,pool and vmInterface objects in *)
-let path = x_tl2Path+"Compile/X_TL2/startup.tyc",
-let errorLog = ErrorLog.new,
-let f = File.openRead(path),
-let s = newTL.newSyntax.scan(path, f, errorLog),
-let startup = newTL.newSyntax.parse(s, errorLog),
-f.close,
-assert startup."class" == X_TL2PUBindings,
-let startup = _typeCast(startup, :X_TL2PUBindings),
-let block :X_TL2BlockValue = startup.b,
-assert block.values.size = 1,
-let funExpr = block.values[0],
-assert funExpr."class" == X_TL2CompiledFun,
-assert _typeCast(funExpr, :X_TL2CompiledFun).domain.size = 3,
-let funExpr =
+path ::= x_tl2Path+"Compile/X_TL2/startup.tyc"
+errorLog ::= ErrorLog.new
+f ::= File.openRead(path)
+s ::= newTL.newSyntax.scan(path, f, errorLog)
+startup ::= newTL.newSyntax.parse(s, errorLog)
+f.close
+assert({ startup."class" == X_TL2PUBindings })
+startup ::= _typeCast(startup, :X_TL2PUBindings)
+block :X_TL2BlockValue := startup.b
+assert({ block.values.size = 1 })
+funExpr ::= block.values[0]
+assert({ funExpr."class" == X_TL2CompiledFun })
+assert({ _typeCast(funExpr, :X_TL2CompiledFun).positionalDomain.size = 3 })
+funExpr ::=
   X_TL2CompiledFun.new(nil, Symbol.new("[]"), List.with0, nil,
     X_TL2SendValue.new(nil, funExpr, Symbol.new("[]"),
       List.with3(
         X_TL2LiteralValue.new(nil, newTL.root),
         X_TL2LiteralValue.new(nil, newTL.pool),
-        X_TL2LiteralValue.new(nil, newTL.vmInterface)))),
-newTL.compiler.simpleEval(nil, newTL.classManager.get("Nil"), funExpr, errorLog),
+        X_TL2LiteralValue.new(nil, newTL.vmInterface))))
+newTL.compiler.simpleEval(nil, newTL.classManager.get("Nil"), funExpr, errorLog)
 (* as a side effect, funExpr is compiled. *)
 newTL.root.thread := _typeCast(funExpr);
 
-newTL.root.symbolTable := tycoon.tl.root.symbolTable.as(Set), true;
+newTL.root.symbolTable := tycoon.tl.root.symbolTable.as(Set)  true;
 (* CrossTracer.new.collectSymbols(newTL.root); *)
 
 Date.now.print;
@@ -156,8 +155,8 @@ newTL.root.classes.do(fun(c:X_TL2Class) {
 newTL.pool.observers.remove(newTL.classManager);
 newTL.pool.observers.remove(newTL.typeChecker);
 Timer.new(tycoon.cpuClock).time({
-  try({ CrossTracer.new.traceToFile(newTL.root, "dump") },
-  fun(e:Exception){ e })
+  try({ CrossTracer.new.traceToFile(newTL.root, "dump") }
+  else: fun(e:Exception){ e })
 });
 newTL.root.classes.do(fun(c:X_TL2Class) {
   c.classManager := newTL.classManager

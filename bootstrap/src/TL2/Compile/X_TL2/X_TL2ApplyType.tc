@@ -76,56 +76,82 @@ checkSubObjectType(big :X_TL2ObjectType, subst :X_TL2Subst, bigSubst :X_TL2Subst
 checkSubApplyType (big :X_TL2ApplyType,  subst :X_TL2Subst, bigSubst :X_TL2Subst) :Void
   (* *)
 {
-    ; first chance:
+  success ::= false
+
+; first chance:
+;    same operator (global ide), known co/contravariance
+
+  if( args.size == big.args.size then: {
+    getOperIde ::= visitor.
+      ifIdeType(fun(oper :X_TL2IdeType) {
+	oper.ide
+      }).
+      otherwise(fun(:X_TL2Type) { nil })
+
+    operIde ::= getOperIde.visitType(oper)
+    bigOperIde ::= getOperIde.visitType(big.oper)
+    if( operIde.isNotNil
+     && operIde == bigOperIde
+     && operIde.isGlobal then: {
+      unistate ::= typeChecker.unificationState
+      variance ::= typeChecker.getVariance(operIde)
+      if( variance.isNotNil && variance.size == args.size then: {
+	checkArgListVariance(variance, args, big.args, subst, bigSubst)
+	success := true
+	;; an exception makes the whole check fail
+      })
+    })
+  })
+
+;    second chance:
 ;       O <: O'', A <: A'', A'' <: A
 ;       -------------------------
 ;          O(A) <: O''(A'')
 ;
-;       Use first chance, if:
+;       Use second chance, if:
+;       - first chance not tried (different / too complex operators)
 ;       - argument lists are equally long
-;       - small is not a Fun (could also check for big)
 ;    
 
-    firstChance ::=
-      if( args.size == big.args.size then: {
-	isFun ::= oper.visitor.
-	  ifIdeType(fun(oper :X_TL2IdeType) {
-	    oper.ide.name.startsWith("Fun")
-	  }).
-	  otherwise(fun(:X_TL2Type) { false }).
-	  visitType(oper)
+  if( !success then: {
 
-	!isFun
-      } else: {
-        false
-      })
-
-    if( firstChance then: {
+    if(  args.size == big.args.size
+	  && !oper.visitor.
+	   ifIdeType(fun(oper :X_TL2IdeType) {
+	     oper.ide.name.startsWith("Fun")
+	   }).
+	   otherwise(fun(:X_TL2Type) { false }).
+	   visitType(oper)
+     then: {
+      unistate ::= typeChecker.unificationState
       try({
+
 	oper.checkSubType(big.oper, subst, bigSubst)
 	checkEqualArgLists(args, big.args, subst, bigSubst)
+
+	success := true
       } else: fun(e :Exception) {
-	if( e."class" == X_TL2TypeCheckTypeError then: {
-	  expose(subst, false, fun(t :X_TL2Type, subst :X_TL2Subst) {
-	    t.checkSubType(big, subst, bigSubst)
-	  })
-	} else: {
+	typeChecker.retractTo(unistate)
+	if( e."class" != X_TL2TypeCheckTypeError then: {
 	  e.raise
 	})
       })
-    } else: {
-      expose(subst, false, fun(t :X_TL2Type, subst :X_TL2Subst) {
-	t.checkSubType(big, subst, bigSubst)
-      })
     })
-  }
+  })
+
+  if( !success then: {
+    expose(subst, false, fun(t :X_TL2Type, subst :X_TL2Subst) {
+      t.checkSubType(big, subst, bigSubst)
+    })
+  })
+}
 
 checkSubOperType  (big :X_TL2OperType,   subst :X_TL2Subst, bigSubst :X_TL2Subst) :Void
   (* *)
 {
-    ; A type application is never an oper in X_TL2TL-2 and so can't be subtype of an Oper 
-    raiseSubTypeError(self, big)
-  }
+  ; A type application is never an oper in X_TL2TL-2 and so can't be subtype of an Oper 
+  raiseSubTypeError(self, big)
+}
 
 prettyPrint(out :Printer) :Void
   (* ########################################### *)
@@ -184,14 +210,14 @@ substArgs(subst :X_TL2Subst, args :List(X_TL2Type)) :List(X_TL2Type)
 subst(subst :X_TL2Subst) :X_TL2ApplyType
   (* *)
 {
-    newOper ::= oper.subst(subst)
-    newArgs ::= substArgs(subst, args)
-    if( newOper == oper && newArgs == args then: fun():X_TL2ApplyType {
-      self
-    } else: {
-      X_TL2ApplyType.new(oper, args)
-    })
-  }
+  newOper ::= oper.subst(subst)
+  newArgs ::= substArgs(subst, args)
+  if( newOper == oper && newArgs == args then: fun():X_TL2ApplyType {
+    self
+  } else: {
+    X_TL2ApplyType.new(newOper, newArgs)
+  })
+}
 
 private
 
@@ -213,13 +239,47 @@ doExpose(T <: Void, subst :X_TL2Subst, exact :Bool, cont :Fun(:X_TL2Type, :X_TL2
     oper.apply(args, subst, subst, exact, cont)
   }
 
+checkArgListVariance(variance :List(Int), args1 :List(X_TL2Type), args2 :List(X_TL2Type), s1 :X_TL2Subst, s2 :X_TL2Subst) :Void
+  (* *)
+require args1.size == args2.size
+     && args1.size == variance.size
+  {
+    variance ::= variance
+    args1 ::= args1
+    args2 ::= args2
+    while({
+      !args1.isEmpty
+    } do: {
+      t1 ::= args1.head
+      t2 ::= args2.head
+      vari ::= variance.head
+
+      if( (vari & 2) == 0 then: {
+	;; operator not contravariant
+	;; check covariance
+        t1.checkSubType(t2, s1, s2)
+      })
+      if( (vari & 1) == 0 then: {
+	;; operator not covariant
+	;; check contravariance
+        t2.checkSubType(t1, s2, s1)
+      })
+      ;; we assume that co AND contravariant operator means
+      ;; that argument is ignored or compared only to itself
+      ;; so no check - ### is this correct?
+
+      args1 := args1.tail
+      args2 := args2.tail
+      variance := variance.tail
+    })
+  }
+
 checkEqualArgLists(args1 :List(X_TL2Type), args2 :List(X_TL2Type), s1 :X_TL2Subst, s2 :X_TL2Subst) :Void
   (* *)
 require args1.size == args2.size
   {
     args1 ::= args1
     args2 ::= args2
-    
     while({
       !args1.isEmpty
     } do: {
@@ -233,5 +293,4 @@ require args1.size == args2.size
       args2 := args2.tail
     })
   }
-
 }

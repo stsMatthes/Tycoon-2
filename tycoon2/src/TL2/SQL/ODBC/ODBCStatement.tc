@@ -271,7 +271,7 @@ _putRawParameters():Void
 	     ; Parameter was set by setRaw 
              currentFile ::= _rawData[pNumberBuffer.intValue].openRead
 	     length ::= odbc.rawBufferLength
-	     until({length < odbc.rawBufferLength}, fun() {
+	     repeat({
 	       length:=
 	       currentFile.readBuffer(stringBuffer,0,odbc.rawBufferLength)
 	       cBuffer.setRawStringValue(stringBuffer)
@@ -281,7 +281,7 @@ _putRawParameters():Void
 		   pNumberBuffer.close
 		   ODBCError.new(odbc.NULL,odbc.NULL,_hstmt).raise
 	         })
-	      }) 
+	      }until:{ length < odbc.rawBufferLength }) 
 	      currentFile.close
 	    }
 	else: {  ; Parameter was not set -> insert NULL-Value into DB 

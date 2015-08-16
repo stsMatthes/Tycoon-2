@@ -31,7 +31,7 @@ new(n :Int,
   instance.n := n
   instance.className := className
   instance.selector :=
-    X_TL2Selector.new1(Symbol.new(selector), arity, sorts)
+    X_TL2Selector.new1(Symbol.new(selector), arity, sorts, #())
   instance._init
   instance
 }

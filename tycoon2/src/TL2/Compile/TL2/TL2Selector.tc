@@ -32,6 +32,9 @@ sorts :Int
      (sorts & (1<<n)) != 0 iff argument n is a component
      leftmost argument is n=0 *)
 
+keywords :Array(Symbol)
+  (* always non-nil *)
+
 sortsSequence :Sequence(Bool)
 { FunSequence.new(
     fun(i :Int) { (sorts & (1<<i)) != 0 },
@@ -51,14 +54,22 @@ symbolSansAt :Symbol
 isComponent :Bool
 { symbol.size > 0 && symbol[symbol.size-1] = '@' }
 
+nPositional :Int
+{
+  arity - keywords.size
+}
+
 printOn(out :Output) :Void
   (* *)
-{ symbol.printOn(out)
-  out.write('/')
-  arity.printOn(out)
-  out.write('/')
+{ 
+  nPositional ::= self.nPositional
+  out << symbol << '/' << nPositional << '/'
+  keywords.do(fun(kw:Symbol){
+    out << kw << ':'
+  })
+  out << '/'
   sortsSequence.do(fun(isComponent :Bool) {
-    out.write( if(isComponent then: {'C'} else: {'R'}) )
+    out << if(isComponent then: {'C'} else: {'R'})
   })
 }
 
@@ -76,13 +87,15 @@ selectorEqual(selector :TL2Selector) :Bool
 {
   symbol == selector.symbol
    && arity == selector.arity
-   && sorts = selector.sorts 
+   && sorts = selector.sorts
+   && keywords.sequenceEqual(selector.keywords)
 }
 
 equalityHash :Int
   (* answer a hash value reflecting the receivers contents. *)
 {
   symbol.equalityHash + arity + sorts
+   + keywords.equalityHash
 }
 
 }

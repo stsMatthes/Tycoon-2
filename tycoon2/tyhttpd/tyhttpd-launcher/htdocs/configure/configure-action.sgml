@@ -2,24 +2,24 @@
 
 <tycoon>
    success := try({
-     server := formFields["server"],
+     server := formFields["server"]
      
-     let host = formFields["host"].trim,
-     let port = formFields["port"].trim,
-     let user = formFields["user"].trim,
-     let group = formFields["group"].trim,
-     let documentRoot = formFields["documentRoot"].trim,
+     host ::= formFields["host"].trim
+     port ::= formFields["port"].trim
+     user ::= formFields["user"].trim
+     group ::= formFields["group"].trim
+     documentRoot ::= formFields["documentRoot"].trim
 
-     properties.host := host,
-     properties.port := port.asInt,
-     properties.user := user != "" ? { user } : { nil },
-     properties.group := group != "" ? { group } : { nil },
-     properties.documentRoot := documentRoot,
-     properties.url := URL.fromString(""), (*##formFields["url"],*)
-     properties.save,
+     properties.host := host
+     properties.port := port.asInt
+     properties.user := if( user != "" then: { user } else: { nil })
+     properties.group := if( group != "" then: { group } else: { nil })
+     properties.documentRoot := documentRoot
+     properties.url := URL.fromString("") ;;##formFields["url"]
+     properties.save
      true
-   }, fun(e :Exception) {
-        errorMsg := e.printString,
+   } else: fun(e :Exception) {
+        errorMsg := e.printString
 	false
    })
 </tycoon>

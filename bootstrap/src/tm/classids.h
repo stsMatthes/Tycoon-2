@@ -21,7 +21,7 @@
 /*
   Copyright (c) 1996 Higher-Order GmbH, Hamburg. All rights reserved.
 
-  $File: //depot/tycoon2/stsmain/bootstrap/src/tm/classids.h $ $Revision: #4 $ $Date: 2003/10/02 $ Marc Weikard
+  $File: //depot/tycoon2/stsmain/bootstrap/src/tm/classids.h $ $Revision: #5 $ $Date: 2003/10/17 $ Marc Weikard
 
   Tycoon Predefined ClassIds
 
@@ -81,31 +81,32 @@
 
   TYC_CLASSID(BUILTIN, DLL,              Array, NULL) /* "ooooo" WR, Int32, Path, err, errDetail */
 
-  TYC_CLASSID(X_TL2, Selector,            Struct, "oii")
+  TYC_CLASSID(X_TL2, Selector,            Struct, "oiio")
 
-  TYC_CLASSID(X_TL2 , Method,              Struct, "ooooooiiii")
-  TYC_CLASSID(X_TL2 , CompiledMethod,      Struct, "ooooooiiiioioooiio")
-  TYC_CLASSID(X_TL2 , BuiltinMethod,       Struct, "ooooooiiiioioooiioii")
-  TYC_CLASSID(X_TL2 , ExternalMethod,      Struct, "ooooooiiiiooooii")
-  TYC_CLASSID(X_TL2 , SlotMethod,          Struct, "ooooooiiiioi")  
-  TYC_CLASSID(X_TL2 , SlotAccessMethod,    Struct, "ooooooiiiioi")  
-  TYC_CLASSID(X_TL2 , SlotUpdateMethod,    Struct, "ooooooiiiioi") 
-  TYC_CLASSID(X_TL2 , PoolMethod,          Struct, "ooooooiiiio")  
-  TYC_CLASSID(X_TL2 , PoolAccessMethod,    Struct, "ooooooiiiio")  
-  TYC_CLASSID(X_TL2 , PoolUpdateMethod,    Struct, "ooooooiiiio")  
-  TYC_CLASSID(X_TL2 , CSlotAccessMethod,   Struct, "ooooooiiiioiC") 
-  TYC_CLASSID(X_TL2 , CSlotUpdateMethod,   Struct, "ooooooiiiioiC")
-  TYC_CLASSID(X_TL2 , SlotReferenceMethod, Struct, "ooooooiiiioi")  
-  TYC_CLASSID(X_TL2 , SlotTakeFromMethod,  Struct, "ooooooiiiioi")  
-  TYC_CLASSID(X_TL2 , SlotMoveToMethod,    Struct, "ooooooiiiioi") 
-  TYC_CLASSID(X_TL2 , CSlotReferenceMethod,Struct, "ooooooiiiioiC")  
-  TYC_CLASSID(X_TL2 , CSlotTakeFromMethod, Struct, "ooooooiiiioiC")  
-  TYC_CLASSID(X_TL2 , CSlotMoveToMethod,   Struct, "ooooooiiiioiC") 
-  TYC_CLASSID(X_TL2 , CompiledFun,         Struct, "ooooooiiiioioooiiooi")
+  TYC_CLASSID(X_TL2 , Method,              Struct, "ooooooiiioi")
+  TYC_CLASSID(X_TL2 , CompiledMethod,      Struct, "ooooooiiioiooioooiio")
+  TYC_CLASSID(X_TL2 , BuiltinMethod,       Struct, "ooooooiiioiooioooiioii")
+  TYC_CLASSID(X_TL2 , ExternalMethod,      Struct, "ooooooiiioiooooii")
+  TYC_CLASSID(X_TL2 , SlotMethod,          Struct, "ooooooiiioioi")  
+  TYC_CLASSID(X_TL2 , SlotAccessMethod,    Struct, "ooooooiiioioi")  
+  TYC_CLASSID(X_TL2 , SlotUpdateMethod,    Struct, "ooooooiiioioi") 
+  TYC_CLASSID(X_TL2 , PoolMethod,          Struct, "ooooooiiioio")  
+  TYC_CLASSID(X_TL2 , PoolAccessMethod,    Struct, "ooooooiiioio")  
+  TYC_CLASSID(X_TL2 , PoolUpdateMethod,    Struct, "ooooooiiioio")  
+  TYC_CLASSID(X_TL2 , CSlotAccessMethod,   Struct, "ooooooiiioioiC") 
+  TYC_CLASSID(X_TL2 , CSlotUpdateMethod,   Struct, "ooooooiiioioiC")
+  TYC_CLASSID(X_TL2 , SlotReferenceMethod, Struct, "ooooooiiioioi")  
+  TYC_CLASSID(X_TL2 , SlotTakeFromMethod,  Struct, "ooooooiiioioi")  
+  TYC_CLASSID(X_TL2 , SlotMoveToMethod,    Struct, "ooooooiiioioi") 
+  TYC_CLASSID(X_TL2 , CSlotReferenceMethod,Struct, "ooooooiiioioiC")  
+  TYC_CLASSID(X_TL2 , CSlotTakeFromMethod, Struct, "ooooooiiioioiC")  
+  TYC_CLASSID(X_TL2 , CSlotMoveToMethod,   Struct, "ooooooiiioioiC") 
+  TYC_CLASSID(X_TL2 , CompiledFun,         Struct, "ooooooiiioiooioooiiooi")
   TYC_CLASSID(BUILTIN, Function,            Array,  NULL)       
-  TYC_CLASSID(X_TL2 , DeferredMethod,      Struct, "ooooooiiii")
-  TYC_CLASSID(X_TL2 , UnimplementedMethod, Struct, "ooooooiiii")
-  TYC_CLASSID(X_TL2 , Slot, 		Struct, "ooooiio")
+  TYC_CLASSID(X_TL2 , DeferredMethod,      Struct, "ooooooiiioi")
+  TYC_CLASSID(X_TL2 , UnimplementedMethod, Struct, "ooooooiiioi")
+  TYC_CLASSID(X_TL2 , ReorderMethod, 	 Struct, "ooooooiiioiioiiCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC")
+  TYC_CLASSID(X_TL2 , Slot, 		 Struct, "ooooiio")
 
   /* exceptions raised by TVM */
   TYC_CLASSID(BUILTIN, TypeError,             Array, NULL) /* "oo" *//* debug range */
@@ -118,6 +119,7 @@
   TYC_CLASSID(BUILTIN, BlockingCallInterrupt, Array, NULL) /* "" */
   TYC_CLASSID(BUILTIN, ThreadCancelled,       Array, NULL) /* "" */
   TYC_CLASSID(BUILTIN, CommitError,           Array, NULL) /* "" */
+  TYC_CLASSID(BUILTIN, UnknownSelectorError,  Array, NULL) /* "" */
   TYC_CLASSID(BUILTIN, WrongSignature,        Array, NULL) /* "oooo" */
   TYC_CLASSID(BUILTIN, FetchBoundComponent,   Array, NULL) /* "o" */
   TYC_CLASSID(BUILTIN, PerformArityMismatch,  Array, NULL) /* "ooo" */

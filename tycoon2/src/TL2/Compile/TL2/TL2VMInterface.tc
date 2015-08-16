@@ -64,6 +64,10 @@ literalMax :Int
   (* maximum number of objects in literal vector *)
 { 65536 }
 
+maxKeywords :Int
+  (* maximum number of keywords in method selector *)
+{ 32 }
+
 private
 
 _shortSendMax :Int
@@ -82,15 +86,15 @@ _init :Void
 ; opcodes and builtins are set via script 
 
   specialSends := Dictionary.new1(9)
-  specialSends[TL2Selector.new(#"+", #(false))] := #sendAdd
-  specialSends[TL2Selector.new(#"-", #(false))] := #sendSub
-  specialSends[TL2Selector.new(#"<=", #(false))] := #sendLessOrEqual
-  specialSends[TL2Selector.new(#"==", #(false))] := #sendEqual
-  specialSends[TL2Selector.new(#"!==", #(false))] := #sendNotEqual
-  specialSends[TL2Selector.new(#"[]", #())] := #sendFun0Apply
-  specialSends[TL2Selector.new(#"[]", #(false))] := #sendFun1Apply
-  specialSends[TL2Selector.new(#isNil, #())] := #sendIsNil
-  specialSends[TL2Selector.new(#isNotNil, #())] := #sendIsNotNil
+  specialSends[TL2Selector.new(#"+", #(false),#())] := #sendAdd
+  specialSends[TL2Selector.new(#"-", #(false),#())] := #sendSub
+  specialSends[TL2Selector.new(#"<=", #(false),#())] := #sendLessOrEqual
+  specialSends[TL2Selector.new(#"==", #(false),#())] := #sendEqual
+  specialSends[TL2Selector.new(#"!==", #(false),#())] := #sendNotEqual
+  specialSends[TL2Selector.new(#"[]", #(),#())] := #sendFun0Apply
+  specialSends[TL2Selector.new(#"[]", #(false),#())] := #sendFun1Apply
+  specialSends[TL2Selector.new(#isNil, #(),#())] := #sendIsNil
+  specialSends[TL2Selector.new(#isNotNil, #(),#())] := #sendIsNotNil
 
   shortSends := #( #send0, #send1, #send2, #send3, #send4,
 		   #send5, #send6, #send7, #send8, #send9 ;; , ...

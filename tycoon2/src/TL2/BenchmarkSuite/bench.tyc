@@ -1,3 +1,4 @@
+(*
    TL-2 Benchmark Suite
    --------------------
 
@@ -12,7 +13,7 @@
    B. Medium benchmarks:
 
    richards        1 iteration
-
+*)
 
 (* *** TESTING *** *)
 

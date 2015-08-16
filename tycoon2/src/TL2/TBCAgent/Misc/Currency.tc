@@ -200,13 +200,13 @@ printOn(out :Output) :Void
     buffer:Stack(Char) := Stack.new1(64)    
     mark:Long := _value/100.asLong.abs      
     i:Int := 0
-    until({mark.isZero}, {
+    repeat({
       buffer.addFirst(Char.digit((mark % radix).asInt))
       mark := mark / radix
       i := i + 1
       if( ((i % 3) = 0 && mark.isStrictlyPositive) then:
        { buffer.addFirst('.') })
-    })
+    }until:{mark.isZero})
     out.writeAll(buffer)
     
     out.write(',')

@@ -43,7 +43,7 @@ genLoadRef(writer :BEByteCodeWriter) :Void
 
 genStore(writer :BEByteCodeWriter) :Void
   (* *)
-{ assert({ ide.mutable })
+{
   assert({ !ide.component })
   if( ide.accessedFromClosure then: {
     genLoadRef(writer)

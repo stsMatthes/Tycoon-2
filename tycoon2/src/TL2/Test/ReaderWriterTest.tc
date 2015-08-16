@@ -82,9 +82,9 @@ busy(processor :Int, c :Char, duration :Long)
  * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
  *
 
-  forDownto(duration.asInt-1, 0, fun(i:Int) {
+  forDown(duration.asInt-1 to: 0 do: fun(i:Int) {
     Thread.sleep(1.asLong),
-    stateChange(processor, i.isZero ? { '-' } : { Char.digit(i) })
+    stateChange(processor, if( i.isZero then:{ '-' } else:{ Char.digit(i) }))
   })
 *)
  Thread.sleep(duration),

@@ -1,6 +1,6 @@
 <!doctype stml system>
  
-<stml processor=HttpdLauncherProcessor>
+<stml processor=HttpdLauncherProcessor language='tycoon-1.0'>
 
 <title>Tycoon Web Server Launching Pad</title>
 
@@ -12,7 +12,7 @@
 
 <table width="100%" border=1>
 <tbody>
-<tycoon/let var heading = false/
+<tycoon/heading ::= false/
 <send selector=serversDo>
 <arg><fun>
 
@@ -26,7 +26,7 @@
       <td align=center>
         <b><if true=isRunning>
 		<a href='`"http://" +
-		  (properties.host = Httpd.anyHost ? { "localhost" } : { properties.host })
+		  if( properties.host = Httpd.anyHost then: { "localhost" } else: { properties.host })
 		  + ":" + properties.port.printString`'>
 		   <ref name=server>tyhttpd-X</ref>
 		</a>

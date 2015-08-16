@@ -1,5 +1,5 @@
 (*
-   $File: //depot/tycoon2/stsmain/tycoon2/src/TL2/Debug/Debug.tyc $ $Revision: #4 $ $Date: 2003/10/01 $ Axel Wienberg
+   $File: //depot/tycoon2/stsmain/tycoon2/src/TL2/Debug/Debug.tyc $ $Revision: #5 $ $Date: 2003/10/07 $ Axel Wienberg
 
    load script for debug package
  *)
@@ -9,27 +9,30 @@ tycoon.tl.typeChecker.check;
 (* short cut:
 tycoon.tl.typeChecker.finalize;
 tycoon.tl.classManager.classTable.do(fun(c:Class){
-  let path = c.pos.where,
-  path.startsWith("./Debug/") 
-  && { tycoon.tl.typeChecker.agenda.includes(c) }
-  ? { tycoon.tl.typeChecker.checkClass(c) }
+  path ::= c.pos.where
+  if( path.startsWith("./Debug/") 
+   && tycoon.tl.typeChecker.agenda.includes(c) then: {
+    tycoon.tl.typeChecker.checkClass(c)
+  })
 });
 *)
 tycoon.tl.typeChecker.finalize;
 
 DO load "Debug/Init.tyc";
 
-(*;
+;;
+;; end of automatic script
+;;
+
 (* warning: the printer will interfere with the sequence diagram stml page! for console use only. *)
 DbgTracer.instance.startPrinter;
 DbgTracer.instance.trace({
   for(1,2,fun(:Int) {
-    tycoon.stdout << "work...\n",
+    tycoon.stdout << "work...\n"
     Thread.sleep(Long.fromInt(2))
   })
 });
 DbgTracer.instance.stopPrinter;
-*)
 
 (*
 DbgTracer.instance.stopTracer;

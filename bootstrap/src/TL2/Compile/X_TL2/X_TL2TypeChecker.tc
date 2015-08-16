@@ -134,6 +134,8 @@ classChanged(:X_TL2ClassManager, c :X_TL2ClassPublic) :Void
 
     agenda[c.name] := c
 
+    varianceDB.removeKey(c.typeIde)
+
     ; ## too slow ? 
     dependencies.do(fun(s :Set(String)) {
       s.remove(c.name)
@@ -261,8 +263,10 @@ retractTo(unificationState :Int) :Void
 finalize :Void
   (* regain some MB *)
 {
-    subTypeDB.clear
-  }
+  subTypeDB := X_TL2SubTypeDB.new
+  varianceDB := Dictionary.new
+  unificationDB.reset
+}
 
 classManager :X_TL2ClassManager
   (* *)
@@ -272,9 +276,96 @@ pool :X_TL2Pool
   (* *)
 { _pool }
 
+getVariance(operIde :X_TL2TypeIde) :List(Int)
+{
+  found ::=
+    varianceDB.lookup(operIde, fun(variance:List(Int)) {
+      variance
+    }, {
+      ;; set marker for "in progress" (recursion)
+      varianceDB[operIde] := List.with0
+      try({
+	oper :X_TL2OperType :=
+	  operIde.type.accept(
+	    X_TL2FunTypeVisitor.new
+	    .ifOperType(fun(t:X_TL2OperType){ t })
+	    .otherwise(fun(:X_TL2Type){ nil }))
+	assert({ oper.isNotNil })
+
+	isSimpleVisitor ::= X_TL2FunTypeVisitor.new
+	  .ifIdeType(fun(t:X_TL2IdeType){ t.ide.isGlobal })
+	  .ifVoidType(fun(:X_TL2VoidType){ true })
+	  .otherwise(fun(:X_TL2Type){ false })
+	domain ::= oper.domain
+	if( domain.all(fun(param :X_TL2TypeIde) {
+	      param.case( fun(:X_TL2ValueIde){ false },
+			  fun(:X_TL2TypeIde){ false },
+			  fun(st:X_TL2SubTypeIde){ st.type.accept(isSimpleVisitor) })
+	    }) then: {
+	  emptySubst ::= X_TL2EmptySubst.instance
+	  unistate ::= typeChecker.unificationState
+	  tycoon.stdout << "{computing variance of operator "<<operIde.name<<"\n"
+	  myApply ::= 
+	    X_TL2ApplyType.new(X_TL2IdeType.new(operIde),
+	      domain.map(fun(ide:X_TL2TypeIde){ X_TL2IdeType.new(ide) }).as(List))
+	  variance ::=
+	    domain.map(fun(param :X_TL2TypeIde) {
+	      subIde ::= X_TL2SubTypeIde.new(param.pos, "sub_"+param.name, X_TL2IdeType.new(param))
+	      subIdeSubst ::= X_TL2ConsSubst.new(param, X_TL2IdeType.new(subIde), emptySubst)
+	      subApply ::= 
+		X_TL2ApplyType.new(X_TL2IdeType.new(operIde),
+		  domain.map(fun(ide:X_TL2TypeIde){ 
+		    X_TL2IdeType.new(if(ide == param then:{ subIde } else:{ ide })) })
+		  .as(List))
+	      vari ::= 0 
+	      try({
+		subTypeDB.consult(subApply, myApply, emptySubst, emptySubst, {
+		  oper.range.checkSubType(oper.range,subIdeSubst,emptySubst)
+		})
+		vari := 1  ;; co
+	      } else: fun(e :Exception) {
+		if( e."class" != X_TL2TypeCheckTypeError then: {
+	          retractTo(unistate)
+		  e.raise
+		})
+	      })
+	      retractTo(unistate)
+	      try({
+		subTypeDB.consult(myApply, subApply, emptySubst, emptySubst, {
+		  oper.range.checkSubType(oper.range,emptySubst,subIdeSubst)
+		})
+		vari := vari + 2 ;; contra
+	      } else: fun(e :Exception) {
+		if( e."class" != X_TL2TypeCheckTypeError then: {
+	          retractTo(unistate)
+		  e.raise
+		})
+	      })
+	      retractTo(unistate)
+	      tycoon.stdout << "{variance of operator "<<operIde.name<<" in "<<param.name<<": "<<vari<<"}\n"
+	      vari
+	    }).as(List)
+	  tycoon.stdout << "}\n"
+	  varianceDB[operIde] := variance
+	  variance
+	} else: {
+	  tycoon.stdout << "{operator signature too complicated for variance check: "<<operIde.name<<"}\n"
+	  List.with0
+	})
+      } else: fun(e:Exception) {
+	varianceDB.removeKey(operIde)
+	e.raise
+      })
+    })
+  ;; empty list is marker for "too touchy" or "in progress"
+  if( !found.isEmpty then: { found } else: { nil })
+}
+
 private
 
 subTypeDB     :X_TL2SubTypeDB
+
+varianceDB    :Dictionary(X_TL2TypeIde, List(Int))
 
 unificationDB :X_TL2UnificationDB
   (* database of currently instantiated unification variables *)
@@ -298,11 +389,22 @@ _pool :X_TL2Pool
 checkMethod(m :X_TL2Method) :Void
   (* *)
 {
-    m.methodType.domain.do(fun(i :X_TL2Ide) {
+    m.methodType.positionalDomain.do(fun(i :X_TL2Ide) {
       i.type.checkType(X_TL2EmptySubst.instance)
     })
 
+    m.methodType.keywordDomain.do(fun(kwi :X_TL2KeywordIde) {
+      kwi.ide.type.checkType(X_TL2EmptySubst.instance)
+      kwi.defaultValue.check(fun(t :X_TL2Type, s :X_TL2Subst) {
+	setError(m.pos, "default value does not conform to declared parameter type", {
+	  t.checkSubType(kwi.ide.type, s, X_TL2EmptySubst.instance)
+	})
+      })
+    })
+
     m.methodType.range.checkType(X_TL2EmptySubst.instance)
+
+    ;; ### check pre- and postcondition
 
     if( m."class" == X_TL2CompiledMethod then: {
       m ::= _typeCast(m, :X_TL2CompiledMethod)
@@ -322,6 +424,7 @@ _init :Void
   (* *)
 {
     subTypeDB := X_TL2SubTypeDB.new
+    varianceDB := Dictionary.new
     unificationDB := X_TL2UnificationDB.new
     
     logTypeChecks   := false

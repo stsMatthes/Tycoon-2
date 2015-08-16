@@ -126,15 +126,18 @@ build_linescanner :Void
 {
   sg ::= ScannerBuilder.new
   
-  sg.addToken("-[^\n]*\n", fun(s :UserScanner(Bool,SgmlsParserData)) {
+  sg.addToken("-[^\r\n]*\r?\n", fun(s :UserScanner(Bool,SgmlsParserData)) {
+    token ::= s.token
+    len ::= token.size-2
+    if(token[len]='\r' then:{ len:=len-1 })
     unquoter ::= Scanner.new1(unquoterTables,
-      StringInput.new2(s.token, 1, s.tokenSize-2),
-      s.tokenSize)
+      StringInput.new2(s.token, 1, len),
+      len)
     s.userState.out.writeAll(unquoter)
     true
   })
 
-  sg.addToken("A{[^ \n]+} {CDATA |TOKEN |[^ \n]+}{[^\n]*}\n",
+  sg.addToken("A{[^ \n\r]+} {CDATA |TOKEN |[^ \n\r]+}{[^\r\n]*}\r?\n",
     fun (s:UserScanner(Bool,SgmlsParserData)) {
       name ::= s.submatchString(0)
       type ::= s.submatchString(1)
@@ -157,26 +160,32 @@ build_linescanner :Void
     }
   )
 
-  sg.addToken("\\([^ \n]+\n", fun(s :UserScanner(Bool,SgmlsParserData)) {
-    s.userState.openTag(String.fromSubSequence(s.token, 1, s.tokenSize-2))
+  sg.addToken("\\([^ \r\n]+\r?\n", fun(s :UserScanner(Bool,SgmlsParserData)) {
+    token ::= s.token
+    len ::= token.size-2
+    if(token[len]='\r' then:{ len:=len-1 })
+    s.userState.openTag(String.fromSubSequence(token, 1, len))
     true
   })
 
-  sg.addToken("\\)[^ \n]+\n", fun(s :UserScanner(Bool,SgmlsParserData)) {
-    s.userState.closeTag(String.fromSubSequence(s.token, 1, s.tokenSize-2))
+  sg.addToken("\\)[^ \r\n]+\r?\n", fun(s :UserScanner(Bool,SgmlsParserData)) {
+    token ::= s.token
+    len ::= token.size-2
+    if(token[len]='\r' then:{ len:=len-1 })
+    s.userState.closeTag(String.fromSubSequence(token, 1, len))
     true
   })
 
-  sg.addToken("C\n", fun(s :UserScanner(Bool,SgmlsParserData)) {
+  sg.addToken("C\r?\n", fun(s :UserScanner(Bool,SgmlsParserData)) {
     false
   })
 
-  sg.addToken("e\n", fun(s :UserScanner(Bool,SgmlsParserData)) {
+  sg.addToken("e\r?\n", fun(s :UserScanner(Bool,SgmlsParserData)) {
     s.userState.nextIsEmpty := true
     true
   })
 
-  sg.addToken("L{[0-9]+}{( [^\n]*)?}\n",
+  sg.addToken("L{[0-9]+}{( [^\r\n]*)?}\r?\n",
     fun (s:UserScanner(Bool,SgmlsParserData)) {
       out ::= s.userState.out
       out.lineNumber := Int.fromReader(s.submatchReader(0))
@@ -186,7 +195,7 @@ build_linescanner :Void
       true
     })
 
-  sg.addToken("[^-A()CLe][^\n]*\n", fun(s :UserScanner(Bool,SgmlsParserData)) {
+  sg.addToken("[^-A()CLe][^\r\n]*\r?\n", fun(s :UserScanner(Bool,SgmlsParserData)) {
     if( verbose then: {
       tycoon.stdout.writeln("ignoring input line:")
       tycoon.stdout.writeString(s.token)
@@ -202,7 +211,7 @@ build_unquoter :Void
 {
   sg ::= ScannerBuilder(:Char).new
 
-  sg.addToken("[^\\\n]", fun(s :Scanner(Char)) {
+  sg.addToken("[^\\\r\n]", fun(s :Scanner(Char)) {
     s.token[0]
   })
 

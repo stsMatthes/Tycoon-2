@@ -35,10 +35,13 @@ postcondition :TL2Value
 isPrivate :Bool
 
 arity :Int
-  (* number of value arguments, without receiver *)
+  (* number of value arguments, without receiver (used by TVM) *)
 
 sorts :Int
-  (* bitmap giving argument sorts *)
+  (* bitmap giving argument sorts (used by TVM) *)
+
+_keywords :Array(Symbol)
+  (* the expected keywords (used by TVM) *)
 
 nativeCode :Int
   (* not used by Tycoon *)
@@ -47,13 +50,24 @@ acceptMethodVisitor(T <: Void, visitor :TL2MethodVisitor(T)) :T
   (* *)
 deferred
 
-domain :List(TL2Ide)
+positionalDomain :List(TL2Ide)
   (* *)
-{ methodType.domain }
+{ methodType.positionalDomain }
+
+keywordDomain :List(TL2KeywordIde)
+  (* *)
+{ methodType.keywordDomain }
 
 keywords :Array(Symbol)
   (* *)
-{ methodType.keywords }
+{
+  if( _keywords.isNotNil then: {
+    _keywords
+  } else: {
+    ;; fetch from methodType if machine slot is uninitialized
+    Array.fromContainerWithMap(methodType.keywordDomain, fun(kwi:TL2KeywordIde){ kwi.keyword })
+  })
+}
 
 range :TL2Type
   (* *)
@@ -80,11 +94,10 @@ scopeMethod(env :TL2Scoper) :Void
 
 compileMethod(selfSig :TL2ValueIde, compiler :TL2Compiler) :Void
   (* *)
-{ ;; non-compiled methods do not need any more
-  computeArityAndSorts(compiler.errorLog)
+{
   ;; make sure the selector is known (for perform)
-  compiler.getSelectorId(
-    TL2Selector.new1(selector, arity, sorts))
+  ;; this also initializes arity and sorts
+  compiler.getSelectorId(getSelector(compiler))
 }
 
 disassemble(reader :BEByteCodeReader) :Void
@@ -106,35 +119,43 @@ patchClass(compiledIn :TL2ClassPublic) :Void
 { ; TL2CompiledMethod implements this 
 }
 
-getSelector(errorLog :ErrorLog) :TL2Selector
+getSelector(compiler: TL2Compiler) :TL2Selector
 {
   ;; just in case arity and sorts have not been computed yet
-  computeArityAndSorts(errorLog)
-  TL2Selector.new1(selector, arity, sorts)
+  computeArityAndSorts(compiler)
+  TL2Selector.new1(selector, arity, sorts, _keywords)
 }
 
 private
 
-computeArityAndSorts(errorLog :ErrorLog) :Void
-  (* fill in the machine-relevant slots "arity" and "sorts". *)
+computeArityAndSorts(compiler :TL2Compiler) :Void
+  (* fill in the machine-relevant slots "arity", "sorts" and "_keywords". *)
 {
-  arity ::= 0
-  sorts ::= 0
-  domain.do(fun(i :TL2Ide) {
-    if( i.isValueIde then: {
-      vi ::= i.asValueIde
-      if( vi.component then: {
-        mask ::= (1 << arity)
-	if( mask.isZero then: {
-	  errorLog.error(vi.pos, "implementation restriction: only first 32 parameters may be components")
+  if( _keywords.isNil then: {
+    arity ::= 0
+    sorts ::= 0
+    visitIde ::=
+    fun(i :TL2Ide) {
+      if( i.isValueIde then: {
+	vi ::= i.asValueIde
+	if( vi.component then: {
+	  mask ::= (1 << arity)
+	  if( mask.isZero then: {
+	    compiler.errorLog.error(vi.pos, "implementation restriction: only first 32 parameters may be components")
+	  })
+	  sorts := sorts | mask
 	})
-        sorts := sorts | mask
+	arity := arity + 1
       })
-      arity := arity + 1
+    }
+    positionalDomain.do(visitIde)
+    keywordDomain.do(fun(kwi:TL2KeywordIde){
+      visitIde[kwi.ide]
     })
+    self.arity := arity
+    self.sorts := sorts
+    self._keywords := TL2Selector.checkKeywords(keywords, pos, compiler)
   })
-  self.arity := arity
-  self.sorts := sorts
 }
 
 }

@@ -1,5 +1,5 @@
 class TL2SubTypeDB
-super TL2, Set(TL2SubTypeRelation)
+super TL2
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -44,54 +44,39 @@ super TL2, Set(TL2SubTypeRelation)
    As types come with substitutions, these must be incorporated, too, although
    they''ll be omitted if the tuple (t1, [], t2, []) is already in the cache.
 *)
-meta TL2SubTypeDBClass()
-
+meta SimpleConcreteClass(TL2SubTypeDB)
 {
-add(r :TL2SubTypeRelation) :Void
-  (* *)
-{
-    if( r.shouldBeStored then: {
-;      TL2TypeChecker.instance.writeln("DB: Adding "+r.small.printString+r.smallSubst.printString+" <: "+r.big.printString+r.bigSubst.printString), 
-      super.add(r)
-    })
-  }
-
-includes(o :Object) :Bool
-  (* *)
-{
-    o."class" == TL2SubTypeRelation && (
-      r ::= _typeCast(o, :TL2SubTypeRelation)
-      r.shouldBeStored &&  super.includes(r) 
-    )
-  }
-
-remove(o :Object) :TL2SubTypeRelation
-  (* *)
-{
-  r ::= _typeCast(o, :TL2SubTypeRelation)
-  if( r.shouldBeStored then: {
-    super.remove(r)
-  } else: {
-    nil
-  })
-}
-
 consult(small :TL2Type, big :TL2Type, smallSubst :TL2Subst, bigSubst :TL2Subst, test :Fun():Void) :Void
   (* *)
 {
-    relation ::= TL2SubTypeRelation.new(small, big, smallSubst, bigSubst)
+  relation ::= TL2SubTypeRelation.new(small, big, smallSubst, bigSubst)
 
-    if( includes(relation) then: { } else: {
+  if( relation.shouldBeStored then: {
+    if( !_relations.includes(relation) then: {
       ; perform test under positive assumption 
-      add(relation)
+      ;; tycoon.stdout.writeln("DB: Adding "+r.small.printString+r.smallSubst.printString+" <: "+r.big.printString+r.bigSubst.printString)
+      _relations.add(relation)
       try({
-        test[]
+	test[]
       } else: fun(e :Exception) {
-        ; the subtype test failed, so retract again 
-	remove(relation)
+	; the subtype test failed, so retract again 
+	_relations.remove(relation)
 	e.raise
       })
     })
-  }
+  } else: {
+    test[]
+  })
+}
+
+private
+
+_relations :Set(TL2SubTypeRelation)
+
+_init :Void
+{
+  super._init
+  _relations := Set.new
+}
 
 }

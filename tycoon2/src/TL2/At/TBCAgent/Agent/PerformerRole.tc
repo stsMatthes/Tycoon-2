@@ -107,7 +107,7 @@ requestConversation(m :MessageRequestConversation) @:Message
       ; create context 
       cv:Conversation(S) := Conversation(:S).new(_convSpec)
       stop ::= false
-      until({stop},{
+      repeat({
         ;; ### drop the message here.  Is this good?
 	m :MessageCustomerDialogRequest := ref(port.get@).asMessageCustomerDialogRequest
 	if( m.isNotNil then: {
@@ -151,7 +151,7 @@ requestConversation(m :MessageRequestConversation) @:Message
 	  ;; m isNil 
 	  stop:=true
 	})
-      }) ; until 
+      }until:{stop})
       ; end service. 
       AgentITCSystem.instance.unregisterPort(port)
       _remPort(port)

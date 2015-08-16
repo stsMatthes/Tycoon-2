@@ -4,19 +4,19 @@
   <!entity configure-action system "configure-action.sgml" >
 ]> 
   
-<stml processor=HttpdLauncherProcessor>
+<stml processor=HttpdLauncherProcessor language='tycoon-1.0'>
 
 <tycoon>
-  let action :String =
-    formFields.includesKey("configure-action")
-      ? { "configure-action" }
-      : { let field = formFields.keys.detect(
-	    fun(field :String) {field.startsWith("tyhttpd-") }
-	  ),
-	  assert field.isNotNil,
-	  server := field,
-	  formFields[field]
-	}
+  action :String :=
+    if( formFields.includesKey("configure-action") then: {
+      "configure-action"
+    } else: {
+      field ::= formFields.keys.detect(
+	    fun(field :String) {field.startsWith("tyhttpd-") })
+      assert({ field.isNotNil })
+      server := field
+      formFields[field]
+    })
 </tycoon> 
   
 <title><tycoon/ out << action << " " << server/
@@ -28,12 +28,12 @@
 &configure
 <else>
 
-  <tycoon>let var success :Bool = false </tycoon>
+  <tycoon>success :Bool := false </tycoon>
   <define name=title></define>
   <define name=msg></define>
 
   <if true='action = "configure-action"'>&configure-action
-  <else><tycoon/assert false/
+  <else><tycoon/assert({ false })/
   </if>
 
 <!--  <head>

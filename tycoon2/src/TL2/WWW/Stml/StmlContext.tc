@@ -33,11 +33,13 @@ meta StmlContextClass
   {
     if( language = "tycoon-1.0" then: {
       syntax := tycoon.tl.newSyntax
-    } else: { if( language = "tycoon-0.9" then: {
-      syntax := tycoon.tl.oldSyntax
     } else: {
-      errorLog.error(pos, "Unknown language name: "+language)
-      syntax := tycoon.tl.oldSyntax
-    }) })
+;;    if( language = "tycoon-0.9" then: {
+;;      syntax := tycoon.tl.oldSyntax
+;;    } else: {
+        errorLog.error(pos, "Unknown language name: "+language)
+        syntax := tycoon.tl.newSyntax
+;;    })
+    })
   }
 }

@@ -28,7 +28,7 @@ terminals :TL2Terminals
 
 scanner :ReentrantTL2Scanner
 
-makeScanner(where :String, input :Input, errorLog :ErrorLog, bufferCapacity :Int) :AbstractTL2Scanner
+makeScanner(where :String, input :Input, semicolonIsEoI :Bool, errorLog :ErrorLog, bufferCapacity :Int) :TL2Scanner
   (* *)
 { scanner.scan1(where, input, errorLog, bufferCapacity) }
 

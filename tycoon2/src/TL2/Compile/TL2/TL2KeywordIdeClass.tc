@@ -1,5 +1,5 @@
-class X_ReentrantTL2ScannerClass
-super ConcreteClass(X_ReentrantTL2Scanner)
+class TL2KeywordIdeClass
+super ConcreteClass(TL2KeywordIde)
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -22,13 +22,15 @@ super ConcreteClass(X_ReentrantTL2Scanner)
 *)
 meta MetaClass
 {
-new( twlTerminals :X_TL2Terminals ) :X_ReentrantTL2Scanner
+new(pos :SourcePos, keyword :Symbol, ide :TL2ValueIde, defaultValue :TL2Value) :TL2KeywordIde
   (* *)
 {
   instance ::= _new
-  instance.twlTerminals := twlTerminals
+  instance.pos := pos
+  instance.keyword := keyword
+  instance.ide := ide
+  instance.defaultValue := defaultValue
   instance._init
   instance
 }
-
 }

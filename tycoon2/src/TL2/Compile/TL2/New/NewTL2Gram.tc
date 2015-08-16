@@ -234,8 +234,6 @@ createRules (
   identParen ::= terminals.identParen
   docString ::= terminals.docString
 
-  ArrayWith0 ::= Array.with0
-
   type :MutableNonterminal(TL2Type) := mnnew("type")
   value :MutableNonterminal(TL2Value) := mnnew("value")
   signature :MutableNonterminal(TL2Ide) := mnnew("signature")
@@ -278,7 +276,7 @@ createRules (
 		      })
   arguments.addRule3( s("("), positionalArguments, s(")"),
 		      fun(:O, positional :List(TL2Argument), :O) {
-			Pair.new(positional, ArrayWith0)
+			Pair.new(positional, #())
 		      })
   arguments.addRule3( s("("), keywordArguments, s(")"),
 		      fun(:O, byKeyword :List(Pair(Symbol, TL2Value)), :O) {
@@ -290,50 +288,50 @@ createRules (
 		      })
   arguments.addRule2( s("("), s(")"),
 		      fun(:O, :O) {
-			Pair.new(EmptyList.new, ArrayWith0)
+			Pair.new(EmptyList.new, #())
 		      })
 
   positionalParameters ::= nonEmptyCommaList(signature)
 
-  keywordParameter ::= mnnew(:Triple(Symbol, TL2ValueIde, TL2Value), "keywordParameter")
+  keywordParameter ::= mnnew(:TL2KeywordIde, "keywordParameter")
   keywordParameter.addRule3( ident, s(":"), valueSignature,
 			    fun(s:Positioned(String), :O, v :TL2ValueIde) {
-			      Triple.new(Symbol.new(s.value), v, TL2LiteralValue.new(s.pos, nil))
+			      pos ::= s.pos
+			      TL2KeywordIde.new(pos, Symbol.new(s.value), v, 
+			        if(v.component then: fun():TL2Value {
+				  TL2SendValue.new(pos,
+						   TL2IdeValue.new(
+						     TL2ValueIde.newRef(pos, "self")),
+						   #"nil@",
+						   List.with0)
+				} else: {
+				  TL2LiteralValue.new(pos, nil)
+				}))
 			    })
   keywordParameter.addRule5( ident, s(":"), valueSignature, s(":="), value,
 			    fun(s:Positioned(String), :O, v :TL2ValueIde, :O, defaultValue :TL2Value) {
-			      Triple.new(Symbol.new(s.value), v, defaultValue)
+			      TL2KeywordIde.new(s.pos, Symbol.new(s.value), v, defaultValue)
 			    })
 
   keywordParameters ::= nonEmptyList(keywordParameter)
 
-  parameters ::= mnnew(:Pair(List(TL2Ide), Array(Symbol)), "parameters")
+  parameters ::= mnnew(:Pair(List(TL2Ide), List(TL2KeywordIde)), "parameters")
   parameters.addRule4( s("("), positionalParameters, keywordParameters, s(")"),
 		       fun(:O, positional :List(TL2Ide),
-			       byKeyword :List(Triple(Symbol, TL2ValueIde, TL2Value)), :O) {
-			  keywords ::=
-			    byKeyword.map(fun(p :Pair(Symbol, TL2ValueIde)){ p.first }).as(Array)
-			  keySigs ::=
-			    byKeyword.map(fun(p :Pair(Symbol, TL2ValueIde)){ p.second }).as(List)
-			  ; ### no place to store default values 
-			  Pair.new(List.append(positional, keySigs), keywords)
+			       byKeyword :List(TL2KeywordIde), :O) {
+			 Pair.new(positional, byKeyword)
 		       })
   parameters.addRule3( s("("), positionalParameters, s(")"),
 		       fun(:O, positional :List(TL2Ide), :O) {
-			  Pair.new(positional, ArrayWith0)
+			 Pair.new(positional, EmptyList.new)
 		       })
   parameters.addRule3( s("("), keywordParameters, s(")"),
-		       fun(:O, byKeyword :List(Triple(Symbol, TL2ValueIde, TL2Value)), :O) {
-			 keywords ::=
-			   byKeyword.map(fun(p :Pair(Symbol, TL2ValueIde)){ p.first }).as(Array)
-			 keySigs ::=
-			   byKeyword.map(fun(p :Pair(Symbol, TL2ValueIde)){ p.second }).as(List)
-			 ; ### no place to store default values 
-			 Pair.new(keySigs, keywords)
+		       fun(:O, byKeyword :List(TL2KeywordIde), :O) {
+			 Pair.new(EmptyList.new, byKeyword)
 		       })
   parameters.addRule2( s("("), s(")"),
 		       fun(:O, :O) {
-			 Pair.new(EmptyList.new, ArrayWith0)
+			 Pair.new(EmptyList.new, EmptyList.new)
 		       })
 
   typeSignatures ::= commaList(typeSignature)
@@ -511,12 +509,12 @@ createRules (
 
   methodSignature ::= mnnew(:TL2MethodType, "methodSignature")
   methodSignature.addRule4( selector, parameters, s(":"), type,
-			 fun(sel :Positioned(Symbol), domain :Pair(List(TL2Ide), Array(Symbol)), :O,
+			 fun(sel :Positioned(Symbol), domain :Pair(List(TL2Ide), List(TL2KeywordIde)), :O,
 						      range :TL2Type) {
                            TL2MethodType.newK(sel.pos, sel.value, domain.first, domain.second, range)
 			 })
   methodSignature.addRule5( selector, parameters, s("@"), s(":"), type,
-			 fun(sel :Positioned(Symbol), domain :Pair(List(TL2Ide), Array(Symbol)), :O, :O,
+			 fun(sel :Positioned(Symbol), domain :Pair(List(TL2Ide), List(TL2KeywordIde)), :O, :O,
 						      range :TL2Type) {
                            TL2MethodType.newK(sel.pos, Symbol.new(sel.value+"@"), domain.first, domain.second, range)
 			 })
@@ -585,7 +583,7 @@ createRules (
          doc :String, preCond :TL2Value, postCond :TL2Value, m :TL2Method) {
        signature ::=
          TL2MethodType.newK(sel.pos, Symbol.new(sel.value),
-			    EmptyList.new, ArrayWith0, range)
+			    EmptyList.new, EmptyList.new, range)
        methodDefAction[signature, doc, preCond, postCond, m]
      })
   methodDefinition.addRule8( selector, s("@"), s(":"), type, optDoc, optPre, optPost, methodBody,
@@ -593,7 +591,7 @@ createRules (
          doc :String, preCond :TL2Value, postCond :TL2Value, m :TL2Method) {
        signature ::=
          TL2MethodType.newK(sel.pos, Symbol.new(sel.value+"@"),
-			    EmptyList.new, ArrayWith0, range)
+			    EmptyList.new, EmptyList.new, range)
        methodDefAction[signature, doc, preCond, postCond, m]
      })
                            
@@ -731,7 +729,7 @@ createRules (
   message ::= mnnew(:Triple(Positioned(String), List(TL2Argument), Array(Symbol)), "message")
   mess0Action ::=
     fun(s :Positioned(String)) {
-      Triple.new( s, List.with0, ArrayWith0)
+      Triple.new( s, List.with0, #())
     }
   message.addRule1( ident,
 		    mess0Action)
@@ -739,7 +737,7 @@ createRules (
 		    mess0Action)
   mess0CAction ::=
     fun(s :Positioned(String), :O) {
-      Triple.new( Positioned.new(s.pos, s.value+"@"), List.with0, ArrayWith0)
+      Triple.new( Positioned.new(s.pos, s.value+"@"), List.with0, #())
     }
   message.addRule2( ident, s("@"),
 		    mess0CAction)

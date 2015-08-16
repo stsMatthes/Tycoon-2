@@ -27,7 +27,8 @@ genCode(backEnd :X_BEMethodManager) :Void
 {
   sendValue.receiver.genCode(backEnd)
   argSorts ::= genArgs(backEnd)
-  selectorObject ::= X_TL2Selector.new(sendValue.selector, argSorts)
+  keywords ::= X_TL2Selector.checkKeywords(sendValue.keywords, sendValue.pos, backEnd.compiler)
+  selectorObject ::= X_TL2Selector.new(sendValue.selector, argSorts, keywords)
   backEnd.sendSuper(selectorObject)
 }
 

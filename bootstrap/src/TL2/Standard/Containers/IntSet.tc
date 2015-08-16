@@ -212,15 +212,16 @@ reader :Reader(Int)
   pos ::= lastBitPos
   FunReader.new({
     bits ::= bits
-    until({word >= bits.size ||
-            (bits[word] & (1 << pos)) != 0 },{
+    repeat({
       if( pos = lastBitPos then: {
         pos := 0
 	word := word + 1
       } else: {
 	pos := pos + 1
       })
-    })
+    } until: {
+      word >= bits.size
+       || (bits[word] & (1 << pos)) != 0 })
     if( word < bits.size then: {
       word * wordSize + pos
     } else: {

@@ -19,7 +19,6 @@ tycoon.tl.loader.registerDirectory("Compile/Scan/Eager");
 tycoon.tl.loader.registerDirectory("Compile/Parse");
 tycoon.tl.loader.registerDirectory("Compile/Parse/Compact");
 tycoon.tl.loader.registerDirectory("Compile/TL2");
-tycoon.tl.loader.registerDirectory("Compile/TL2/Old");
 tycoon.tl.loader.registerDirectory("Compile/TL2/New");
 tycoon.tl.loader.registerDirectory("Compile/TL2/BackEnd");
 tycoon.tl.loader.unregisterClass("TL2Root");
@@ -33,9 +32,11 @@ tycoon.tl.loader.update;
 
 (* type check everything *)
 
-tycoon.tl.typeChecker.maxDepth := tycoon.tl.typeChecker.maxDepth.max(75000);
+tycoon.tl.typeChecker.maxDepth := tycoon.tl.typeChecker.maxDepth.max(50000);
 
+Date.now;
 tycoon.tl.typeChecker.check;
+Date.now;
 tycoon.tl.typeChecker.finalize;
 
 (* alternatively, assume all classes are typechecked: *)
@@ -49,7 +50,7 @@ Array.fromContainer(tycoon.tl.typeChecker.agenda).do(
 
 tycoon.commit(
       (* ifCommitted *) {
-           tycoon.stdout.writeln("System saved."),
+           tycoon.stdout.writeln("System saved.")
 	   tycoon.ansiC.exit(0)
 	},
       (* ifRolledBack *) {

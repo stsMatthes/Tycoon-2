@@ -12,33 +12,33 @@ tyhttpd.configure;
 
 (* Create STML resource factories: *)
 define httpdLauncherApplication :HttpdLauncherApplication;
-httpdLauncherApplication := HttpdLauncherApplication.new,
+httpdLauncherApplication := HttpdLauncherApplication.new
 (*
-httpdLauncherApplication.compiler.verbose := true,
+httpdLauncherApplication.compiler.verbose := true
 *)
-let resourceFactory = HttpFunResourceFactory.new,
+resourceFactory ::= HttpFunResourceFactory.new
 resourceFactory.generators["jump"] :=
   fun(file:File){
     JumpResource.new(file)
-  },
+  }
 resourceFactory.generators["stml"] :=
   fun(file:File){
     StmlResource.new(httpdLauncherApplication, file)
-  },
-let dir = tyhttpd.root.lookupDirectory(EmptyList.new),
+  }
+dir ::= tyhttpd.root.lookupDirectory(EmptyList.new)
 dir.resourceFactory := resourceFactory;
 
 define httpdAdminApplication :HttpdAdminApplication;
-httpdAdminApplication := HttpdAdminApplication.new,
-httpdAdminApplication.compiler.verbose := true,
+httpdAdminApplication := HttpdAdminApplication.new
+httpdAdminApplication.compiler.verbose := true
 (*
 *)
-let resourceFactory = HttpFunResourceFactory.new,
+resourceFactory ::= HttpFunResourceFactory.new
 resourceFactory.generators["stml"] :=
   fun(file:File){
     StmlResource.new(httpdAdminApplication, file)
-  },
-let dir = tyhttpd.root.lookupDirectory(List.with1("admin")),
+  }
+dir ::= tyhttpd.root.lookupDirectory(List.with1("admin"))
 dir.resourceFactory := resourceFactory;
 
 
@@ -46,12 +46,19 @@ dir.resourceFactory := resourceFactory;
 tyhttpd.root.lookupDirectory(EmptyList.new)["stop"] := HttpShutdownResource.new(tyhttpd);
 
 
-(* Authentication Stuff (does it still work?):
-let authRoot = HttpAuthenticatedResource.new,
-authRoot.resource := root,
-authRoot.install,
-let realm = BasicProtectionRealm.new("HoxIntern"),
-realm.acl["mernst"] := "hackenklacken",
-authRoot.realm := realm,
-tyhttpd.root := HttpDebugResource.new(authRoot);
+;;
+;; end of automated script
+;;
+
+(*
+  Authentication Stuff (does it still work?):
 *)
+
+authRoot ::= HttpAuthenticatedResource.new
+authRoot.resource := root
+authRoot.install
+realm ::= BasicProtectionRealm.new("HoxIntern")
+realm.acl["mernst"] := "hackenklacken"
+authRoot.realm := realm
+tyhttpd.root := HttpDebugResource.new(authRoot);
+

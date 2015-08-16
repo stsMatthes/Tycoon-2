@@ -25,6 +25,18 @@ meta AbstractClass
 isComponent :Bool
   deferred
 
+isLiteral :Bool
+  (* *)
+{ false }
+
+getLiteralValue :Object
+  (* *)
+require isLiteral
+{
+  assert({ false })
+  nil
+}
+
 genCode(backEnd :X_BEMethodManager) :Void
   (* generate code that evaluates self and pushes the result *)
 require backEnd.isReached

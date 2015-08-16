@@ -58,11 +58,12 @@ p := parserGen.generate(gr);
 define testInput :List(Token(Object));
 
 testInput := 
-  List.fromReader(
-    List.new7("begin", "dec", ";", "dec", ";", "st", "end")
-      .reader.map(fun(s :String){t[s].token}));
+  #("begin", "dec", ";", "dec", ";", "st", "end")
+      .map(fun(s :String){t[s].token}).as(List);
 
-p.parse(testInput.reader);
+p.logging := true;
+
+p.parse(testInput.reader,fun(t:Token(Object)){tycoon.stdout << "Error on "<<t<<"\n"});
 
 (*
 S4

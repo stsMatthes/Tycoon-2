@@ -34,7 +34,6 @@ new( pos :SourcePos, selector :Symbol,
 		     List.with1(X_TL2ValueIde.new(pos, nil, false, slotType)), 
 		     slotType)
   instance.cell := cell
-  instance.arity := 1
   instance._init
   instance
 }

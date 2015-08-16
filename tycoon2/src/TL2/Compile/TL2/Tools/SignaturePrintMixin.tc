@@ -1,24 +1,6 @@
 class SignaturePrintMixin
 super Tools
-meta AbstractClass
-{
-
-private
-
-printSelector(selector :Symbol) :Void
-{
-  ;; ## todo: check for reserved words
-  if( selector.all(fun(c:Char){ c.isAlphaNumeric || c = '_' }) then: {
-    out << selector
-  } else: {
-    out << '\"'
-    selector.do(fun(ch :Char) {ch.printEscapeSequence(out)})
-    out << '\"'
-  })
-}
-
-printDomain(t :TL2MethodType) :Bool
-  (*
+(*
  * This file is part of the Tycoon-2 system.
  *
  * The Tycoon-2 system is free software; you can redistribute it and/or
@@ -37,23 +19,42 @@ printDomain(t :TL2MethodType) :Bool
  * 
  * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
  *
- print the domain of t.
+ *)
+meta AbstractClass
+{
+
+private
+
+printSelector(selector :Symbol) :Void
+{
+  ;; ## todo: check for reserved words
+  if( selector.all(fun(c:Char){ c.isAlphaNumeric || c = '_' }) then: {
+    out << selector
+  } else: {
+    out << '\"'
+    selector.do(fun(ch :Char) {ch.printEscapeSequence(out)})
+    out << '\"'
+  })
+}
+
+printDomain(t :TL2MethodType) :Bool
+  (* print the domain of t.
      result: was everything printed on one line?
    *)
 {
-  simpleDomain ::= t.domain.all(fun(i:TL2Ide) {
+  simpleDomain ::= t.positionalDomain.all(fun(i:TL2Ide) {
 			   i.type.isNil || i.type.isLeaf})
   out.withAbsIndent(out.column, {
-    t.plainDomain.doBetween(fun(i :TL2Ide) {
+    t.positionalDomain.doBetween(fun(i :TL2Ide) {
       printPositionalParameter(i)
     }, {
       out << ','
       if( simpleDomain then: { out.space } else: { out.nl })
     })
     if( t.hasKeywords then: {
-      if( t.hasPlain then: { out.nl })
-      t.keywordDomain.doBetween(fun(p :Pair(Symbol, TL2ValueIde)) {
-	printKeywordParameter(p.first, p.second)
+      if( !t.positionalDomain.isEmpty then: { out.nl })
+      t.keywordDomain.doBetween(fun(kwi :TL2KeywordIde) {
+	printKeywordParameter(kwi)
       }, {
 	out.nl
       })
@@ -62,10 +63,10 @@ printDomain(t :TL2MethodType) :Bool
   simpleDomain
 }
 
-printKeywordParameter(key :Symbol, i :TL2ValueIde) :Void
+printKeywordParameter(kwi :TL2KeywordIde) :Void
 {
-  out << key << ": "
-  printPositionalParameter(i)
+  out << kwi.keyword << ": "
+  printPositionalParameter(kwi.ide)
 }
 
 printPositionalParameter(i :TL2Ide) :Void

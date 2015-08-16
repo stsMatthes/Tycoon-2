@@ -30,7 +30,9 @@ DO load "WWW/Http/Init.tyc";
 DO load "WWW/Httpd/HttpResources/Init.tyc";
 DO load "WWW/Stml/Init.tyc";
 
-(*;
+;;
+;; end of automatic script
+;;
 
 (* In a new workspace, create your own copy of
       tyhttpd/tyhttpd-launcher/conf/tyhttpd.conf
@@ -46,20 +48,19 @@ tyhttpd.configure;
 
 define stmlApplication :SimpleStmlApplication;
 stmlApplication := SimpleStmlApplication.new;
-let resourceFactory = HttpFunResourceFactory.new,
+resourceFactory = HttpFunResourceFactory.new
 resourceFactory.generators["jump"] :=
   fun(file:File){
     JumpResource.new(file)
-  },
+  }
 resourceFactory.generators["stml"] :=
   fun(file:File){
     StmlResource.new(stmlApplication, file)
-  },
-let dir = tyhttpd.root.lookupDirectory(EmptyList.new),
-dir.resourceFactory := resourceFactory,
-dir["stop"] := HttpShutdownResource.new(tyhttpd);
+  }
+dir ::= tyhttpd.root.lookupDirectory(EmptyList.new)
+dir.resourceFactory := resourceFactory
+dir["stop"] := HttpShutdownResource.new(tyhttpd)
 tyhttpd.serve;
-*)
 
 (*some tests;
 
@@ -89,15 +90,15 @@ DO load "../TWL/WWW/Stml/SimpleStmlApplication.tc";
 define sa :SimpleStmlApplication;
 sa := SimpleStmlApplication.new;
 define spro :Fun0(StmlProcessor(SimpleStmlApplication));
-let t = Timer.new(tycoon.cpuClock),
-t.start,
-spro := sa.compiler.compile(tycoon.hoxHome+"/src/TL2/WWW/Stml/examples/stml.stml", nil, ErrorLog.new),
-t.stop,
+t ::= Timer.new(tycoon.cpuClock)
+t.start
+spro := sa.compiler.compile(tycoon.hoxHome+"/src/TL2/WWW/Stml/examples/stml.stml", nil, ErrorLog.new)
+t.stop
 t;
 spro.emitFun;
 spro := sa.compiler.compile(tycoon.hoxHome+"/src/TL2/WWW/Stml/examples/numbers.stml", nil, ErrorLog.new);
-let s = spro[],
-s.out := tycoon.stdout,
+s ::= spro[]
+s.out := tycoon.stdout
 s.process;
 *)
 

@@ -54,4 +54,8 @@ deferred
 genMoveTo(writer :BEByteCodeWriter) :Void
   (* only for component ides *)
 deferred
+
+genCell(writer :BEByteCodeWriter) :Void
+  (* put an argument into a cell. *)
+{ assert({ false }) }
 }

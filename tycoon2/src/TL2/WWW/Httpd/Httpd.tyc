@@ -3,8 +3,9 @@ DO load "../TWL/WWW/Httpd/HttpResources/HttpResources.tyc";
 tycoon.tl.loader.update;
 tycoon.tl.typeChecker.check;
 
-(*
-
+;;
+;; end of automated script
+;;
 
 tycoon.debug := true;
 
@@ -21,19 +22,19 @@ tyhttpd.root.lookupDirectory(EmptyList.new)["stop"] := HttpShutdownResource.new(
 tyhttpd.serve;
 
 (*
-let authRoot = HttpAuthenticatedResource.new,
-authRoot.resource := root,
+authRoot ::= HttpAuthenticatedResource.new
+authRoot.resource := root
 
-let realm = BasicProtectionRealm.new("HoxIntern"),
-realm.acl["mernst"] := "hackenklacken",
-authRoot.realm := realm,
+realm ::= BasicProtectionRealm.new("HoxIntern")
+realm.acl["mernst"] := "hackenklacken"
+authRoot.realm := realm
 tyhttpd.root := HttpDebugResource.new(authRoot);
 *)
 
 
-List.fromContainer(tycoon.allOpenResources).do(fun(r :Resource) {
-  r.clazz == StreamSocket || {r.clazz == ServerSocket} ? {
+tycoon.allOpenResources.as(Array).do(fun(r :Resource) {
+  if( r.clazz == StreamSocket || r.clazz == ServerSocket then: {
     r.close
- }});
-*)
+  })
+});
 

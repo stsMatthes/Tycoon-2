@@ -26,24 +26,18 @@ new(pos :SourcePos, selector :Symbol, domain :List(TL2Ide), range :TL2Type)
 	:TL2MethodType
   (* *)
 {
-  instance ::= _new
-  instance.pos := pos
-  instance.selector := selector
-  instance.domain := domain
-  instance.range := range
-  instance._init
-  instance
+  newK(pos,selector,domain,List.with0,range)
 }
 
-newK(pos :SourcePos, selector :Symbol, domain :List(TL2Ide), keywords :Array(Symbol), range :TL2Type)
+newK(pos :SourcePos, selector :Symbol, positionalDomain :List(TL2Ide), keywordDomain :List(TL2KeywordIde), range :TL2Type)
 	:TL2MethodType
   (* *)
 {
   instance ::= _new
   instance.pos := pos
   instance.selector := selector
-  instance.domain := domain
-  instance.keywords := keywords
+  instance.positionalDomain := positionalDomain
+  instance.keywordDomain := keywordDomain
   instance.range := range
   instance._init
   instance

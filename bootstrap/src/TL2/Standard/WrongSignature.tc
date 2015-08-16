@@ -41,7 +41,7 @@ arguments :Array(Object)
 printOn(out :Output) :Void
   (* *)
 {
-  expected ::= X_TL2Selector.new1(method.selector, method.arity, method.sorts)
+  expected ::= X_TL2Selector.new1(method.selector, method.arity, method.sorts, method.keywords)
   out << "Wrong signature in call to method "
       << receiver.clazz.name<<"::"<<method.selector
       << ": expected selector "<<expected

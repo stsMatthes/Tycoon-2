@@ -102,7 +102,7 @@ _init :Void
     trace("agent thread launched for address "+name)
     ; this port will receive the messages for all roles. 
     _port := AgentITCSystem.instance.newPort(_address)
-    until({_stop},{
+    repeat({
       msg @::= _port.get@                    ; wait for next message 
       if( msg.isNotNil then: {
 	role ::= lock({_roles[msg.to.nameTail]})  ; find receiver 
@@ -112,7 +112,7 @@ _init :Void
 	; ### ^try/catch 
 	AgentITCSystem.instance.send(msg@)        ; reply result (maybe nil)  
       })
-    })
+    }until:{_stop})
     AgentITCSystem.instance.unregisterPort(_port)
     trace("agent thread ended for address "+name)
     TBC.instance.remAgent(self)

@@ -21,7 +21,7 @@
 /*
   Copyright (c) 1996 Higher-Order GmbH, Hamburg. All rights reserved.
 
-  $File: //depot/tycoon2/stsmain/tycoon2/src/tm/tyc.h $ $Revision: #3 $ $Date: 2003/10/01 $ Andreas Gawecki, Marc Weikard
+  $File: //depot/tycoon2/stsmain/tycoon2/src/tm/tyc.h $ $Revision: #9 $ $Date: 2003/10/10 $ Andreas Gawecki, Marc Weikard
 
   Tycoon Objects
 
@@ -38,6 +38,8 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#define MAX_KEYWORD_ARGS 32
 
 
 /* Boxed values: */
@@ -102,10 +104,12 @@ extern tsp_OID * tyc_boxReal(Real value);
 
 #define tyc_IS_TRUE(x)  ((x) == tyc_pRoot->pTrue)
 #define tyc_IS_FALSE(x) ((x) == tyc_pRoot->pFalse)
+#define tyc_IS_ABSENT_KEYWORD(x)((x) == tyc_pRoot->pAbsentKeyword)
 #define tyc_IS_NIL(x)   ((x) == NULL)
 
 #define tyc_TRUE  (tyc_pRoot->pTrue)
 #define tyc_FALSE (tyc_pRoot->pFalse)
+#define tyc_ABSENT_KEYWORD (tyc_pRoot->pAbsentKeyword)
 #define tyc_NIL   NULL
 
 #define tyc_CLASSID(x) ((x) == NULL ? tyc_ClassId_Nil : tsp_IS_IMMEDIATE(x) ? \
@@ -115,6 +119,7 @@ extern tsp_OID * tyc_boxReal(Real value);
 #define tyc_SELECTOR(id)  (tyc_pRoot->apSelectorTable[(id)]->pSymbol)
 #define tyc_ARGUMENTS(id) (tyc_pRoot->apSelectorTable[(id)]->wArity)
 #define tyc_SORTS(id)     (tyc_pRoot->apSelectorTable[(id)]->wSorts)
+#define tyc_KEYWORDS(id)  (tyc_pRoot->apSelectorTable[(id)]->wSorts)
 
 
 /* ClassId codes used by the virtual machine: */
@@ -219,6 +224,7 @@ typedef struct tyc_Selector {
   tyc_Symbol pSymbol;
   Word wArity;
   Word wSorts;
+  tyc_Symbol *apKeywords;
 } tyc_Selector;
 
 typedef struct tyc_Method {
@@ -231,17 +237,19 @@ typedef struct tyc_Method {
   Bool fIsPrivate;
   Word nArgs;                       /* number of arguments */
   Word wSorts;                      /* bitvector: is param i a component? */
+  tyc_Symbol *apKeywords;
   void * pNativeCode;		    /* for jit compiler */
 } tyc_Method;
 
 typedef struct tyc_CompiledMethod {
   tyc_Method method;
 
+  tyc_Array pKeywordDefaults;	    /* default values for keywords */
   tsp_OID body;
   Word wDebugMode;
   tyc_Class * pClass;
   Byte * pbCode;
-  tyc_Array * pLiterals;
+  tyc_Array pLiterals;
   Word idSelector; 
   Word cwStackPeak;	      	    /* stack peak */
   tyc_CatchFrame * asHandlerTable;  /* may be null (no handlers) */
@@ -290,6 +298,17 @@ typedef struct tyc_PoolMethod {
 
   tsp_OID * pCell;
 } tyc_PoolMethod;
+
+typedef struct tyc_ReorderMethod {
+  tyc_Method method;
+
+  int idDelegateSelector; /* with extended/reordered keywords */
+  tyc_Method *pDelegateMethod;    /* the delegate method */
+  void *pDelegateMethodCode;	  /* for threaded code */
+
+  tyc_Array pFillWords;
+  unsigned char aPermutation[MAX_KEYWORD_ARGS / 2 * 3 + 2];
+} tyc_ReorderMethod;
 
 typedef struct tyc_PoolAccessMethod {
   tyc_PoolMethod poolMethod;
@@ -398,6 +417,7 @@ typedef struct tyc_IndexOutOfBounds {
 typedef struct tyc_WrongSignature {
   tsp_OID pMethod;                /* method object found */
   tsp_OID pReceiver;              /* message receiver */
+  tyc_Selector *pSelector;	  /* message selector */
   tsp_OID pArgs;                  /* argument list received */
 } tyc_WrongSignature;
 
@@ -438,6 +458,7 @@ extern tsp_OID * tyc_pArgv;
 extern tsp_OID tyc_pBlockingCCallException;
 extern tsp_OID tyc_pThreadCancelledException;
 extern tsp_OID tyc_pCommitError;
+extern tsp_OID tyc_pUnknownSelectorError;
   /* single exception objects */
 
 extern void tyc_init(void);

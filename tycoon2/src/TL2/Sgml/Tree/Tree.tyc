@@ -8,19 +8,23 @@ tycoon.tl.loader.update;
 tycoon.tl.typeChecker.check;
 
 
-(*;
+;;
+;; end of automated script
+;;
+
 define tb :SgmlTreeBuilder;
 tb := SgmlTreeBuilder.new;
 tb.defineElement("HTML", SgmlContentType.mixed, Dictionary.new);
-let d = Dictionary.new,
-d["name"] := "value",
+d ::= Dictionary.new
+d["name"] := "value"
 tb.startElement("HTML", d);
 tb.writeString("lala");
 tb.endElement("HTML");
 tb.tree;
-*)
 
-(*;
+;; ------------------------------------------------------------ 
+;;
+
 define sgml_dir :String;
 sgml_dir := tycoon.ansiC.getenv("SGML_DIR");
 define sp :SgmlsParser;
@@ -43,12 +47,12 @@ tb := SgmlTreeBuilder.new;
 tb.interestedInComments := true;
 sp.parse(List.with0, "/local/doc/hox/stml/stml.sgml", tb);
 tb.tree;
-*)
 
-(*;
 
-(* check if we have read-write invariance *)
-   (* ### not up to date *)
+;; ------------------------------------------------------------ 
+;; check if we have read-write invariance *)
+;;  ### not up to date
+;;
 
 define fw :File;
 fw := File.openWrite("schwupp");
@@ -64,7 +68,9 @@ tb.tree.printOn(fw);
 fw.close;
 tycoon.ansiC.system("diff schwupp schwupp1");
 
-(* --- HTML test --- *)
+;; ------------------------------------------------------------
+;; HTML test
+;;
 
 tb := SgmlTreeBuilder.new;
 sp.parse(Array.with1(sgml_dir+"/doctype-html"), sgml_dir+"/demos/index.html", tb);  (* ==> Exception *)
@@ -85,5 +91,3 @@ fw := File.openWrite("schwupp1");
 co.printOn(fw);
 fw.close;
 tycoon.ansiC.system("diff schwupp schwupp1");
-
-*)

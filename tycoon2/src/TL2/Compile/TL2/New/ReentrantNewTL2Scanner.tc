@@ -22,16 +22,16 @@ super NewTL2
 *)
 meta ReentrantNewTL2ScannerClass
 {
-scan(where :String, input :Input, errorLog :ErrorLog ) :NewTL2Scanner
+scan(where :String, input :Input, semicolonIsEoI :Bool, errorLog :ErrorLog ) :NewTL2Scanner
   (*, bufferCapacity :=100*)
-{ scan1(where, input, errorLog, 100) }
+{ scan1(where, input, semicolonIsEoI, errorLog, 100) }
 
-scan1(where :String, input :Input, errorLog :ErrorLog, bufferCapacity :Int) :NewTL2Scanner
+scan1(where :String, input :Input, semicolonIsEoI :Bool, errorLog :ErrorLog, bufferCapacity :Int) :NewTL2Scanner
   (* *)
 {
   s ::=
     UserScanner.new1(tables, input, bufferCapacity,
-      NewTL2ScannerState.new(terminals.reservedWords, where, errorLog))
+      NewTL2ScannerState.new(terminals.reservedWords, where, semicolonIsEoI, errorLog))
   s.errorHandler :=   ; ### should become an argument when optional parameters are available 
     fun(ch :Char){ s.userState.error(ch) }
   s.userState.scanner := s  ; backward reference for source positions 
@@ -219,9 +219,14 @@ _init :Void
         s.userState.newline
         idx := token.locateChar1('\n', idx+1)
       })
-      docString.token(Positioned.new(pos,
-        token.subString(2, token.size-4)
-      ))
+      if( !s.userState.semicolonIsEoI then: {
+	docString.token(Positioned.new(pos,
+	  token.subString(2, token.size-4)
+	))
+      } else: {
+        ;; on toplevel, interpret as whitespace
+        s.read
+      })
     })
 
   sb.addToken("\\(\\*", fun(s :NewTL2Scanner) {
@@ -234,7 +239,11 @@ _init :Void
   ;; 1.5 Single Line Comments 
   sb.addToken(";[^\n]*",
     fun(s :NewTL2Scanner) {
-      s.read
+      if( !s.userState.semicolonIsEoI then: {
+        s.read ;; skip whitespace
+      } else: {
+        nil    ;; end-of-input marker on toplevel
+      })
     })
 
   ;; 1.6 Other tokens 

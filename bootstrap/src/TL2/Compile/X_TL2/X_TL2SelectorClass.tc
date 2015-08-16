@@ -22,24 +22,47 @@ super CStructClass(X_TL2Selector)
 *)
 meta MetaClass
 {
-new(symbol :Symbol, sorts :Sequence(Bool)) :X_TL2Selector
+new(symbol :Symbol, sorts :Sequence(Bool), keywords :Array(Symbol)) :X_TL2Selector
   (* *)
 {
   new1(symbol, sorts.size,
     sorts.reverseReader.inject(0,fun(i:Int,b:Bool) {
       i*2 + if(b then:{1} else:{0})
-    }))
+    }),
+    keywords)
 }
 
-new1(symbol :Symbol, arity :Int, sorts :Int) :X_TL2Selector
+new1(symbol :Symbol, arity :Int, sorts :Int, keywords :Array(Symbol)) :X_TL2Selector
 {
   instance ::= _new
   assert({ arity >= 0 & arity < 256 })
+  assert({ arity >= keywords.size })
   instance.symbol := symbol
   instance.arity := arity
   instance.sorts := sorts
+  instance.keywords := keywords
   instance._init
   instance
 }
 
+checkKeywords(keywords :Array(Symbol), pos :SourcePos, compiler :X_TL2Compiler) :Array(Symbol)
+{
+  if( !keywords.isEmpty then: { 
+    ;; check for duplicates
+    keywordSet ::= keywords.as(Set)
+    if( keywordSet.size != keywords.size then: {
+      keywordSet.do(fun(s:Symbol) {
+	if( keywords.occurrencesOf(s) > 1 then: {
+	  compiler.errorLog.error(pos, "repeated keyword: "+s)
+	})
+      })
+    })
+    ;; check for TVM limit
+    maxKeywords ::= compiler.vmInterface.maxKeywords
+    if( keywords.size > maxKeywords then: {
+      compiler.errorLog.error(pos, "implementation restriction: no more than "+maxKeywords.printString+" keywords allowed in call or signature")
+    })
+  })
+  keywords
+}
 }

@@ -22,6 +22,8 @@
 @SET HOX_HOME=%HOX_CURR_DIR%
 @SET TL2_PATH=.;%HOX_CURR_DIR%\src\TL2;
 
+@SET SGML_CATALOG_FILES=%HOX_HOME%\lib\sgml\CATALOG
+@SET SGML_SEARCH_PATH=%HOX_HOME%\lib\sgml
 
 @REM
 @REM Expand path, only one Tycoon-2-bin directory

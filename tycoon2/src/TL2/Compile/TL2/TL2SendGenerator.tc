@@ -32,7 +32,8 @@ genCode(backEnd :BEMethodManager) :Void
 {
   sendValue.receiver.genCode(backEnd)
   argSorts ::= genArgs(backEnd)
-  selectorObject ::= TL2Selector.new(sendValue.selector, argSorts)
+  keywords ::= TL2Selector.checkKeywords(sendValue.keywords, sendValue.pos, backEnd.compiler)
+  selectorObject ::= TL2Selector.new(sendValue.selector, argSorts, keywords)
   backEnd.send(selectorObject)
 }
 
@@ -40,7 +41,8 @@ genCodeReturn(backEnd :BEMethodManager) :Void
   (* *)
 { sendValue.receiver.genCode(backEnd)
   argSorts ::= genArgs(backEnd)
-  selectorObject ::= TL2Selector.new(sendValue.selector, argSorts)
+  keywords ::= TL2Selector.checkKeywords(sendValue.keywords, sendValue.pos, backEnd.compiler)
+  selectorObject ::= TL2Selector.new(sendValue.selector, argSorts, keywords)
   backEnd.sendTail(selectorObject)
   backEnd.return
 }
@@ -53,8 +55,7 @@ genArgs(backEnd :BEMethodManager) :Sequence(Bool)
 
 genArgsLoop(backEnd :BEMethodManager, args :List(TL2Argument)) :List(Bool)
 {
-  ; keywords are currently ignored
-  ;   (typechecker statically checks for equal keyword lists)
+  ; keywords arguments are passed just like positional arguments
   if( args.isEmpty then: {
     EmptyList.new
   } else: {

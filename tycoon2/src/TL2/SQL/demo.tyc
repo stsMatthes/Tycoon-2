@@ -1,9 +1,8 @@
 (*
-DO load "../TWL/WWW/WWW.tyc";
-DO load "../TWL/C/CValueHolder.tyc";
-DO load "../TWL/SQL/SQL.tyc";
-DO load "../TWL/SQL/ODBC/ODBC.tyc";
-DO load "../TWL/SQL/OCI/OCI.tyc";
+DO load "WWW/WWW2.tyc";
+DO load "SQL/SQL2.tyc";
+DO load "SQL/ODBC/ODBC2.tyc";
+DO load "SQL/OCI/OCI2.tyc";
 *)
 
 (* open database-connection *)
@@ -37,8 +36,8 @@ statement.executeDirectUpdate
   (* define the TWL-types of the input-parameters *)
   define names:MutableArray(String);
   names:=MutableArray.with4("a","b","c","d");
-  define classes:MutableArray(Class); classes:=MutableArray.new(4);
-  classes[0]:=Int; classes[1]:=Real; classes[2]:=String; classes[3]:=Date;
+  define classes:MutableArray(Class); 
+  classes:=#(Int,Real,String,Date);
 
 statement.defineParameterClasses(classes,names);
 (* Oracle: set maximium length of String-Input-Parameter
@@ -54,15 +53,15 @@ string[0]:='x';
 define date:Date; (* create date *)
 date:=Date.now;
 
-for (2,10,fun (i:Int)
+for(2,10,fun (i:Int)
   {
-    statement.setInt(0,i),
-    statement.setReal(1,tycoon.rts.tyreal_fromInt(i)/100.0),                   
-    string[i-1]:='x',
-    statement.setString(2,string),
+    statement.setInt(0,i)
+    statement.setReal(1,tycoon.rts.tyreal_fromInt(i)/100.0)
+    string[i-1]:='x'
+    statement.setString(2,string)
       (* value of string for third column *)
-    date.day := date.day+1,date.minute := date.minute+1,
-    statement.setDate(3,date),
+    date.day := date.day+1,date.minute := date.minute+1
+    statement.setDate(3,date)
       (* value of date for third column *)
     statement.execute
   }
@@ -100,19 +99,21 @@ cursor.getString(0); (* get "string-item" in column 0 -> error,
                         column 0 is no string-type *)
 
 (* get the following rows *)
-while(fun (){cursor.next()},fun ()
-                              {cursor.getInt(0).printOn(tycoon.stdout),
-                               " ".printOn(tycoon.stdout),
-			       cursor.getReal(1).printOn(tycoon.stdout),
-                               " ".printOn(tycoon.stdout),
-                               cursor.getString(2).printOn(tycoon.stdout),
-			       " ".printOn(tycoon.stdout),
-                               cursor.getDate(3).printOn(tycoon.stdout),
-                               tycoon.stdout.writeln("")});
+while({ cursor.next } do: {
+  tycoon.stdout
+    << cursor.getInt(0)
+    << " "
+    << cursor.getReal(1)
+    << " "
+    << cursor.getString(2)
+    << " "
+    << cursor.getDate(3)
+    << "\n"
+});
 
 (* Query with parameters *)
   names:=MutableArray.with1("a");
-  classes:=MutableArray.new(1);classes[0]:=Int;
+  classes:=#(Int);
 
 statement.defineParameterClasses(classes,names);
 
@@ -123,14 +124,16 @@ statement.setInt(0,5);
 statement.execute;
 cursor:=statement.getCursor;
 
-cursor.next; cursor.getObjects; (* call this until cursor.next returns false *)
+(* call this until cursor.next returns false *)
+if( cursor.next then:{ cursor.getObjects } else: {nil}); 
 
 (* set int-parameter 0 to 8 *)
 statement.setInt(0,8);
 statement.execute;
 cursor:=statement.getCursor;
 
-cursor.next; cursor.getObjects; (* call this until cursor.next returns false *)
+(* call this until cursor.next returns false *)
+if( cursor.next then:{ cursor.getObjects } else: {nil}); 
 
 (* close statement *)
 statement.close;
@@ -149,24 +152,28 @@ updateStatement.prepare("delete from testtable where int_column > 5");
 selectStatement.execute;
 cursor:=selectStatement.getCursor;
 
-cursor.next; cursor.getObjects; (* call this until cursor.next returns false
-                                   to show all result-rows *)
+(* call this until cursor.next returns false
+   to show all result-rows *) *)
+if( cursor.next then:{ cursor.getObjects } else: {nil}); 
+
 
 updateStatement.execute; (* perform changes *)
 
 selectStatement.execute;
 cursor:=selectStatement.getCursor;
-cursor.next; cursor.getObjects; (* call this until cursor.next returns false
-                                   to show all result-rows, some rows were
-				   deleted *)
+(* call this until cursor.next returns false
+   to show all result-rows, some rows were
+   deleted: *)
+if( cursor.next then:{ cursor.getObjects } else: {nil}); 
 
 connection.rollback;     (* discard changes *)
 
 selectStatement.execute;
 cursor:=selectStatement.getCursor;
-cursor.next; cursor.getObjects; (* call this until cursor.next returns false
-                                   to show all result-rows; no rows were
-				   affected *)
+(* call this until cursor.next returns false
+   to show all result-rows, no rows were
+   affected: *)
+if( cursor.next then:{ cursor.getObjects } else: {nil}); 
 
 updateStatement.execute; (* perform changes once again *)
 connection.commit;       (* make changes persistent *)
@@ -174,9 +181,9 @@ connection.rollback;     (* try to rollback *)
 
 selectStatement.execute;
 cursor:=selectStatement.getCursor;
-cursor.next; cursor.getObjects; (* call this until cursor.next returns false
-                                   to show all result-rows; rows were deleted
-				 *)
+(* call this until cursor.next returns false
+   to show all result-rows, rows were deleted: *)
+if( cursor.next then:{ cursor.getObjects } else: {nil}); 
 
 (* close all open resources *)
 

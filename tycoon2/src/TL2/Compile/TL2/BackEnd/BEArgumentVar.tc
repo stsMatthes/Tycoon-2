@@ -26,15 +26,26 @@ idx :Int
 
 genLoad(writer :BEByteCodeWriter) :Void
   (* *)
-{ writer.loadArgument(idx)
-  assert({ !ide.mutable })
+{
+  assert({ !ide.component })
+  if( ide.celled then: {
+    genLoadRef(writer)
+    writer.cellLoad
+  } else: {
+    writer.loadArgument(idx)
+  })
 }
 
 genStore(writer :BEByteCodeWriter) :Void
   (* *)
-{ ; #### 
-   tycoon.stdout.writeln("May not modify arguments")
-   assert({ false })
+{
+  assert({ !ide.component })
+  if( ide.accessedFromClosure then: {
+    genLoadRef(writer)
+    writer.cellStore
+  } else: {
+    writer.storeArgument(idx)
+  })
 }
 
 genLoadRef(writer :BEByteCodeWriter) :Void
@@ -45,21 +56,51 @@ genReference(writer :BEByteCodeWriter) :Void
   (* *)
 {
   assert({ ide.component })
-  writer.referenceArgument(idx)
+  if( ide.accessedFromClosure then: {
+    genLoadRef(writer)
+    writer.cellReference
+  } else: {
+    writer.referenceArgument(idx)
+  })
 }
 
 genTakeFrom(writer :BEByteCodeWriter) :Void
   (* *)
 {
   assert({ ide.component })
-  writer.takeFromArgument(idx)
+  if( ide.accessedFromClosure then: {
+    genLoadRef(writer)
+    writer.takeFromCell
+  } else: {
+    writer.takeFromArgument(idx)
+  })
 }
 
 genMoveTo(writer :BEByteCodeWriter) :Void
   (* *)
 {
   assert({ ide.component })
-  tycoon.stdout.writeln("May not modify arguments")
-  assert({ false })
+  if( ide.accessedFromClosure then: {
+    genLoadRef(writer)
+    writer.moveToCell
+  } else: {
+    writer.moveToArgument(idx)
+  })
+}
+
+genCell(writer :BEByteCodeWriter) :Void
+{
+  assert({ ide.celled })
+  if( ide.component then: {
+    writer.takeFromArgument(idx)
+    writer.componentCellNew
+    writer.storeArgument(idx)
+    writer.pop
+  } else: {
+    writer.loadArgument(idx)
+    writer.cellNew
+    writer.storeArgument(idx)
+    writer.pop
+  })
 }
 }

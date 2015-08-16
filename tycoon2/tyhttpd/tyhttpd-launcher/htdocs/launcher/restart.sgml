@@ -5,7 +5,9 @@
 <if true=success>
   <assign name=msg>
     <p><b><a href='`"http://" +
-      (properties.host = Httpd.anyHost ? { "localhost" } : { properties.host })
+      if( properties.host = Httpd.anyHost 
+	     then: { "localhost" } 
+	     else: { properties.host })
       + ":" + properties.port.printString`'>
 	    <ref name=server>tyhttpd-X</ref></a>
        </b> re-started

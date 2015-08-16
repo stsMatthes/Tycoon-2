@@ -41,14 +41,14 @@ asFun :TL2CompiledFun
 prettyPrint(out :Printer) :Void
   (* *)
 {
-  if( domain.isEmpty && range.isNil then: {
+  if( positionalDomain.isEmpty && range.isNil then: {
     ; no fun 
   } else: {
     out.writeAll("fun(")
-    simpleDomain ::= domain.all(fun(i:TL2Ide) {
+    simpleDomain ::= positionalDomain.all(fun(i:TL2Ide) {
 			     i.type.isNil || i.type.isLeaf})
     out.withAbsIndent(out.column, {
-      domain.doBetween(fun(i :TL2Ide) {
+      positionalDomain.doBetween(fun(i :TL2Ide) {
 	i.prettyPrint(out)
       }, {
 	out.write(',')
@@ -96,7 +96,7 @@ freeVarHook(out :Printer) :Void
 children :Reader(TL2ProgramObject)
   (* *)
 {
-  Reader(:TL2ProgramObject).append( domain.map(fun(i:TL2Ide){i.type}),
+  Reader(:TL2ProgramObject).append( positionalDomain.map(fun(i:TL2Ide){i.type}),
 		 body.children)
 }
 
@@ -118,12 +118,12 @@ scope(env :TL2Scoper) :TL2CompiledFun
   freeValueIdes := Array.fromReader(Reader.cons(selfSig, nonSelfFreeValueIdes))
   ; ...setAccessedFromClosure moved to TL2Optimizer
   ;   (this closure may end up being inlined)
-  domain.do(fun(i:TL2Ide) {
+  positionalDomain.do(fun(i:TL2Ide) {
     if( !i.isValueIde then: {
       env.errorLog.error(i.pos, "functions currently cannot take type parameters")
     })
   })
-  if( !keywords.isEmpty then: {
+  if( !keywordDomain.isEmpty then: {
       env.errorLog.error(pos, "functions currently cannot take keyword parameters")
   })
   self
@@ -138,12 +138,12 @@ genCode(backEnd :BEMethodManager) :Void
     fun(idx:Int, ide :TL2ValueIde) {
        globalVars[ide] := BEGlobalVar.new(ide, idx+1)
     })
-  computeArityAndSorts(backEnd.errorLog)
+  computeArityAndSorts(backEnd.compiler)
   compile(globalVars, nil, backEnd.compiler)
 
   ; emit closure creation:
 ;     push variable references in reverse order, then the TL2CompiledFun (me). 
-  freeValueIdes.reverseReader.do(fun(ide :TL2ValueIde) {
+  freeValueIdes.reverseDo(fun(ide :TL2ValueIde) {
     backEnd.loadRef(ide)
   })
   backEnd.loadLiteral(self)
@@ -173,7 +173,7 @@ private
 doCheck(T <: Void, cont :Fun(:TL2Type, :TL2Subst):T) :T
   (* *)
 {
-    args ::= List.fromReader(domain.map(fun(i :TL2Ide) { i.type }))
+    args ::= List.fromReader(positionalDomain.map(fun(i :TL2Ide) { i.type }))
     args.do(fun(t :TL2Type) { t.checkType(TL2EmptySubst.instance) })
 
     if( range.isNotNil then: { range.checkType(TL2EmptySubst.instance) })
@@ -187,17 +187,16 @@ doCheck(T <: Void, cont :Fun(:TL2Type, :TL2Subst):T) :T
 
       n ::= args.size
 
-      args ::= List.reverse(List.cons(
-	if( range.isNotNil then: { range } else: { TL2SubstType.new(t, s) }),
-	List.reverse(args)
+      args ::= List.append(args, List.with1(
+	if( range.isNotNil then: { range } else: { TL2SubstType.new(t, s) })
       ))
 
       className ::=
         if( methodType.isComponent
-         || domain.some(fun(i :TL2Ide){ i.asValueIde.component }) then: {
+         || positionalDomain.some(fun(i :TL2Ide){ i.asValueIde.component }) then: {
 	  String.concatAll( #(
           "Fun",
-	  domain.map(fun(i :TL2Ide){
+	  positionalDomain.map(fun(i :TL2Ide){
 	   if( i.asValueIde.component then: {'C'} else: {'R'}) }).as(String),
 	  if( methodType.isComponent then: {"C"} else: {"R"}) ))
 	} else: {

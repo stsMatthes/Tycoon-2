@@ -26,13 +26,7 @@ new(pos :SourcePos,
     receiver :X_TL2Value, selector :Symbol, args :List(X_TL2Argument)) :X_TL2SendValue
   (* *)
 {
-  instance ::= _new
-  instance.pos := pos
-  instance.receiver := receiver
-  instance.selector := selector
-  instance.args := args
-  instance._init
-  instance
+  newK(pos, receiver, selector, args, #())
 }
 
 newK(pos :SourcePos, 

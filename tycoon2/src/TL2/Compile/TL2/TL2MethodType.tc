@@ -24,49 +24,15 @@ meta TL2MethodTypeClass
 {
 selector :Symbol
 
-domain :List(TL2Ide)
+positionalDomain :List(TL2Ide)
 
-_keywords :Array(Symbol)
-  (* ### temp hack *)
+keywordDomain :List(TL2KeywordIde)
 
 range :TL2Type
 
-keywords :Array(Symbol)
-  (* *)
-{ k ::= _keywords
-  if( k.isNotNil then: { k } else: { Array.with0 })
-}
-
-"keywords:="(k :Array(Symbol)) :Array(Symbol)
-  (* *)
-{ _keywords := k }
-
-plainDomain :Reader(TL2Ide)
-  (* plain, i.e. non-keyword parameters *)
-{
-  domain.subSequenceReader(0,domain.size - keywords.size)
-}
-
-keywordDomain :Reader(Pair(Symbol, TL2ValueIde))
-  (* *)
-{
-  domain.nthTail(domain.size - keywords.size)
-      .keysAndElementsMap(fun(i:Int, param :TL2Ide) {
-         sym ::= keywords[i]
-	 param ::= param.asValueIde
-	 assert({ param.isNotNil })
-	 Pair.new(sym, param)
-       })
-}
-
-hasPlain :Bool
-  (* *)
-{ domain.size - keywords.size > 0
-}
-
 hasKeywords :Bool
   (* *)
-{ !keywords.isEmpty }
+{ !keywordDomain.isEmpty }
 
 selectorSansAt :Symbol
 {
@@ -86,22 +52,21 @@ prettyPrint(out:Printer) :Void
 {
   ;; out.writeAll("Method ")
   out.writeString(selectorSansAt)
-  if( !domain.isEmpty then: {
-    simpleDomain ::= domain.all(fun(i:TL2Ide) {
+  if( !(positionalDomain.isEmpty && keywordDomain.isEmpty) then: {
+    simplePsnlDomain ::= positionalDomain.all(fun(i:TL2Ide) {
 			     i.type.isNil || i.type.isLeaf})
     out.write('(')
     out.withAbsIndent(out.column, {
-      plainDomain.doBetween(fun(i :TL2Ide) {
+      positionalDomain.doBetween(fun(i :TL2Ide) {
 	i.prettyPrint(out)
       }, {
 	out.write(',')
-	if( simpleDomain then: { out.space } else: { out.nl })
+	if( simplePsnlDomain then: { out.space } else: { out.nl })
       })
-      if( hasKeywords then: {
-	if( hasPlain then: { out.nl })
-	keywordDomain.doBetween(fun(p :Pair(Symbol, TL2ValueIde)) {
-	  out << p.first << ": "
-	  p.second.prettyPrint(out)
+      if( !keywordDomain.isEmpty then: {
+	if( !positionalDomain.isEmpty then: { out.nl })
+	keywordDomain.doBetween(fun(kwi :TL2KeywordIde) {
+	  kwi.prettyPrint(out)
 	}, {
 	  out.nl
 	})
@@ -124,7 +89,10 @@ prettyPrint(out:Printer) :Void
 children :Reader(TL2ProgramObject)
   (* *)
 {
-    r ::= domain.map(fun(i:TL2Ide):TL2ProgramObject{i.type})
+    r :Reader(TL2ProgramObject) := positionalDomain.map(fun(i:TL2Ide):TL2ProgramObject{i.type})
+    if( !keywordDomain.isEmpty then: {
+      r := Reader.append(r, keywordDomain.reader)
+    })
     if( range.isNil
      then: { r }
      else: { Reader.cons(range, r) })
@@ -133,11 +101,13 @@ children :Reader(TL2ProgramObject)
 scope(env :TL2Scoper) :TL2MethodType
   (* *)
 {
-    env.withScopedSignatures(domain, {
+  env.withScopedSignatures(positionalDomain, {
+    env.withScopedKWSignatures(keywordDomain, {
       if( range.isNotNil then: { range := range.scope(env) })
     })
-    self
-  }
+  })
+  self
+}
 
 accept(T <: Void, visitor :TL2TypeVisitor(T)) :T
   (* visitor support
@@ -161,20 +131,45 @@ checkSubMethodType(big :TL2MethodType, subst :TL2Subst, bigSubst :TL2Subst) :Voi
 ;       (T <: Void, :T) -> T    <:    (:String) -> String
 ;    
 
-    if( hasKeywords ||  big.hasKeywords  then: {
-      ; ### keyword args 
-      setError2(pos, big.pos, "keyword signatures not implemented", { raiseError })
+; fake a send value with the signature of "big" against this method
+
+    domain ::= List(:TL2Ide).new
+    bigArgs ::= List(:TL2Argument).new
+
+    if( big.hasKeywords then: {
+      big.keywordDomain.reverseDo(fun(bigKwIde :TL2KeywordIde) {
+	k ::= bigKwIde.keyword
+	kwIde ::= keywordDomain.detect(fun(kwIde:TL2KeywordIde){ kwIde.keyword == k })
+	ide ::=
+	  if( kwIde.isNotNil then: {
+	    kwIde.ide
+	  } else: {
+	    setError2(bigKwIde.pos, pos, "missing keyword parameter: "+k, { raiseError })
+	    TL2ValueIde.new(bigKwIde.pos,nil,bigKwIde.ide.component,TL2VoidType.instance)
+	  })
+	bigIde ::= bigKwIde.ide
+	bigArg :TL2Argument
+	  := if(bigIde.component then: { TL2TakeFromValue.new(bigIde) }
+				 else: { TL2IdeValue.new(bigIde) })
+	domain := List.cons(ide, domain)
+	bigArgs := List.cons(bigArg, bigArgs)
+      })
+      domain := List.append(positionalDomain, domain)
+    } else: {
+      domain := positionalDomain
     })
 
-    bigArgs ::= List.fromReader(big.domain.map(fun(i :TL2Ide) :TL2Argument {
-      if( i.isTypeIde
-      then: { a :TL2Argument := TL2IdeType.new(i.asTypeIde) }
-      else: { vi :TL2ValueIde := i.asValueIde
-	      a :TL2Argument :=
-	        if(vi.component
-		then: { TL2TakeFromValue.new(vi) }
-		else: { TL2IdeValue.new(vi) }) })
-    }))
+    big.positionalDomain.reverseDo(fun(i :TL2Ide) {
+      bigArg :TL2Argument :=
+	if( i.isTypeIde
+	then: { a :TL2Argument := TL2IdeType.new(i.asTypeIde) }
+	else: { vi :TL2ValueIde := i.asValueIde
+		a :TL2Argument :=
+		  if(vi.component
+		  then: { TL2TakeFromValue.new(vi) }
+		  else: { TL2IdeValue.new(vi) }) })
+      bigArgs := List.cons(bigArg, bigArgs)
+    })
 
     applyArgs(pos, domain, bigArgs, subst, bigSubst, range, true, false, true, fun(range :TL2Type, subst :TL2Subst) {
       range.checkSubType(big.range, subst, bigSubst)

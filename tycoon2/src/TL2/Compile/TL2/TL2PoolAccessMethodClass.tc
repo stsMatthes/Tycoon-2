@@ -32,7 +32,6 @@ new(pos :SourcePos, selector :Symbol, domain :List(TL2Ide), range :TL2Type,
   instance.selector := selector
   instance.methodType := TL2MethodType.new(pos, selector, domain, range)
   instance.cell := cell
-  instance.arity := 0  ; ### better: actually scope this method! 
   instance._init
   instance
 }

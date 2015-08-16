@@ -30,23 +30,13 @@ selector :Symbol
 
 args :List(TL2Argument)
 
-_keywords :Array(Symbol)
+keywords :Array(Symbol)
   (* for the last arguments *)
 
 generator :TL2CodeGenerator
   (* set during "optimization", zapped during code generation 
  a0 a1 a2 a3
          k0 k1 *)
-
-keywords :Array(Symbol)
-  (* ### temp hack *)
-{ k ::= _keywords
-  if( k.isNotNil then: { k } else: { Array.with0 })
-}
-
-"keywords:="(k :Array(Symbol)) :Array(Symbol)
-  (* *)
-{ _keywords := k }
 
 accept(T <: Void, v :TL2ValueVisitor(T)) :T
   (* *)
@@ -64,6 +54,13 @@ isSend :Bool
 asSend :TL2SendValue
   (* *)
 { self }
+
+isLiteral :Bool
+{ generator.isNotNil && generator.isLiteral }
+
+getLiteralValue :Object
+require isLiteral
+{ generator.getLiteralValue }
 
 plainArgs :Reader(TL2Argument)
   (* plain, i.e. non-keyword arguments *)
@@ -208,13 +205,26 @@ doCheck(T <: Void, cont :Fun(:TL2Type, :TL2Subst):T) :T
 	      })
 	    })
 	  })
-	  if( !keywords.sequenceEqual(m.methodType.keywords) then: {
-	    tycoon.stdout << keywords << '\n'
-			  << m.methodType.keywords << '\n'
-	    ; ### keyword args 
-	    setError2(pos, m.pos, "keyword lists not implemented", { raiseError })
-	  })
-	  applyArgs(pos, m.methodType.domain, args, subst, subst, m.methodType.range, true, true, false, cont)
+	  methodDomain ::= m.methodType.positionalDomain
+	  if( hasKeywords then: {
+	    ides :List(TL2Ide) := EmptyList.new
+	    keywords.reverseDo(fun(k:Symbol) {
+	      kwIde ::= m.keywordDomain.detect(fun(kwIde:TL2KeywordIde){ kwIde.keyword == k })
+	      ide ::=
+		if( kwIde.isNotNil then: {
+		  kwIde.ide
+		} else: {
+		  arg ::= args[args.size - keywords.size + keywords.locate(k)]
+		  setError2(arg.pos, m.pos, "unexpected keyword: "+k, { raiseError })
+		  argIsComponent ::=
+		    arg.argumentCase(fun(v:TL2Value){v.isComponent}, fun(:TL2Type){false})
+		  TL2ValueIde.new(arg.pos,nil,argIsComponent,TL2VoidType.instance)
+		})
+	      ides := List.cons(ide, ides)
+            })
+	    methodDomain := List.append(methodDomain, ides)
+          })
+	  applyArgs(pos, methodDomain, args, subst, subst, m.methodType.range, true, true, false, cont)
 	}
       )
     })

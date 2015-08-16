@@ -104,7 +104,7 @@ acceptConversation(m :MessageAcceptConversation) :Message
       ; create context 
       cv:Conversation(S) := Conversation(:S).new(_convSpec)
       stop ::= false
-      until({stop},{
+      repeat({
 	m :MessagePerformerDialog := port.get.asMessagePerformerDialog
 	if( m.isNotNil then: {
 	  t.trace("got dialog "+m.dialog.name+" from "+m.from.name)
@@ -135,7 +135,7 @@ acceptConversation(m :MessageAcceptConversation) :Message
 	  ) ; lookup 
 	})
 	{stop:=true} ; m.isNil -> signal to stop 
-      }) ;until
+      }until:{stop})
       ; stop client 
       AgentITCSystem.instance.unregisterPort(port)
       _remPort(port)

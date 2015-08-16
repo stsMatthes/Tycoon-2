@@ -33,6 +33,16 @@ isComponent :Bool
   false
 }
 
+isLiteral :Bool
+{ values.all(fun(v:X_TL2Value){ v.isLiteral }) }
+
+getLiteralValue :Object
+require isLiteral
+{
+  Array.fromContainerWithMap(values,
+    fun(v :X_TL2Value){ v.getLiteralValue })
+}
+
 prettyPrint(out :Printer) :Void
   (* *)
 {
@@ -69,34 +79,8 @@ scope(env :X_TL2Scoper) :X_TL2ArrayValue
 genCode(backEnd :X_BEMethodManager) :Void
   (* *)
 {
-  isLiteralVisitor :X_TL2FunValueVisitor(Bool) := nil
-  isLiteralVisitor := X_TL2FunValueVisitor.new(nil)
-		       .ifLiteral(fun(:X_TL2LiteralValue){ true })
-		       .ifArray(fun(a:X_TL2ArrayValue){
-			 a.values.all(fun(v:X_TL2Value){
-			   v.accept(isLiteralVisitor)
-			 })
-			})
-		       .ifSend(fun(s:X_TL2SendValue) {
-		         s.generator.isNotNil
-			 && s.generator."class" == X_TL2LiteralValue
-		       })
-		       .otherwise(fun(:X_TL2Value){ false })
-
-  getLiteralVisitor :X_TL2FunValueVisitor(Object) := nil
-  getLiteralVisitor :=
-    X_TL2FunValueVisitor.new(nil)
-      .ifLiteral(fun(v:X_TL2LiteralValue){ v.value })
-      .ifArray(fun(a:X_TL2ArrayValue) {
-        Array.fromContainerWithMap(a.values,
-	  fun(v :X_TL2Value){ v.accept(getLiteralVisitor) })
-       })
-       .ifSend(fun(s:X_TL2SendValue) {
-	 _typeCast(s.generator, :X_TL2LiteralValue).value
-       })
-
-  if( accept(isLiteralVisitor) then: {
-    literal ::= accept(getLiteralVisitor)
+  if( isLiteral then: {
+    literal ::= getLiteralValue
     backEnd.loadLiteral(literal)
   } else: {
     values.do(fun(v :X_TL2Value) {
@@ -109,7 +93,9 @@ genCode(backEnd :X_BEMethodManager) :Void
 genCodeIgnore(backEnd :X_BEMethodManager) :Void
   (* *)
 { backEnd.errorLog.warning(pos, "unused array expression")
-  super.genCodeIgnore(backEnd)
+  values.do(fun(v :X_TL2Value) {
+    v.genCodeIgnore(backEnd)
+  })
 }
 
 genCodeBranch(backEnd :X_BEMethodManager, dest :X_BEMMLabel, branchIf :Bool) :Void

@@ -70,23 +70,23 @@ stdin :Void
 
 private
 
-compile(where :String, input :Input, closeWhenFinished :Bool, interactive :Bool) :Void
+compile(where :String, input :Input, closeWhenFinished :Bool, prompt :Bool) :Void
   (* *)
 {
   errorLog.reset
-  s ::= syntax.scan(where, input, errorLog)
+  s ::= syntax.scan1(where, input, true, errorLog)
 
   protect({
-    parseLoop(s, interactive)
+    parseLoop(s, prompt)
   }, {
     if( closeWhenFinished then: { input.close })
   })
 }
 
-parseLoop(s :AbstractTL2Scanner, interactive :Bool) :Void
+parseLoop(s :AbstractTL2Scanner, prompt :Bool) :Void
   (* *)
 {
-  if( interactive
+  if( prompt
   then: { tycoon.stdout.writeAll("|> ") })
   u ::= syntax.parse(s, errorLog)
   if( u.isNotNil
@@ -106,7 +106,7 @@ parseLoop(s :AbstractTL2Scanner, interactive :Bool) :Void
       )
       if( errorLog.hasErrors then: { tycoon.stdout << "There were errors.\n" })
       errorLog.reset
-      parseLoop(s, interactive) })
+      parseLoop(s, prompt) })
 }
 
 visitClass(builder :TL2ClassBuilder) :Void

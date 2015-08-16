@@ -1,7 +1,7 @@
 (* open database-connection *)
 
-let connection = SQLDriverManager.instance.connect(
-  URL.fromString("tysql:/odbc/hoxsun01:ADABAS;user=hoxdba;password=hoxdba")),
+connection ::= SQLDriverManager.instance.connect(
+  URL.fromString("tysql:/odbc/hoxsun01:ADABAS;user=hoxdba;password=hoxdba"))
   
 (* parameters depend on current database, here :
    database: ADABAS on hoxsun01,
@@ -11,13 +11,13 @@ let connection = SQLDriverManager.instance.connect(
 
 (* create statement *)
 
-let statement=connection.newStatement,
+statement::=connection.newStatement
 
 (* delete table *)
-statement.executeDirectUpdate("drop table testtable"),
+statement.executeDirectUpdate("drop table testtable")
 
 (* close statement and disconnect user hoxdba *)
-statement.close,
+statement.close
 connection.close;
 
 

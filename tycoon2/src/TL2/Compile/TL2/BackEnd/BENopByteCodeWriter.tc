@@ -79,6 +79,10 @@ loadLocal(localIdx :Int) :Void
   (* 0 <= n < current stack size *)
 { }
 
+storeArgument(argIdx :Int) :Void
+  (* self == nb_args, last argument is 1 *)
+{ }
+
 storeLocal(localIdx :Int) :Void
   (* 0 <= n < current stack size *)
 { }
@@ -144,6 +148,10 @@ referenceArgument(argIdx :Int) :Void
 { }
 
 takeFromArgument(argIdx :Int) :Void
+  (* self == nb_args, last argument is 1 *)
+{ }
+
+moveToArgument(argIdx :Int) :Void
   (* self == nb_args, last argument is 1 *)
 { }
 

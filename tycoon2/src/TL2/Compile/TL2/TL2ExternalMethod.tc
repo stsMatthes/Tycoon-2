@@ -41,8 +41,9 @@ acceptMethodVisitor(T <: Void, visitor :TL2MethodVisitor(T)) :T
 compileMethod(selfSig :TL2ValueIde, compiler :TL2Compiler) :Void
   (* *)
 { super.compileMethod(selfSig, compiler)
+  assert({ keywordDomain.isEmpty })  ;; ### unimplemented
   tycoonArgs :=
-    String.fromReader(domain.sfw(
+    String.fromReader(positionalDomain.sfw(
       fun(i :TL2Ide){ i.asValueIde.type.charCode },
       fun(i :TL2Ide){ i.isValueIde }))
     + String.with1(range.resultCharCode)

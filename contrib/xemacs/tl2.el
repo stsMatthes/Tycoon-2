@@ -193,7 +193,7 @@ of tl2-program-name).  Runs the hooks from inferior-tl2-mode-hook
 (defun tl2-do-check ()
   "Send a `DO check' to the inferior Tl2 process."
   (interactive)
-  (comint-send-string (tl2-proc) "DO check;\n"))
+  (comint-send-string (tl2-proc) "tycoon.tl.loader.update if(!tycoon.tl.loader.errorLog.hasErrors then: { tycoon.tl.typeChecker.check });\n"))
 
 (defun tl2-send-region (start end)
   "Send the current region to the inferior Tl2 process."

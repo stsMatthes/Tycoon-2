@@ -3,25 +3,25 @@ sugarMain := SugarMain.new;
 sugarMain.newParser;
 sugarMain.newScanner;
 Thread.new({
-  let f = File.openWrite("/home/awienber/tmp/rules"),
+  f ::= File.openWrite("/home/awienber/tmp/rules")
   protect({
     sugarMain.grammar.rules.printOn(f)
   }, {
     f.close
-  }),
+  })
   "kloing!".print
 });
 Thread.new({
-  let f = File.openWrite("/home/awienber/tmp/states").bufferedOutput,
-  let oldlog = sugarMain.parserBuilder.log,
+  f ::= File.openWrite("/home/awienber/tmp/states").bufferedOutput
+  oldlog ::= sugarMain.parserBuilder.log
   protect({
-    sugarMain.parserBuilder.log := f,
-    f << "Start: " << sugarMain.parserBuilder.lalr.start.n <<"\n",
+    sugarMain.parserBuilder.log := f
+    f << "Start: " << sugarMain.parserBuilder.lalr.start.n <<"\n"
     sugarMain.parserBuilder.debugDump
   }, {
-    sugarMain.parserBuilder.log := oldlog,
+    sugarMain.parserBuilder.log := oldlog
     f.close
-  }),
+  })
   "pling!".print
 });
 sugarMain.scanner.scan(
@@ -101,7 +101,7 @@ sugarMain.sugarGram.splitWhite("(*(**)*)", fun(inhalt :String, weiss :String){
 		<< "weiss:  "<<weiss.printString<<"\n"
 });
 
-sugarMain.filterPathStdout(tycoon.hoxHome+"/src/TL2/Standard/Object.tc"),
+sugarMain.filterPathStdout(tycoon.hoxHome+"/src/TL2/Standard/Object.tc");
 
 sugarMain.filterPathPath(tycoon.hoxHome
 		   +"/src/TL2/Compile/Parse/LALRItemFA.tc",
@@ -125,32 +125,30 @@ sugarMain.filterPathPath(tycoon.hoxHome
 		   +"/src/TL2/Standard/AnsiC.tc",
 		   "/home/awienber/tmp/AnsiC.tc");
 
-let c = StringBuilderOutput.new,
-let o = StringBuilderOutput.new,
+c ::= StringBuilderOutput.new
+o ::= StringBuilderOutput.new
 CommentCollector.instance.collect(
   StringInput.new("hallo (*ko1*) du (*ko2*)!"),
   c,
-  o),
+  o)
 Pair.new(c.contents, o.contents);
 
-let c = StringBuilderOutput.new,
-let o = StringBuilderOutput.new,
+c ::= StringBuilderOutput.new
+o ::= StringBuilderOutput.new
 CommentCollector.instance.collect(
   StringInput.new("hallo (*ko1(*nest*)*) du (*ko2*)!"),
   c,
-  o),
+  o)
 Pair.new(c.contents, o.contents);
 
-(*
-{
-  bla, (* dut *)
-(*##Auskommentiert:
-  blub, (* dda *) 
-  (*gruetz*)
-*)
- ende
-}
-*)
+;; {
+;;   bla, (* dut *)
+;; (*##Auskommentiert:
+;;   blub, (* dda *) 
+;;   (*gruetz*)
+;; *)
+;;  ende
+;; }
 
 tycoon.stdout << CommentTransformer.instance.transform("{\n  bla, (* dut *)\n(*##Auskommentiert:\n  blub, (* dda *) \n  (*gruetz*)\n*)\n ende\n}\n");
 
@@ -174,4 +172,6 @@ tycoon.stdout << sugarMain.filterStringString(
 tycoon.stdout << sugarMain.filterStringString(
   "for(0,10,fun(i:Int){\n  i.print\n})\n");
 
+(*
 sugarMain.filterDirectory(tycoon.hoxHome+"/src/TL2/NewStandard", ".OLD");
+*)

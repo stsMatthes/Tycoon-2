@@ -161,8 +161,6 @@ private
 
 builders :Dictionary(String, X_TL2ClassBuilder)
 
-_oldSyntax :X_AbstractTL2Syntax
-
 _newSyntax :X_AbstractTL2Syntax
 
 _compiler :X_TL2Compiler
@@ -267,11 +265,12 @@ withSyntax(resolvedPath :String,
 { ... }
 *)
 {
-  fs ::= tycoon.os.fs
-  dir ::= fs.pathPrefix(resolvedPath)
-  if( File.new(fs.composePath(List.with2(dir, "SYNTAX10"))).exists
-  then: { _newSyntax }
-  else: { _oldSyntax })
+  _newSyntax
+;;  fs ::= tycoon.os.fs
+;;  dir ::= fs.pathPrefix(resolvedPath)
+;;  if( File.new(fs.composePath(List.with2(dir, "SYNTAX10"))).exists
+;;  then: { _newSyntax }
+;;  else: { _oldSyntax })
 }
 
 parseFile(syntax :X_AbstractTL2Syntax,

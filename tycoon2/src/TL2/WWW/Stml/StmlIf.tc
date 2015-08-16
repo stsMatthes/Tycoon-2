@@ -69,14 +69,14 @@ makeIf(out :StmlASTWriter, trueBranch :TL2Value, falseBranch :TL2Value) :Void
   (* *)
 {
   out.tycoonExpression(
-    TL2SendValue.new(position,
+    TL2SendValue.newK(position,
       TL2IdeValue.new(TL2ValueIde.newRef(position, "self")),
       #if,
       List.with3(
         condition.compileToValue(out.context),
 	makeFun0(trueBranch),
-	makeFun0(falseBranch))))
-   ;;; keywords will come later (AST is "normalized")
+	makeFun0(falseBranch)),
+      #(#then,#else)))
 }
 
 makeFun0(body :TL2Value) :TL2CompiledFun

@@ -21,7 +21,7 @@
 /*
   Copyright (c) 1996 Higher-Order GmbH, Hamburg. All rights reserved.
 
-  $File: //depot/tycoon2/stsmain/tycoon2/src/tm/opcodes.h $ $Revision: #3 $ $Date: 2003/10/01 $ Marc Weikard
+  $File: //depot/tycoon2/stsmain/tycoon2/src/tm/opcodes.h $ $Revision: #6 $ $Date: 2003/10/14 $ Marc Weikard
 
   Tycoon Virtual Machine Opcodes
   
@@ -60,6 +60,7 @@
   
   /* store operands */
   TVM_OP(storeLocal, 1, 0)
+  TVM_OP(storeArg, 1, 0)
 
   /* access captured mutable bindings */
   TVM_OP(cellNew,   0,  0)
@@ -108,6 +109,7 @@
   TVM_OP(referenceLocal,    1, 1)
   TVM_OP(takeFromLocal,     1, 1)
   TVM_OP(moveToLocal,       1, 0)
+  TVM_OP(moveToArgument,    1, 0)
   TVM_OP(componentCellNew,  0, 0)
   TVM_OP(cellReference,     0, 0)
   TVM_OP(takeFromCell,      0, 0)

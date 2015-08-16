@@ -37,37 +37,40 @@ errorLog :ErrorLog
 visitSend(v :TL2SendValue) :Void
   (* *)
 { super.visitSend(v)
-  standardKeywords.lookup(v.selector, fun(expected :Array(Pair(Symbol, Fun(:SourcePos):TL2Value))) {
-    expectedKeywords ::=
-      Array.fromContainerWithMap(expected, fun(p:Pair(Symbol,Object)) { p.first })
+  standardKeywords.lookup(v.selector, fun(expected :Pair(Array(Symbol), Array(Fun(:SourcePos):TL2Value))) {
+    expectedKeywords ::= expected.first
+    defaultExpressions ::= expected.second
     if( !v.keywords.sequenceEqual(expectedKeywords) then: {
       ; we have to reorder the keyword arguments or insert default expressions 
       actual ::= Dictionary.fromPairs(v.keywordArgs)
       ; have we lost some arguments while converting to Dictionary? 
-      if( actual.size != v.keywords.size
-      then: { multiArgs ::= Dictionary.fromMultiPairs(v.keywordArgs)
-	  multiKeywords ::= multiArgs.keys.select(fun(k :Symbol) { multiArgs[k].size > 1 })
-	  multiKeywords.do(fun(k :Symbol) {
-	    errorLog.error(v.pos, "repeated argument keyword: "+k)
-	  }) })
-      newArgs :List(TL2Value) := EmptyList.new
-      expected.reverseDo(fun(p :Pair(Symbol, Fun(:SourcePos):TL2Value)) {
-	arg ::=
-	  actual.lookup(p.first, fun(arg :TL2Value){
-	    actual.removeKey(p.first)
-	    arg
-	  }, {
-	    p.second[v.pos]
-	  })
-	newArgs := List.cons(arg, newArgs)
+      if( actual.size != v.keywords.size then: { 
+        multiArgs ::= Dictionary.fromMultiPairs(v.keywordArgs)
+	multiKeywords ::= multiArgs.keys.select(fun(k :Symbol) { multiArgs[k].size > 1 })
+	multiKeywords.do(fun(k :Symbol) {
+	  errorLog.error(v.pos, "repeated argument keyword: "+k)
+	})
       })
-      if( !actual.isEmpty
-      then: { actual.keys.do(fun(k :Symbol) {
-	    errorLog.error(v.pos, "unknown argument keyword: "+k)
-	  }) })
-      v.args := List.append(List.fromReader(v.plainArgs), newArgs)
+      newKeyArgs ::=
+	FunSequence.new(fun(i:Int) {
+	  k ::= expectedKeywords[i]
+	  arg ::=
+	    actual.lookup(k, fun(arg :TL2Value){
+	      actual.removeKey(k)
+	      arg
+	    }, {
+	      defaultExpressions[i][v.pos]
+	    })
+	  arg
+	}, { expectedKeywords.size }).as(List)
+      if( !actual.isEmpty then: { 
+	actual.keys.do(fun(k :Symbol) {
+ 	  errorLog.error(v.pos, "unknown argument keyword: "+k)
+	})
+      })
+      v.args := List.append(List.fromReader(v.plainArgs), newKeyArgs)
     })
-    v.keywords := Array.with0
+    v.keywords := expectedKeywords
   }, {
     ; no special selector 
   })
@@ -84,56 +87,60 @@ visitIde( :TL2IdeValue) :Void
 
 private
 
-standardKeywords :Dictionary(Symbol, Array(Pair(Symbol, Fun(:SourcePos):TL2Value)))
+standardKeywords :Dictionary(Symbol, Pair(Array(Symbol), Array(Fun(:SourcePos):TL2Value)))
 
 _init :Void
   (* *)
 {
   emptyBlock ::=
     fun(pos :SourcePos) {
+      ;; { }
       TL2CompiledFun.new(pos, #"[]", List.with0, nil,
         TL2BlockValue.new(pos, List.with0))
     }
-  d ::= Dictionary(:Symbol, :Array(Pair(Symbol, Fun(:SourcePos):TL2Value))).new
-  d[Symbol.new("if")] :=
-    Array.with2( Pair.new( Symbol.new("then"),
-			   emptyBlock),
-		 Pair.new( Symbol.new("else"),
-			   emptyBlock))
-  d[Symbol.new("while")] :=
-    Array.with1( Pair.new( Symbol.new("do"),
-			   emptyBlock))
-  d[Symbol.new("repeat")] :=
-    Array.with1( Pair.new( Symbol.new("until"),
-			   fun(pos :SourcePos) {
-			     TL2CompiledFun.new(pos, #"[]", List.with0, nil,
-			       TL2LiteralValue.new(pos, true))
-			   }))
-  d[Symbol.new("for")] :=
-    Array.with2( Pair.new( Symbol.new("to"),
-			   fun(pos :SourcePos) :TL2Value {
-			     TL2LiteralValue.new(pos, nil)  ; ### makes no sends - i mean sense 
-			   }),
-		 ; ### step: does not match current definition of Object::for 
-		 Pair.new( Symbol.new("do"),
-			   fun(pos :SourcePos) {
-			     intType ::=
-			       TL2IdeType.new(TL2TypeIde.newRef(pos, "Int"))
-			     TL2CompiledFun.new(pos, #"[]", List.with1(TL2ValueIde.new(pos, nil, false, intType)), nil,
-			       TL2BlockValue.new(pos, List.with0))
-			   }))
-  d[Symbol.new("try")] :=
-    Array.with1( Pair.new( Symbol.new("else"),
-			   fun(pos :SourcePos) {
-			      ; fun(e :Exception) { e.raise } 
-			      exceptionType ::=
-			        TL2IdeType.new(TL2TypeIde.newRef(pos, "Exception"))
-			      TL2CompiledFun.new(pos, #"[]", List.with1(TL2ValueIde.new(pos, "e", false, exceptionType)), nil,
-				TL2SendValue.new(pos,
-				  TL2IdeValue.new(TL2ValueIde.newRef(pos, "e")),
-				  Symbol.new("raise"),
-				  List.with0))
-			   }))
+  d ::= Dictionary(:Symbol, :Pair(Array(Symbol), Array(Fun(:SourcePos):TL2Value))).new
+  d[#if] :=
+    Pair.new( #(#then,#else),
+              #(emptyBlock,emptyBlock))
+  d[#while] :=
+    Pair.new( #(#do),
+	      #(emptyBlock))
+  d[#repeat] :=
+    Pair.new( #(#until),
+	      #(fun(pos :SourcePos) {
+	          ;; { true }
+	          TL2CompiledFun.new(pos, #"[]", List.with0, nil,
+		    TL2LiteralValue.new(pos, true))
+		}))
+  d[#for] :=
+    Pair.new( #(#to,#step,#do), ; ### step
+	      #(fun(pos :SourcePos) :TL2Value {
+		  ; ### makes no sends - i mean sense
+	          TL2LiteralValue.new(pos, nil)  
+		},
+		fun(pos :SourcePos) :TL2Value {
+	          TL2LiteralValue.new(pos, 1)  
+		},
+		fun(pos :SourcePos) {
+		  ;; fun(:Int){}
+		  intType ::=
+		    TL2IdeType.new(TL2TypeIde.newRef(pos, "Int"))
+		  TL2CompiledFun.new(pos, #"[]", List.with1(TL2ValueIde.new(pos, nil, false, intType)), nil,
+		    TL2BlockValue.new(pos, List.with0))
+	        }))
+  d[#forDown] := d[#for]
+  d[#try] :=
+    Pair.new( #(#else),
+	      #(fun(pos :SourcePos) {
+		  ; fun(e :Exception) { e.raise } 
+		  exceptionType ::=
+		    TL2IdeType.new(TL2TypeIde.newRef(pos, "Exception"))
+		  TL2CompiledFun.new(pos, #"[]", List.with1(TL2ValueIde.new(pos, "e", false, exceptionType)), nil,
+		    TL2SendValue.new(pos,
+		      TL2IdeValue.new(TL2ValueIde.newRef(pos, "e")),
+		      #raise,
+		      List.with0))
+	       }))
   standardKeywords := d
   self
 }

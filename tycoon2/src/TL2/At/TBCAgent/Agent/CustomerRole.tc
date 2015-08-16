@@ -103,7 +103,7 @@ acceptConversation(m :MessageAcceptConversation) @:Message
       ; create context 
       cv:Conversation(S) := Conversation(:S).new(_convSpec)
       stop ::= false
-      until({stop},{
+      repeat({
         ;; ### drop message component - is this good?
 	m :MessagePerformerDialog := ref(port.get@).asMessagePerformerDialog
 	if( m.isNotNil then: {
@@ -135,7 +135,7 @@ acceptConversation(m :MessageAcceptConversation) @:Message
 	  ;; m.isNil -> signal to stop 
 	  stop:=true
 	})
-      }) ;until
+      }until:{stop})
       ; stop client 
       AgentITCSystem.instance.unregisterPort(port)
       _remPort(port)

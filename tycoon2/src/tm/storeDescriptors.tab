@@ -32,29 +32,30 @@ List	Array
 Class	Array	
 TL2MethodDictionary	Array	
 DLL	Array	
-TL2Selector	Struct	oii
-TL2Method	Struct	ooooooiiii
-TL2CompiledMethod	Struct	ooooooiiiioioooiio
-TL2BuiltinMethod	Struct	ooooooiiiioioooiioii
-TL2ExternalMethod	Struct	ooooooiiiiooooii
-TL2SlotMethod	Struct	ooooooiiiioi
-TL2SlotAccessMethod	Struct	ooooooiiiioi
-TL2SlotUpdateMethod	Struct	ooooooiiiioi
-TL2PoolMethod	Struct	ooooooiiiio
-TL2PoolAccessMethod	Struct	ooooooiiiio
-TL2PoolUpdateMethod	Struct	ooooooiiiio
-TL2CSlotAccessMethod	Struct	ooooooiiiioiC
-TL2CSlotUpdateMethod	Struct	ooooooiiiioiC
-TL2SlotReferenceMethod	Struct	ooooooiiiioi
-TL2SlotTakeFromMethod	Struct	ooooooiiiioi
-TL2SlotMoveToMethod	Struct	ooooooiiiioi
-TL2CSlotReferenceMethod	Struct	ooooooiiiioiC
-TL2CSlotTakeFromMethod	Struct	ooooooiiiioiC
-TL2CSlotMoveToMethod	Struct	ooooooiiiioiC
-TL2CompiledFun	Struct	ooooooiiiioioooiiooi
+TL2Selector	Struct	oiio
+TL2Method	Struct	ooooooiiioi
+TL2CompiledMethod	Struct	ooooooiiioiooioooiio
+TL2BuiltinMethod	Struct	ooooooiiioiooioooiioii
+TL2ExternalMethod	Struct	ooooooiiioiooooii
+TL2SlotMethod	Struct	ooooooiiioioi
+TL2SlotAccessMethod	Struct	ooooooiiioioi
+TL2SlotUpdateMethod	Struct	ooooooiiioioi
+TL2PoolMethod	Struct	ooooooiiioio
+TL2PoolAccessMethod	Struct	ooooooiiioio
+TL2PoolUpdateMethod	Struct	ooooooiiioio
+TL2CSlotAccessMethod	Struct	ooooooiiioioiC
+TL2CSlotUpdateMethod	Struct	ooooooiiioioiC
+TL2SlotReferenceMethod	Struct	ooooooiiioioi
+TL2SlotTakeFromMethod	Struct	ooooooiiioioi
+TL2SlotMoveToMethod	Struct	ooooooiiioioi
+TL2CSlotReferenceMethod	Struct	ooooooiiioioiC
+TL2CSlotTakeFromMethod	Struct	ooooooiiioioiC
+TL2CSlotMoveToMethod	Struct	ooooooiiioioiC
+TL2CompiledFun	Struct	ooooooiiioiooioooiiooi
 Function	Array	
-TL2DeferredMethod	Struct	ooooooiiii
-TL2UnimplementedMethod	Struct	ooooooiiii
+TL2DeferredMethod	Struct	ooooooiiioi
+TL2UnimplementedMethod	Struct	ooooooiiioi
+TL2ReorderMethod	Struct	ooooooiiioiioiiCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 TL2Slot	Struct	ooooiio
 TypeError	Array	
 DoesNotUnderstand	Array	
@@ -66,6 +67,7 @@ IndexOutOfBounds	Array
 BlockingCallInterrupt	Array	
 ThreadCancelled	Array	
 CommitError	Array	
+UnknownSelectorError	Array	
 WrongSignature	Array	
 FetchBoundComponent	Array	
 PerformArityMismatch	Array	

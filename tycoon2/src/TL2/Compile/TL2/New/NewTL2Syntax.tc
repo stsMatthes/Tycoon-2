@@ -33,9 +33,9 @@ scanner :ReentrantNewTL2Scanner
 
 _grammar :NewTL2Gram
 
-makeScanner(where :String, input :Input, errorLog :ErrorLog, bufferCapacity :Int) :NewTL2Scanner
+makeScanner(where :String, input :Input, semicolonIsEoI :Bool, errorLog :ErrorLog, bufferCapacity :Int) :NewTL2Scanner
   (* *)
-{ scanner.scan1(where, input, errorLog, bufferCapacity) }
+{ scanner.scan1(where, input, semicolonIsEoI, errorLog, bufferCapacity) }
 
 normalizeClass(builder:TL2ClassBuilder, errorLog :ErrorLog) :Void
   (* *)

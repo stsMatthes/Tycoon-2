@@ -195,6 +195,10 @@ moveTo(ide :X_TL2ValueIde) :Void
 { bindings[ide].genMoveTo(writer)
 }
 
+genCell(ide :X_TL2ValueIde) :Void
+{ bindings[ide].genCell(writer)
+}
+
 closure(nbGlobals :Int) :Void
   (* *)
 { writer.closure(nbGlobals)
@@ -311,7 +315,7 @@ finished :Void
   method.stackPeak := stackPeak 
   method.selectorID :=
     compiler.getSelectorId(
-      X_TL2Selector.new1(method.selector, method.arity, method.sorts))
+      method.getSelector(compiler))
 }
 
 incSp :Void
@@ -336,7 +340,7 @@ private
 genComponentCleanup :Void
 {
   if( componentScopes.isNotNil then: {
-    sel ::= X_TL2Selector.new(#_raise, #())
+    sel ::= X_TL2Selector.new(#_raise, #(), #())
     componentScopes.do(fun(t :Triple(X_BEMMLabel, X_BEMMLabel, X_BEMMLabel)) {
       sp := t.first.sp
       assert({ sp.isNotNil })

@@ -30,6 +30,12 @@ accept(T <: Void, v :TL2ValueVisitor(T)) :T
   (* *)
 { v.visitLiteral(self) }
 
+isLiteral :Bool
+{ true }
+
+getLiteralValue :Object
+{ value }
+
 prettyPrint(out :Printer) :Void
   (* *)
 {

@@ -53,12 +53,10 @@
   tycoon.stdout := TeeOutput.new(SgmlEntityOutput.new(out), stdout)
   tycoon.tl.topLevel.errorLog.errout := tycoon.stdout
   tycoon.tl.loader.errorLog.errout := tycoon.stdout
-  tycoon.tl.topLevel.syntax := tycoon.tl.newSyntax
 
   protect({ 
     tycoon.tl.topLevel.string(expr)
   }, {
-    tycoon.tl.topLevel.syntax := tycoon.tl.oldSyntax
     tycoon.stdout := stdout
     tycoon.tl.topLevel.errorLog.errout := stdout
     tycoon.tl.loader.errorLog.errout := stdout

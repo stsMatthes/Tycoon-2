@@ -129,6 +129,7 @@ _init :Void
 
   setAction(#arg,	{ out.loadArgument(fetch) })
   setAction(#local,	{ out.loadLocal(fetch) })
+  setAction(#storeArg,  { out.storeArgument(fetch) })
   setAction(#storeLocal,{ out.storeLocal(fetch) })
   setAction(#global,	{ out.loadGlobal(fetch) })
 
@@ -151,6 +152,7 @@ _init :Void
 
   setAction(#referenceArgument, { out.referenceArgument(fetch) })
   setAction(#takeFromArgument,  { out.takeFromArgument(fetch) })
+  setAction(#moveToArgument,    { out.moveToArgument(fetch) })
   setAction(#referenceLocal,    { out.referenceLocal(fetch) })
   setAction(#takeFromLocal,     { out.takeFromLocal(fetch) })
   setAction(#moveToLocal,       { out.moveToLocal(fetch) })

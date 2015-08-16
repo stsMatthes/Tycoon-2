@@ -63,7 +63,7 @@ visitTakeFrom(v :TL2TakeFromValue) :Void
 visitFun(v :TL2CompiledFun) :Void
   (* *)
 {
-  domain ::= v.domain
+  domain ::= v.positionalDomain
   range ::= v.range
   if( domain.isEmpty && range.isNil then: {
     ; no fun 

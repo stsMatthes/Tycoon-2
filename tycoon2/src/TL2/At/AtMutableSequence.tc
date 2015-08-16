@@ -54,11 +54,15 @@ require n >= 0
 	  & 0 <= startingAt
 	  & startingAt+n <= with.size
 {
-  if( startingAt > at 
-    then: { for(0 to:n-1 do:fun(i :Int)
-	  { self[at+i] := with[startingAt+i]@ }) }
-    else: { forDownto(n-1,0,fun(i :Int)
-	  { self[at+i] := with[startingAt+i]@ }) })
+  if( startingAt > at then: { 
+    for(0 to:n-1 do:fun(i :Int) { 
+      self[at+i] := with[startingAt+i]@
+    })
+  } else: { 
+    forDown(n-1 to:0 do:fun(i :Int) { 
+      self[at+i] := with[startingAt+i]@
+    })
+  })
 }
 
 reverse :Void

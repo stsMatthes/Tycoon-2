@@ -26,4 +26,16 @@ acceptMethodVisitor(T <: Void, visitor :X_TL2MethodVisitor(T)) :T
   (* *)
 { visitor.visitPoolUpdate(self) }
 
+
+private
+
+_init :Void
+{
+  super._init
+    ; ### better: actually scope / compile this method!
+  arity := 1
+  sorts := 0
+  _keywords := #()
+}  
+
 }

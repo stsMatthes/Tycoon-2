@@ -21,7 +21,7 @@
 /*
   Copyright (c) 1996 Higher-Order GmbH, Hamburg. All rights reserved.
 
-  $File: //depot/tycoon2/stsmain/tycoon2/src/tm/tyc.c $ $Revision: #3 $ $Date: 2003/10/01 $ Marc Weikard
+  $File: //depot/tycoon2/stsmain/tycoon2/src/tm/tyc.c $ $Revision: #4 $ $Date: 2003/10/10 $ Marc Weikard
 
   Tycoon Objects
   
@@ -47,6 +47,9 @@ tsp_OID tyc_pBlockingCCallException;
 tsp_OID tyc_pThreadCancelledException;
 /* single CommitError object */
 tsp_OID tyc_pCommitError;
+/* single UnknownSelectorError object */
+tsp_OID tyc_pUnknownSelectorError;
+
 
 
 void tyc_init(void)
@@ -76,6 +79,8 @@ void tyc_init(void)
     tsp_newArray(tyc_ClassId_ThreadCancelled, 0);
   /* create a single CommitError object */
   tyc_pCommitError = tsp_newArray(tyc_ClassId_CommitError, 0);
+  /* create a single UnknownSelectorError object */
+  tyc_pUnknownSelectorError = tsp_newArray(tyc_ClassId_UnknownSelectorError, 0);
   tsp_allowGc();
   /* init virtual machine */
   tvm_init();
@@ -90,6 +95,7 @@ void tyc_enumRootPtr(tsp_VisitPtr visitRootPtr)
   visitRootPtr((tsp_OID*)&tyc_pBlockingCCallException);
   visitRootPtr((tsp_OID*)&tyc_pThreadCancelledException);
   visitRootPtr((tsp_OID*)&tyc_pCommitError);
+  visitRootPtr((tsp_OID*)&tyc_pUnknownSelectorError);
 }
 
 void tyc_enumAmbiguousRootPtr(tsp_VisitPtr visitAmbiguousPtr)

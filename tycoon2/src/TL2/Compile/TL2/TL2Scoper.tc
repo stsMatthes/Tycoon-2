@@ -159,6 +159,30 @@ withScopedSignatures(signatures :List(TL2Ide), thunk :Fun():Void) :Void
   })
 }
 
+withScopedKWSignatures(signatures :List(TL2KeywordIde), thunk :Fun():Void) :Void
+  (* *)
+{
+  if( signatures.isEmpty then: {
+    thunk[]
+  } else: {
+    kwi ::= signatures.head
+    ;; scope first, bind second - must not refer to itself
+    ;; ### move this to TL2KeywordIde ?
+    kwi.defaultValue := scope(kwi.defaultValue)
+    if(kwi.defaultValue.isComponent != kwi.ide.component then: {
+      if( kwi.defaultValue.isComponent then: {
+        errorLog.error(kwi.pos, "component default value for reference keyword parameter")
+      } else: {
+        errorLog.error(kwi.pos, "reference default value for component keyword parameter")
+      })
+    })
+    withScopedSignature(kwi.ide, {
+      withScopedKWSignatures(signatures.tail, thunk)
+    })
+  })
+}
+
+
 locate(e :Object) :String
   (* for a bit of bonus functionality, play Decorator for Dictionary <env> *)
 { env.locate(e) }

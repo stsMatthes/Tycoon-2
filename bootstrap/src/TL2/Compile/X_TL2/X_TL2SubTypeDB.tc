@@ -1,5 +1,5 @@
 class X_TL2SubTypeDB
-super X_TL2, Set(X_TL2SubTypeRelation)
+super X_TL2
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -44,54 +44,39 @@ super X_TL2, Set(X_TL2SubTypeRelation)
    As types come with substitutions, these must be incorporated, too, although
    they''ll be omitted if the tuple (t1, [], t2, []) is already in the cache.
 *)
-meta X_TL2SubTypeDBClass()
-
+meta SimpleConcreteClass(X_TL2SubTypeDB)
 {
-add(r :X_TL2SubTypeRelation) :Void
-  (* *)
-{
-    if( r.shouldBeStored then: {
-;      X_TL2TypeChecker.instance.writeln("DB: Adding "+r.small.printString+r.smallSubst.printString+" <: "+r.big.printString+r.bigSubst.printString), 
-      super.add(r)
-    })
-  }
-
-includes(o :Object) :Bool
-  (* *)
-{
-    o."class" == X_TL2SubTypeRelation && (
-      r ::= _typeCast(o, :X_TL2SubTypeRelation)
-      r.shouldBeStored &&  super.includes(r) 
-    )
-  }
-
-remove(o :Object) :X_TL2SubTypeRelation
-  (* *)
-{
-  r ::= _typeCast(o, :X_TL2SubTypeRelation)
-  if( r.shouldBeStored then: {
-    super.remove(r)
-  } else: {
-    nil
-  })
-}
-
 consult(small :X_TL2Type, big :X_TL2Type, smallSubst :X_TL2Subst, bigSubst :X_TL2Subst, test :Fun():Void) :Void
   (* *)
 {
-    relation ::= X_TL2SubTypeRelation.new(small, big, smallSubst, bigSubst)
+  relation ::= X_TL2SubTypeRelation.new(small, big, smallSubst, bigSubst)
 
-    if( includes(relation) then: { } else: {
+  if( relation.shouldBeStored then: {
+    if( !_relations.includes(relation) then: {
       ; perform test under positive assumption 
-      add(relation)
+      ;; tycoon.stdout.writeln("DB: Adding "+r.small.printString+r.smallSubst.printString+" <: "+r.big.printString+r.bigSubst.printString)
+      _relations.add(relation)
       try({
-        test[]
+	test[]
       } else: fun(e :Exception) {
-        ; the subtype test failed, so retract again 
-	remove(relation)
+	; the subtype test failed, so retract again 
+	_relations.remove(relation)
 	e.raise
       })
     })
-  }
+  } else: {
+    test[]
+  })
+}
+
+private
+
+_relations :Set(X_TL2SubTypeRelation)
+
+_init :Void
+{
+  super._init
+  _relations := Set.new
+}
 
 }

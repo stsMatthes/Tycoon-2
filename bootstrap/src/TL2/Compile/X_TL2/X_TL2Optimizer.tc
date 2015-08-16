@@ -83,7 +83,7 @@ visitFun(v :X_TL2CompiledFun) :Void
   freeIdes := Set.with0
   super.visitFun(v)
   newFreeIdes ::= freeIdes
-  newFreeIdes.removeAll(v.domain)
+  newFreeIdes.removeAll(v.positionalDomain)  ;; no keywords for funs
   freeIdes := savedFreeIdes
   freeIdes.addAll(newFreeIdes)
  
@@ -137,39 +137,32 @@ fillSpecialSelectors :Void
   (* *)
 {
   ; Bool (control structures) 
-  specialSelectors[Symbol.new("?")] :=
-    fun(v :X_TL2SendValue){ optimizeIf1(v) }
-  specialSelectors[Symbol.new("?:")] :=
-    fun(v :X_TL2SendValue){ optimizeIf2(v) }
-  specialSelectors[Symbol.new("&&")] :=
+  specialSelectors[#"&&"] :=
     fun(v :X_TL2SendValue){ optimizeAnd(v) }
-  specialSelectors[Symbol.new("||")] :=
+  specialSelectors[#"||"] :=
     fun(v :X_TL2SendValue){ optimizeOr(v) }
-  specialSelectors[Symbol.new("!")] :=
+  specialSelectors[#"!"] :=
     fun(v :X_TL2SendValue){ optimizeNot(v) }
 
   ; Object (self sends) 
-  specialSelectors[Symbol.new("try")] :=
+  specialSelectors[#if] :=
+    fun(v :X_TL2SendValue){ optimizeIf(v) }
+  specialSelectors[#try] :=
     fun(v :X_TL2SendValue){ optimizeTry(v) }
-  specialSelectors[Symbol.new("while")] :=
+  specialSelectors[#while] :=
     fun(v :X_TL2SendValue){ optimizeWhile(v) }
-  specialSelectors[Symbol.new("assert")] :=
+  specialSelectors[#assert] :=
     fun(v :X_TL2SendValue){ optimizeAssert(v) }
-  specialSelectors[Symbol.new("for")] :=
+  specialSelectors[#for] :=
     fun(v :X_TL2SendValue){ optimizeFor(v) }
-  specialSelectors[Symbol.new("forDownto")] :=
-    fun(v :X_TL2SendValue){ optimizeForDownto(v) }
-  ; ### ...forStep, forDowntoStep ? hardly ever used 
+  specialSelectors[#forDown] :=
+    fun(v :X_TL2SendValue){ optimizeForDown(v) }
 
-  ; Tycoon 1.0 support 
-  ; &&, ||, !, try, while, for:  as above 
-  specialSelectors[Symbol.new("if")] :=
-    fun(v :X_TL2SendValue){ optimizeNewIf(v) }
-  specialSelectors[Symbol.new("nil")] :=
+  specialSelectors[#nil] :=
     fun(v :X_TL2SendValue){ optimizeNil(v) }
-  specialSelectors[Symbol.new("true")] :=
+  specialSelectors[#true] :=
     fun(v :X_TL2SendValue){ optimizeTrue(v) }
-  specialSelectors[Symbol.new("false")] :=
+  specialSelectors[#false] :=
     fun(v :X_TL2SendValue){ optimizeFalse(v) }
   ; ### repeat 
 }
@@ -216,10 +209,10 @@ optimizeAssert(v :X_TL2SendValue) :X_TL2CodeGenerator
 	  pos ::= v.pos
 	  selfRef ::= v.receiver
 
-	  ;  <value>
-;	       ? { }
-;	       : { self._raiseAssertError(<line>,<column>,<where>) }
-;	   
+	  ;  if( <value>
+          ;    then: { }
+          ;    else: { self._raiseAssertError(<line>,<column>,<where>) })
+          ;
 
 	  cond.accept(self)
 	  thenBranch ::=
@@ -262,28 +255,40 @@ optimizeFor(v :X_TL2SendValue) :X_TL2CodeGenerator
   (* *)
 {
   if( v.isSelfSend
-  then: { optimizeThreeValueArgs(v, fun(fromValue :X_TL2Value, toValue :X_TL2Value, a3 :X_TL2Value) {
+  then: { optimizeFourValueArgs(v, fun(fromValue :X_TL2Value, toValue :X_TL2Value, stepValue :X_TL2Value, a3 :X_TL2Value) {
         optimizeFun1(a3, fun(sig :X_TL2ValueIde, body :X_TL2Value) {
 	  forGenerator(v.pos, v.receiver,
-		       fromValue, toValue, X_TL2LiteralValue.new(v.pos, 1), true,
+		       fromValue, toValue, stepValue, true,
 		       sig, body)
 	})
       }) }
   else: { nil })
 }
 
-optimizeForDownto(v :X_TL2SendValue) :X_TL2CodeGenerator
+optimizeForDown(v :X_TL2SendValue) :X_TL2CodeGenerator
   (* *)
 {
   if( v.isSelfSend
-  then: { optimizeThreeValueArgs(v, fun(fromValue :X_TL2Value, toValue :X_TL2Value, a3 :X_TL2Value) {
+  then: { optimizeFourValueArgs(v, fun(fromValue :X_TL2Value, toValue :X_TL2Value, stepValue :X_TL2Value, a3 :X_TL2Value) {
         optimizeFun1(a3, fun(sig :X_TL2ValueIde, body :X_TL2Value) {
 	  forGenerator(v.pos, v.receiver,
-		       fromValue, toValue, X_TL2LiteralValue.new(v.pos, 1), false,
+		       fromValue, toValue, stepValue, false,
 		       sig, body)
 	})
       }) }
   else: { nil })
+}
+
+wrapConstant(name :String, value :X_TL2Value, body:Fun(v:X_TL2Value):X_TL2Value):X_TL2Value
+{
+  if( value.isLiteral 
+   || (value.isIde && !value.asIde.ide.assigned) then: { 
+    body[value]
+  } else: { 
+    ide ::= X_TL2ValueIde.new(value.pos, name, false, nil)
+    X_TL2LetValue.new(value.pos, ide, value,
+	      body[X_TL2IdeValue.new(ide)])
+  })
 }
 
 forGenerator(pos :SourcePos, selfValue :X_TL2Value,
@@ -291,28 +296,30 @@ forGenerator(pos :SourcePos, selfValue :X_TL2Value,
 	     sig :X_TL2ValueIde, body :X_TL2Value) :X_TL2CodeGenerator
   (* *)
 {
-  ; let <from> = <fromValue>,
+
+;     let <from> = <fromValue>,
 ;     let <to> = <toValue>,
-;     while ({ <from> <= <to> }, {
-;       let <sig> = <from>,   ; immutable 
-;       <body>,
-;       <from> := <from> + <stepValue>
-;     }) 
+;     let <step> = <stepValue>,
+;     while({ <from> <= <to> } do: {
+;       <sig> ::= <from>
+;       <body>
+;       <from> := <from> + <step>
+;     })
   ; bei !countUp wird "<=" zu ">=" und "+" zu "-" 
   fromIde ::= X_TL2ValueIde.new(fromValue.pos, "<from>", false, nil)
   fromIde.setAssigned
-  toIde ::= X_TL2ValueIde.new(toValue.pos, "<to>", false, nil)
   result ::=
     X_TL2LetValue.new(fromValue.pos, fromIde, fromValue,
-      X_TL2LetValue.new(toValue.pos, toIde, toValue,
-	X_TL2SendValue.new( pos, selfValue,  ; receiver is self 
-			  Symbol.new("while"),
+      wrapConstant("<to>", toValue, fun(toValue:X_TL2Value){
+        wrapConstant("<step>", stepValue, fun(stepValue:X_TL2Value){
+	  X_TL2SendValue.new( pos, selfValue,  ; receiver is self 
+			  #while,
 			  List.with2(
 			    X_TL2CompiledFun.new(pos, #"[]", List.with0, nil,
 			      X_TL2SendValue.new(pos,
 				X_TL2IdeValue.new(fromIde),
-				if( countUp then: { Symbol.new("<=") } else: { Symbol.new(">=") }),
-				List.with1(X_TL2IdeValue.new(toIde)))),
+				if( countUp then: { #"<=" } else: { #">=" }),
+				List.with1(toValue))),
 			    X_TL2CompiledFun.new(pos, #"[]", List.with0, nil,
 			      X_TL2BlockValue.new(pos,
 				List(:X_TL2Value).with2(
@@ -321,42 +328,18 @@ forGenerator(pos :SourcePos, selfValue :X_TL2Value,
 				  X_TL2AssignValue.new(pos, fromIde,
 				    X_TL2SendValue.new(pos,
 				      X_TL2IdeValue.new(fromIde),
-				      if( countUp then: { Symbol.new("+") } else: { Symbol.new("-") }),
-				      List.with1(stepValue))))))))))
+				      if( countUp then: { #"+" } else: { #"-" }),
+				      List.with1(stepValue))))))))
+      })
+    }))
   result.accept(self)
   result
 }
 
-optimizeIf1(v :X_TL2SendValue) :X_TL2CodeGenerator
-  (* *)
-{
-  optimizeOneValueArg(v, fun(a :X_TL2Value) {
-    optimizeFun0(a, fun(thenBranch :X_TL2Value) {
-      elseBranch ::= X_TL2BlockValue.new(v.pos, List.with0)
-      v.receiver.accept(self)
-      thenBranch.accept(self)
-      elseBranch.accept(self)
-      X_TL2IfGenerator.new(v.receiver, thenBranch, elseBranch)
-    })
-  })
-}
-
-optimizeIf2(v :X_TL2SendValue) :X_TL2CodeGenerator
-  (* *)
-{
-  optimizeTwoValueArgs(v, fun(a1 :X_TL2Value, a2 :X_TL2Value) {
-    optimizeFun0(a1, fun(thenBranch :X_TL2Value) {
-      optimizeFun0(a2, fun(elseBranch :X_TL2Value) {
-	v.receiver.accept(self)
-	thenBranch.accept(self)
-	elseBranch.accept(self)
-	X_TL2IfGenerator.new(v.receiver, thenBranch, elseBranch)
-      })
-    })
-  })
-}
-
 optimizeNewIf(v :X_TL2SendValue) :X_TL2CodeGenerator
+{ optimizeIf(v) }
+
+optimizeIf(v :X_TL2SendValue) :X_TL2CodeGenerator
   (* *)
 {
   if( v.isSelfSend then: {
@@ -469,24 +452,50 @@ optimizeTwoValueArgs1( args :List(X_TL2Argument),
 optimizeThreeValueArgs( v :X_TL2SendValue,
 		      f :Fun(:X_TL2Value, :X_TL2Value, :X_TL2Value):X_TL2CodeGenerator) :X_TL2CodeGenerator
   (* *)
-{ if( v.args.size = 3
-  then: { a1 ::= v.args[0]
-      a2 ::= v.args[1]
-      a3 ::= v.args[2]
-      loose ::= fun(:X_TL2Type){ nil }
-      a1.argumentCase(
-        fun(a1 :X_TL2Value) {
-	a2.argumentCase(
-	  fun(a2 :X_TL2Value) {
-	    a3.argumentCase(
-	      fun(a3 :X_TL2Value) {
-		if( !a1.isComponent && !a2.isComponent && !a3.isComponent
-		   then: { f[a1,a2,a3] }
-		   else: { nil })
-	      }, loose)
-	  }, loose)
-	}, loose) }
-  else: { nil })
+{ args ::= valueArgs(v.args)
+  if( args.size = 3 then: { 
+    a1 ::= args[0]
+    a2 ::= args[1]
+    a3 ::= args[2]
+    if( !a1.isComponent && !a2.isComponent && !a3.isComponent then: { 
+      f[a1,a2,a3]
+    } else: { 
+      nil
+    })
+  } else: { nil })
+}
+
+optimizeFourValueArgs( v :X_TL2SendValue,
+		      f :Fun(:X_TL2Value, :X_TL2Value, :X_TL2Value, :X_TL2Value):X_TL2CodeGenerator) :X_TL2CodeGenerator
+  (* *)
+{ args ::= valueArgs(v.args)
+  if( args.size = 4 then: { 
+    a1 ::= args[0]
+    a2 ::= args[1]
+    a3 ::= args[2]
+    a4 ::= args[3]
+    if( !a1.isComponent && !a2.isComponent && !a3.isComponent && !a4.isComponent then: { 
+      f[a1,a2,a3,a4]
+    } else: { 
+      nil
+    })
+  } else: { nil })
+}
+
+valueArgs(args :List(X_TL2Argument)) :List(X_TL2Value)
+{
+  if( args.isEmpty then: {
+    List(:X_TL2Value).new
+  } else: {
+    a ::= args.head
+    a.argumentCase(fun(v :X_TL2Value){ 
+      List.cons(v, valueArgs(args.tail))
+    }, 
+    fun(:X_TL2Type){
+      ;; ignore
+      valueArgs(args.tail)
+    })
+  })
 }
 
 optimizeFun0( f :X_TL2Value,
@@ -496,7 +505,7 @@ optimizeFun0( f :X_TL2Value,
 {
   f.visitor
     .ifFun(fun(f :X_TL2CompiledFun) {
-       if( f.domain.size = 0 then: { optF[f.body] } else: { nil })
+       if( f.positionalDomain.size = 0 then: { optF[f.body] } else: { nil })
     }).otherwise(fun(:Object){
        nil
     }).visit
@@ -510,8 +519,8 @@ optimizeFun1( f :X_TL2Value,
 {
   f.visitor
     .ifFun(fun(f :X_TL2CompiledFun) {
-       if( f.domain.size = 1
-       then: { ide ::= f.domain[0].asValueIde
+       if( f.positionalDomain.size = 1
+       then: { ide ::= f.positionalDomain[0].asValueIde
 	   assert({ ide.isNotNil })  	   ; funs can not have type parameters 
 	   optF[ide, f.body] }
        else: { nil })

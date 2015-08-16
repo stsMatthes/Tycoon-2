@@ -10,17 +10,17 @@ tyhttpd.configure;
 
 define koltarApplication :KoltarApplication;
 koltarApplication := KoltarApplication.new;
-let resourceFactory = HttpFunResourceFactory.new,
+resourceFactory ::= HttpFunResourceFactory.new
 resourceFactory.generators["jump"] :=
   fun(file:File){
     JumpResource.new(file)
-  },
+  }
 resourceFactory.generators["stml"] :=
   fun(file:File){
     StmlResource.new(koltarApplication, file)
-  },
-let dir = tyhttpd.root.lookupDirectory(EmptyList.new),
-dir.resourceFactory := resourceFactory,
+  }
+dir ::= tyhttpd.root.lookupDirectory(EmptyList.new)
+dir.resourceFactory := resourceFactory
 dir["stop"] := HttpShutdownResource.new(tyhttpd);
 
 (*;

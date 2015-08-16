@@ -1,3 +1,5 @@
+(* continuation of e.tyc *)
+
 define Lines :MutableNonterminal(Object);
 define S :MutableNonterminal(Object);
 
@@ -15,10 +17,7 @@ Lines.addRule3(
 S.addRule1(
 	E,
 	fun(i :Int) {
-	  tycoon.stdout.nl,
-	  tycoon.stdout.writeln("Ergebnis: "),
-	  i.print,
-	  tycoon.stdout.nl,
+	  tycoon.stdout << "\nErgebnis:\n" << i << "\n"
 	  nil
 	});
 S.addRule0(
@@ -31,14 +30,14 @@ g := Grammar.new(Lines);
 define p :NaiveParser(Object);
 p := parserGen.generate(g);
 
-s.in := File.stdin;
+sc := Scanner.new(st,File.stdin);
 p.logging := false;
-p.parse(s);
+p.parse(sc,errHandler);
 *)
 
 define cp :CompactParser(Object);
 cp := cparserGen.generate(g);
 
-s.in := File.stdin;
+sc := Scanner.new(st,File.stdin);
 cp.logging := false;
-cp.parse(s);
+cp.parse(sc,errHandler);

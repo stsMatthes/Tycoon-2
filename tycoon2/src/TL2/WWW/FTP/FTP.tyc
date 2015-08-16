@@ -12,19 +12,19 @@ client.open;
 
 (* client;
 client.list(".", fun(in :Input) {
-  let buffer = MutableString.new(200),
-  let var n = in.readBuffer(buffer, 0, buffer.size),
-  while({n > 0}, {
-    tycoon.stdout.writeBuffer(buffer, 0, n),
+  buffer ::= MutableString.new(200)
+  n ::= in.readBuffer(buffer, 0, buffer.size)
+  while({ n > 0 } do: {
+    tycoon.stdout.writeBuffer(buffer, 0, n)
     n := in.readBuffer(buffer, 0, buffer.size)
   })
 });
 
 client.nameList(".", fun(in :Input) {
-  let tokenizer = Tokenizer.new(in, "\n"),
-  let var fileName :String = tokenizer.read,
-  while ({fileName.isNotNil}, {
-    tycoon.stdout.writeln("Next File: "+fileName),
+  tokenizer ::= Tokenizer.new(in, "\n")
+  fileName :String := tokenizer.read
+  while({ fileName.isNotNil } do: {
+    tycoon.stdout.writeln("Next File: "+fileName)
     fileName := tokenizer.read
   })
 });

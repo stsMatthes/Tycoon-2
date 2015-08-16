@@ -48,3 +48,7 @@ parserGen := ParserGen(:NaiveParser).new(NaiveParserBuilder.new);
 
 define p :NaiveParser(Object);
 p := parserGen.generate(g);
+
+input ::= #("*","id","=","id")
+p.parse(input.map(t).map(fun(st:SimpleTerminal){st.token}),
+        fun(o:Object):Void{tycoon.stdout<<o});

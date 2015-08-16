@@ -22,14 +22,12 @@ super ConcreteClass(TL2ClassLoader)
 *)
 meta MetaClass
 {
-new( oldSyntax :AbstractTL2Syntax,
-     newSyntax :AbstractTL2Syntax,
+new( newSyntax :AbstractTL2Syntax,
      compiler :TL2Compiler,
      classManager :TL2ClassManager) :TL2ClassLoader
   (* *)
 {
   instance ::= _new
-  instance._oldSyntax := oldSyntax
   instance._newSyntax := newSyntax
   instance._compiler := compiler
   instance._classManager := classManager

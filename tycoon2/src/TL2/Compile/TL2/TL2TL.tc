@@ -30,8 +30,6 @@ pool :TL2Pool
 
   (* syntax stuff: *)
 
-oldSyntax :TL2Syntax
-
 newSyntax :NewTL2Syntax
 
   (* system components: *)
@@ -50,8 +48,7 @@ loader :TL2ClassLoader
 
 linkSyntax :Void
   (* *)
-{ oldSyntax := TL2Syntax.new
-  newSyntax := NewTL2Syntax.new 
+{ newSyntax := NewTL2Syntax.new 
 }
 
 linkSystem :Void
@@ -61,8 +58,8 @@ linkSystem :Void
   classManager := TL2ClassManager.new(root, pool, typeManager)
   typeChecker := TL2TypeChecker.new(classManager, pool)
   compiler := TL2Compiler.new(vmInterface, root, typeChecker)
-  loader := TL2ClassLoader.new(oldSyntax, newSyntax, compiler, classManager)
-  topLevel := TL2TopLevel.new(oldSyntax, compiler, classManager, pool, loader)
+  loader := TL2ClassLoader.new(newSyntax, compiler, classManager)
+  topLevel := TL2TopLevel.new(newSyntax, compiler, classManager, pool, loader)
 }
 
 private

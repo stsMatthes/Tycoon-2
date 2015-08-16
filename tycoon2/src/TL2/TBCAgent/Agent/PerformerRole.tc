@@ -107,7 +107,7 @@ requestConversation(m :MessageRequestConversation) :Message
       ; create context 
       cv:Conversation(S) := Conversation(:S).new(_convSpec)
       stop ::= false
-      until({stop},{
+      repeat({
 	m :MessageCustomerDialogRequest := port.get.asMessageCustomerDialogRequest
 	if( m.isNotNil then: {
 	  t.trace("got request " + m.requestName +
@@ -152,7 +152,7 @@ requestConversation(m :MessageRequestConversation) :Message
 	  AgentITCSystem.instance.send(reply)
 	})
 	{stop:=true} ; m isNil 
-      }) ; until 
+      }until:{stop})
       ; end service. 
       AgentITCSystem.instance.unregisterPort(port)
       _remPort(port)

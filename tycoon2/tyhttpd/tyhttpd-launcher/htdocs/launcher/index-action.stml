@@ -7,7 +7,7 @@
   <!entity reinstall system "reinstall.sgml" >
 ]> 
   
-<stml processor=HttpdLauncherProcessor>
+<stml processor=HttpdLauncherProcessor language='tycoon-1.0'>
 
 <!-- we cannot use forms inside tables, we have to use the same
      action URL for every server and action pair.
@@ -16,15 +16,14 @@
 -->
 
 <tycoon>
-  let field = formFields.keys.detect(
-    fun(field :String) {field.startsWith("tyhttpd-") }
-  ),
-  assert field.isNotNil,
-  server := field,
-  let action = formFields[field]
+  field ::= formFields.keys.detect(
+    fun(field :String) {field.startsWith("tyhttpd-") })
+  assert({ field.isNotNil })
+  server := field
+  action ::= formFields[field]
 </tycoon> 
 
-<tycoon>let var success :Bool = false </tycoon>
+<tycoon>success :Bool := false </tycoon>
 <define name=title></define>
 <define name=msg></define>
 
@@ -33,7 +32,7 @@
 <elseif true='action = "Restart"'>&restart
 <elseif true='action = "Kill!"'>&kill
 <elseif true='action = "Reinstall"'>&reinstall
-<else><tycoon/assert false/
+<else><tycoon/assert({ false })/
 </if>
 
 <head>

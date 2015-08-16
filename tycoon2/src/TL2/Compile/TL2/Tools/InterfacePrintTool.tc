@@ -1,5 +1,25 @@
 class InterfacePrintTool
 super TypePrettyPrintTool
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ *)
 meta InterfacePrintToolClass
 {
 printSignature :Void
@@ -21,26 +41,7 @@ printSignature :Void
 }
 
 printInterface :Void
-  (*
- * This file is part of the Tycoon-2 system.
- *
- * The Tycoon-2 system is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation (Version 2).
- *
- * The Tycoon-2 system is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty
- * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public
- * License along with the Tycoon-2 system; see the file LICENSE.
- * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
- * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
- * 
- * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
- *
- print methods sorted by the class the method was last/first
+  (* print methods sorted by the class the method was last/first
      redefined in *)
 {
   Reader.cons(_classObject, _classObject.superclasses)
@@ -223,22 +224,32 @@ _init :Void
 
 reduceMethodType(t :TL2MethodType, subst :TL2Subst) :TL2MethodType
 {
+  reduceValueIde ::= 
+    fun(vi :TL2ValueIde) {
+      TL2ValueIde.new(vi.pos, vi.name, vi.component, funReduce(vi.type, subst))
+    }
+  reduceTypeIde ::=
+    fun(ti :TL2TypeIde) {
+      TL2TypeIde.new(ti.pos, ti.name, funReduce(ti.type, subst))
+    }
+  reduceSubTypeIde ::=
+    fun(sti :TL2SubTypeIde) {
+      TL2SubTypeIde.new(sti.pos, sti.name, funReduce(sti.type, subst))
+    }
   TL2MethodType.newK(
     t.pos,
     t.selector,
-    t.domain.map(fun(i :TL2Ide) {
+    t.positionalDomain.map(fun(i :TL2Ide) {
       i.case(:TL2Ide,
-        fun(vi :TL2ValueIde) {
-	  TL2ValueIde.new(vi.pos, vi.name, vi.component, funReduce(vi.type, subst))
-	},
-	fun(ti :TL2TypeIde) {
-	  TL2TypeIde.new(ti.pos, ti.name, funReduce(ti.type, subst))
-	},
-	fun(sti :TL2SubTypeIde) {
-	  TL2SubTypeIde.new(sti.pos, sti.name, funReduce(sti.type, subst))
-	}) })
-     .as(List),
-    t.keywords,
+        reduceValueIde,
+	reduceTypeIde,
+	reduceSubTypeIde)
+    }).as(List),
+    t.keywordDomain.map(fun(kwi:TL2KeywordIde){
+      ;; ### should also subst/reduce the types in the defaultValue
+      ;;     ...but default values aren''t printed anyway...
+      TL2KeywordIde.new(kwi.pos, kwi.keyword, reduceValueIde[kwi.ide], kwi.defaultValue)
+    }).as(List),
     funReduce(t.range, subst))
 }
 

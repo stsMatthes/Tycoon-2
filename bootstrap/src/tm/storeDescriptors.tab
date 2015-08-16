@@ -32,29 +32,30 @@ List	Array
 Class	Array	
 X_TL2MethodDictionary	Array	
 DLL	Array	
-X_TL2Selector	Struct	oii
-X_TL2Method	Struct	ooooooiiii
-X_TL2CompiledMethod	Struct	ooooooiiiioioooiio
-X_TL2BuiltinMethod	Struct	ooooooiiiioioooiioii
-X_TL2ExternalMethod	Struct	ooooooiiiiooooii
-X_TL2SlotMethod	Struct	ooooooiiiioi
-X_TL2SlotAccessMethod	Struct	ooooooiiiioi
-X_TL2SlotUpdateMethod	Struct	ooooooiiiioi
-X_TL2PoolMethod	Struct	ooooooiiiio
-X_TL2PoolAccessMethod	Struct	ooooooiiiio
-X_TL2PoolUpdateMethod	Struct	ooooooiiiio
-X_TL2CSlotAccessMethod	Struct	ooooooiiiioiC
-X_TL2CSlotUpdateMethod	Struct	ooooooiiiioiC
-X_TL2SlotReferenceMethod	Struct	ooooooiiiioi
-X_TL2SlotTakeFromMethod	Struct	ooooooiiiioi
-X_TL2SlotMoveToMethod	Struct	ooooooiiiioi
-X_TL2CSlotReferenceMethod	Struct	ooooooiiiioiC
-X_TL2CSlotTakeFromMethod	Struct	ooooooiiiioiC
-X_TL2CSlotMoveToMethod	Struct	ooooooiiiioiC
-X_TL2CompiledFun	Struct	ooooooiiiioioooiiooi
+X_TL2Selector	Struct	oiio
+X_TL2Method	Struct	ooooooiiioi
+X_TL2CompiledMethod	Struct	ooooooiiioiooioooiio
+X_TL2BuiltinMethod	Struct	ooooooiiioiooioooiioii
+X_TL2ExternalMethod	Struct	ooooooiiioiooooii
+X_TL2SlotMethod	Struct	ooooooiiioioi
+X_TL2SlotAccessMethod	Struct	ooooooiiioioi
+X_TL2SlotUpdateMethod	Struct	ooooooiiioioi
+X_TL2PoolMethod	Struct	ooooooiiioio
+X_TL2PoolAccessMethod	Struct	ooooooiiioio
+X_TL2PoolUpdateMethod	Struct	ooooooiiioio
+X_TL2CSlotAccessMethod	Struct	ooooooiiioioiC
+X_TL2CSlotUpdateMethod	Struct	ooooooiiioioiC
+X_TL2SlotReferenceMethod	Struct	ooooooiiioioi
+X_TL2SlotTakeFromMethod	Struct	ooooooiiioioi
+X_TL2SlotMoveToMethod	Struct	ooooooiiioioi
+X_TL2CSlotReferenceMethod	Struct	ooooooiiioioiC
+X_TL2CSlotTakeFromMethod	Struct	ooooooiiioioiC
+X_TL2CSlotMoveToMethod	Struct	ooooooiiioioiC
+X_TL2CompiledFun	Struct	ooooooiiioiooioooiiooi
 Function	Array	
-X_TL2DeferredMethod	Struct	ooooooiiii
-X_TL2UnimplementedMethod	Struct	ooooooiiii
+X_TL2DeferredMethod	Struct	ooooooiiioi
+X_TL2UnimplementedMethod	Struct	ooooooiiioi
+X_TL2ReorderMethod	Struct	ooooooiiioiioiiCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 X_TL2Slot	Struct	ooooiio
 TypeError	Array	
 DoesNotUnderstand	Array	
@@ -66,6 +67,7 @@ IndexOutOfBounds	Array
 BlockingCallInterrupt	Array	
 ThreadCancelled	Array	
 CommitError	Array	
+UnknownSelectorError	Array	
 WrongSignature	Array	
 FetchBoundComponent	Array	
 PerformArityMismatch	Array	

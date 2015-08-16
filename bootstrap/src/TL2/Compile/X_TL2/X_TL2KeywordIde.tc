@@ -1,5 +1,5 @@
-class X_TL2SubTypeDBClass
-super ConcreteClass(X_TL2SubTypeDB)
+class X_TL2KeywordIde
+super X_TL2ProgramObject
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -19,15 +19,29 @@ super ConcreteClass(X_TL2SubTypeDB)
  * 
  * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
  *
+ File: X_TL2Ide.tc
+ Author: Axel Wienberg
+   Date: 2003-10-10
+Purpose: keyword parameter
 *)
-meta MetaClass
+meta X_TL2KeywordIdeClass
 {
+keyword :Symbol
 
-new :X_TL2SubTypeDB
+ide :X_TL2ValueIde
+
+defaultValue :X_TL2Value
+
+prettyPrint(out:Printer) :Void
+  (* *)
 {
-  i ::= _new
-  i._init1(0)
-  i
+  out << keyword << ": "
+  ide.prettyPrint(out)
+  out << " := "
+  defaultValue.prettyPrint(out)
 }
+
+children :Reader(X_TL2ProgramObject)
+{ #((x:X_TL2ProgramObject:=ide x), defaultValue).reader }
 
 }

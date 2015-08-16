@@ -14,7 +14,10 @@ tycoon.tl.loader.update;
 tycoon.tl.typeChecker.check;
 tycoon.tl.topLevel.file("Debug/Init.tyc");
 
-(*
+;;
+;; end of automatic script
+;;
+
 tycoon.saveSystem;
 
 tycoon.debug := true;
@@ -41,5 +44,3 @@ tyhttpd.commit;
     
 *)
 
-
-*)

@@ -41,14 +41,14 @@ asFun :X_TL2CompiledFun
 prettyPrint(out :Printer) :Void
   (* *)
 {
-  if( domain.isEmpty && range.isNil then: {
+  if( positionalDomain.isEmpty && range.isNil then: {
     ; no fun 
   } else: {
     out.writeAll("fun(")
-    simpleDomain ::= domain.all(fun(i:X_TL2Ide) {
+    simpleDomain ::= positionalDomain.all(fun(i:X_TL2Ide) {
 			     i.type.isNil || i.type.isLeaf})
     out.withAbsIndent(out.column, {
-      domain.doBetween(fun(i :X_TL2Ide) {
+      positionalDomain.doBetween(fun(i :X_TL2Ide) {
 	i.prettyPrint(out)
       }, {
 	out.write(',')
@@ -96,7 +96,7 @@ freeVarHook(out :Printer) :Void
 children :Reader(X_TL2ProgramObject)
   (* *)
 {
-  Reader(:X_TL2ProgramObject).append( domain.map(fun(i:X_TL2Ide){i.type}),
+  Reader(:X_TL2ProgramObject).append( positionalDomain.map(fun(i:X_TL2Ide){i.type}),
 		 body.children)
 }
 
@@ -118,12 +118,12 @@ scope(env :X_TL2Scoper) :X_TL2CompiledFun
   freeValueIdes := Array.fromReader(Reader.cons(selfSig, nonSelfFreeValueIdes))
   ; ...setAccessedFromClosure moved to X_TL2Optimizer
   ;   (this closure may end up being inlined)
-  domain.do(fun(i:X_TL2Ide) {
+  positionalDomain.do(fun(i:X_TL2Ide) {
     if( !i.isValueIde then: {
       env.errorLog.error(i.pos, "functions currently cannot take type parameters")
     })
   })
-  if( !keywords.isEmpty then: {
+  if( !keywordDomain.isEmpty then: {
       env.errorLog.error(pos, "functions currently cannot take keyword parameters")
   })
   self
@@ -138,12 +138,12 @@ genCode(backEnd :X_BEMethodManager) :Void
     fun(idx:Int, ide :X_TL2ValueIde) {
        globalVars[ide] := X_BEGlobalVar.new(ide, idx+1)
     })
-  computeArityAndSorts(backEnd.errorLog)
+  computeArityAndSorts(backEnd.compiler)
   compile(globalVars, nil, backEnd.compiler)
 
   ; emit closure creation:
 ;     push variable references in reverse order, then the X_TL2CompiledFun (me). 
-  freeValueIdes.reverseReader.do(fun(ide :X_TL2ValueIde) {
+  freeValueIdes.reverseDo(fun(ide :X_TL2ValueIde) {
     backEnd.loadRef(ide)
   })
   backEnd.loadLiteral(self)
@@ -173,7 +173,7 @@ private
 doCheck(T <: Void, cont :Fun(:X_TL2Type, :X_TL2Subst):T) :T
   (* *)
 {
-    args ::= List.fromReader(domain.map(fun(i :X_TL2Ide) { i.type }))
+    args ::= List.fromReader(positionalDomain.map(fun(i :X_TL2Ide) { i.type }))
     args.do(fun(t :X_TL2Type) { t.checkType(X_TL2EmptySubst.instance) })
 
     if( range.isNotNil then: { range.checkType(X_TL2EmptySubst.instance) })
@@ -187,17 +187,16 @@ doCheck(T <: Void, cont :Fun(:X_TL2Type, :X_TL2Subst):T) :T
 
       n ::= args.size
 
-      args ::= List.reverse(List.cons(
-	if( range.isNotNil then: { range } else: { X_TL2SubstType.new(t, s) }),
-	List.reverse(args)
+      args ::= List.append(args, List.with1(
+	if( range.isNotNil then: { range } else: { X_TL2SubstType.new(t, s) })
       ))
 
       className ::=
         if( methodType.isComponent
-         || domain.some(fun(i :X_TL2Ide){ i.asValueIde.component }) then: {
+         || positionalDomain.some(fun(i :X_TL2Ide){ i.asValueIde.component }) then: {
 	  String.concatAll( #(
           "Fun",
-	  domain.map(fun(i :X_TL2Ide){
+	  positionalDomain.map(fun(i :X_TL2Ide){
 	   if( i.asValueIde.component then: {'C'} else: {'R'}) }).as(String),
 	  if( methodType.isComponent then: {"C"} else: {"R"}) ))
 	} else: {

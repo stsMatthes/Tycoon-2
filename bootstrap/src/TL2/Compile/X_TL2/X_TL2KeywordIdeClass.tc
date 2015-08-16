@@ -1,5 +1,5 @@
-class X_TL2GramClass
-super ConcreteClass(X_TL2Gram)
+class X_TL2KeywordIdeClass
+super ConcreteClass(X_TL2KeywordIde)
 (*
  * This file is part of the Tycoon-2 system.
  *
@@ -22,13 +22,15 @@ super ConcreteClass(X_TL2Gram)
 *)
 meta MetaClass
 {
-new(twlTerminals :X_TL2Terminals) :X_TL2Gram
+new(pos :SourcePos, keyword :Symbol, ide :X_TL2ValueIde, defaultValue :X_TL2Value) :X_TL2KeywordIde
   (* *)
 {
   instance ::= _new
-  instance.twlTerminals := twlTerminals
+  instance.pos := pos
+  instance.keyword := keyword
+  instance.ide := ide
+  instance.defaultValue := defaultValue
   instance._init
   instance
 }
-
 }

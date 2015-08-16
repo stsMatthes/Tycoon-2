@@ -21,7 +21,7 @@
 /*
   Copyright (c) 1996 Higher-Order GmbH, Hamburg. All rights reserved.
 
-  $File: //depot/tycoon2/stsmain/tycoon2/src/tm/tvm.c $ $Revision: #3 $ $Date: 2003/10/01 $  Andreas Gawecki, Marc Weikard
+  $File: //depot/tycoon2/stsmain/tycoon2/src/tm/tvm.c $ $Revision: #11 $ $Date: 2003/10/20 $  Andreas Gawecki, Marc Weikard
 
   component and debugging extensions (c) 1998 Axel Wienberg
 
@@ -239,12 +239,13 @@ tyc_Method * tvm_methodSuperLookup(tyc_SelectorId idSelector,
 
 #define PERFORMCACHE_SIZE 256
 
-#define PERFORMHASH(s, n, c) (((tsp_hash(s) >> 2) + n + c) & (PERFORMCACHE_SIZE - 1)) 
+#define PERFORMHASH(s, n, c, k) (((tsp_hash(s) >> 2) + n + c + tsp_size(k)) & (PERFORMCACHE_SIZE - 1)) 
 
 typedef struct tvm_performCacheLine {
   tyc_Symbol pSymbol;                        /* pSymbol == NULL : free entry */
   Word wArity;
   Word wSorts;
+  tyc_Symbol *apKeywords;
   tyc_SelectorId idSelector;
 } tvm_performCacheLine;
 
@@ -315,8 +316,10 @@ void tvm_enumRootPtr(tsp_VisitPtr visitRootPtr)
   }
   /* enumerate perform cache */
   for (i = 0; i < PERFORMCACHE_SIZE; i++) {
-    if(performCache[i].pSymbol != NULL)
+    if(performCache[i].pSymbol != NULL) {
       visitRootPtr((tsp_OID*)&performCache[i].pSymbol);
+      visitRootPtr((tsp_OID*)&performCache[i].apKeywords);
+    }
   }
 }
 
@@ -689,12 +692,17 @@ static Bool isSuperComponentOf(tsp_OID a, tsp_OID b)
   return FALSE;
 }
 
-static void assert_superComponent(tsp_OID superComponent, tsp_OID obj)
+static void assert_superComponent(tsp_OID expectedSuperComponent, tsp_OID obj)
 {
+  tsp_OID actualSuper; 
   assert(!tyc_IS_NIL(obj));
   assert(!tsp_IS_IMMEDIATE(obj));
-  if(tsp_superComponent(obj) != superComponent) {
-    fprintf(stderr, "tvm warning: unexpected super component detected\n");
+  actualSuper = tsp_superComponent(obj);
+  if(actualSuper != expectedSuperComponent) {
+    tosLog_error("tvm", "assert_superComponent", "object %s@%p has super component %s@%p, expected super component %s@%p",
+		 tyc_CLASS(tyc_CLASSID(obj))->pszName, obj,
+		 tyc_CLASS(tyc_CLASSID(actualSuper))->pszName, actualSuper,
+		 tyc_CLASS(tyc_CLASSID(expectedSuperComponent))->pszName, expectedSuperComponent);
   }
 }
 
@@ -734,6 +742,169 @@ static void takeFromComponent(tyc_Thread *pThread, tsp_OID *sp, tsp_OID srcSuper
     *src = NULL;
   }
   *sp = obj;
+}
+
+#define DEBUG_KW_REORDER 0
+
+/**
+ * compute the permutation required to assign keyword arguments
+ * delivered according to ks to keyword parameters expected according
+ * to km.  The permutation is written into permutation, using at most
+ * MAX_KW/2*3+2 bytes.
+ *
+ * return 0 if successful, != 0 if sorts do not match or ks contains 
+ * superfluous or duplicate keywords.
+ * 
+ * precondition: km does not contain duplicate keywords.
+ * precondition: kmSize <= MAX_KEYWORD_ARGS
+ */
+static int computePermutation(unsigned char *permutation, 
+			      tyc_Array pFillWords,
+			      tyc_Array pKeywordDefaults,
+			      int kmSize,
+			      tyc_Symbol *km,
+			      Word wSortsM,
+			      int ksSize,
+			      tyc_Symbol *ks,
+			      Word wSortsS)
+{
+  int nAbsent;
+  int posInMsg[MAX_KEYWORD_ARGS];
+  int im,is;
+  int undefSearch;
+  unsigned char *cycleSizePatch;
+
+  assert(kmSize <= MAX_KEYWORD_ARGS);
+  assert(kmSize > 0);
+  assert(tsp_size(pKeywordDefaults)==kmSize*sizeof(tsp_OID));
+  assert(kmSize-ksSize == 0 || tsp_size(pFillWords)==(kmSize-ksSize)*sizeof(tsp_OID));
+  assert(wSortsM < (1<<kmSize));
+  assert(wSortsS < (1<<ksSize));
+#if DEBUG_KW_REORDER
+  tosLog_debug("tvm", "computePermutation", "enter, kmSize=%d, ksSize=%d", kmSize, ksSize);
+  for(im=0;im<kmSize;++im) {
+    tosLog_debug("tvm","computePermutation", "  km[%d]=%s", im, km[im]);
+  }
+  for(is=0;is<ksSize;++is) {
+    tosLog_debug("tvm","computePermutation", "  ks[%d]=%s", is, ks[is]);
+  }
+#endif
+
+  /*
+  // build an array that indicates where which keyword value
+  // can be obtained from:
+  // parameter keyword number im corresponds to message keyword 
+  // number is == posInMsg[im]
+  // if a keyword is not given, distinct indices above ksSize are
+  // assigned (at runtime, the corresponding element of pFillWords is 
+  // pushed there before permutation).
+  // try not to unnecessarily permute fill words 
+  */
+  nAbsent = 0;
+  for(im=0; im<kmSize; ++im) {
+    tyc_Symbol k = km[im];
+    for(is=0; is<ksSize; ++is) {
+      if(ks[is] == k) {
+	/* check component sort */
+	if ((wSortsS & (1<<is)) != 0) {
+	  if ((wSortsM & (1<<im)) == 0)
+	    /* component mismatch */
+	    return 1;
+	} else if ((wSortsM & (1<<im)) != 0) {
+	  /* component mismatch */
+	  return 1;
+	}
+#if DEBUG_KW_REORDER
+	tosLog_debug("tvm","computePermutation", "  km[%d]==ks[%d]", im, is);
+#endif
+	break;
+      }
+    }
+    if(is == ksSize) {
+      ++nAbsent;
+      /*
+      // undefined keywords coinciding with pushed undefined values
+      // keep their position (no push).  For others, the position
+      // is determined later
+      */
+      if (im >= ksSize) {
+	is = im;
+	pFillWords[kmSize-1-is] = pKeywordDefaults[im];
+#if DEBUG_KW_REORDER
+	tosLog_debug("tvm","computePermutation", "  km[%d]==ks[%d]==%s@%p", im,is,
+		     tyc_CLASS(tyc_CLASSID(pKeywordDefaults[im]))->pszName, pKeywordDefaults[im]);
+#endif
+      } else {
+	is = -1;
+      }
+    }
+    posInMsg[im] = is;
+  }
+  if (nAbsent != kmSize - ksSize) {
+    /* unexpected keyword(s) */
+    return 2;
+  }
+  /* find positions for absent keywords */
+  undefSearch = ksSize;
+  for(im=0; im<ksSize; ++im) {
+    if(posInMsg[im] == -1) {
+      /* skip undefined keywords */
+      while(posInMsg[undefSearch] == undefSearch)
+	++undefSearch;
+      /*
+      // undefSearch is the index of a defined keyword,
+      // at an index where a default value will been pushed
+      // take the default value from this index to avoid
+      // fruitless permutation of default values
+      */
+      assert(undefSearch <= kmSize);
+#if DEBUG_KW_REORDER
+	tosLog_debug("tvm","computePermutation", "  km[%d]==ks[%d]==%s@%p", im,undefSearch,
+		     tyc_CLASS(tyc_CLASSID(pKeywordDefaults[im]))->pszName, pKeywordDefaults[im]);
+#endif
+      pFillWords[kmSize-1-undefSearch] = pKeywordDefaults[im];
+      posInMsg[im] = undefSearch;
+      ++undefSearch;
+    }
+  }
+  /*
+  // now represent this permutation as a product of disjoint cycles,
+  // ready for efficient interpretation
+  // each cycle starts with the length of the cycle-1, followed by the
+  // element's indices. A length 0 marks the end of the sequence.  E.g.
+  // "2 1 4 7 1 2 3 0" represents "(1 4 7) o (2 3)".
+  */
+  for(im=0; im<kmSize; ++im) {
+    /* ignore cycles of length 1 */
+    if(posInMsg[im] != im) {
+      int current;
+
+      cycleSizePatch = permutation;
+      *permutation++ = 0; /* placeholder for cycle length (patched later) */
+      *permutation++ = kmSize-1-im;  /* count from end */
+      current = posInMsg[im];
+      posInMsg[im] = im;  /* mark seen */
+      do {
+	int next;
+	*permutation++ = kmSize-1-current; /* count from end */
+#if DEBUG_KW_REORDER
+	tosLog_debug("tvm","computePermutation", "   permute %d - %d", permutation[-2], permutation[-1]);
+#endif
+	next = posInMsg[current];
+	posInMsg[current] = current; /* mark seen */
+	current = next;
+      } while(current != im);
+#if DEBUG_KW_REORDER
+      tosLog_debug("tvm","computePermutation", "  cycle length was %d", (int)(permutation-cycleSizePatch-1));
+#endif
+      *cycleSizePatch = permutation-cycleSizePatch-2;
+    }
+  }
+#if DEBUG_KW_REORDER
+  tosLog_debug("tvm","computePermutation", "  no more cycles");
+#endif
+  *permutation = 0;
+  return 0;
 }
 
 
@@ -887,11 +1058,23 @@ static tsp_OID run(void)
 	((tsp_OID*)fp)[-(ip[1])] = *sp;
 	ip += 2;
 	NEXT();
+      LABEL(tvm_Op_storeArg):
+	((tsp_OID*)(fp + 1))[ip[1]] = *sp;
+	ip += 2;
+	NEXT();
       LABEL(tvm_Op_moveToLocal):
 	/* superComponent is not modified */
 	if(!tyc_IS_NIL(*sp))
 	  assert_superComponent(pThread, *sp);
 	((tsp_OID*)fp)[-(ip[1])] = *sp;
+	*sp = tyc_NIL;
+	ip += 2;
+	NEXT();
+      LABEL(tvm_Op_moveToArgument):
+	/* superComponent is not modified */
+	if(!tyc_IS_NIL(*sp))
+	  assert_superComponent(pThread, *sp);
+	((tsp_OID*)(fp + 1))[ip[1]] = *sp;
 	*sp = tyc_NIL;
 	ip += 2;
 	NEXT();
@@ -1321,15 +1504,12 @@ super0:
 	tyc_Class * pSuperClass = fp->pCode->pClass;
 	if((pMethod = tvm_methodSuperLookup(idSelector, idClass,
 					    pSuperClass))) {
-	  /* check no. of arguments */
-	  tyc_Selector *pSelector = tyc_pRoot->apSelectorTable[idSelector];
-	  if(pMethod->nArgs != pSelector->wArity || pMethod->wSorts != pSelector->wSorts) {
-	    goto wrongSignature;
-	  }
-	  /* update lookup index */	  
 	  pSuperEntry->superKey = idSuperClass;
 	  pEntry = &pSuperEntry->cache;
-	  goto methodFound;
+	  /* invalidate, to avoid half-written entry 
+	     in case the signature is wrong */
+	  pEntry->key = tvm_INVALID_KEY;
+	  goto methodCandidateFound;
 	}
 	/* method not implemented */
 	goto dontUnderstand;
@@ -1443,6 +1623,45 @@ nonrec_methodcall:
 	    CLEAR_PAST_EVENT(pThread);
 	    SAMPLE();
 	    NEXT();            /* continue interpreter loop */
+	  }
+
+	  METHODLABEL(ReorderMethod):
+	  {
+	    unsigned char *p;
+	    int cycleLen;
+	    tyc_Array pFillWords;
+	    /* copy defaulted values to the stack */
+	    /* ### stack limit check? */
+	    pFillWords = ((tyc_ReorderMethod *)pMethod)->pFillWords;
+	    if(pFillWords) {
+	      int i;
+	      i=tsp_size(pFillWords)/sizeof(tsp_OID);
+	      while(i>0)
+		*--sp = pFillWords[--i];
+	    }
+	    /* now stir... */
+	    p = ((tyc_ReorderMethod *)pMethod)->aPermutation;
+	    while( (cycleLen = *p++) > 0) {
+	      int prevIdx = *p++;
+	      tsp_OID first = sp[prevIdx];
+	      do {
+		int idx = *p++;
+		sp[prevIdx] = sp[idx];
+		prevIdx = idx;
+	      } while(--cycleLen > 0);
+	      sp[prevIdx] = first;
+	    }
+	    /* ...and jump to the full method */
+	    idSelector = ((tyc_ReorderMethod *)pMethod)->idDelegateSelector;
+#ifdef tvm_THREADED_CODE
+	    pMethodCode = ((tyc_ReorderMethod *)pMethod)->pDelegateMethodCode;
+#endif
+	    pMethod = ((tyc_ReorderMethod *)pMethod)->pDelegateMethod;
+#ifdef tvm_THREADED_CODE
+	    goto *pMethodCode;
+#else
+	    goto lookupHit;
+#endif
 	  }
 
 	  METHODLABEL(SlotAccessMethod):
@@ -1928,6 +2147,10 @@ divisionbyzero:
 		  tyc_Symbol pSymbol = pSelector->pSymbol;
 		  Word wArity = pSelector->wArity;
 		  Word wSorts = pSelector->wSorts;
+		  tyc_Symbol *apKeywords = pSelector->apKeywords;
+		  int nKeywords4;
+		  assert(apKeywords);
+		  nKeywords4 = tsp_size(apKeywords);
 		  if(((tyc_BuiltinMethod*)pMethod)->iNumber ==
 		     tvm_Builtin_Object__performAt)
 		    assert(pSymbol[tsp_size(pSymbol)-2] == '@');
@@ -1938,12 +2161,16 @@ divisionbyzero:
 		    if(wArity == tsp_size(pArray) / sizeof(tsp_OID)) {
 		      Word i, n;
 		      tvm_performCacheLine * pCacheLine =
-			&performCache[PERFORMHASH(pSymbol, wArity, wSorts)];
+			&performCache[PERFORMHASH(pSymbol, wArity, wSorts, apKeywords)];
 		      /* consult mini cache */
 		      tmthread_performLock();
+		      assert(!pCacheLine->pSymbol || pCacheLine->apKeywords);
 		      if(pCacheLine->pSymbol == pSymbol &&
 			 pCacheLine->wArity == wArity &&
-			 pCacheLine->wSorts == wSorts) {
+			 pCacheLine->wSorts == wSorts &&
+			 (pCacheLine->apKeywords == apKeywords
+			 || (tsp_size(pCacheLine->apKeywords) == nKeywords4 &&
+			     memcmp(pCacheLine->apKeywords, apKeywords, nKeywords4)==0))) {
 			idSelector = pCacheLine->idSelector;
 		      }
 		      else {
@@ -1953,21 +2180,27 @@ divisionbyzero:
 			/* search for idSelector */
 			for(i = 0; i < n; i++, ppSelector++) {
 			  tyc_Selector * pSelector = *ppSelector;
+			  assert(pSelector->apKeywords);
 			  if(pSelector->pSymbol == pSymbol &&
 			     pSelector->wArity == wArity &&
-			     pSelector->wSorts == wSorts) {
+			     pSelector->wSorts == wSorts &&
+			     (pSelector->apKeywords == apKeywords
+			      || (tsp_size(pSelector->apKeywords) == nKeywords4 &&
+			          memcmp(pSelector->apKeywords, apKeywords, nKeywords4)==0))) {
 			    break;
 			  }
 			}
 			if(i == n) {
 			  tmthread_performUnlock();
 			  SAVE_REGS();
-			  RAISE_DoesNotUnderstand(pReceiver, pSymbol);
+			  /* tell TL2 code to register the selector */
+			  tvm_raise(tyc_pUnknownSelectorError);
 			}
 			/* update cache */
 			pCacheLine->pSymbol = pSymbol;
 			pCacheLine->wArity = wArity;
 			pCacheLine->wSorts = wSorts;
+			pCacheLine->apKeywords = apKeywords;
 			pCacheLine->idSelector = idSelector = i;
 		      }
 		      tmthread_performUnlock();
@@ -3568,12 +3801,14 @@ divisionbyzero:
 	    /* C slot access */
 	    void * pAddress;
 	    Int iIndex = ((tyc_CSlotMethod*)pMethod)->slotMethod.iOffset;
+#ifndef NDEBUG
 	    Char cTycoonType = ((tyc_CSlotMethod*)pMethod)->cTycoonType;
 	    Char cCType;
 	    assert(!tsp_IS_IMMEDIATE(pReceiver) && !tyc_IS_NIL(pReceiver));
 	    cCType = tsp_getCType(pReceiver, iIndex);
-	    pAddress = tsp_getCAddress(pReceiver, iIndex);
 	    assert(cCType == tsp_Field_OID && cTycoonType == tyc_Type_Object);
+#endif
+	    pAddress = tsp_getCAddress(pReceiver, iIndex);
 	    takeFromComponent(pThread, sp, pReceiver, ((tsp_OID*)pAddress));
 	    BNEXT();
 	  } 
@@ -3745,12 +3980,14 @@ divisionbyzero:
 	    /* component C slot update */
 	    void * pAddress;
 	    Int iIndex = ((tyc_CSlotMethod*)pMethod)->slotMethod.iOffset;
+#ifndef NDEBUG
 	    Char cTycoonType = ((tyc_CSlotMethod*)pMethod)->cTycoonType;
 	    Char cCType;
 	    assert(!tsp_IS_IMMEDIATE(pReceiver) && !tyc_IS_NIL(pReceiver));
 	    cCType = tsp_getCType(pReceiver, iIndex);
-	    pAddress = tsp_getCAddress(pReceiver, iIndex);
 	    assert(cCType == tsp_Field_OID && cTycoonType == tyc_Type_Object);
+#endif
+	    pAddress = tsp_getCAddress(pReceiver, iIndex);
 	    /* ### CYCLE */
 	    moveToComponent(pReceiver, (tsp_OID*)pAddress, pThread, sp);
 	    *++sp = tyc_NIL;
@@ -3878,12 +4115,93 @@ methodEnd:
 	/* 2nd level cache miss */
 	{
 	if((pMethod = tvm_methodLookup(idSelector, idClass))) {
-	  /* check no. of arguments */
-	  tyc_Selector *pSelector = tyc_pRoot->apSelectorTable[idSelector];
-	  if(pMethod->nArgs != pSelector->wArity || pMethod->wSorts != pSelector->wSorts) {
-	    goto wrongSignature;
+	  /* check signatures (no. of positional arguments, keywords, sorts) */
+	  tyc_Selector *pSelector;
+	  tyc_ReorderMethod *pReorderMethod;
+methodCandidateFound:
+	  pSelector = tyc_pRoot->apSelectorTable[idSelector];
+	  pReorderMethod = NULL;
+	  assert(pMethod->apKeywords);
+	  assert(pSelector->apKeywords);
+	  if( pMethod->apKeywords == pSelector->apKeywords) {
+	    if( pMethod->nArgs != pSelector->wArity || pMethod->wSorts != pSelector->wSorts)
+	      goto wrongSignature;
+	  } else {
+	    int kmSize = tsp_size(pMethod->apKeywords)/sizeof(tsp_OID);
+	    int ksSize = tsp_size(pSelector->apKeywords)/sizeof(tsp_OID);
+	    tyc_Array pFillWords;
+	    if(ksSize != kmSize
+	       || memcmp(pMethod->apKeywords, pSelector->apKeywords, ksSize*sizeof(tsp_OID)) != 0) {
+	      /* keyword lists are not identical */
+	      /* need to generate a reorder method (or bail out) */
+	      tyc_Selector *pDelegateSelector;
+	      int idDelegateSelector;
+	      Bool fIsPrivate;
+	      int nPositional = pMethod->nArgs-kmSize;
+	      if( nPositional != pSelector->wArity-ksSize
+		  || (pMethod->wSorts & ((1<<nPositional)-1))
+		     != (pSelector->wSorts & ((1<<nPositional)-1))
+		  || kmSize < ksSize ) {
+		/*
+		// wrong number of positional arguments
+		// or wrong component sort of positional arguments
+		// or more keywords than expected
+		*/
+		goto wrongSignature;
+	      }
+	      /* needs reordering / default values */
+	      /* determine selector id of actual method */
+	      switch(tsp_classId(pMethod)) {
+	      case tyc_ClassId_BuiltinMethod:
+	      case tyc_ClassId_CompiledMethod:
+		idDelegateSelector = ((tyc_CompiledMethod *)pMethod)->idSelector;
+		break;
+	      default:
+		/* ### to do: ExternalMethod (see also pKeywordDefaults below) */
+		/* other method types cannot have keyword parameters */
+		tosLog_error("tvm", "keyword reordering", "unimplemented method class: id=%d", tsp_classId(pMethod));
+		tosError_ABORT();  /* unimplemented */
+	      }
+	      fIsPrivate = pMethod->fIsPrivate;
+	      tmthread_cacheUnlock();
+	      tmthread_pushStack(pMethod);
+	      SAVE_REGS();
+	      pReorderMethod = tsp_newStruct(tyc_ClassId_ReorderMethod);
+	      if (kmSize > ksSize) {
+	        tmthread_pushStack(pReorderMethod);
+	        pFillWords = tsp_newArray(tyc_ClassId_Array, kmSize - ksSize);
+	        pReorderMethod = tmthread_popStack();
+	      } else {
+		pFillWords = NULL;
+	      }
+	      FETCH_THREAD();
+	      LOAD_REGS();
+	      pMethod = tmthread_popStack();
+	      tmthread_cacheLock();
+	      pSelector = tyc_pRoot->apSelectorTable[idSelector];
+	      pReceiver = sp[pSelector->wArity];
+	      pDelegateSelector = tyc_pRoot->apSelectorTable[idDelegateSelector];
+	      pReorderMethod->method.pSelector = pSelector->pSymbol;
+	      pReorderMethod->method.fIsPrivate = fIsPrivate;
+	      pReorderMethod->method.nArgs = pSelector->wArity;
+	      pReorderMethod->method.wSorts = pSelector->wSorts;
+	      pReorderMethod->method.apKeywords = pSelector->apKeywords;
+	      pReorderMethod->idDelegateSelector = idDelegateSelector;
+	      pReorderMethod->pFillWords = pFillWords;
+	      if (computePermutation(pReorderMethod->aPermutation,
+				     pFillWords,
+				     ((tyc_CompiledMethod *)pMethod)->pKeywordDefaults,
+				     kmSize,
+				     pDelegateSelector->apKeywords, 
+				     pDelegateSelector->wSorts >> nPositional,
+				     ksSize, 
+				     pSelector->apKeywords, 
+				     pSelector->wSorts >> nPositional)) {
+		/* unexpected keywords or component mismatch */
+		goto wrongSignature;
+	      }
+	    }
 	  }
-methodFound:
 	  /* check for special method types */
 	  switch(tsp_classId(pMethod)) {
 	  case tyc_ClassId_ExternalMethod:
@@ -3977,6 +4295,14 @@ methodFound:
 		    tyc_SELECTOR(idSelector));
 	    goto dontUnderstand;
 	  }
+#endif
+	  }
+	  if(pReorderMethod != NULL) {
+	    pReorderMethod->pDelegateMethod = pMethod;
+	    pMethod = &pReorderMethod->method;
+#ifdef tvm_THREADED_CODE
+	    pReorderMethod->pDelegateMethodCode = pMethodCode;
+	    pMethodCode = &&ReorderMethod;
 #endif
 	  }
 	  pEntry->pMethod = pMethod;

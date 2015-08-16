@@ -45,19 +45,19 @@ case(T <: Void, ifTrue :Fun()@:T,  :Fun()@:T) @:T
   (* *)
 {
   false
-  }
+}
 
 "&"(aBool :Bool) :Bool
   (* *)
 {
   aBool
-  }
+}
 
 "|"( :Bool) :Bool
-  (*aBool*)
+  (* *)
 {
   self	; equals true 
-  }
+}
 
 "^"(aBool :Bool) :Bool
   (* *)
@@ -69,43 +69,18 @@ case(T <: Void, ifTrue :Fun()@:T,  :Fun()@:T) @:T
   (* *)
 {
   ifTrue[]
-  }
+}
 
 "||"( :Fun():Bool) :Bool
   (*ifFalse*)
 {
   self	; equals true 
-  }
-
-"?"(ifTrue :Fun():Void) :Void
-  (* old syntax *)
-{
-  ifTrue[]
-  }
-
-"?:"(T <: Void, ifTrue :Fun():T,  :Fun():T) :T
-  (*ifFalse
- old syntax *)
-{
-  ifTrue[]
-  }
-
-"=>=>"(ifTrue :Fun():Bool) :Bool
-  (* old syntax *)
-{
-  ifTrue[] ; a => b means : (a & b) | !a 
-  }
-
-"=>"(aBool :Bool) :Bool
-  (* old syntax *)
-{
-  aBool ; a => b means : (a & b) | !a 
-  }
+}
 
 printString :String
   (* *)
 {
   "true"
-  }
+}
 
 }

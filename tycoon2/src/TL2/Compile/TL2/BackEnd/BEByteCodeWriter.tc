@@ -84,6 +84,10 @@ loadLocal(localIdx :Int) :Void
   (* 0 <= n < current stack size *)
 deferred
 
+storeArgument(argIdx :Int) :Void
+  (* self == nb_args, last argument is 1 *)
+deferred
+
 storeLocal(localIdx :Int) :Void
   (* 0 <= n < current stack size *)
 deferred
@@ -149,6 +153,10 @@ referenceArgument(argIdx :Int) :Void
 deferred
 
 takeFromArgument(argIdx :Int) :Void
+  (* self == nb_args, last argument is 1 *)
+deferred
+
+moveToArgument(argIdx :Int) :Void
   (* self == nb_args, last argument is 1 *)
 deferred
 

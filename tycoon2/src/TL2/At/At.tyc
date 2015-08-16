@@ -1,53 +1,55 @@
 tycoon.tl.loader.registerDirectory("At");
 tycoon.tl.loader.update;
 
-(*;
+;;
+;; end of automated script
+;;
 
 define aa :AtArray(String);
 define s :String;
 s := "hallo";
 
-aa := ref(AtArray."new@"(2));
+aa := ref(AtArray.new(2)@);
 s.superComponent;  (* nil *)
-aa[0] := self."fetch@"(s);
+aa[0] := fetch(s)@;
 s.superComponent; (* == aa *)
-MutableArray.new(2000000), nil;
+MutableArray.new(2000000)  nil;  (* provoke GC *)
 s.superComponent; (* == aa *)
 aa := nil;
-s.superComponent; (* vermutlich immernoch == aa *)
-MutableArray.new(2000000), nil;  (* GC, tvm debug info: component becomes orphan *)
+s.superComponent; (* probably still == aa *)
+MutableArray.new(2000000) nil;  (* GC, tvm debug info: component becomes orphan *)
 s.superComponent; (* nil *)
 
-aa := ref(AtArray."new@"(2));
-aa.perform(TL2Selector.new(Symbol.new("[]:="), Array.with2(false, true)), Array.with2(0, s));
-aa; (* Array{"hallo", nil} *)
+aa := ref(AtArray.new(2)@);
+aa[0] := fetch(s)@;
+aa; (* AtArray{"hallo", nil} *)
 s.superComponent == aa; (* true *)
-aa.perform(TL2Selector.new(Symbol.new("[]:="), Array.with2(false, true)), Array.with2(1, s));
+aa[1] := fetch(s)@;
     (* Exception: Fetch bound component: "hallo" *)
 aa;  (* unchanged *)
-aa[1] := aa."[]@"(0);
-aa;
-s.superComponent;
-ref(aa."[]@"(1));
-aa;
-s.superComponent;
+aa[1] := aa[0]@;
+aa;  (* ArArray{nil, "hallo"} *)
+s.superComponent;  (* == aa *)
+ref(aa[1]@);  (* "hallo" *)
+aa;  (* AtArray{nil,nil} *)
+s.superComponent;  (* nil *)
 
-foo(nil."fetch@"(s), 1/0); (* exception: DivisionByZero *)
+foo(fetch(s)@, 1/0); (* exception: DivisionByZero *)
 s.superComponent; (* nil *)
-foo(nil."fetch@"(s), nil."fetch@"(s)); (* exception: FetchBoundComponent *)
+foo(fetch(s)@, fetch(s)@); (* exception: FetchBoundComponent *)
 s.superComponent; (* nil *)
 
 try({
-  yourself(nil."fetch@"(s), s.superComponent)
-}, fun(e:WrongSignature){
+  yourself(fetch(s)@, s.superComponent)
+} else: fun(e:WrongSignature){
   e.arguments
 });  (* Array{"hallo", a Thread} *)
 s.superComponent; (* nil *)
 
 define ad :AtDictionary(Int, String);
-ad := ref(AtDictionary."new@");
-ad[0] := nil."fetch@"("null".copy);
-ad[1] := nil."fetch@"("eins".copy);
-ad[2] := nil."fetch@"("zwei".copy);
+ad := ref(AtDictionary.new@);
+ad[0] := fetch("null".copy)@;
+ad[1] := fetch("eins".copy)@;
+ad[2] := fetch("zwei".copy)@;
 
 *)

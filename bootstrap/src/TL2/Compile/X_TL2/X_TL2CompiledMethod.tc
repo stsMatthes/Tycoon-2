@@ -22,23 +22,28 @@ super X_TL2Method
 *)
 meta X_TL2CompiledMethodClass
 {
+keywordDefaults :Array(Object)
+  (* constant default values for keywords. size equals keywords.size *)
+
 body :X_TL2Value
 
+debugMode :Int
   (* debug mode of the generated code.  a DEBUG_... constant. ### not implemented *)
 
-debugMode :Int
-
-  (* slots used by the machine: (sync with tvm.doc) *)
-
 compiledIn :X_TL2ClassPublic
+  (* slot used by the machine (see tvm.doc) *)
 
 byteCode :ByteArray
+  (* slot used by the machine (see tvm.doc) *)
 
 literals :Array(Object)
+  (* slot used by the machine (see tvm.doc) *)
 
 selectorID :Int
+  (* slot used by the machine (see tvm.doc) *)
 
 stackPeak :Int
+  (* slot used by the machine (see tvm.doc) *)
 
 exceptionTable :ShortArray
   (* may be nil. six short integers: fromIP..toIP -> handlerIP, sp, nativeCode (two shorts) *)
@@ -77,8 +82,8 @@ scopeMethod(env :X_TL2Scoper) :Void
 {
   saved ::= env.warnUnused
   env.warnUnused := warnUnused
-  domain.do(fun(i:X_TL2Ide){ i.setImmutable })
-  env.withScopedSignatures(domain, {
+  env.withScopedSignatures(positionalDomain, {
+  env.withScopedKWSignatures(keywordDomain, {
     if( range.isNotNil then: { range := range.scope(env) })  ; for Funs 
     if( precondition.isNotNil then: {
       precondition := precondition.scope(env)
@@ -86,7 +91,6 @@ scopeMethod(env :X_TL2Scoper) :Void
         env.errorLog.error(pos, "precondition result must not be a component")
       })
     })
-    body := wrapComponents(domain, body)
     body := body.scope(env)
     if( body.isComponent != methodType.isComponent then: {
       if( methodType.isComponent then: {
@@ -101,6 +105,7 @@ scopeMethod(env :X_TL2Scoper) :Void
         env.errorLog.error(pos, "postcondition result must not be a component")
       })
     })
+  })
   })
   env.warnUnused := saved
 }
@@ -117,6 +122,9 @@ compileMethod(selfSig :X_TL2ValueIde, compiler :X_TL2Compiler) :Void
   ; we could allocate a new optimizer, but that would be SLOW 
   optimizer ::= compiler.optimizer
   optimizer.optimize(body, compiler.errorLog)
+  keywordDomain.do(fun(kwi: X_TL2KeywordIde) {
+    optimizer.optimize(kwi.defaultValue, compiler.errorLog)
+  })
   ; ...and compile 
   compile(Dictionary.new, selfSig, compiler)
   ; ### to do: optional debug mode, compiling pre & postcondition 
@@ -135,7 +143,7 @@ DEBUG_preAndPost :Int
 { 3 }
 
 DEBUG_assert :Int
-  (* check assertions, pre- and postcondition *)
+  (* check assertions *)
 { 4 }
 
 DEBUG_all :Int
@@ -145,29 +153,43 @@ DEBUG_all :Int
 compile( env :Dictionary(X_TL2ValueIde,X_BEVariable), selfSig :X_TL2ValueIde, compiler :X_TL2Compiler) :Void
   (* *)
 {
-  bek ::= X_BEMethodManager.new(self, env, compiler)
+  backEnd ::= X_BEMethodManager.new(self, env, compiler)
 
-  extendedDomain ::=
-    if( selfSig.isNil
-     then: { domain }
-     else: { List(:X_TL2Ide).cons(selfSig, domain) })
-  valueArgs ::=
-      extendedDomain.sfw(
-        ; select 
-        fun(i :X_TL2Ide){ i.asValueIde },
-	; where 
-        fun(i :X_TL2Ide){ i.isValueIde })
-      .as(List)
+  valueParams ::= computeValueParams(selfSig)
 
-  valueArgs.do(fun(ide :X_TL2ValueIde) {
-    ide.setImmutable
+  if( valueParams.some(fun(i:X_TL2ValueIde){ i.component && !i.celled }) then: {
+    ;; need to generate cleanup code for component arguments
+    backEnd.withArgumentBindings(valueParams, {
+      genArgumentCells(backEnd, valueParams)
+      scopeStart ::= backEnd.newLabel
+      backEnd.defineLabel(scopeStart)
+      genKeywordDefaults(backEnd)
+      body.genCode(backEnd)
+      scopeEnd ::= backEnd.newLabel
+      backEnd.defineLabel(scopeEnd)
+      componentArgsCleanup(backEnd,valueParams)
+      backEnd.return
+      handler ::= backEnd.newLabel
+      backEnd.sp := scopeStart.sp
+      backEnd.incSp ; exception object is magically pushed
+      backEnd.defineLabel(handler)
+      backEnd.exceptionHandler(scopeStart,scopeEnd,handler)
+      componentArgsCleanup(backEnd, valueParams)
+      backEnd.send(X_TL2Selector.new(#_raise, #(), #()))
+      ;; the generated send never returns
+      backEnd.sp := nil
+    })
+  } else: {
+    backEnd.withArgumentBindings(valueParams, {
+      genArgumentCells(backEnd, valueParams)
+      genKeywordDefaults(backEnd)
+      body.genCodeReturn(backEnd)
+    })
   })
 
-  bek.withArgumentBindings(valueArgs, {
-    body.genCodeReturn(bek)
-  })
-  bek.finished
+  backEnd.finished
 }
+
 
 disassembleOn(out :Printer, reader :X_BEByteCodeReader) :Void
   (* *)
@@ -179,7 +201,17 @@ disassembleOn(out :Printer, reader :X_BEByteCodeReader) :Void
 	<< " ("<<compiledIn.classManager.root.selectors[selectorID] << ")\n"
     out << "Stack peak = " << stackPeak << '\n'
     freeVarHook(out)
-    out.writeString( "Literals:" )
+    out.writeString( "Keyword Defaults:" )
+    if( keywordDefaults.isNotNil then: {
+      out.withRelIndent(1, {
+	keywordDefaults.keysAndElementsDo(fun(i :Int, o :Object) {
+	  out.nl
+	  keywordDomain[i].keyword.printOn(out) out.writeString(": ")
+	  o.printOn(out)
+	})
+      })
+    })
+    out.writeString( "\nLiterals:" )
     out.withRelIndent(1, {
       literals.keysAndElementsDo(fun(i :Int, o :Object) {
         out.nl
@@ -196,7 +228,7 @@ disassembleOn(out :Printer, reader :X_BEByteCodeReader) :Void
     })
     if( exceptionTable.isNotNil then: {
       out.writeln("\nException Handlers:")
-      forStep(0, exceptionTable.size - 6, 6, fun(p :Int) {
+      for(0 to: exceptionTable.size - 6 step: 6 do: fun(p :Int) {
         out.nl
         out << exceptionTable[p] << '-' << exceptionTable[p+1] << ": "
 	    << exceptionTable[p+2] << ", sp=" << exceptionTable[p+3]
@@ -219,13 +251,11 @@ makeDisassembler :X_BEDisassembler
   (* *)
 {
   dis ::= X_BEDisassembler.new
-  args ::=
-    MutableArray.fromReader(
-      Reader.cons("self",
-	domain.select(fun(i:X_TL2Ide){ i.isValueIde })
-	      .map(fun(i:X_TL2Ide){ i.name })))
-  args.reverse
-  dis.argumentNames := args
+  params ::= computeValueParams(X_TL2ValueIde.new(nil,"self",false,nil))
+  paramNames ::= MutableArray.fromContainerWithMap(params,
+    fun(ide:X_TL2ValueIde){ide.name})
+  paramNames.reverse
+  dis.argumentNames := paramNames
   dis
 }
 
@@ -253,30 +283,82 @@ patchClass(compiledIn :X_TL2ClassPublic) :Void
 
 private
 
-wrapComponents(dom :List(X_TL2Ide), body :X_TL2Value) :X_TL2Value
-  (* move component arguments to local variables
-     (simplifies cleanup etc.) *)
+computeValueParams(selfSig :X_TL2ValueIde) :List(X_TL2ValueIde)
+  (* ides for all value parameters in the order they appear on the stack *)
 {
-  if( dom.isEmpty then: {
-    body
-  } else: {
-    ide ::= dom.head
-    rest ::= dom.tail
-    if( ide.isValueIde && ide.asValueIde.component then: {
-      vide ::= ide.asValueIde
-      shadow ::= X_TL2ValueIde.new(vide.pos, vide.name, vide.component, vide.type)
-      shadow.setImmutable
-      X_TL2LetValue.new(
-	vide.pos,
-        shadow,
-	X_TL2TakeFromValue.new(vide),
-	wrapComponents(rest, body))
-    } else: {
-      wrapComponents(rest, body)
+  valueParams ::= List(:X_TL2ValueIde).new
+  keywordDomain.reverseDo(fun(kwi:X_TL2KeywordIde) {
+    valueParams := List.cons(kwi.ide,valueParams)
+  })
+  positionalDomain.reverseDo(fun(i:X_TL2Ide) {
+    if(i.isValueIde then: {
+      valueParams := List.cons(i.asValueIde, valueParams)
+    })
+  })
+  if( selfSig.isNotNil then: {
+    valueParams := List.cons(selfSig, valueParams)
+  })
+  valueParams
+}
+
+genArgumentCells(bek: X_BEMethodManager, valueParams :List(X_TL2ValueIde)) :Void
+{
+  valueParams.do(fun(ide:X_TL2ValueIde) {
+    if(ide.celled then: {
+      bek.genCell(ide)
     })
   })
 }
 
+genKeywordDefaults(bek: X_BEMethodManager) :Void
+  (* *)
+{
+  if(!keywordDomain.isEmpty then: {
+    placeHolder ::= Cell.new(nil)
+    keywordDefaults := 
+      Array.fromContainerWithMap(keywordDomain, fun(kwIde: X_TL2KeywordIde) {
+	if( kwIde.defaultValue.isLiteral then: {
+	  defVal :Object := kwIde.defaultValue.getLiteralValue
+	} else: {
+	  ;; if(<placeHolder> == <ide> then: { <ide> := <defaultExpr> })
+	  ide ::= kwIde.ide
+	  if(!ide.component then: { bek.loadLiteral(placeHolder) })
+	  if( ide.component then: {
+	    bek.reference(ide)
+	  } else: {
+	    bek.load(ide)
+	  })
+	  if(!ide.component then: {
+	    bek.send(X_TL2Selector.new(#"==",#(false),#()))
+	  } else: {
+	    bek.send(X_TL2Selector.new(#"isNil",#(),#()))
+	  })
+	  contL ::= bek.newLabel
+	  bek.ifFalse(contL)
+	  kwIde.defaultValue.genCode(bek)
+	  if( ide.component then: {
+	    bek.moveTo(ide)
+	  } else: {
+	    bek.store(ide)
+	  })
+	  bek.pop
+	  bek.defineLabel(contL)
+	  defVal :Object := if(!ide.component then: { placeHolder } else: { nil })
+	})
+      })
+  })
+}
+
+componentArgsCleanup(backEnd :X_BEMethodManager, 
+	             valueParams :List(X_TL2ValueIde)):Void
+{
+  valueParams.do(fun(i:X_TL2ValueIde) {
+    if( i.component && !i.celled then: {
+      backEnd.takeFrom(i)
+      backEnd.componentPop
+    })
+  })
+}
 
 submethods :Reader(X_TL2CompiledMethod)
   (* *)

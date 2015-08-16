@@ -24,12 +24,16 @@ meta AbstractClass
 {
 scan(where :String, input :Input, errorLog :ErrorLog) :X_AbstractTL2Scanner
   (* *)
-{ scan1(where, input, errorLog, 100) }
+{ scan2(where, input, false, errorLog, 100) }
 
-scan1(where :String, input :Input, errorLog :ErrorLog, bufferCapacity :Int) :X_AbstractTL2Scanner
+scan1(where :String, input :Input, isToplevel :Bool, errorLog :ErrorLog) :X_AbstractTL2Scanner
+  (* *)
+{ scan2(where, input, isToplevel, errorLog, 100) }
+
+scan2(where :String, input :Input, isToplevel :Bool, errorLog :ErrorLog, bufferCapacity :Int) :X_AbstractTL2Scanner
   (* *)
 {
-  s ::= makeScanner(where, input, errorLog, bufferCapacity)
+  s ::= makeScanner(where, input, isToplevel, errorLog, bufferCapacity)
   s.errorHandler :=
     fun(ch :Char) {
       if( ch.isNotNil
@@ -74,7 +78,8 @@ parse(in :X_AbstractTL2Scanner, errorLog :ErrorLog) :X_TL2ParseUnit
 scanAndParse(where :String, input :Input, errorLog :ErrorLog) :X_TL2ParseUnit
   (* *)
 {
-  in ::= scan(where, input, errorLog)
+  isToplevel ::= false
+  in ::= scan1(where, input, isToplevel, errorLog)
   parse(in, errorLog)
 }
 
@@ -100,7 +105,7 @@ private
 
 _parser :AbstractParser(X_TL2ParseUnit)
 
-makeScanner(where :String, input :Input, errorLog :ErrorLog, bufferCapacity :Int) :X_AbstractTL2Scanner
+makeScanner(where :String, input :Input, isToplevel :Bool, errorLog :ErrorLog, bufferCapacity :Int) :X_AbstractTL2Scanner
   (* *)
 deferred
 

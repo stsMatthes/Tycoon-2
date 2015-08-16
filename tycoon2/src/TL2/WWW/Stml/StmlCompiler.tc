@@ -136,7 +136,7 @@ compileAST( funExpression :TL2CompiledFun,
   (* compile the abstract syntax tree <funExpression> into a generator that creates
      closures for different self arguments *)
 {
-  assert({ funExpression.domain.isEmpty })  ; a Fun0 
+  assert({ funExpression.positionalDomain.isEmpty })  ; a Fun0 
   selfTypeSig ::= stmlClass.selfTypeSig
   selfSig ::= TL2ValueIde.new(selfTypeSig.pos, "self", false, selfTypeSig.type)
   environment ::= Dictionary(:TL2ValueIde,:Object).new

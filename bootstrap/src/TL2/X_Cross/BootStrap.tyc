@@ -13,12 +13,12 @@
    loaded into an empty system. *)
 
 (* must be the first one: *)
-class AbstractClass metaclass AbstractClass;
+class AbstractClass meta AbstractClass { };
 
-class Class metaclass AbstractClass;
+class Class meta AbstractClass { };
 
-class Object metaclass AbstractClass;
-class ConcreteClass metaclass AbstractClass;
-class MetaClass metaclass AbstractClass;
+class Object meta AbstractClass { };
+class ConcreteClass meta AbstractClass { };
+class MetaClass meta AbstractClass { };
 
 

@@ -61,27 +61,11 @@ deferred
   (* lazy logical or *)
 deferred
 
-"?"(ifTrue :Fun():Void) :Void
-  (* old syntax *)
-deferred
-
-"?:"(T <: Void, ifTrue :Fun():T, ifFalse :Fun():T) :T
-  (* old syntax *)
-deferred
-
-"=>"(aBool :Bool) :Bool
-  (* old syntax *)
-deferred
-
-"=>=>"(ifTrue :Fun():Bool) :Bool
-  (* old syntax *)
-deferred
-
 printOn(out :Output) :Void
   (* *)
 {
   out.writeString(printString)
-  }
+}
 
 private
 

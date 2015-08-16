@@ -133,7 +133,7 @@ printOn(out :Output) :Void
      the receiver. default implementation, subclasses should override it appropriately.
   *)
 {
-  className :String := self."class".name  ;##allow 'class' as identifier  
+  className :String := self."class".name
   out << if( className[0].isVowel then: {"an "} else: {"a "}) << className
 }
 
@@ -156,10 +156,25 @@ perform(selector :X_TL2Selector, args :Array(Object)) :Nil
   (* *)
   require selector.arity == args.size
 {
-  if( selector.isComponent then: fun():Nil{
-    ref(_perform(selector, args)@)
-  } else: {
-    _perform(selector, args)
+  try(:Nil,{
+    if(:Nil,selector.isComponent then: {
+      ref(_perform(selector, args)@)
+    } else: {
+      _perform(selector, args)
+    })
+  } else: fun(e:Exception) {
+    if(:Nil, e."class" == UnknownSelectorError then: {
+      ;; backdoor into the compiler, to help the tvm:
+      ;; assign a tvm id to the selector and retry
+      tycoon.tl.compiler.getSelectorId(selector)
+      if(:Nil, selector.isComponent then: {
+	ref(_perform(selector, args)@)
+      } else: {
+	_perform(selector, args)
+      })
+    } else: {
+      e.raise
+    })
   })
 }
 
@@ -181,7 +196,7 @@ builtin
 __deepHollowCopy(mapping: IdDictionary(Object, Object)) :Void
   (* recursively allocate hollow copies for all transitive components,
      and set mapping[original] := hollow copy.
-     Helper method for componentCopy. *)
+     Helper method for componentCopy, system use only. *)
 {
   ;; default implementation, unsuitable for classes with varying size (arrays)
   mapping[self] := __hollowCopy
@@ -194,6 +209,9 @@ __deepHollowCopy(mapping: IdDictionary(Object, Object)) :Void
 }
 
 __copyFrom(original :Object, mapping :IdDictionary(Object,Object)) :Void
+  (* copy the contents from the original to this object, using the
+     given oid mapping.  Unmapped objects remain the same.
+     Helper method for componentCopy, system use only. *)
 {
   assert({ original."class" == self."class" })
   for(0 to: __basicSize-1 do: fun(i:Int){
@@ -230,15 +248,15 @@ _init :Void
    mixin-style programming. *)
 { self }
 
-"true" :Bool
+true :Bool
   (* *)
 builtin
 
-"false" :Bool
+false :Bool
   (* *)
 builtin
 
-"nil" :Nil
+nil :Nil
   (* *)
 builtin
 
@@ -248,7 +266,8 @@ nil @: Nil
 
 fetch(T <:Object, x:T) @: T
   (* make the object referred to by x a local component of the caller.
-     Throws an exception if x is already a component of some object. *)
+     Throws an exception if x is already a component of some object
+     or activation. *)
   builtin
 { nil@ }
 
@@ -256,7 +275,7 @@ ref(T <: Object, x @:T ) :T
   (* set the component x free and return a reference to it *)
 { x }
 
-"void" :Void
+void :Void
   (* help kill the type checker messenger *)
 { nil } 
 
@@ -266,7 +285,7 @@ emptyList :EmptyList
   EmptyList.instance
 }
 
-if(T <: Void, cond :Bool, then :Fun():T, else :Fun():T) :T
+if(T <: Void, cond :Bool then: then :Fun():T else: else :Fun():T) :T
   (* *)
 { cond.case(then,   ; ifTrue 
 	    else)   ; ifFalse 
@@ -280,49 +299,41 @@ if(T <: Void, cond :Bool
 	    else)@   ; ifFalse 
 }
 
-while(cond :Fun():Bool, statement :Fun():Void) :Void
+while(cond :Fun():Bool do: statement :Fun():Void) :Void
   (* *)
 {
-  if( cond[] then: {statement[] while(cond do: statement)})
+  if( cond[] then:{ statement[] while(cond do: statement) })
   }
 
-until(cond :Fun():Bool, statement :Fun():Void) :Void
-  (* old syntax *)
-{
-  statement[] if( !cond[] then: {until(cond, statement)})
-  }
-
-repeat(statement :Fun():Void, until :Fun():Bool) :Void
+repeat(statement :Fun():Void until: until :Fun():Bool) :Void
   (* *)
 {
-  statement[] if( !until[] then: {repeat(statement until: until)})
+  statement[] 
+  if( !until[] then:{ repeat(statement until: until) })
 }
 
-forStep(from :Int, to :Int, step :Int, statement :Fun(:Int):Void) :Void
+for(from :Int to: to :Int step: step :Int := 1
+    do: statement :Fun(:Int):Void := fun(:Int){ }) :Void
   (* *)
 {
-  if( (from <= to) then: {statement[from] forStep(from+step, to, step, statement)})
+  if( (from <= to) then: {
+    statement[from] 
+    for(from+step to: to step: step do: statement)
+  })
   }
 
-for(from :Int, to :Int, statement :Fun(:Int):Void) :Void
+forDown(from :Int to: to :Int step: step :Int := 1
+    do: statement :Fun(:Int):Void := fun(:Int){ }) :Void
   (* *)
 {
-  forStep(from, to, 1, statement)
+  if( (from >= to) then: {
+    statement[from]
+    forDown(from-step to: to step: step do: statement)
+  })
   }
 
-forDowntoStep(from :Int, to :Int, step :Int, statement :Fun(:Int):Void) :Void
-  (* *)
-{
-  if( (from >= to) then: {statement[from] forDowntoStep(from-step, to, step, statement)})
-  }
-
-forDownto(from :Int, to :Int, statement :Fun(:Int):Void) :Void
-  (* *)
-{
-  forDowntoStep(from, to, 1, statement)
-  }
-
-"try"(T <:Void, block :Fun():T, handler :Fun(:Exception):T) :T
+"try"(T <:Void, block :Fun():T 
+      else: handler :Fun(:Exception):T) :T
   (* *)
 builtin
 
@@ -365,13 +376,18 @@ protect(T <: Void, statement :Fun():T, finally :Fun():Void) :T
 
 "assert"(assertion :Fun():Bool) :Nil
   (* *)
-{ if( !assertion[]
-  then: fun() :Nil { if( assertion."class" == Fun0
-      then: { code ::= _typeCast( assertion.__basicAt(0), :X_TL2CompiledFun)
-	  pos ::= code.pos
-	  _raiseAssertError(pos.line, pos.column, pos.where) }
-      else: { _raiseAssertError((-1), (-1), "<unknown>") }) }
-  else: { nil })
+{ if( !assertion[] then: { 
+    if( assertion."class" == Fun0 then: {
+      code ::= _typeCast( assertion.__basicAt(0), :X_TL2CompiledFun)
+      pos ::= code.pos
+      if( pos.isNotNil then: {
+        _raiseAssertError(pos.line, pos.column, pos.where)
+      })
+    })
+    _raiseAssertError((-1), (-1), "<unknown>") 
+  } else: { 
+    nil
+  })
 }
 
 _raiseAssertError(line :Int, column :Int, where :String) :Nil
@@ -417,9 +433,7 @@ _typeComponent(x @:Object, T <:Object, xRef :T) @:T
   ensure result == xRef
 {
   assert({ x == xRef })
-  ;; a bit clumsy (maybe this would better be implemented as a builtin)
   ref(x@)
-  ;; now, x has no superComponent, so we can safely fetch the typed xRef
   fetch(xRef)@
 }
 

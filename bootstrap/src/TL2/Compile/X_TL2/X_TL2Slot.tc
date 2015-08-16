@@ -50,12 +50,12 @@ scopeSlot(env :X_TL2Scoper) :Void
 selectors :Array(X_TL2Selector)
 {
   if( isComponent then: {
-    #( X_TL2Selector.new(name, #()),
-       X_TL2Selector.new(Symbol.new(name+"@"), #()),
-       X_TL2Selector.new(Symbol.new(name+":="), #(true)))
+    #( X_TL2Selector.new(name, #(), #()),
+       X_TL2Selector.new(Symbol.new(name+"@"), #(), #()),
+       X_TL2Selector.new(Symbol.new(name+":="), #(true), #()))
   } else: {
-    #( X_TL2Selector.new(name, #()),
-       X_TL2Selector.new(Symbol.new(name+":="), #(false)))
+    #( X_TL2Selector.new(name, #(), #()),
+       X_TL2Selector.new(Symbol.new(name+":="), #(false), #()))
   })
 }
 

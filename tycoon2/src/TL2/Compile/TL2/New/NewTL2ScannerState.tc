@@ -26,6 +26,8 @@ scanner :NewTL2Scanner
 
 errorLog :ErrorLog
 
+semicolonIsEoI :Bool
+
 position :SourcePos
   (* *)
 {

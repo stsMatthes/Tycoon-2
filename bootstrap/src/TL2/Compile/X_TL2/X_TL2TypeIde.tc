@@ -31,11 +31,19 @@ type :X_TL2Type
 {
   if( tycoon.tl.isNotNil  ; ###BOOTSTRAP 
 ; ### plain wrong when doing 2nd bootstrap 
-  then: { if( tycoon.tl.typeManager.isDefined(name)
-      &&  tycoon.tl.typeManager.signature(name) == self 
+  then: { if( isGlobal 
       then: { tycoon.tl.typeChecker.globalIdeReferenced(name) }) })
 
   super.type
+}
+
+isGlobal :Bool
+  (* Is this a global type identifier?
+     If true, this ide will never by substituted. *)
+{
+  ; ### plain wrong when doing 2nd bootstrap 
+  tycoon.tl.typeManager.isDefined(name)
+  &&  tycoon.tl.typeManager.signature(name) == self
 }
 
 case( T <: Void,

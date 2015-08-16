@@ -10,43 +10,43 @@ tyhttpd.configure;
 
 (* Create STML resource factories: *)
 tyhttpd.root.lookupDirectory(EmptyList.new).reindex;
-let simpleApplication = SimpleStmlApplication.new,
-let dir = tyhttpd.root.lookupDirectory(EmptyList.instance),
-let resourceFactory = HttpFunResourceFactory.new,
+simpleApplication ::= SimpleStmlApplication.new
+dir ::= tyhttpd.root.lookupDirectory(EmptyList.instance)
+resourceFactory ::= HttpFunResourceFactory.new
 resourceFactory.generators["jump"] :=
   fun(file:File){
     JumpResource.new(file)
-  },
+  }
 resourceFactory.generators["stml"] :=
   fun(file:File){
     StmlResource.new(simpleApplication, file)
-  },
+  }
 dir.resourceFactory := resourceFactory;
 
 define httpdAdminApplication :HttpdAdminApplication;
-httpdAdminApplication := HttpdAdminApplication.new,
-httpdAdminApplication.compiler.verbose := true,
-(*
-*)
-let dir = tyhttpd.root.lookupDirectory(List.with1("admin")),
-let resourceFactory = HttpFunResourceFactory.new,
+httpdAdminApplication := HttpdAdminApplication.new
+httpdAdminApplication.compiler.verbose := true
+dir ::= tyhttpd.root.lookupDirectory(List.with1("admin"))
+resourceFactory ::= HttpFunResourceFactory.new
 resourceFactory.generators["stml"] :=
   fun(file:File){
     StmlResource.new(httpdAdminApplication, file)
-  },
+  }
 dir.resourceFactory := resourceFactory;
 
 
 (* Notnagel: Stop it. *)
 tyhttpd.root.lookupDirectory(EmptyList.new)["stop"] := HttpShutdownResource.new(tyhttpd);
 
+;;
+;; end of automated script
+;;
 
-
-(* Authentication Stuff (does it still work?):
-let authRoot = HttpAuthenticatedResource.new,
-authRoot.resource := root,
-let realm = BasicProtectionRealm.new("HoxIntern"),
-realm.acl["mernst"] := "hackenklacken",
-authRoot.realm := realm,
+(* Authentication Stuff (does it still work?): *)
+authRoot = HttpAuthenticatedResource.new
+authRoot.resource := root
+realm ::= BasicProtectionRealm.new("HoxIntern")
+realm.acl["mernst"] := "hackenklacken"
+authRoot.realm := realm
 tyhttpd.root := HttpDebugResource.new(authRoot);
-*)
+

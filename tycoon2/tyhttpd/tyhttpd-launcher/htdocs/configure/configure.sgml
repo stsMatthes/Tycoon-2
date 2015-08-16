@@ -20,7 +20,7 @@
   
 <tr><td></td><td align=right>Port:<td>
   <input name=port type=text size=5
-   value='`properties.port.isNil ? {""} : {properties.port.printString}`'>
+   value='`if( properties.port.isNil then: {""} else: {properties.port.printString})`'>
   
 <tr><td></td><td align=right>Document Root:<td>
   <input name=documentRoot type=text size=60 value="`unparse(properties.documentRoot)`">
