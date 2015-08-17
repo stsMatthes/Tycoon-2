@@ -575,7 +575,7 @@ The following three links lead to an graphical overview of the class hierarchy. 
 FAQ
 ---
 
-Frequently asked questions - and their answers. Currently, there is only a german version available. Click [here](doc/faq.html) to read the FAQ.
+Frequently asked questions - and their answers. Currently, there is only a german version available. Click [here](doc/faq.md) to read the FAQ.
 
 (\#\#\# HW : extend FAQ and translate)
 
