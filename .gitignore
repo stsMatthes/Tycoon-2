@@ -8,6 +8,9 @@ contrib/Jam-2.2/bin.linuxx86/**
 contrib/Jam-2.2/bin.macosx/**
 
 *~
+.DS_Store
+*.log
+.p4config
 
 # general C stuff:
 

@@ -42,10 +42,10 @@
    Pfad ausgegeben.
 <p>
    Der Klassen-Lader interpretiert alle Dateinamen relativ zum ersten
-   passenden Element der Environment-BEVariable <tt>TL2_PATH</tt>.  Bei einem
-   Wert von <tt>.:/usr/local/hox/src/TL2</tt> hei&szlig;t der tats&auml;chlich
+   passenden Element der Environment-Variable <tt>TL2_PATH</tt>.  Bei einem
+   Wert von <tt>.:/local/teamware/tycoon2/hox/src/TL2</tt> hei&szlig;t der tats&auml;chlich
    verwendete Pfad dann <tt>./MeinPaket/Foo.tc</tt>, oder
-   <tt>/usr/local/hox/src/TL2/MeinPaket/Foo.tc</tt>, falls die erste Datei
+   <tt>/local/teamware/tycoon2/hox/src/TL2/MeinPaket/Foo.tc</tt>, falls die erste Datei
    nicht existiert.
 <p>
    Durch "registerDirectory" werden die DO load-Skripte des alten Systems
@@ -66,12 +66,12 @@
 <pre>
      tycoon.tl.loader.unregisterClass("Foo");
 </pre>
-   auf.  Eine nicht mehr ben&ouml;tigte Klasse l&ouml;scht man am besten, indem
+   auf. Da Klassen nicht gel&ouml;scht werden k&ouml;nnen, überschreibt man eine nicht mehr ben&ouml;tigte Klasse am besten, indem
    man eine leere Definition, also
 <pre>
      class Foo metaclass AbstractClass;
 </pre>
-   eingibt.
+   eingibt. Dies ist z.B. für die Typ&uuml;berpr&uuml;fung wichtig. Zum einen treten dann keine Fehler mehr in dieser Klasse auf und zum anderen treten mit gro&szlig;er Wahrscheinlichkeit Fehler auf, wenn diese Klasse noch irgendwo benutzt wird. 
 <p>
 <li> Starte den Lader. Dies geschieht mit
 <pre>
@@ -89,7 +89,7 @@
 <ol type=a>
 <li> F&uuml;r jede eingelesene Quelldatei wird der Pfad ausgegeben.
 <pre>
-    [../TL2/MeinPaket/Foo.tc...
+    [../TWL/MeinPaket/Foo.tc...
     ]
 </pre>
 <li> Ausgabe
@@ -115,12 +115,10 @@
     plus eventuelle Fehlermeldungen.
 </ol>
 </ol>
-      <hr>
-      <address><a href="mailto:awienber@higher-order.de">Axel Wienberg</a></address>
-<!-- Created: Thu Apr 10 15:58:57 MET DST 1997 -->
-<!-- hhmts start -->
-Last modified: Thu Apr 10 17:21:48 MET DST 1997
-<!-- hhmts end -->
-  </body>
+<HR WIDTH="100%">
+
+<ADDRESS><A HREF="mailto:tycoon2@sun01.sts.tu-harburg.de">Tycoon-2 Administrator</A>
+/ 07.07.97</ADDRESS>
+
 </BODY>
 </HTML>
