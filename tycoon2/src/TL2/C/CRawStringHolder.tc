@@ -1,0 +1,78 @@
+class CRawStringHolder
+super CValueHolder(MutableString)
+(**)
+meta CRawStringHolderClass
+{
+valueClass():Class
+  (* *)
+{ MutableString }
+
+value():MutableString
+  (* *)
+{
+  if( handle.isNotNil
+    then: {a ::= MutableString.new(_length)
+       for(0 to:_length-1 do:fun (i:Int)
+         {a[i]:=tycoon.tycoonOS.memory_peekChar(handle,i)})
+       a}
+    else: {a:MutableString := nil})
+}
+
+rawStringValue():MutableString
+  (* *)
+{ value() }
+
+stringValue():String
+  (* *)
+{ if( value.isNotNil then: {String.fromSequence(value())}
+                                      else: {nil}) }
+
+"value:="(s:MutableString):MutableString
+  (* *)
+{
+  if( handle.isNotNil then:
+  {
+    if( s.size <= _length
+      then: {for(0 to:s.size-1 do:fun (i:Int)
+           {tycoon.tycoonOS.memory_pokeChar(handle,i,s[i])})
+	 for(s.size to:_length-1 do:fun (i:Int)
+	   {tycoon.tycoonOS.memory_pokeChar(handle,i,'\000')})
+         value()}
+      else: {KeyNotFoundError.new(s,_length+1).raise})
+  }
+  else: {nil})
+}
+
+setStringValue(v:String):String
+  (* *)
+{ value:=MutableString.fromReader(v.reader)
+                                  stringValue() }
+
+setRawStringValue(v:MutableString):MutableString
+  (* *)
+{ value:= v }
+
+setFileValue(v:File):File
+  (* *)
+{
+   contents ::= MutableString.new(v.contentSize.asInt)
+   v.openRead
+   v.readBuffer(contents,0,v.contentSize.asInt)
+   v.close
+   value:=contents
+   v
+}
+
+private
+
+_length:Int
+
+_allocate(length:Int) :Void
+  (* *)
+{
+  super._init
+  super._allocate(length)
+  for(0 to:length-1 do:fun (i:Int) {tycoon.tycoonOS.memory_pokeChar(handle,i,'\000')})
+}
+
+}

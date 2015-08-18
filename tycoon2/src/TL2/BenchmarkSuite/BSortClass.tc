@@ -1,0 +1,14 @@
+class BSortClass(Instance <: BSort)
+super ConcreteClass(Instance)
+(**)
+meta MetaClass
+{
+new1(elem :Int) :Instance
+  (* *)
+{
+  s ::= _new
+  s._elem := elem
+  s._init
+}
+
+}

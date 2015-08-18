@@ -1,0 +1,34 @@
+<!DOCTYPE STML system>
+<html>
+  <head>
+    <title>CDATA elements</title>
+    <style type='...'>
+      x<!--  you've got no style, man -->
+    </style>
+  </head>
+
+  <body>
+      <h1>cdata elements</h1>
+
+    <script language=coolness>
+      x<!--  you've got no style, man -->
+    </script>
+    <script language=coolness>      x<!--  you've got no style, man -->
+    </script>
+
+
+<script language="cantonese">
+  ching chang chung <>!!<!--kein kommentar-->
+  second line
+  third line
+</script>
+
+
+      <hr>
+      <address><a href="mailto:">Axel Wienberg</a></address>
+<!-- Created: Fri Jul 25 11:20:30 MET DST 1997 -->
+<!-- hhmts start -->
+Last modified: Wed Sep 24 22:12:29 MET DST 1997
+<!-- hhmts end -->
+  </body>
+</html>

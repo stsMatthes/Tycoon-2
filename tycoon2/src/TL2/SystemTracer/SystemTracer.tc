@@ -1,0 +1,6 @@
+class SystemTracer
+super Object
+(**)
+meta AbstractClass
+{
+}

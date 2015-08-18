@@ -1,0 +1,13 @@
+
+Differences between bootstrap-tm and original tm
+------------------------------------------------
+
+builtins.h:
+- rename: TL2Debugger -> X_TL2Debugger
+
+classids.h:
+- rename: (TL2 -> (X_TL2
+
+tvm.c:
+- rename: TL2Debugger -> X_TL2Debugger
+

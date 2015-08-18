@@ -1,0 +1,14 @@
+class HttpdErrorClass
+super ConcreteClass(HttpdError)
+(**)
+meta MetaClass
+{
+new(response :HttpResponse): HttpdError
+  (* *)
+{
+  result ::= _new
+  result.response := response
+  result
+}
+
+}

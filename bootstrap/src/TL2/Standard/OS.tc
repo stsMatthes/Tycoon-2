@@ -1,0 +1,472 @@
+class OS
+super Object
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+My instances represent the different operating systems
+Tycoon is potentially running on.
+
+Here we define some system dependent constants.
+We define them as deferred, or
+define some default value (the value used on most systems).
+Platform-specific subclasses will overwrite with the correct
+values if they are different.
+
+We especially define some error codes present at all platforms.
+We might easily invent our own error names, but we decided to
+use the corresponding C identifiers as defined in <errno.h>
+in order to emphasize dependencies.
+
+See also:
+  class FS: manipulating pathnames in a portable fashion
+
+Author:  Andreas Gawecki
+Date:    21-Feb-1996
+Updates: (Date)		(Name)		(Description)
+	 06-APR-99	A.Willomat	Adaption to tycoonOS
+*)
+meta AbstractClass
+{
+visit(T <:Void, visitor :OSVisitor(T)) :T
+  (* *)
+deferred
+
+resolveDLL(dllName :String) :String
+  (* verify the given DLL name, construct a valid dll path if
+     necessary, e.g. "libc.so.1.4" -> "libc.so.1.7" on SunOS4.
+     Default: answer the given dll name.
+  *)
+{
+  dllName
+}
+
+fs :FS
+  (* *)
+{ _fs }
+
+exec(command :String) :Int
+  (* *)
+deferred
+
+pid :Int
+  (* execute the given command string. return the exit status of the command,
+     or raise OSError if the command cannot be executed.
+     answer the process id
+   *)
+{
+  ;##make tycoon.atomic()
+  tycoon.tycoonOS.process_getpid
+}
+
+ppid :Int
+  (* Warning: Not available on all operating systems!
+     Answer the parent process id.
+  *)
+{
+  ;##make tycoon.atomic()
+  tycoon.tycoonOS.process_getppid
+}
+
+user2uid(user :String) :Int
+  (* Answer the user id, given the user name, or nil if no such user exists.
+     Warning: Better use security classes since tycoonOS!
+   *)
+{
+  pResUid  ::= Int32.fromInt(0)
+  pResSize ::= tycoon.ansiC.malloc(4)
+  tycoon.tycoonOS.memory_pokeInt(pResSize, 0, 0)
+
+  ; first call fails, but returns the correct size
+  tycoon.tycoonOS.security_uidFromString(user, pResUid, pResSize)
+  pResUid := tycoon.ansiC.malloc(tycoon.tycoonOS.memory_peekInt(pResSize, 0))
+  rc ::= tycoon.tycoonOS.security_uidFromString(user, pResUid, pResSize)
+
+  if( rc >= 0 then: { 
+    res ::= tycoon.tycoonOS.security_toUnixID(pResUid)
+    tycoon.ansiC.free(pResUid)
+    tycoon.ansiC.free(pResSize)
+    res
+  }
+  else: {
+    tycoon.ansiC.free(pResUid)
+    tycoon.ansiC.free(pResSize)
+    nil
+  }) 
+}
+
+group2gid(group :String) :Int
+  (* Answer the group id, given the group name, or nil if no group exists.
+     Warning: Better use security classes since tycoonOS!
+   *)
+{
+  pResGid  ::= Int32.fromInt(0)
+  pResSize ::= tycoon.ansiC.malloc(4)
+  tycoon.tycoonOS.memory_pokeInt(pResSize, 0, 0)
+
+  ; first call fails, but returns the correct size
+  tycoon.tycoonOS.security_gidFromString(group, pResGid, pResSize)
+  pResGid := tycoon.ansiC.malloc(tycoon.tycoonOS.memory_peekInt(pResSize, 0))
+  rc ::= tycoon.tycoonOS.security_gidFromString(group, pResGid, pResSize)
+
+  if( rc >= 0 then: { 
+    res ::= tycoon.tycoonOS.security_toUnixID(pResGid)
+    tycoon.ansiC.free(pResGid)
+    tycoon.ansiC.free(pResSize)
+    res
+  }
+  else: {
+    tycoon.ansiC.free(pResGid)
+    tycoon.ansiC.free(pResSize)
+    nil
+  }) 
+}
+
+uid :Int
+  (* answer the user id of the Tycoon process *)
+{
+  pResUid  ::= Int32.fromInt(0)
+  pResSize ::= tycoon.ansiC.malloc(4)
+  tycoon.tycoonOS.memory_pokeInt(pResSize, 0, 0)
+
+  ; first call fails, but returns the correct size
+  tycoon.tycoonOS.security_getCurrentUID(pResUid, pResSize)
+  pResUid := tycoon.ansiC.malloc(tycoon.tycoonOS.memory_peekInt(pResSize, 0))
+  rc ::= tycoon.tycoonOS.security_getCurrentUID(pResUid, pResSize)
+
+  if( rc >= 0 then: { 
+    res ::= tycoon.tycoonOS.security_toUnixID(pResUid)
+    tycoon.ansiC.free(pResUid)
+    tycoon.ansiC.free(pResSize)
+    res
+  }
+  else: {
+    tycoon.ansiC.free(pResUid)
+    tycoon.ansiC.free(pResSize)
+    nil
+  }) 
+}
+
+gid :Int
+  (* answer the group id of the Tycoon process *)
+{
+  pResGid  ::= Int32.fromInt(0)
+  pResSize ::= tycoon.ansiC.malloc(4)
+  tycoon.tycoonOS.memory_pokeInt(pResSize, 0, 0)
+
+  ; first call fails, but returns the correct size
+  tycoon.tycoonOS.security_getCurrentGID(pResGid, pResSize)
+  pResGid := tycoon.ansiC.malloc(tycoon.tycoonOS.memory_peekInt(pResSize, 0))
+  rc ::= tycoon.tycoonOS.security_getCurrentGID(pResGid, pResSize)
+
+  if( rc >= 0 then: { 
+    res ::= tycoon.tycoonOS.security_toUnixID(pResGid)
+    tycoon.ansiC.free(pResGid)
+    tycoon.ansiC.free(pResSize)
+    res
+  }
+  else: {
+    tycoon.ansiC.free(pResGid)
+    tycoon.ansiC.free(pResSize)
+    nil
+  }) 
+}
+
+"uid:="(uid :Int) :Int
+  (* change the user id of the Tycoon process. Raise OSError on failure.
+     setting the user id may fail if no such user id exists, or
+     the Tycoon process has insufficient privileges.
+   *)
+{
+  sysUid ::= tycoon.tycoonOS.security_fromUnixID(uid)
+  res ::= tycoon.tycoonOS.security_setCurrentUID(sysUid)
+  tycoon.ansiC.free(sysUid)
+  _checkReturnCode(res)
+}
+
+"gid:="(gid :Int) :Int
+  (* set the group id of the Tycoon process. Raise OSError on failure.
+     setting the group id may fail if no such group exists, or
+     the Tycoon process has insufficient privileges.
+   *)
+{
+  sysGid ::= tycoon.tycoonOS.security_fromUnixID(gid)
+  res ::= tycoon.tycoonOS.security_setCurrentGID(sysGid)
+  tycoon.ansiC.free(sysGid)
+  _checkReturnCode(res)
+}
+
+signal(pid :Int, sig :Int) :Int
+  (* send the given signal to the process with the given pid.
+     raise OSError if no such process or signal exists, or
+     this Tycoon process has insufficient privileges.
+     see OS::SIG* for signal numbers valid on all supported platforms.
+   *)
+{
+  _checkReturnCode(tycoon.tycoonOS.process_signal(pid, sig))
+}
+
+SIGTESTPID  :Int
+  (* *)
+deferred
+
+SIGHUP  :Int
+  (* Check whether the given pid is valid, no signal is actually sent  *)
+deferred
+
+SIGINT  :Int
+  (* Hangup *)
+deferred
+
+SIGQUIT :Int
+  (* Interrupt *)
+deferred
+
+SIGABRT :Int
+  (* Quit *)
+deferred
+
+SIGKILL :Int
+  (* Abort *)
+deferred
+
+SIGALRM :Int
+  (* Killed *)
+deferred
+
+SIGTERM :Int
+  (* Alarm Clock *)
+deferred
+
+SIGUSR1 :Int
+  (* Terminated *)
+deferred
+
+SIGUSR2 :Int
+  (* User Signal 1 *)
+deferred
+
+ENOENT :Int
+  (* User Signal 2 *)
+deferred
+
+EINTR :Int
+  (* No such file or directory
+     A file name is specified and the file should exist  but
+     doesn't,  or one of the directories in a path name does
+     not exist.
+  *)
+deferred
+
+EIO :Int
+  (* Interrupted system call:
+     A blocked system call was interrupted by a signal.
+   *)
+deferred
+
+EACCES :Int
+  (* I/O error:
+     Some physical I/O error has occurred.  This error may
+     in  some  cases  occur on a call following the one to
+     which it actually applies.
+   *)
+deferred
+
+EEXIST :Int
+  (* Permission denied:
+     An attempt was made to access a file in a way forbid-
+     den by the protection system.
+  *)
+deferred
+
+ENOTDIR :Int
+  (* File exists:
+     An existing file was mentioned  in  an  inappropriate
+     context (for example, call to the link routine).
+   *)
+deferred
+
+EISDIR :Int
+  (* Not a directory:
+     A non-directory was specified where  a  directory  is
+     required  (for  example,  in  a  path prefix or as an
+     argument to the chdir routine).
+   *)
+deferred
+
+ENFILE :Int
+  (* Is a directory:
+     An attempt was made to write on a directory.
+  *)
+deferred
+
+EMFILE :Int
+  (* File table overflow:
+     The system file table  is  full, and temporarily
+     no more files can be opened.
+   *)
+deferred
+
+EFBIG :Int
+  (* Too many open files:
+     No process may have more than OPEN_MAX file  descrip-
+     tors open at a time.
+   *)
+deferred
+
+ENOSPC :Int
+  (* File too large:
+     The size of the file exceeded the limit specified  by
+     resource  RLIMIT_FSIZE; or, the file size exceeds the
+     maximum supported by the file system.
+  *)
+deferred
+
+EROFS :Int
+  (* No space left on device:
+     While writing an ordinary file or creating  a  direc-
+     tory  entry,  there is no free space left on the dev-
+     ice.  In the fcntl routine, the setting  or  removing
+     of  record  locks  on  a  file cannot be accomplished
+     because there are no more record entries left on  the
+     system.
+   *)
+deferred
+
+EMLINK :Int
+  (* Read-only file system:
+     An attempt to modify a file or directory was made  on
+     a device mounted read-only.
+   *)
+deferred
+
+EDEADLK :Int
+  (* Too many links:
+     An attempt to make more than the  maximum  number  of
+     links, LINK_MAX, to a file.
+   *)
+deferred
+
+ENOLCK :Int
+  (* Deadlock condition:
+     A deadlock situation was detected and avoided.   This
+     error  pertains  to file and record locking, and also
+     applies to mutexes, semaphores, condition  variables,
+     and r/w locks.
+   *)
+deferred
+
+ENOTSUP :Int
+  (* No record locks available:
+     There are no more locks available.  The  system  lock
+     table is full (see fcntl(2)).
+   *)
+deferred
+
+EDQUOT :Int
+  (* Not supported:
+     This version of the  system  does  not  support  this
+     feature.   Future  versions of the system may provide
+     support.
+   *)
+deferred
+
+ENAMETOOLONG :Int
+  (* Disc quota exceeded:
+     A write to an ordinary  file,  the  creation  of  a
+     directory  or  symbolic  link,  or  the creation of a
+     directory entry failed because the  user's  quota
+     was  exhausted
+   *)
+deferred
+
+EBADFD :Int
+  (* File name too long:
+     The length of a path argument exceeds
+     the system-dependent limit (see FS::maxPathLen)
+  *)
+deferred
+
+ELOOP :Int
+  (* File descriptor in bad state:
+     Either a file descriptor refers to no open file or  a
+     read request was made to a file that is open only for
+     writing.
+   *)
+deferred
+
+ENOTEMPTY :Int
+  (* Number of symbolic links encountered during path
+     name traversal exceeds some system-dependent limit
+   *)
+deferred
+
+SOCK_STREAM :Int
+  (* Directory not empty::
+     An attempt was made to delete a non-empty directory
+  
+ valid for SunOS4, Linux, HP-UX at least: *)
+{ 1 }
+
+SOCK_DGRAM :Int
+  (* *)
+{ 2 }
+
+SOCK_RAW :Int
+  (* *)
+{ 3 }
+
+AF_INET :Int
+  (* valid for SunOS5, Linux, HP-UX at least: *)
+{ 2 }
+
+PF_INET :Int
+  (* *)
+{ AF_INET }
+
+errorMessage(errCode :Int) :Void
+  (* *)
+deferred
+
+private
+
+_fs: FS
+
+_init: Self
+  (* *)
+{ _fs := getFS self }
+
+getFS: FS
+  (* *)
+deferred
+
+_checkReturnCode(result :Int) :Int
+  (* check dll return code code: -1 means failure *)
+{
+  if( result < 0 then: { _osError })
+  result
+}
+
+_osError :Nil
+  (* *)
+{
+  OSError.new(self, tycoon.tycoonOS).raise
+}
+
+}

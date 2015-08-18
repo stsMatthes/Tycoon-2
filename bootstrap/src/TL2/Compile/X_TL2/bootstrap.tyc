@@ -1,0 +1,133 @@
+;;  Script for "Big" Bootstrap
+;;  generate a new X-Store
+;;  see doc/bootstrap/bootstrap.txt for usage description
+
+Date.now ?
+
+;; the destination workspace
+
+define nox_home :String ?
+nox_home := tycoon.hoxHome+"/../tycoon2" ?
+
+define nox_tl2Path :String ?
+nox_tl2Path := nox_home+"/src/TL2/" ?
+
+;; load X-Environment
+
+tycoon.tl.topLevel.file(nox_tl2Path+"Compile/TL2/Descriptors.tyc") ?
+
+tycoon.tl.loader.registerDirectory(nox_tl2Path+"Compile/TL2") ?
+tycoon.tl.loader.registerDirectory(nox_tl2Path+"Compile/TL2/New") ?
+tycoon.tl.loader.registerDirectory(nox_tl2Path+"Compile/TL2/BackEnd") ?
+tycoon.tl.loader.update ?
+
+tycoon.tl.topLevel.file(nox_tl2Path+"Compile/TL2/Init.tyc") ?
+
+tycoon.tl.loader.registerDirectory("X_Cross") ?
+tycoon.tl.loader.update ?
+
+define newTL :TL2TL ?
+root ::= TL2Root.new(nox_home+"/src/tm/storeDescriptors.tab")
+pool ::= TL2Pool.new
+vmInterface ::=
+  TL2VMInterface.new(
+    nox_home+"/src/tm/builtins.tab",
+    nox_home+"/src/tm/opcodes.tab")
+newTL := TL2TL.new(root,pool,vmInterface) ?
+
+;; Hack: pretend that AbstractClass is already known
+newTL.typeManager.newClassSignature("AbstractClass") ?
+
+f ::= File.openRead(nox_home+"/src/tm/classids.tyc")
+script ::= f.readString(f.size.asInt)
+f.close
+newTL.topLevel.string(script+";") ?
+
+newTL.topLevel.file(nox_tl2Path+"Cross/BootStrap.tyc") ?
+newTL.loader.unregisterClass("Class") ?
+newTL.loader.unregisterClass("AbstractClass") ?
+newTL.loader.unregisterClass("MetaClass") ?
+
+Date.now ?
+
+;; ------------------------------------------------------------
+;; newTL is functional now.
+;; Here come the actual classes needed for bootstrap:
+
+newTL.loader.registerDirectory(nox_tl2Path+"Standard") ?
+newTL.loader.registerDirectory(nox_tl2Path+"Standard/Containers") ?
+newTL.loader.registerFile(nox_tl2Path+"Util/Util.tc") ?
+newTL.loader.registerFile(nox_tl2Path+"Util/StandardDateParser.tc") ?
+newTL.loader.registerFile(nox_tl2Path+"Util/MD5.tc") ?
+newTL.loader.registerFile(nox_tl2Path+"Util/MD5Class.tc") ?
+newTL.loader.registerDirectory(nox_tl2Path+"Util/Graphs") ?
+newTL.loader.registerDirectory(nox_tl2Path+"Util/Graphs/Simple") ?
+newTL.loader.registerDirectory(nox_tl2Path+"Compile") ?
+newTL.loader.registerDirectory(nox_tl2Path+"Compile/Scan") ?
+newTL.loader.registerDirectory(nox_tl2Path+"Compile/Scan/Eager") ?
+newTL.loader.registerDirectory(nox_tl2Path+"Compile/Parse") ?
+newTL.loader.registerDirectory(nox_tl2Path+"Compile/Parse/Compact") ?
+newTL.loader.registerDirectory(nox_tl2Path+"Compile/TL2") ?
+newTL.loader.registerDirectory(nox_tl2Path+"Compile/TL2/New") ?
+newTL.loader.registerDirectory(nox_tl2Path+"Compile/TL2/BackEnd") ?
+newTL.loader.unregisterClass("TL2Root") ?
+newTL.loader.unregisterClass("TL2Class") ?
+newTL.loader.unregisterClass("TL2MetaClass") ?
+newTL.loader.registerClassFile("Class", nox_tl2Path+"Compile/TL2/TL2Class.tc") ?
+newTL.loader.registerClassFile("MetaClass", nox_tl2Path+"Compile/TL2/TL2MetaClass.tc") ?
+newTL.loader.registerClassFile("Root", nox_tl2Path+"Compile/TL2/TL2Root.tc") ?
+
+Date.now ?
+newTL.loader.update ?
+
+Date.now ?
+
+newTL.topLevel.string("define tycoon :Tycoon") ?
+
+;; manually run the compiler on the startup code
+;; and pass the root,pool and vmInterface objects in
+path ::= nox_tl2Path+"Compile/TL2/startup.tyc"
+errorLog ::= ErrorLog.new
+f ::= File.openRead(path)
+s ::= newTL.newSyntax.scan(path, f, errorLog)
+startup ::= newTL.newSyntax.parse(s, errorLog)
+f.close
+assert({ startup."class" == TL2PUBindings })
+startup ::= _typeCast(startup, :TL2PUBindings)
+block :TL2BlockValue := startup.b
+assert({ block.values.size = 1 })
+funExpr ::= block.values[0]
+assert({ funExpr."class" == TL2CompiledFun })
+assert({ _typeCast(funExpr, :TL2CompiledFun).positionalDomain.size = 3 })
+funExpr ::=
+  TL2CompiledFun.new(nil, Symbol.new("[]"), List.with0, nil,
+    TL2SendValue.new(nil, funExpr, Symbol.new("[]"),
+      List.with3(
+        TL2LiteralValue.new(nil, newTL.root),
+        TL2LiteralValue.new(nil, newTL.pool),
+        TL2LiteralValue.new(nil, newTL.vmInterface))))
+newTL.compiler.simpleEval(nil, newTL.classManager.get("Nil"), funExpr, errorLog)
+;; as a side effect, funExpr is compiled.
+newTL.root.thread := _typeCast(funExpr) ?
+
+newTL.root.symbolTable := tycoon.tl.root.symbolTable.as(Set)  true ?
+;; alternatively (if you''ve got some spare time)
+;; X_CrossTracer.new.collectSymbols(newTL.root) ?
+
+Date.now.print ?
+newTL.root.classes.do(fun(c:TL2Class) {
+  c.classManager := nil
+}) ?
+newTL.pool.observers.remove(newTL.classManager) ?
+newTL.pool.observers.remove(newTL.typeChecker) ?
+Timer.new(tycoon.cpuClock).time({
+  try({ X_CrossTracer.new.traceToFile(newTL.root, "dump") }
+  else: fun(e:Exception){ e })
+}) ?
+newTL.root.classes.do(fun(c:TL2Class) {
+  c.classManager := newTL.classManager
+}) ?
+newTL.pool.observers.add(newTL.classManager) ?
+newTL.pool.observers.add(newTL.typeChecker) ?
+Date.now.print ?
+;; DO exit ?

@@ -1,0 +1,9 @@
+class TL2ShortArrayDescriptor
+super TL2TspDescriptor
+meta SingletonClass(TL2ShortArrayDescriptor)
+{
+
+layout :Int
+{ layoutShortArray }
+
+}

@@ -1,0 +1,14 @@
+class InterfacePrintToolClass
+super ConcreteClass(InterfacePrintTool)
+meta MetaClass
+{
+new(className :String, printAtLatestRedefinition :Bool, unfiltered :Output) :InterfacePrintTool
+{
+  instance ::= _new
+  instance._className := className
+  instance._printAtLatestRedefinition := printAtLatestRedefinition
+  instance._unfiltered := unfiltered
+  instance._init
+  instance
+}
+}

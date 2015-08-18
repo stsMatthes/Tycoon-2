@@ -1,0 +1,17 @@
+class SgmlsParserError
+super Sgml, Exception
+(**)
+meta SgmlsParserErrorClass
+{
+sourceFile :String
+
+errorText :String
+
+printOn(out :Output) :Void
+  (* *)
+{
+  out << sourceFile <<":\n"
+      << errorText
+}
+
+}

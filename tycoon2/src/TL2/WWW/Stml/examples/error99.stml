@@ -1,0 +1,15 @@
+<!DOCTYPE STML SYSTEM>
+<stml processor='StmlProcessor'>
+<html>
+<title>
+Error 1
+</title>
+<body>
+<define name=x>
+  <fun>erste</fun>
+  <fun>zweite</fun>
+</define>
+<apply name=x></apply>
+<ref name=x></ref>
+</body>  
+</html>  

@@ -1,0 +1,351 @@
+class ODBCStatement
+super SQLStatement
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+SQL-Statement produced by ODBCConnection
+
+Author:  Michael Skusa
+
+Date:    27-Aug-1996
+
+Updates: (Date)		(Name)	(Description)
+	 4-Apr-1997	MS      Tycoons locale has to be C or POSIX.
+	                        Otherwise _execute fails if statement
+				contains TIMESTAMP-parameters.
+*)
+meta SimpleConcreteClass(ODBCStatement)
+{
+cancel():Void
+  (* Closes cursor,
+     cancels odbc-cursor,
+     raises ODBCError.
+   *)
+{
+  if( _cursor.isNotNil then:
+  {
+    if( (odbc.SQLFreeStmt(_hstmt,odbc.SQL_CLOSE) = odbc.SQL_SUCCESS)
+    then: {_cursor.close}
+    else: {ODBCError.new(odbc.NULL,odbc.NULL,_hstmt).raise})
+  })
+}
+
+getUpdateCount():Int
+  (* returns the number of rows affected by execute,
+     returns nil if _hstmt is nil
+   *)
+{
+  if( _hstmt.isNotNil then:
+  {
+  n ::= CIntHolder.new()
+  if( (odbc.SQLRowCount(_hstmt,n.handle) = 0)
+  then: {count::=n.value
+     n.close()
+     count}
+  else: {n.close()
+     ODBCError.new(odbc.NULL,odbc.NULL,_hstmt).raise})
+  }
+  else: {n:Int := nil})
+}
+
+setInt(parameterIndex:Int, value:Int):Int
+  (* *)
+{
+  if( value.isNil
+  then: {_parameterLengthDataArea[parameterIndex].setIntValue(odbc.SQL_NULL_DATA)}
+  else: {
+      _parameterDataArea[parameterIndex].setIntValue(value)
+      _parameterLengthDataArea[parameterIndex].setIntValue(0)
+    })
+  value
+}
+
+setReal(parameterIndex:Int, value:Real):Real
+  (* *)
+{
+  if( value.isNil
+  then: {_parameterLengthDataArea[parameterIndex].setIntValue(odbc.SQL_NULL_DATA)}
+  else: {
+      _parameterDataArea[parameterIndex].setRealValue(value)
+      _parameterLengthDataArea[parameterIndex].setIntValue(0)
+    })
+  value
+}
+
+setString(parameterIndex:Int, value:String):String
+  (* *)
+{
+  if( value.isNil
+  then: {_parameterLengthDataArea[parameterIndex].setIntValue(odbc.SQL_NULL_DATA)}
+  else: {
+      _parameterDataArea[parameterIndex].setStringValue(value)
+      _parameterLengthDataArea[parameterIndex].setIntValue(odbc.SQL_NTS)
+    })
+  value
+}
+
+setDate(parameterIndex:Int, value:Date):Date
+  (* *)
+{
+  if( value.isNil
+  then: {_parameterLengthDataArea[parameterIndex].setIntValue(odbc.SQL_NULL_DATA)}
+  else: {
+      type ::= parameterMetaData.getSqlType(parameterIndex)
+      dbValue ::=
+        if( type = odbc.SQL_DATE
+          then: {value.format("%Y-%m-%d")} else:{
+	if( type = odbc.SQL_TIME
+	  then: {value.format("%H:%M:%S")} else:{
+	if( type = odbc.SQL_TIMESTAMP
+	  then: {value.format("%Y-%m-%d %H:%M:%S.000000")}
+	  else: {""})})})
+      _parameterDataArea[parameterIndex].setStringValue(dbValue)
+      _parameterLengthDataArea[parameterIndex].setIntValue(odbc.SQL_NTS)
+   })
+  value 
+}
+
+setRaw(parameterIndex:Int, value:File):File
+  (* *)
+{
+  if( value.isNil
+  then: {_parameterLengthDataArea[parameterIndex].setIntValue(odbc.SQL_NULL_DATA)}
+  else: {
+     _rawData[parameterIndex]:=value
+       ; inserts the RAW-data-file into a private dictionary. 
+     _parameterLengthDataArea[parameterIndex].setIntValue(odbc.SQL_DATA_AT_EXEC)})
+       ; this indicates, that the RAW-data will be inserted AFTER 
+       ; SQLExec has been called                                  
+  value
+}
+
+private
+
+_rawData:Dictionary(Int,File)
+
+_open(hdbc:Int32):Void
+  (* *)
+{
+  h::=CIntHolder.new()
+  if( (odbc.SQLAllocStmt(hdbc,h.handle) = odbc.SQL_SUCCESS)
+  then: {_hstmt := h.value32
+	 h.close}
+  else: {
+     h.close
+     ODBCError.new(odbc.NULL,hdbc,odbc.NULL).raise
+    })
+}
+
+_createParameterMetaData(hstmt:Int32):ODBCParameterMetaData
+  (* *)
+{
+  m ::= ODBCParameterMetaData.new()
+  m.retrieveParameterMetaData(hstmt)
+  m
+}
+
+_allocateParameterDataArea:Void
+  (* *)
+{
+  _parameterDataArea:=MutableArray.new(parameterMetaData.getParameterCount)
+  for(0 to:_parameterDataArea.size-1 do:fun (i:Int)
+    {
+      if( _parameterClasses[i] = Int
+      then: {_parameterDataArea[i]:=CIntHolder.new} else:{
+      if( _parameterClasses[i] = Real
+      then: {_parameterDataArea[i]:=CRealHolder.new} else:{
+      if( _parameterClasses[i] = String
+      then: {setMaxLength(i,parameterMetaData.getPrecision(i))
+         _parameterDataArea[i]:= CStringHolder.new(_parameterMaxLength[i])} else:{
+      if( _parameterClasses[i] = Date
+      then: {setMaxLength(i,parameterMetaData.getPrecision(i) + parameterMetaData.getScale(i) + 1)
+         _parameterDataArea[i]:= CStringHolder.new(_parameterMaxLength[i])} else:{
+      if( _parameterClasses[i] = File
+      then: {setMaxLength(i,0)
+         _parameterDataArea[i]:= CRawStringHolder.new(_parameterMaxLength[i])}
+	   ; dummy-buffer. Data is passed via separate 
+	   ; buffers at statement-execution-time.      
+      else: {CoerceError.new("class not supported",_parameterClasses[i]).raise})})})})})
+    })
+}
+
+_allocateParameterLengthDataArea() :Void
+  (* *)
+{
+  _parameterLengthDataArea:=
+    MutableArray.new(parameterMetaData.getParameterCount)
+  for(0 to:parameterMetaData.getParameterCount-1 do:fun (i:Int)
+    {
+	_parameterLengthDataArea[i]:=CIntHolder.new()
+	_parameterLengthDataArea[i].setIntValue(odbc.SQL_NULL_DATA)
+    })
+}
+
+_bindParameters:Void
+  (* *)
+{  
+  for(0 to:parameterMetaData.getParameterCount-1 do: fun (i:Int)
+    {
+      dataHandle ::= if( _parameterClasses[i]=File
+      then: {i.asInt32}
+      else: {_parameterDataArea[i].handle})
+        ; For normal parameters the dataHandle is a handle for the      
+	; buffer in which the parameter values are stored.              
+	; For RAW-parameters the dataHandle is an application-defined   
+	; pointer or number which is returned by SQLParamData at        
+	; execution time. In this implementation the value for RAW-data 
+	; is the internal parameter-index, which is used by             
+	; _putRawParameters.                                            
+	
+      error ::= (odbc.SQLBindParameter(_hstmt,i+1,1,
+                     odbc.CTypeCode[_parameterClasses[i]],
+		     parameterMetaData.getSqlType(i),
+		     parameterMetaData.getPrecision(i),
+		     parameterMetaData.getScale(i),
+		     dataHandle,
+		     _parameterMaxLength[i]+1,
+		     _parameterLengthDataArea[i].handle) != odbc.SQL_SUCCESS)
+      if( error then: { er ::= ODBCError.new(odbc.NULL,odbc.NULL,_hstmt)
+                _freeParameterAreas()
+		er.raise })
+     })
+}
+
+_nativeParameter(name:String):String
+  (* *)
+{ "?" }
+
+_dropStatement() :Void
+  (* *)
+{
+  odbc.SQLFreeStmt(_hstmt,odbc.SQL_DROP)
+}
+
+_prepare(sql:String):Void
+  (* *)
+{ 
+  if( (odbc.SQLPrepare(_hstmt,sql,odbc.SQL_NTS) != odbc.SQL_SUCCESS)
+  then: {ODBCError.new(odbc.NULL,odbc.NULL,_hstmt).raise})
+}
+
+_putRawParameters():Void
+  (* *)
+{
+  error ::= odbc.SQL_NEED_DATA
+  cBuffer ::= CRawStringHolder.new(odbc.rawBufferLength)
+  pNumberBuffer ::= CIntHolder.new
+  stringBuffer ::= MutableString.new(odbc.rawBufferLength)
+  while({error = odbc.SQL_NEED_DATA} do:{
+
+    error := odbc.SQLParamData(_hstmt,pNumberBuffer.handle)
+      ; retrieve parameter index of next RAW-Parameter,                
+      ; SQLParamData returns odbc.SQL_NEED_DATA if a RAW-parameter was 
+      ; found, its index is stored in pNumberBuffer.                   
+      ; The value of pNumberBuffer was defined by _bindParameters.     
+      ; If no further RAW-parameter exists, SQLParamData returns 0     
+
+    if( error = odbc.SQL_NEED_DATA
+     then: {
+         ; open the file, containing the RAW-data and transfer its          
+	 ; contents in pieces of size odbc.rawBufferLength to the database. 
+	 length ::= odbc.rawBufferLength
+	 if( _rawData.includesKey(pNumberBuffer.intValue)
+	 then: {
+	     ; Parameter was set by setRaw 
+             currentFile ::= _rawData[pNumberBuffer.intValue].openRead
+	     length ::= odbc.rawBufferLength
+	     repeat({
+	       length:=
+	       currentFile.readBuffer(stringBuffer,0,odbc.rawBufferLength)
+	       cBuffer.setRawStringValue(stringBuffer)
+	       if( odbc.SQLPutData(_hstmt,cBuffer.handle,length) != odbc.SQL_SUCCESS
+	       then: {
+		   cBuffer.close
+		   pNumberBuffer.close
+		   ODBCError.new(odbc.NULL,odbc.NULL,_hstmt).raise
+	         })
+	      }until:{ length < odbc.rawBufferLength }) 
+	      currentFile.close
+	    }
+	else: {  ; Parameter was not set -> insert NULL-Value into DB 
+	     length := odbc.SQL_NULL_DATA
+	     if( odbc.SQLPutData(_hstmt,cBuffer.handle,length) != odbc.SQL_SUCCESS
+	     then: { cBuffer.close
+		 pNumberBuffer.close
+		 ODBCError.new(odbc.NULL,odbc.NULL,_hstmt).raise
+	       })
+	   })  
+	}
+      else: { if( error != odbc.SQL_SUCCESS
+          then: {cBuffer.close pNumberBuffer.close
+	     ODBCError.new(odbc.NULL,odbc.NULL,_hstmt).raise})
+	})
+  })
+  cBuffer.close
+  pNumberBuffer.close
+}
+
+_execute():Void
+  (* *)
+{
+  if( _hstmt.isNotNil then:
+  {
+    error ::= odbc.SQLExecute(_hstmt)
+    if( error != odbc.SQL_SUCCESS
+    then: { if( error = odbc.SQL_NEED_DATA
+          then: { _putRawParameters }
+          else: {ODBCError.new(odbc.NULL,odbc.NULL,_hstmt).raise})
+      })
+   })
+}
+
+_executeDirect(sql:String):Void
+  (* *)
+{
+   if( _hstmt.isNotNil then:
+   {
+     if( (odbc.SQLExecDirect(_hstmt,sql,odbc.SQL_NTS) != odbc.SQL_SUCCESS)
+     then: {ODBCError.new(odbc.NULL,odbc.NULL,_hstmt).raise})
+   })
+}
+
+_unbindParameters():Void
+  (* *)
+{
+  odbc.SQLFreeStmt(_hstmt,odbc.SQL_RESET_PARAMS)
+}
+
+_createCursor(_hstmt:Int32):ODBCCursor
+  (* *)
+{
+  c ::= ODBCCursor.new
+  c.open(_hstmt)
+  c
+}
+
+_init:Self
+  (* *)
+{
+   super._init
+   _rawData:=Dictionary.new
+   self
+}
+
+}

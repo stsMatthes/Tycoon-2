@@ -1,0 +1,47 @@
+class CStringHolder
+super CValueHolder(String)
+(**)
+meta CStringHolderClass
+{
+valueClass():Class
+  (* *)
+{ String }
+
+value():String
+  (* *)
+{ if( handle.isNotNil then: {tycoon.tycoonOS.memory_peekString(handle,0)}
+                  else: {s:String := nil}) }
+
+stringValue():String
+  (* *)
+{ value() }
+
+"value:="(s:String):String
+  (* *)
+{
+  if( handle.isNotNil then:
+  {
+    if( s.size <= _length then: {tycoon.tycoonOS.memory_pokeString(handle,0,s)
+                         tycoon.tycoonOS.memory_peekString(handle,0)}
+                      else: {KeyNotFoundError.new(s,_length+1).raise})
+  }
+  else: {nil})
+}
+
+setStringValue(v:String):String
+  (* *)
+{ value:=v }
+
+private
+
+_length:Int
+
+_allocate(length:Int) :Void
+  (* *)
+{
+  super._init
+  super._allocate(length+1)
+  tycoon.tycoonOS.memory_pokeString(handle,0,"")
+}
+
+}

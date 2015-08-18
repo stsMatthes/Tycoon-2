@@ -1,0 +1,18 @@
+class SQLError
+super Exception
+(**)
+meta AbstractClass
+{
+errorCode:Int
+
+errorMessage:String
+
+isDuplicateKeyError:Bool
+  (* *)
+deferred
+
+isConnectionFailedError :Bool
+  (* *)
+deferred
+
+}

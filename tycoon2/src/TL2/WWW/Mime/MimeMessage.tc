@@ -1,0 +1,219 @@
+class MimeMessage
+super Mime
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+	Mime-Message
+
+	Ingo Richtsmeier
+
+	23-Jul-97
+
+	Copyright 1997, Higher-Order GmbH, Hamburg
+	
+
+ These need to be set and read
+   depending on whether you generate a request
+   or parse one *)
+meta MimeMessageClass()
+
+{
+headers :MimeHeaderDictionary(MimeHeaderValue)
+
+body :Input
+
+parser :MimeMessageParser(Self)
+  (* *)
+{ MimeMessageParser.new }
+
+header(name :String) :MimeHeaderValue
+  (* *)
+{
+  headers[name]
+}
+
+headerValue(name :String, T <:Object) :T
+  (* type inference at its best *)
+{
+  header(name).valueAs(:T)
+}
+
+setHeader(name :String, value :MimeHeaderValue) :Void
+  (* *)
+{
+  headers[name] := value
+}
+
+setHeaderValue(name :String, T <: Object, clazz :MimeHeaderValueImplClass(T), value :T) :Void
+  (* *)
+{
+  if( value == nil then: {
+    headers.removeKey(name)
+  } else: {
+    setHeader(name, clazz.withValue(value))
+  })
+}
+
+hasHeader(name :String) :Bool
+  (* *)
+{
+  headers.includesKey(name)
+}
+
+contentTypeString :String
+  (* Mime 1.0 Body-Part Headers *)
+{ "Content-Type" }
+
+hasContentType :Bool
+  (* *)
+{ hasHeader(contentTypeString) }
+
+contentType :MediaType
+  (* *)
+{ headerValue(contentTypeString, :MediaType) }
+
+"contentType:="(ct :MediaType) :Void
+  (* *)
+{ setHeaderValue(contentTypeString, MediaTypeHeader, ct) }
+
+contentTransferEncodingString :String
+  (* *)
+{ "Content-Transfer-Encoding" }
+
+hasContentTransferEncoding :Bool
+  (* *)
+{ hasHeader(contentTransferEncodingString) }
+
+contentTransferEncoding :String
+  (* *)
+{ headerValue(contentTransferEncodingString) }
+
+"contentTransferEncoding:="(code :String) :Void
+  (* *)
+{setHeaderValue(contentTransferEncodingString, MimeToken, code)}
+
+mimeVersionString :String
+  (* *)
+{ "MIME-Version" }
+
+hasMimeVersion :Bool
+  (* *)
+{ hasHeader(mimeVersionString) }
+
+mimeVersion :String
+  (* *)
+{ headerValue(mimeVersionString) }
+
+"mimeVersion:="(mv :String) :Void
+  (* *)
+{ setHeaderValue(mimeVersionString, MimeString, mv) }
+
+contentIDString :String
+  (* *)
+{ "Content-Id" }
+
+hasContentID :Bool
+  (* *)
+{ hasHeader(contentIDString) }
+
+contentID :String
+  (* *)
+{ headerValue(contentIDString) }
+
+"contentID:="(cid :String) :Void
+  (* *)
+{setHeaderValue(contentIDString, MimeString, cid) }
+
+contentDescriptionString :String
+  (* *)
+{ "Content-Description" }
+
+hasContentDescription :Bool
+  (* *)
+{ hasHeader(contentDescriptionString) }
+
+contentDescription :String
+  (* *)
+{ headerValue(contentDescriptionString) }
+
+"contentDescription:="(cDescription :String) :Void
+  (* *)
+{setHeaderValue(contentDescriptionString, MimeString, cDescription) }
+
+emit(out :Output) :Void
+  (***********************
+  writing a Mime message
+**********************
+ emit the headers and the body of the message, if any,
+     and close the body input stream (even if an exception
+     occurs while writing to the output stream).
+  *)
+{
+  protect({
+    emitHeaders(out)
+    emitBody(out)
+  }, fun(){
+    if( body.isNotNil then: {
+      body.close
+    })
+  })
+}
+
+private
+
+_init2(h :MimeHeaderDictionary(MimeHeaderValue), b :Input) :Self
+  (* *)
+{
+  headers := h
+  body := b
+
+  super._init
+
+  self
+}
+
+_init :Void
+  (* *)
+{
+  _init2(MimeHeaderDictionary.new, nil)
+}
+
+emitHeaders(out :Output) :Void
+  (* *)
+{
+  headers.keysAndElementsDo(fun(name :String, value :MimeHeaderValue) {
+    out << name << ": " << value.string << "\r\n"
+  })
+  out << "\r\n"  
+}
+
+emitBody(out :Output) :Void
+  (* emit the body of the message, if any  *)
+{
+  if( body.isNotNil then: {
+    buf ::= MutableString.new(1024)
+    n :Int := 0
+    while({(n := body.readBuffer(buf, 0, buf.size)) > 0} do: {
+      out.writeBuffer(buf,0,n)
+    })
+  })
+}
+
+}

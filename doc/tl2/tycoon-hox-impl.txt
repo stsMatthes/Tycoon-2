@@ -1,0 +1,60 @@
+This document describes the differences between the Tycoon 1.0 language as
+defined in the "Report on the Tycoon-2 Programming Language Version 1.0" and
+the implementation available at Higher-Order.
+
+1. Implementation Restrictions
+
+Tycoon Version 1.0.3 has the following limitations:
+
+o (5.1) pre- and postconditions are recognized syntactically and are
+scoped, so unknown type identifiers are detected.  "old" expressions
+are not treated correctly, but are incorrectly normalized to message
+send with selector "old".  Also, the "result" variable is not scoped.
+No code is generated for pre- or postconditions, and they are not
+typechecked.
+
+o (5.2) Packages are not implemented.  As a workaround, define a class named as
+  your package, and let all classes in the package inherit from that class.
+  Prefix your class names with a short combination of capital letters
+  (e.g. TL2ClassLoader is part of package TL2)
+
+o (5.3) there are no inner classes.  anonymous functions and keyword parameters
+  can often be used to achieve their effect.
+
+o There are builtin limits for the number of arguments (255), the number of 
+  local variables (255), and the number of keywords (32) per method or function.
+
+o (6.1.3) safe downcast is not available.  Workaround: test class explicitly and
+  use unsafe _typeCast, as follows:
+  if( x.clazz == MyClass then: {
+    x :MyClass := _typeCast(x)
+  } else:{ ... })
+
+o (6.1.4) try does not understand the "catch:" keyword.  Only "else:" (catch all) is supported.
+
+o The typechecker internally caches intermediate results.  Sometimes,
+these intermediate results are not correctly invalidated when a class
+definition is changed.  Also, in rare cases where a type definition
+indirectly affects the type correctness of other classes, this
+dependency may not be detected by the type checker.  In
+these cases, try running "tycoon.tl.typeChecker.finalize" (which
+flushes all caches) and then check the suspicious classes manually
+using "tycoon.tl.typeChecker.checkClass(SuspiciousClass)"
+
+2. Language Extensions
+
+Tycoon 1.0.3 contains support for component bindings, as described in
+[Wien99, WMB99].  Each object can be bound by at most one component
+binding at each point in time.  Component bindings can be: component
+slots, local component variables or component parameters, and
+component results.  Components can be moved between these bindings
+using a special "takeFrom/moveTo" operator.  Syntactically, this
+operator, as well as component binding declarations, and invocation of
+a method returning a component, are indicated using the "@" (at)
+character.  Component bindings are currently used for greater
+expressiveness (to represent aggregation), for debugging purposes, and
+to support a generic deep copy.  Please consult the master thesis and
+paper cited above for further detail.
+
+Variants of the Tycoon-2 container classes aggregating their elements
+can be found in the "At" package.

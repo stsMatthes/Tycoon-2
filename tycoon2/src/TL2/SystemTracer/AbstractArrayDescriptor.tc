@@ -1,0 +1,23 @@
+class AbstractArrayDescriptor
+super TspDescriptor
+(**)
+meta AbstractClass
+{
+objectSize(o :Object) :Int
+  (* *)
+{ o.__basicSize * _tracer.sizeof(elementFmt) }
+
+elementFmt :Char
+  (* *)
+deferred
+
+dumpInstance(o :Object) :Void
+  (* *)
+{
+  tracer ::= _tracer
+  for(0 to:o.__basicSize-1 do:fun(i:Int){
+    tracer.dumpC(o.__basicAt(i), elementFmt)
+  })
+}
+
+}

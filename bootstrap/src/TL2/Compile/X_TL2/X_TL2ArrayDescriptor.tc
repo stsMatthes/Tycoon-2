@@ -1,0 +1,8 @@
+class X_TL2ArrayDescriptor
+super X_TL2TspDescriptor
+meta SingletonClass(X_TL2ArrayDescriptor)
+{
+layout :Int
+{ layoutArray }
+
+}

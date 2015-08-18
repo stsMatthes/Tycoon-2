@@ -1,0 +1,48 @@
+class Hauspost
+super Buero
+{
+
+zustellSammelRunde :Void
+  (* alle Briefkoerbe leeren und Briefe einsortieren *)
+{
+  arbeitsplaetze.do(fun(a :Arbeitsplatz) {
+    neuePost @::= a.postAusgang.leeren@
+    neuePost.giveWhere(fun(:Vorgang) {true})
+       .do(fun(v @:Vorgang) {
+	 postsack.add(v@)
+       })
+    ;; ### ein Index wäre natürlich effizienter, führt aber zu
+    ;; ### häßlichen equalityHash-Nachrichten
+    postsack.giveWhere(fun(v:Vorgang){ untraced({ v.naechstesZiel == a }) })
+       .do(fun(v @:Vorgang) {
+	 a.postEingang.ablegen(v@)
+	})
+  })
+}
+
+registriereArbeitsplatz(a :Arbeitsplatz) :Void
+{
+  arbeitsplaetze.add(a)
+}
+
+private
+
+arbeitsplaetze @: GapArray(Arbeitsplatz)
+postsack @: AtSet(Vorgang)
+
+untraced(T<:Void, f:Fun0(T)):T
+{
+  t ::= Thread.this
+  savedFlags ::= t.traceFlags
+  t.traceFlags := Thread.TRACE_NONE
+  protect(f, { t.traceFlags := savedFlags })
+}
+
+_init :Void
+{
+  super._init
+  arbeitsplaetze := fetch(GapArray.new0)@
+  postsack := AtSet.new@
+}
+
+}

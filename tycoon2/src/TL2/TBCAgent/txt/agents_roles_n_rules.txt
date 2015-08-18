@@ -1,0 +1,148 @@
+Agents, Roles'n'Rules.
+---------------------
+
+o  Agenten aggregieren Roles.
+
+o  :Role ist abstrakte Superklasse von :PerformerRole (PR) und :CustomerRole (CR)
+
+o  Roles haben einen Namen, "uber den sie angesprochen werden.
+
+o  PR und CR implementieren Verhalten der entspr. Partner lt. BC (Business
+   Conversations)
+   
+o  Anwendungslogik wird zu den entspr. PR und CR dynamisch in Form von
+   Rules gebunden, zB in der birth-methode des Agenten (?)
+   
+o  :Rule ist abstrakte Superklasse von PerformerRule und CustomerRule
+
+o  PRu und CRu haben deferred methode transition() bzw. handleDialog(),
+   'transition' legt abh. von Dialog, Request n"achsten Dialog fest,
+   'handleDialog' abh. von Dialog den Request.
+   
+o  Dazu erhalten sie jeweils Zugriff auf die :Conversation - Instanz.
+   
+o  Jede Role ist fest einer ConversationSpecification zugeordnet 
+   (wie in der new-methods angegeben) und 
+   hat einen Satz von Rules daf"ur, die ebenfalls dynamisch 
+   hinzugebunden werden.
+   
+o  Somit kann jeder Agent viele Roles haben, mind. eine.
+   Das ist also ganz anders als bei Nico.
+
+o  Jede Role wickelt also eine Seite eines Dienstes in Form einer BC 
+   ab. 
+   
+o  Je Role sind beliebig viele Sessions, also Conversations m"oglich.
+   ###Auch beim Customer! Das war bei Nico glaube ich anders; wei"st Du,
+   warum?
+
+o  Dazu hat jede Role eine Liste von :Conversations, die den Zustand 
+   (Kontext) der Session repr"asentiert.
+   Und zwar ganz raffiniert: als Dictionary(ITCAdress, Conversation) !
+
+o  Genau wie bei Nico wird die Kommunikation "uber Nachrichten gel"ost,
+   die Roles empfangen f"ur alles Nachrichten.
+   
+o  Dazu abstrakte Superklasse :Msg, f"ur jede konkrete Nachricht eine Subklasse.
+   (welche, s.u.)
+
+o  Dispatching in der Role analog zum Visitor-pattern, d.h. jede 
+   Nachricht hat eine Methode 'handle(r:Role):Msg', die die entspr.
+   Methode in Role aufruft mit argument self. Dazu hat :Role
+   f"ur den Superset aller Nachrichten entspr. Methoden als deferred 
+   definiert. CR und PR spezialisieren sie dann entspr.
+   
+o  Agent hat dann einen _dispatcher, der anhand der Msg entscheidet,
+   welche Role sie bekommt und 'aMsg.handle(theProperRole)' ausf"uhrt.
+   
+o  Dieser Dispatcher kann sp"ater leicht umgebaut werden, wenn es das
+   fertige Framework gibt, und jetzt kann man ihn einfach h"andisch
+   aufrufen oder eine Billig-L"osung bauen, die zwei Agenten dar"uber
+   'hardwired' verbindet.
+   Insbesondere wird der dispatcher sp"ater sicherlich an einem ITCPort
+   h"angen und auf Nachrichten lauschen; dazu mu"s der Agent aber ein
+   eigener Thread sein.
+
+o  :Msg erbt von :ITCMsg.
+
+o  Das eigentliche Nachrichtensubsystem ITC m"ochte ich absolut
+   unabh"angig von konkreten Nachrichtenarten
+   haben, verschickt werden von ITC immer nur
+   Instanzen von Subklassen von :ITCMsg. ITC kennt also niemals
+   die eigentlichen Inhalte.
+   (Das ist, denke ich, einer der GROSSEN Vorteile des OO-Paradigmas!)
+
+o  ITCMsg hat slots 'from' und 'to' von Typ ITCAdresse. Erstmal.
+
+o  ITCAdress hat einen Namen und -- via subclassing? -- IP oder domain sowie port.
+   Setzt auf noch zu eruierenden TCP/IP - Diensten auf.
+
+o  Der Name des Empf"angers in der Nachricht Msg dient dem _dispatcher
+   zum Finden der Role gleichen Namens. Eigentlich reicht dann
+   _dispatch(m :Msg) {m.handle(_roles[m.to.name])}
+   
+o  Das o.g. Dictionary(ITCAdress, Conversation) dient einzelnen 
+   Methoden einer Role dazu, die zug. :Conversation anhand des 
+   Absenders 'from' einer Nachricht zu finden.
+   
+o  Bisher identifizierte Nachrichten (Rohnamen, ala Nico)
+     Name                    verstanden von
+   - setDebug                PR, CR
+   - setSpec                 PR, CR -  ? kann weg, glaube ich.
+   - addTransition           PR
+   - requestForConversation  PR
+   - customerDialogRequest   PR
+   - getSpec                 PR, CR
+   - bindPerformer           CR
+   - conversationAccepted    CR
+   - addDialogHandler        CR
+   - performerDialog         CR
+   - killCustomer            CR       - auch f"ur PR?
+   
+o  Parameter der Msgs sind slots der Subklassen, analog zu Nicos 
+   ITCMessage.
+   
+o  Das tolle ist, da"s Roles vollst. "uber Msg gesteuert werden.
+
+o  Die entspr. handle...-methoden der Role bekommen als Argument immer eine
+   Subklasse von :Msg und geben eine :Msg zur"uck, also die Reply-
+   Msg, die zur"uck an den Sender geht.
+   Darf nat"urlich auch 'nil' sein, dann gibts kein reply.
+
+
+Noch offene Fragen
+..................
+
+o  Adressierungsschema ist noch unklar.
+   Alles hat Namen: Agenten, Roles, ConversationSpecs.
+   Bezug zu ITCAddress?
+   Spinnkram: 
+   "tbc://sun01.sts.tu-harburg.de/fun/Baggeri/Kuchenverkauf"
+   bezeichnet Performer 'Kuchenverkauf' im Agent 
+   'Baggeri', der im hierarchisch geordneten Place 'fun' lebt.
+   oder
+   "tbc://hotel-norge.com/Hotel-Norge/Reservierung"
+   den Reservierungsdienst des Hotelagenten.
+   wohl ohne "tbc://"-Prefix.
+
+o  :Conversation hat ja s:S als zus"atzlichen Kontext.
+   Wo setzen, oder kann man den auch woanders unterbringen? 
+   (Konzeptuell hat er m.E. *dort* nichts zu suchen.)
+
+o  Uebertragung Messages: MsgRequestDialog und MsgDialog schleppen tendenziell immer 
+   (und oft unnoetigerweise) viele Specs mit.  Problem Netzwerklast?
+   
+   
+Einige weitergehende Ideen:
+...........................
+
+o  Kann man das Verhalten f"ur Mobile Agents, Places, 
+   Agent-basisfunktionen nicht auch in Roles (also andere Subklassen 
+   von :Role, oder einer weiteren abstr. Superklasese) packen
+   und den Agenten dann genauso "uber Msg steuern?
+   Das w"are f"ur auch das Framework g""unstig.
+   (Nico macht zumindest die Steurung auch so aehnlich ueber Msgs.)
+   
+o  Dafuer guenstig: deferred handleXYZ-methoden in Mixin-Klasse :MessageHandler
+   tun, :Role erbt die dann.  Sauberer.
+   

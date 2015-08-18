@@ -1,0 +1,15 @@
+class CommentTransformerStateClass
+super ConcreteClass(CommentTransformerState)
+(**)
+meta MetaClass
+{
+new(out :Output) :CommentTransformerState
+  (* *)
+{
+  instance ::= _new
+  instance.out := out
+  instance._init
+  instance
+}
+
+}

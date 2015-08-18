@@ -1,0 +1,447 @@
+class URLClass
+super WWW, ConcreteClass(URL)
+(**)
+meta MetaClass
+{
+fromString(s :String) :URL
+  (* *)
+{
+    url ::= _new
+    url._fromString(s)
+    url
+  }
+
+new8(scheme :String,
+       host :String,
+       port :Int,
+       isAbsolute :Bool,
+       segments :List(String),
+       parameters :Dictionary(String, List(String)),
+       query :String,
+       fragment :String) :URL
+  (*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ note that the discussion around arcs/segments somehow applies here, too:
+     the parameter here is 'segments' so that you can get a trailing slash with
+     a void segment at the end of the list: List.with4("a", "b", "c", "") => "a/b/c/"
+  *)
+{
+    url ::= _new
+    url._init8(scheme, host, port, isAbsolute, segments, parameters, query, fragment)
+
+    url
+  }
+
+inContext(relative :URL, context :URL) :URL
+  (* require context.isAbsolute ## WHY ? *)
+{
+    ; RFC 1808, sec 4 
+
+    ; STEP 1 
+    if( context.asString = "" then: { relative } else: {
+
+    ; STEP 2.a 
+    if( relative.asString = "" then: { context } else: {
+
+    ; STEP 2.b 
+    if( relative.scheme != nil then: { relative } else: {
+
+    ; STEP 3.c 
+    scheme ::= context.scheme
+
+    host   ::= relative.host
+    port   ::= relative.port
+    isAbsolute ::= relative.isAbsolute
+    segments   ::= relative.segments
+    parameters ::= relative.parameters
+    query  ::= relative.query
+    fragment ::= relative.fragment
+
+    ; STEP 3 
+    if( host = nil then: fun() :Void {
+      host := context.host
+      port := context.port
+
+      ; STEP 4 
+      if( relative.isRelative then: {
+        isAbsolute := context.isAbsolute
+	; STEP 5 
+	if( segments.size = 0 then: {
+	  segments := context.segments
+
+	  ; STEP 5.a 
+	  if( parameters = nil then: {
+	    parameters := context.parameters
+
+	    ; STEP 5.b 
+	    if( query = nil then: {
+	      query := context.query
+	    })
+	  })
+	} else:
+	; STEP 6 
+	{
+	  newSegments ::= GapArray(:String).new(10)
+	  newSegments.addAll(context.segments)
+
+	  if( newSegments.size > 0 then: { newSegments.removeLast })
+
+	  newSegments.addAll(segments)
+
+	  index ::= 0
+	  while({ index < newSegments.size } do: {
+	    ; STEP 6.a/b 
+	    if( newSegments[index] = "." then: fun() :Void {
+	      if( index = newSegments.size-1 then: {
+		newSegments[index] := ""
+	      } else: {
+		newSegments.removeKey(index)
+	      })
+	    } else: {
+
+	    ; STEP 6.c/d 
+	    if( newSegments[index] = ".." &&
+		     index > 0  &&
+		     newSegments[index-1] != ".."  &&
+		    ( index != 1 || newSegments[0] != "" ) then: fun() :Void {
+	      index := index-1
+	      newSegments.removeKey(index)
+	      if( index = newSegments.size-1 then: {
+		newSegments[index] := ""
+	      } else: {
+		newSegments.removeKey(index)
+	      })
+	    } else: {
+
+	    index := index + 1
+
+	    })})
+	  })
+
+	  segments := List.fromReader(newSegments.reader)
+	})
+      })
+    })
+    ; STEP 7 
+
+    URL.new8(scheme, host, port, isAbsolute, segments, parameters, query, fragment)
+    })
+    })
+    })
+  }
+
+decode(encoded :String) :String
+  (*
+    [* URL encoding/decoding
+       all these functions raise URLError if called with an illegally encoded value
+    *]
+
+    [* decode URL encoded string *]
+    decode(encoded :String) :String
+
+    [* decode Query string --- like 'decode' but translates '+' to ' ' *]
+    decodeQuery(query :String) :String
+
+    [* decode parameters / form fields in query *]
+    decodeParameters(param :String) :Dictionary(String, String)
+    decodeMultiParameters(param :String) :Dictionary(String, List(String))
+    
+    decodeFormFields(query :String) :Dictionary(String, String)
+    decodeMultiFormFields(query :String) :Dictionary(String, List(String))
+
+    [* vice versa *]
+    encode(plain :String) :String
+    encodeQuery(plainQuery :String) :String
+
+    encodeParameters(plainParameters :Dictionary(String, String)) :String
+    encodeMultiParameters(plainParameters :Dictionary(String, List(String))) :String
+    
+    encodeFormFields(plainFormFields :Dictionary(String, String)) :String
+    encodeMultiFormFields(plainFormFields :Dictionary(String, List(String))) :String
+  *)
+{
+    _decodeString(encoded, false)
+  }
+
+decodeQuery(query :String) :String
+  (* *)
+{
+    _decodeString(query, true)
+  }
+
+decodeParameters(param :String) :Dictionary(String, String)
+  (* *)
+{
+    nameValue(parseParameters(param))
+  }
+
+decodeMultiParameters(param :String) :Dictionary(String, List(String))
+  (* *)
+{
+    multiNameValue(parseParameters(param))
+  }
+
+decodeFormFields(query :String) :Dictionary(String, String)
+  (* *)
+{
+    nameValue(parseFormFields(query))
+  }
+
+decodeMultiFormFields(query :String) :Dictionary(String, List(String))
+  (* *)
+{
+    multiNameValue(parseFormFields(query))
+  }
+
+parseFormFields(formFields :String) :List(Pair(String, String))
+  (* public for HtmlFormProcessor: *)
+{
+    parseNameValue(formFields, '&', false)
+  }
+
+nameValue(nameValue :List(Pair(String, String))) :Dictionary(String, String)
+  (* public for HtmlFormProcessor: *)
+{
+    result ::= Dictionary.new  
+
+    nameValue.do(fun(p :Pair(String, String)) {
+      result[p.first] := p.second
+    })
+
+    result
+  }
+
+multiNameValue(
+     nameValue :List(Pair(String, String))) :Dictionary(String, List(String))
+  (* public for HtmlFormProcessor: *)
+{
+    result ::= Dictionary(:String, :List(String)).new
+
+    nameValue.do(fun(p :Pair(String, String)) {
+      if( result.includesKey(p.first) then: {
+        result[p.first] := List.cons(p.second, result[p.first])
+      } else: {
+        result[p.first] := List.with1(p.second)
+      })
+    })
+
+    result
+  }
+
+encode(plain :String) :String
+  (* vice versa *)
+{
+    _encodeString(plain, false)
+  }
+
+encodeQuery(plainQuery :String) :String
+  (* *)
+{
+    _encodeString(plainQuery, true)
+  }
+
+encodeParameters(plainParameters :Dictionary(String, String)) :String
+  (* *)
+{
+    encodeNameValue(plainParameters, ';', true, fun(s :String) { encode(s) })
+  }
+
+encodeMultiParameters(plainParameters :Dictionary(String, List(String))) :String
+  (* *)
+{
+    encodeMultiNameValue(plainParameters, ';', true, fun(s :String) { encode(s) })
+  }
+
+encodeFormFields(plainFormFields :Dictionary(String, String)) :String
+  (* *)
+{
+    encodeNameValue(plainFormFields, '&', false, fun(s :String) { encodeQuery(s) })
+  }
+
+encodeMultiFormFields(plainFormFields :Dictionary(String, List(String))) :String
+  (* *)
+{
+    encodeMultiNameValue(plainFormFields, '&', false, fun(s :String) { encodeQuery(s) })
+  }
+
+private
+
+_encodeString(s :String, isQuery :Bool) :String
+  (* Character Encoding *)
+{
+    result ::= GapString.new(0)
+    s.do(fun(c :Char) {
+      result.addSequence(_encode(c, isQuery))
+    })
+
+    result.asString
+  }
+
+_encode(c :Char, isQuery :Bool) :String
+  (* *)
+{
+    unsafe ::= "<>\"#%{}|\\^~[]`" ; space is handled before 
+    reserved ::= ";/?:@=&"
+
+    ; specialty 
+    if( c = ' ' then: {
+      if( isQuery then: { "+" } else: { "%20" })
+    } else: {
+    if( c <= ' ' ||  c >= '\127'  ||
+     unsafe.includes(c)  ||  reserved.includes(c)  ||
+     isQuery & c = '+'  then: {
+      code ::= c.asInt
+
+      major ::= "0123456789ABCDEF"[code / 16]
+      minor ::= "0123456789ABCDEF"[code % 16]
+
+      String.with3('%', major, minor)
+    } else: {
+      String.with1(c)
+    })})
+  }
+
+_decodeString(s :String, isQuery :Bool) :String
+  (* *)
+{
+    result ::= GapString.new(0)
+    r ::= s.reader
+
+    c :Char := nil
+
+    while({
+      c := r.read
+      c != nil
+    } do: {
+      if( (isQuery & c='+') then: { result.add(' ') } else: {
+      if( c = '%' then: {
+	majorChar ::= r.read
+	minorChar ::= r.read
+
+	if( majorChar = nil then: {
+	  result.add('%')
+        } else: {
+
+        if( minorChar = nil then: {
+ 	  result.add('%') result.add(majorChar)
+	} else: {
+
+        major :Int := nil
+	if( majorChar.isDigit           then: fun() :Void { major := majorChar.asInt - '0'.asInt } else: {
+	if( majorChar.between('a', 'f') then: fun() :Void { major := majorChar.asInt - 'a'.asInt + 10 } else: {
+	if( majorChar.between('A', 'F') then: fun() :Void { major := majorChar.asInt - 'A'.asInt + 10 }) }) })
+
+	minor :Int := nil
+	if( minorChar.isDigit           then: fun() :Void { minor := minorChar.asInt - '0'.asInt } else: {
+	if( minorChar.between('a', 'f') then: fun() :Void { minor := minorChar.asInt - 'a'.asInt + 10 } else: {
+	if( minorChar.between('A', 'F') then: fun() :Void { minor := minorChar.asInt - 'A'.asInt + 10 }) }) })
+
+	if( major.isNil ||  minor.isNil  then: {
+	  result.add('%') result.add(majorChar) result.add(minorChar)
+	} else: {
+	  result.add((major*16 + minor).asChar)
+	})
+      })})} else: {
+	result.add(c)
+      })})
+    })
+
+    result.asString
+  }
+
+parseParameters(parameters :String) :List(Pair(String, String))
+  (* *)
+{
+    parseNameValue(parameters, ';', true)
+  }
+
+parseNameValue(nameValue :String, delim :Char, leads :Bool) :List(Pair(String, String))
+  (* *)
+{
+    result :List(Pair(String, String)) := EmptyList.new
+  
+    index ::= if( leads then: { 0 } else: { (-1 )}) ; pointing to delimiter 
+    while({index.isNotNil} do: {
+      index := index + 1 ; skip delim 
+      newIndex ::= nameValue.locateChar1(delim, index)
+
+      if( newIndex.isNil then: { ; last parameter 
+	equal ::= nameValue.locateChar1('=', index)
+	if( equal.isNil then: {
+	  result := List.cons(Pair.new(nameValue.subString(index, nameValue.size-index), nil), result)
+	} else: {
+	  result := List.cons(Pair.new(nameValue.subString(index, equal-index), nameValue.subString(equal+1, nameValue.size-equal-1)), result)
+	})
+      } else: {
+	equal ::= nameValue.locateChar1('=', index)
+	if( equal.isNil ||  equal > newIndex  then: {
+	  result := List.cons(Pair.new(nameValue.subString(index, newIndex-index), nil), result)
+	} else: {
+	  result := List.cons(Pair.new(nameValue.subString(index, equal-index), nameValue.subString(equal+1, newIndex-equal-1)), result)
+	})
+      })
+
+      index := newIndex
+    })
+
+    result
+  }
+
+encodeNameValue(nameValue :Dictionary(String, String), delim :Char, leads :Bool, encoder :Fun(:String):String) :String
+  (* *)
+{
+    result ::= GapString.new(10)
+    if( leads then: { result.add(delim) })
+
+    nameValue.keysAndElementsDo(fun(name :String, value :String) {
+      result.addSequence(encoder[name])
+      if( value.isNotNil then: {
+        result.add('=')
+        result.addSequence(encoder[value])
+      })
+      result.add(delim)
+    })
+
+    result.removeLast ; delimiter 
+    result.asString
+  }
+
+encodeMultiNameValue(nameValue :Dictionary(String, List(String)), delim :Char, leads :Bool, encoder :Fun(:String):String) :String
+  (* *)
+{
+    result ::= GapString.new(10)
+    if( leads then: { result.add(delim) })
+
+    nameValue.keysAndElementsDo(fun(name :String, value :List(String)) {
+      value.do(fun(v :String) {
+	result.addSequence(encoder[name])
+	if( v.isNotNil then: {
+	  result.add('=')
+	  result.addSequence(encoder[v])
+	})
+	result.add(delim)
+      })
+    })
+
+    result.removeLast ; delimiter 
+    result.asString
+  }
+
+}

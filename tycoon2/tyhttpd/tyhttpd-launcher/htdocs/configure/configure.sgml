@@ -1,0 +1,50 @@
+<!-- <head>
+<title>Tycoon Web Server Configuration</title>
+</head><body> -->
+
+<h2>Tycoon Web Server Configuration</h2>
+
+<form  action="index-action.stml">
+
+<input type=hidden name=server value="`server`">
+
+<table width="100%" border=1>
+
+<tr><td colspan=7><font size="+2"><b><tycoon>out << server</tycoon></b></font>
+<tr><td colspan=7></td></tr>
+
+<tr><td></td><td align=right>Server Home:<td><tycoon/out << unparse(properties.home)/
+
+<tr><td></td><td align=right>Host:<td>
+  <input name=host type=text size=60 value="`unparse(properties.host)`">
+  
+<tr><td></td><td align=right>Port:<td>
+  <input name=port type=text size=5
+   value='`if( properties.port.isNil then: {""} else: {properties.port.printString})`'>
+  
+<tr><td></td><td align=right>Document Root:<td>
+  <input name=documentRoot type=text size=60 value="`unparse(properties.documentRoot)`">
+  
+<tr><td></td><td align=right>User:<td>
+  <input name=user type=text size=60 value="`unparse(properties.user)`">
+
+<tr><td></td><td align=right>Group:<td>
+  <input name=group type=text size=60 value="`unparse(properties.group)`">
+  
+<!--##
+  <tr><td></td><td align=right>URL:<td>
+  <input name=url type=text size=60 value="`properties.url`">
+-->
+
+<tr><td></td><td align=center colspan=2>
+  <input type=submit name=configure-action value="OK">
+  <input type=reset value="Reset">
+</table>
+</form>
+
+
+
+
+
+
+

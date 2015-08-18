@@ -1,0 +1,54 @@
+class ReentrantCompactParser(D <: Object)
+super Compact, AbstractParser(D)
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ ###? 
+ for explanation, cf. CompactParser *)
+meta ReentrantCompactParserClass(D)
+{
+logging :Bool
+
+parse(in :Reader(Token(Object)),
+      error :Fun(:Token(Object)):Void) :D
+  (* *)
+{ p ::=
+    CompactParser.new(start,
+      actionOffsets, terminalTable, actionTable, actions, gotoTable, eofToken)
+  if( logging.isNotNil then: { p.logging := logging })
+  p.parse(in, error)
+}
+
+private
+
+start :Int
+
+actionOffsets :Array(Int)
+
+terminalTable :Array(TerminalO)
+
+actionTable :Array(Int)
+
+actions :Array(CompactAction)
+
+gotoTable :Array(Int)
+
+eofToken :SimpleToken
+
+}

@@ -1,0 +1,168 @@
+class Filter
+super Util
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+*)
+meta AbstractClass
+{
+filter(input :Input, output :Output) :Void
+  (* write output depending on input. *)
+deferred
+
+inputNeedsBuffering :Bool
+  (* override this method with true
+     if the filter method needs a buffered input
+     (i.e. it makes many small reads) *)
+{ false }
+
+outputNeedsBuffering :Bool
+  (* override this method with true
+     if the filter method needs a buffered output
+     (i.e. it makes many small writes) *)
+{ false }
+
+filterPath(path :String, extension :String) :Void
+  (* rename <path> to <path+extension>,
+     then filter the contents of <path+extension> and write to
+     <path>. <path> and <path+extension> are left on the disc.
+     Note that an existing extension is not truncated (may lead to
+     problems on 8+3 file systems...) *)
+{
+  input ::= File.new(path)
+  filterFile(input, extension)
+}
+
+filterDirectory(path :String, pred :Fun(:String):Bool, extension :String) :Void
+  (* perform filterPath for all regular files in directory <path> *)
+{
+  Directory.new(path).do(fun(c:DirectoryContents) {
+    c.case(:Void,
+      fun(:Directory){ ;nop
+},
+      fun(f:File){
+        if( pred[f.name]
+	then: { tycoon.stdout.writeln(f.path)  ; ### progress 
+	    if( !File.new(f.path+extension).exists
+	    then: { filterFile(f, extension) }) })
+      })
+  })
+}
+
+filterPathStdout(inputPath :String) :Void
+  (* *)
+{
+  withInput(inputPath, fun(input :Input) {
+    filter(input, tycoon.stdout)
+  })
+}
+
+filterPathString(inputPath :String) :String
+  (* *)
+{
+  withStringOutput(fun(output :Output) {
+    withInput(inputPath, fun(input :Input) {
+      filter(input, output)
+    })
+  })
+}
+
+filterPathPath(inputPath :String, outputPath :String) :Void
+  (* *)
+{
+  withOutput(outputPath, fun(output :Output) {
+    withInput(inputPath, fun(input :Input) {
+      filter(input, output)
+    })
+  })
+}
+
+filterStringString(input :String) :String
+  (* *)
+{
+  input ::= StringInput.new(input)
+  withStringOutput(fun(output :Output) {
+    filter(input, output)
+  })
+}
+
+filterFile(f :File, extension :String) :Void
+  (* *)
+{
+  assert({ !f.isOpen })
+  path ::= f.path
+  problem :Bool := false
+  if( path.endsWith(extension)
+  then: { tycoon.stdout
+        << "  "<<f.path << " already has backup extension, not filtered\n"
+      problem := true })
+  if( File.new(path+extension).exists
+  then: { tycoon.stdout
+        << "  "<<f.path<<extension << " exists, not filtered\n"
+      problem := true })
+  if( !problem
+  then: { f.rename(path + extension)
+      f.openRead
+      protect({
+	input ::=
+	  if( inputNeedsBuffering then: { f.bufferedInput } else: { f })
+	withOutput(path, fun(output :Output) {
+	  filter(input, output)
+	})
+      }, {
+	f.close
+      }) })
+}
+
+withStringOutput(proc :Fun(:Output):Void) :String
+  (* *)
+{
+  output ::= StringBuilderOutput.new
+  proc[output]
+  output.contents
+}
+
+withInput(T <: Void, inputPath :String, proc :Fun(:Input):T) :T
+  (* *)
+{
+  f ::= File.openRead(inputPath)
+  protect({
+    input ::=
+      if( inputNeedsBuffering then: { f.bufferedInput } else: { f })
+    proc[input]
+  }, {
+    f.close
+  })
+}
+
+withOutput(T <: Void, outputPath :String, proc :Fun(:Output):T) :T
+  (* *)
+{
+  f ::= File.openWrite(outputPath)
+  output :Output := f
+  protect({
+    if( outputNeedsBuffering
+     then: { output := f.bufferedOutput })
+    proc[output]
+  }, {
+    output.close
+  })
+}
+
+}

@@ -1,0 +1,15 @@
+class MasterClass
+super ConcreteClass(Master)
+(**)
+meta MetaClass
+{
+new2(queue :WorkQueue(WorkItem(Int)), items :Int) :Master
+  (* *)
+{
+  m ::= _new
+  m._workQueue := queue
+  m._items := items
+  m._init
+}
+
+}

@@ -1,0 +1,23 @@
+# Makefile for jam
+
+# NT (with Microsoft compiler)
+# Use FATFS if building on a DOS FAT file system
+Lib = $(MSVCNT)/lib
+Include = $(MSVCNT)/include
+CC = cl /nologo
+CFLAGS = -I $(Include) -DNT 
+TARGET = /Fejam0
+LINKLIBS = $(Lib)/oldnames.lib $(Lib)/kernel32.lib $(Lib)/libc.lib
+
+SOURCES = \
+	command.c compile.c execunix.c execvms.c expand.c \
+	filent.c fileos2.c fileunix.c filevms.c glob.c hash.c \
+	headers.c jam.c jambase.c jamgram.c lists.c make.c make1.c \
+	newstr.c option.c parse.c pathunix.c pathvms.c regexp.c \
+	rules.c scan.c search.c timestamp.c variable.c
+
+all: jam0
+	jam0
+
+jam0:
+	$(CC) $(TARGET) $(CFLAGS) $(SOURCES) $(LINKLIBS)

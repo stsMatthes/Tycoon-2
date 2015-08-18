@@ -1,0 +1,80 @@
+class TL2VMInterfaceClass
+super ConcreteClass(TL2VMInterface)
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+*)
+meta MetaClass
+{
+new(builtinsPath :String,
+    opcodesPath :String) :TL2VMInterface
+  (* *)
+{
+  instance ::= _new
+  instance.builtins := parseBuiltins(builtinsPath)
+  instance.opcodes := parseOpcodes(opcodesPath)
+  instance._init
+  instance
+}
+
+parseBuiltins(path :String) :Array(TL2BuiltinDescriptor)
+  (* *)
+{
+  ga ::= GapArray.new0
+  parseTabs(path, 4, fun(a :Array(String)) {
+    className ::= a[0]
+    selector ::= a[1]
+    arity ::= a[2].asInt
+    sorts ::= a[3].asInt
+    ga.add(TL2BuiltinDescriptor.new(ga.size, className,selector,arity,sorts))
+  })
+  ga.asArray
+}
+
+parseOpcodes(path :String) :Dictionary(Symbol, TL2OpcodeDescriptor)
+  (* *)
+{
+  d ::= Dictionary.new
+  parseTabs(path, 3, fun(a :Array(String)) {
+    n ::= a[0].asInt
+    mnemonic ::= Symbol.new(a[1])
+    argBytes ::= a[2].asInt
+    d[mnemonic] := TL2OpcodeDescriptor.new(n,mnemonic,argBytes)
+  })
+  d
+}
+
+parseTabs(path :String, nFields :Int, fu :Fun(:Array(String)):Void) :Void
+  (* *)
+{
+  f ::= File.openRead(path).bufferedInput
+  line :String := nil
+  while({ line := f.readln line.isNotNil } do: {
+    t ::= Tokenizer.new(line.reader, "\t")
+    a ::= Array.fromReader(t)
+    if( a.size != nFields
+    then: { tycoon.stdout << "Wrong number of fields in file "<<path<<": "
+		      << "expected "<<nFields<<", found "<<a.size<<'\n'
+	assert({ false }) })
+    fu[a]
+  })
+  f.close
+}
+
+}

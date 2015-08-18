@@ -1,0 +1,120 @@
+class TL2ValueIde
+super TL2Ide
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ name :type *)
+meta TL2ValueIdeClass
+{
+mutable :Bool
+{ (__flags & 1) != 0 }
+
+assigned :Bool
+{ (__flags & 2) != 0 }
+
+component :Bool
+{ (__flags & 4) != 0 }
+
+accessedFromClosure :Bool
+{ (__flags & 8) != 0 }
+
+relationName :String
+  (* *)
+{ if( component then: {" @:"} else: {" :"})
+}
+
+case( T <: Void,
+      value :Fun(:TL2ValueIde):T,
+      type :Fun(:TL2TypeIde):T,
+      subType :Fun(:TL2SubTypeIde):T) :T
+  (* *)
+{
+  value[self]
+}
+
+scope(env :TL2Scoper) :TL2ValueIde
+  (* *)
+{
+  i ::= super.scope(env)
+  if( i.isNotNil
+   then: { i ::= i.asValueIde
+       if( i.isNotNil
+        then: { i }
+        else: { env.errorLog.error(pos, "type identifier used as value: "+name)
+            self }) }
+   else: { nil })
+}
+
+setImmutable :Void
+  (* *)
+{ assert({ !assigned })
+  _mutable := false
+}
+
+setAssigned :Void
+  (* *)
+{ assert({ mutable })
+  _assigned := true
+}
+
+setAccessedFromClosure :Void
+  (* *)
+{ _accessedFromClosure := true
+}
+
+celled :Bool
+  (* *)
+{ (assigned || component) &&  accessedFromClosure  }
+
+private
+
+__flags :Int
+
+_setFlag(i :Int, b :Bool) :Void
+{ if( b then: {
+    __flags := __flags | i
+  } else: {
+    __flags := __flags & i.not
+  })
+}
+
+"_mutable:="(b :Bool) :Void
+{ _setFlag(1, b) }
+
+"_assigned:="(b :Bool) :Void
+{ _setFlag(2, b) }
+
+"_component:="(b :Bool) :Void
+{ if(__flags.isNil then: { __flags := 0 })
+  _setFlag(4, b)
+}
+
+"_accessedFromClosure:="(b :Bool) :Void
+{ _setFlag(8, b) }
+
+_init :Void
+  (* *)
+{ super._init
+  if(__flags.isNil then: { __flags := 0 })
+  _mutable := true
+  _assigned := false
+  _accessedFromClosure := false
+  self
+}
+}

@@ -1,0 +1,248 @@
+class Resource
+super Finalized
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+  Persistent External Resources
+
+  The abstract state of a Resource object is composed of
+
+    1) the volatile state, including any attributes which directly or indirectly
+       reference process or operating system resources not under control of the
+       persistent object store, such as operating system handles (e.g. file
+       handles) and attributes of such handles (e.g. the file handle's
+       read/write position).
+
+       Volatile state is highly system dependent and is generally invalid after a
+       restart of the persistent object store, whether on the same platform or
+       not.
+
+    2) the persistent state is a system-independent representation of the
+       volatile state which is sufficient to recreate the volatile state
+       (e.g. reopening a file and seeking to the correct position) on any
+       platform supported by the Tycoon engine.
+
+  IMPORTANT NOTE:
+  Private methods preceeded by an underscore ('_') namely
+  _saveState, _open, _close, _reopen and _rollback must NEVER be synchronized
+  and must NOT call any method that does synchronization on the resource.
+  This applies to all subclasses of the Resource class. Not doing so will
+  lead to persistent deadlocks when commiting blocked resources or reopening
+  a store.
+  
+  Use public synchronized methods calling the private methods as demonstrated
+  in this class.
+
+  Author:  Andreas Gawecki
+  Date:    21-Feb-1996
+  Updates: 31-Jan-1997 ag: major redesign of Resource protocol
+*)
+meta ResourceClass
+{
+weakRef :WeakRef(Resource)
+  (* answer the weak reference created for bookkeeping *)
+{
+  _weakRef
+}
+
+open :Self
+  (* Open the resource as an atomic transaction.
+     calls private method _open and
+     Note that multiple calls to open() are allowed,
+     open() has no effect if the receiver is already closed.
+     registers the receiver as 'open'.
+     Subclasses should redefine '_open' rather than this method.
+   *)
+ensure isOpen
+  
+{
+  ; we must first synchronize with the resource manager and then
+  ; with ourself, or deadlock may occur
+  ;  
+  Resource.openResourceTransaction(fun() {
+    synchronize({
+      if( !isOpen then: { _open })
+      self
+    })
+  })
+}
+
+close :Void
+  (* Open the resource as an atomic transaction.
+     calls private method _close and 
+     unregisters the receiver.
+     Note that multiple calls to close() are allowed,
+     close() has no effect if the receiver is already closed.
+     Subclasses should redefine '_close' rather than this method.
+   *)
+ensure !isOpen
+{
+  ; we must first synchronize with the resource manager and then
+  ; with ourself, or deadlock may occur
+  ;  
+  Resource.closeResourceTransaction(self, fun() {
+    synchronize({
+      if( isOpen then: {
+        _close
+      })
+    })
+  })
+}
+
+isOpen :Bool
+  (* answer true if the receiver is in 'open' state, else answer false.
+     This method should be implemented cheaply since it may be called
+     frequently during open, close, and commit transactions.     
+  *)
+deferred
+
+commit(commitment :Commitment, inner :Fun():Void) :Void
+  (* this method is called by the resource manager.
+     encode the volatile state into the persistent state and call 'inner'.
+     
+     'inner' will eventually trigger the Tycoon engine to commit the persistent object store.
+     after 'inner' returns, the given commitment contains information about the
+     the progress of the transaction, e.g. whether the system has just committed,
+     if it has been restarted  at some later time on a possibly different
+     platform, or if a rollback occurred.
+     
+     if the system has been restarted, reopen the
+     receiver based on the information stored in the receivers persistent state.
+   *)
+{
+  _synchronizeCommit({
+    _saveState
+    inner[]
+    commitment.catchAllWithResource(self,    
+      fun() { },
+      fun() { _rollback },
+      fun() {
+        _reopen
+	if( !(clazz == AnsiC) then: {
+	   if( !(clazz == TycoonOS) then: { 
+              if( tycoon.debug then: {
+	        tycoon.stdout << "\nResource::_reopen: "
+	        printOn(tycoon.stdout)
+	        tycoon.stdout.nl
+	      })
+	})})})
+  })
+}
+
+finalize :Void
+  (* The receiver has become unreachable.
+     Close the receiver if still open to free any external resources.
+  *)
+{
+  synchronize({
+    if( isOpen then: { close })
+    super.finalize
+  })
+}
+
+private
+
+_weakRef :WeakRef(Resource)
+
+_initWeakRef :WeakRef(Self)
+  (* *)
+{
+  wr ::= super._initWeakRef
+  _weakRef := wr
+  wr  
+}
+
+_saveState :Void
+  (* we are inside a commit transaction (Resource::commit).
+     save the volatile state into the persistent state,
+     enabling reopening on restart (see _reopen).
+    
+     Default: do nothing.
+  *)
+{
+}
+
+_open :Void
+  (* we are inside an 'opening' transaction (Resource::open). 
+     open the receiver, using some inital state.
+     sublcasses must override this method to satisfy the ensure
+     clause of Resource::open, and build a super._open call
+     chain with this method as the final call.     
+  *)
+{
+}
+
+_close :Void
+  (* we are inside an 'closing transaction (Resource::close). 
+     close the receiver, free any external resources.
+     sublcasses must override this method to satisfy the ensure
+     clause of Resource::close, and build a super._close call
+     chain with this method as the final call.     
+  *)
+{
+}
+
+_reopen :Void
+  (* we are inside a commit transaction (Resource::commit).
+     the system has been restarted.
+     reopen the receiver with any saved state (see _saveState).
+     Default: call '_open'
+  *)
+ensure isOpen
+{
+  _open
+}
+
+_rollback :Void
+  (* we are inside a commit transaction (Resource::commit).
+     the system has been rolled back.
+     reset the receiver with any saved state (see _saveState).
+     Default: '_close' and  '_reopen'
+  *)
+require isOpen
+{
+  _close
+  _reopen
+}
+
+_synchronizeCommit(T <:Void, statement :Fun():T) :T
+  (* we are inside a commit transaction (Resource::commit).
+     lock the receiver, call 'statement', and release the receiver.
+     
+     the default implementation uses no special synchronization.
+     sublcasses may use the usual Monitor protocol.
+     some more complicated subclasses with potentially blocking methods may
+     have to provide a more specialized synchronization protocol (see
+     IOAccessor).
+  *)
+{
+  synchronize(statement)
+}
+
+synchronize(T <:Void, statement :Fun():T) :T
+  (* synchronize access to the receiver.
+     the default implementation uses no special synchronization.
+     sublcasses may use the usual Monitor protocol.
+  *)
+{
+  statement[]
+}
+
+}

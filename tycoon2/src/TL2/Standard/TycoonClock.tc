@@ -1,0 +1,55 @@
+class TycoonClock
+super Clock
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+   A Tycoon clock measures the time in ticks elapsed in the
+   Tycoon epoch. to find out more  about the Tycoon epoch, call
+      Date.fromTime(0L)
+   The Tycoon epoch is guaranteed to be the same on every system Tycoon
+   is running on.
+   
+   The accuracy of a Tycoon clock is intended to be useful for measuring
+   time intervals similar to human reaction times.
+
+Author:  Andreas Gawecki
+Date:    02-Sep-1996
+Updates: (Date)	  (Name)	(Description)
+*)
+meta SimpleConcreteClass(TycoonClock)
+{
+clockRate :Long
+  (* answer the number of ticks per second *)
+{
+   Long.fromInt(1)  ;##this value will change in the future
+}
+
+time :Long
+  (* answer the number of ticks elapsed in the Tycoon epoch. to find out more
+     about the Tycoon epoch, call
+       Date.fromTime(0L)
+     the Tycoon epoch is guaranteed to be the same on every system Tycoon
+     is running on.
+  *)
+{
+  tycoon.tycoonOS.date_time
+}
+
+}

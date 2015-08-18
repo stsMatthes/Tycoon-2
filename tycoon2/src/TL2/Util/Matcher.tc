@@ -1,0 +1,62 @@
+class Matcher
+super Util
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+*)
+meta MatcherClass()
+
+{
+"[]"(s :String) :Bool
+  (* *)
+{
+  scanner ::= Scanner.new1(tables, StringInput.new(s), s.size)
+  red ::=
+    try({ scanner.read } else:
+	fun(e:Exception) {
+	  if( e."class" == ScannerError
+	  then: { ; unexpected character
+;	         occurs only when complete is true, so this is a failure 
+	      nil }
+	  else: { e.raise })
+        })
+  red.isNotNil && ( !complete ||  scanner.tokenSize = s.size  )
+}
+
+private
+
+pattern :String
+
+complete :Bool
+
+tables :ScannerTables(Bool)
+
+_init :Void
+  (* *)
+{
+  assert({ pattern.isNotNil })
+  sb ::= ScannerBuilder(:Bool, :Void).new
+  sb.addToken(pattern, fun(:Scanner(Bool)){ true })
+  if( !complete
+  then: { sb.addToken("[^]", fun(s:Scanner(Bool)){ s.read }) })
+  tables := sb.generate
+  self
+}
+
+}

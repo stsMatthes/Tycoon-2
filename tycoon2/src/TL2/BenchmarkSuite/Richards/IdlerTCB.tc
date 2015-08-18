@@ -1,0 +1,27 @@
+class IdlerTCB
+super TaskControlBlock
+(**)
+meta IdlerTCBClass(IdlerTCB)
+{
+handle :IdleTaskRec
+
+actionFunc(p :Packet,  noWork :Bool) :List(TaskControlBlock)
+  (* *)
+{
+  bm ::= TaskControlBlock.benchmark
+  handle.count := handle.count - 1
+  if( handle.count == 0
+    then: { bm.holdSelf }
+    else: { if( handle.control.even
+         then: { handle.control := handle.control / 2
+	     bm.release(bm.deviceA) }
+	 else: { handle.control := (handle.control / 2).xor(53256)
+	     bm.release(bm.deviceB) })
+      })
+}
+
+print() :Void
+  (* *)
+{}
+
+}

@@ -1,0 +1,200 @@
+<!DOCTYPE stml system>
+<stml processor=HttpdAdminProcessor language='tycoon-1.0'>
+<script language=tycoon>
+  if(formFields.includesKey("back") && formFields.includesKey("backto") then: {
+    obj ::= handleToObject(formFields["backto"])
+    historyBackTo(obj)
+    jump("object.stml", #(#("oid", getHandle(obj))))
+  })
+
+  expression ::= formFields["expression"]
+  obj ::=
+    formFields.lookup("oid", fun(oidStr:String){
+      handleToObject(oidStr)
+    }, {
+      nil
+    })
+
+  printByValue ::= Set.fromSequence( #( "Nil", "Char", "Int", "Real", "True", "False", "MutableString", "Symbol" ) )
+
+  shortName ::= fun(o:Object) {
+    className ::= o."class".name
+    out << if(className[0].isVowel then:{"an "} else:{"a "}) << className
+    if( printByValue.includes(className) then: {
+      out << " (" << o.printString << ")"
+    })
+  }
+
+  withStdout ::=
+    fun(stdout :Output, thunk:Fun():Void) {
+      oldOut ::= tycoon.stdout
+  
+      tycoon.stdout := stdout
+      tycoon.tl.topLevel.errorLog.errout := stdout
+      tycoon.tl.loader.errorLog.errout := stdout
+  
+      protect({
+        thunk[]
+      }, {
+	tycoon.stdout :=
+	tycoon.tl.topLevel.errorLog.errout :=
+	tycoon.tl.loader.errorLog.errout :=
+	  oldOut
+      })
+    }
+
+    filteredExpression ::=
+      ( strout ::= StringBuilderOutput.new
+        eout ::= SgmlEntityOutput.new(strout)
+	eout << expression
+	strout.contents )
+
+</script>
+<HTML>
+  <HEAD>
+    <TITLE>Evaluate <ref name=filteredExpression></ref> in <apply name=shortName><arg><ref name=obj></ref></apply></TITLE>
+  </HEAD>
+
+  <BODY background="#ffffff">
+
+    <H1>Evaluate <ref name=filteredExpression></ref> in <A HREF='`url("object.stml", #(#("oid", getHandle(obj))))`'><apply name=shortName><arg><ref name=obj></ref></apply></A></H1>
+
+<script language=tycoon>
+    errorLog ::= StoredErrorLog.new
+    parseUnit ::=
+      tycoon.tl.newSyntax.scanAndParse("<input field>", StringInput.new(expression), errorLog)
+    if( !errorLog.hasErrors then: {
+      parseUnit.accept(
+	TL2FunParseUnitVisitor(:Void).new
+	  .ifBindings(fun(pub :TL2PUBindings) {
+	    fu :Fun():Object := _typeCast(
+	      tycoon.tl.compiler.simpleEval(obj, obj."class",
+	        TL2CompiledFun.new(pub.b.pos, #"[]", EmptyList.new, nil, pub.b),
+		errorLog))
+	    if( !errorLog.hasErrors then: {
+	      out.h3({ out << "Output:" })
+	      result :Object := nil
+	      exception :Exception := nil
+	      nonComponent :Bool := false
+	      out.pre({
+		withStdout[TeeOutput.new(SgmlEntityOutput.new(out), tycoon.stdout), {
+		  try({
+		    if( formFields.includesKey("Trace") then: {
+		      Thread.this.traceFlags :=
+			Thread.TRACE_SEND | Thread.TRACE_RETURN | Thread.TRACE_EXCEPTION
+			| Thread.TRACE_INHERIT | if(nonComponent then: {Thread.TRACE_NONCOMPONENT} else: { 0 })
+		      protect({
+		        result := fu[]
+		      }, {
+		        Thread.this.traceFlags := 0
+		      })
+		    } else: {
+		      result := fu[]
+		    })
+		  } else: fun(e:Exception) {
+		    exception := e
+		  })
+		}]
+	      })
+	      if( exception.isNotNil then: {
+		out.h3({ out << "Exception:" })
+		out.a(url("object.stml", #(#("oid",getHandle(exception)))), nil, {
+		  shortName[exception]
+		})
+	      } else: {
+		out.h3({ out << "Result:" })
+		out.a(url("object.stml", #(#("oid",getHandle(result)))), nil, {
+		  shortName[result]
+		})
+	      })
+	      if( formFields.includesKey("Trace") then: {
+		out.h3({ out << "Trace:" })
+		out.beginStartTag("applet")
+		out.attr("archive", "java/applet.jar")
+		out.attr("code", "SeqDiagram.class")
+		out.attr("background", "#ffffff")
+		out.intAttr("width", 1000)
+		out.intAttr("height", 600)
+		out.endStartTag
+		out.nl
+		generateSessionParameters
+		event :DbgEvent := nil
+		objNum ::= IdDictionary(:Object, :Int).new
+		getObjNum ::= fun(o :Object) {
+		  if(o.isNil then: { 0 } else: {
+		    objNum.memoize(o, {
+		      num ::= objNum.size + 1
+		      out.beginStartTag("param")
+		      out.attr("name", "object"+num.printString)
+		      out.attr("value",
+			__stml_toString({
+			  out << getHandle(o) << " "
+			  shortName[o]
+			}))
+		      out.endStartTag
+		      out.nl
+		      num
+		    })
+		  })
+		}
+		eventNo ::= 1
+		sbo ::= StringBuilderOutput.new
+		while({ event := DbgTracer.instance.msgPort.tryGet
+			event.isNotNil } do: {
+		  sbo << event.case(
+			  fun( :DbgSendEvent) { "Send " },
+			  fun( :DbgReturnEvent) { "Return " },
+			  fun( :DbgExceptionEvent) { "Exception " })
+		      << getObjNum[event.thread] << ' '
+		      << getObjNum[event.sender] << ' '
+		      << getObjNum[if(nonComponent then:{event.sender} else:{event.sendingComponent})] << ' '
+		      << getObjNum[event.receiver] << ' '
+		      << getObjNum[if(nonComponent then:{event.receiver} else:{event.receivingComponent})] << ' '
+		  event.case(
+		    fun(event :DbgSendEvent) {
+		      sbo << getObjNum[event.replyTo] << ' '
+			  << getObjNum[if(nonComponent then:{event.replyTo} else:{event.replyToComponent})] << ' '
+			  << event.selector
+		      event.args.do(fun(arg :Object) {
+			sbo << ' ' << getObjNum[arg]
+		      })
+		    },
+		    fun(event :DbgReturnEvent) {
+		      sbo << getObjNum[event.result]
+		      if(event.__basicSize > 6 && event.isComponent then: {
+		        sbo << " @"
+		      })
+		    },
+		    fun(event :DbgExceptionEvent) {
+		      sbo << getObjNum[event.exception]
+		    })
+		  out.beginStartTag("param")
+		  out.attr("name", "event"+eventNo.printString)
+		  out.attr("value", sbo.contents)
+		  out.endStartTag
+		  out.nl
+		  eventNo := eventNo + 1
+		  sbo.clear
+		})
+		out << "Sorry, Java enabled browser required\n"
+		out.endTag("applet")
+	      })
+	    })
+	   })
+	  .otherwise(fun(:TL2ParseUnit) {
+	    errorLog.error(parseUnit.pos, "expected value bindings")
+	   }))
+    })
+    if( errorLog.hasErrors then: {
+      out.h3({ out << "Errors have occurred:" })
+      errorLog.errorsDo(fun(pos :SourcePos, degree :String, message :String) {
+	pos.printOn(out)
+	out.writeString(": ")
+	out.em({ out.writeString(degree) })
+	out.writeString(": ")
+	out.pre({ out.writeString(message) })
+      })
+    })
+</script>
+
+

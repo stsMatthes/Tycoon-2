@@ -1,0 +1,178 @@
+class TL2Type
+super TL2Argument, TL2ProgramObject
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+*)
+meta AbstractClass
+{
+argumentCase(T <: Void,
+       ifValue :Fun(:TL2Value):T,
+       ifType :Fun(:TL2Type):T) :T
+  (* *)
+{ ifType[self] }
+
+charCode :Char
+  (* for the TVM *)
+deferred
+
+resultCharCode :Char
+  (* *)
+deferred
+
+scope(env :TL2Scoper) :TL2Type
+  (* restrict result type to TL2Type *)
+deferred
+
+subst(subst :TL2Subst) :TL2Type
+  (* *)
+deferred
+
+visitor(T <: Void) :TL2FunTypeVisitor(T)
+  (* *)
+deferred
+
+accept(T <: Void, visitor :TL2TypeVisitor(T)) :T
+  (* visitor support
+     calls the appropriate method in visitor
+  *)
+deferred
+
+checkType(subst :TL2Subst) :Void
+  (* is the receiver a well-formed type ? *)
+deferred
+
+checkApplication(args :List(TL2Type), subst :TL2Subst) :Void
+  (* is it legal to apply the receiver to args ? 
+ also checks self and args *)
+deferred
+
+expose(T <: Void, subst :TL2Subst, exact :Bool, cont :Fun(:TL2Type, :TL2Subst):T) :T
+  (* unroll the type (with/without args) to either
+     - a method suite
+     - an oper type
+     and call 'cont' with the result.
+
+     parameter 'exact' determines whether an upper bound as result is ok.
+
+     "ensure" : t.expose(subst, exact, fun(t1 :TL2Type, s1 :TL2Subst) {
+                    t1.expose(s1, exact, fun(t2 :TL2Type, s2 :TL2Subst) {
+		       (t1 == t2) & (s1 == s2)
+		    })
+		})
+
+		resp t.apply(args, subst, argsSubst, exact, fun(t1 :TL2Type, s1 :TL2Subst) ...
+		
+      i.e. exposition is always as complete as possible	
+  *)
+deferred
+
+apply(T <: Void, args :List(TL2Type), subst :TL2Subst, argsSubst :TL2Subst, exact :Bool, cont :Fun(:TL2Type, :TL2Subst):T) :T
+  (* *)
+deferred
+
+reduce(T <: Void, subst :TL2Subst, cont :Fun(:TL2Type, :TL2Subst):T) :T
+  (* partially apply the substitution
+     needed to keep the TL2SubTypeDB small and to enable cache hits
+  *)
+deferred
+
+lookup(T <: Void,
+	 selector :Symbol,
+	 subst :TL2Subst,
+	 withPrivate :Bool,
+	 cont :Fun(:TL2Method, :TL2Subst):T) :T
+  (* method lookup/iteration.
+     withPrivate determines whether the private method dictionaries
+     are consulted, too.
+     It also possible to provide a Self-type that
+     all Self types found during lookup are substituted to.
+  *)
+deferred
+
+lookupWithSelf(T <: Void,
+	 selector :Symbol,
+	 subst :TL2Subst,
+	 withPrivate :Bool,
+	 selfType :TL2Type,
+	 selfTypeSubst :TL2Subst,
+	 cont :Fun(:TL2Method, :TL2Subst):T) :T
+  (* *)
+deferred
+
+methodsDo(subst :TL2Subst,
+	    withPrivate :Bool,
+	    callback :Fun(:TL2Method, :TL2Subst):Void) :Void
+  (* *)
+deferred
+
+methodsWithSelfDo(subst :TL2Subst,
+		    withPrivate :Bool,
+		    selfType :TL2Type,
+		    selfTypeSubst :TL2Subst,
+	            callback :Fun(:TL2Method, :TL2Subst):Void) :Void
+  (* *)
+deferred
+
+checkSubType(big :TL2Type, subst :TL2Subst, bigSubst :TL2Subst) :Void
+  (* check whether the receiver is a subtype of big *)
+deferred
+
+checkSubObjectType(big :TL2ObjectType, subst :TL2Subst, bigSubst :TL2Subst) :Void
+  (* these perform the actual subtype tests; now both types are known
+     performed via Visitor-style double dispatch.
+  
+ ## do we need all these ??? *)
+deferred
+
+checkSubClassInstanceType(big :TL2ClassInstanceType, subst :TL2Subst, bigSubst :TL2Subst) :Void
+  (* *)
+deferred
+
+checkSubNilType   (big :TL2NilType,    subst :TL2Subst, bigSubst :TL2Subst) :Void
+  (*
+     checkSubVoidType  (big :TL2VoidType,   subst :TL2Subst, bigSubst :TL2Subst) deferred
+  *)
+deferred
+
+checkSubApplyType (big :TL2ApplyType,  subst :TL2Subst, bigSubst :TL2Subst) :Void
+  (* *)
+deferred
+
+checkSubIdeType   (big :TL2IdeType,    subst :TL2Subst, bigSubst :TL2Subst) :Void
+  (* *)
+deferred
+
+checkSubUnifyType (big :TL2UnifyType,  subst :TL2Subst, bigSubst :TL2Subst) :Void
+  (* *)
+deferred
+
+checkSubOperType  (big :TL2OperType,   subst :TL2Subst, bigSubst :TL2Subst) :Void
+  (* *)
+deferred
+
+checkSubMethodType(big :TL2MethodType, subst :TL2Subst, bigSubst :TL2Subst) :Void
+  (* *)
+deferred
+
+checkSubSubstType  (big :TL2SubstType, subst :TL2Subst, bigSubst :TL2Subst) :Void
+  (* *)
+deferred
+
+}

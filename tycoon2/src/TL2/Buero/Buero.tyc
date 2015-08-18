@@ -1,0 +1,13 @@
+tycoon.tl.loader.registerDirectory("Buero") ?
+tycoon.tl.loader.update ?
+tycoon.tl.classManager.classTable.do(fun(c:Class){
+  path ::= c.pos.where
+  if( path.startsWith("./Buero/") 
+   && tycoon.tl.typeChecker.agenda.includes(c) then: { 
+    tycoon.tl.typeChecker.checkClass(c)
+  })
+}) ?
+tycoon.tl.typeChecker.finalize ?
+
+TestTreiber.init ?
+TestTreiber.instance.setup ?

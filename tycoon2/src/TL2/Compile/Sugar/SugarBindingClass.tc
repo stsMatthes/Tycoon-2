@@ -1,0 +1,18 @@
+class SugarBindingClass
+super ConcreteClass(SugarBinding)
+(**)
+meta MetaClass
+{
+new(ide :String, type :String, equal :String, val :String) :SugarBinding
+  (* *)
+{
+  instance ::= _new
+  instance.ide := ide
+  instance.type := type
+  instance.equal := equal
+  instance.val := val
+  instance._init
+  instance
+}
+
+}

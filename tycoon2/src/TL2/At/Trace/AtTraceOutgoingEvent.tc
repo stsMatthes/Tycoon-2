@@ -1,0 +1,13 @@
+class AtTraceOutgoingEvent
+super AtTraceEvent
+meta AbstractClass
+{
+sendingComponent :Object
+sender :Object
+
+case(T<:Void,
+     ifSend :Fun(:AtTraceSend):T,
+     ifReturn :Fun(:AtTraceReturn):T,
+     ifStart :Fun(:AtTraceStart):T) :T
+  deferred
+}

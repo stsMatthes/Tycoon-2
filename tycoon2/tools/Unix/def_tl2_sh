@@ -1,0 +1,135 @@
+# Copyright (c) 1996 Higher-Order GmbH, Hamburg. All rights reserved.
+# def_hox_sh 1.14 98/05/19
+# Andreas Gawecki
+#
+# This script is used to set up a shell user's environment for
+# running TL2 (Tycoon Language 2) programs.
+#
+# Usage:   cd <HOX_HOME>
+#	   . def_hox
+#
+# The command must be prefaced with ".", otherwise no permanent
+# change in the environment takes place
+#
+
+
+#
+# Get platform variable TL2_HOST
+#
+MYOS=`uname -s`
+PLATFORM=unknown
+
+case "${MYOS}" in
+  SunOS*)
+	  PROCESSOR=`uname -p`
+	  VERSION=`uname -r`
+	  case "${PROCESSOR}" in
+	    sparc*)
+		    case "${VERSION}" in
+		      4.*) PLATFORM=unsupported ;;
+		      5.*) PLATFORM=Solaris2_SPARC ;;
+		    esac ;;
+	    i86*) ;;
+	    *) ;;
+	  esac ;;
+  NEXTSTEP*)
+          PROCESSOR=`uname -m`
+          VERSION=`uname -v`
+          case "${PROCESSOR}" in
+            586*) PLATFORM=Nextstep_i386 ;;
+            *) ;;
+          esac ;;
+  HP-UX*)   PROCESSOR=`uname -m`
+            VERSION=`uname -v`
+            PLATFORM=HPUX_PARISC ;;	  
+  Windows*) PROCESSOR=`uname -m`
+            VERSION=`uname -v`
+            PLATFORM=Win32_i386 ;;
+  CYGWIN*)  PROCESSOR=`uname -m`
+            VERSION=`uname -v`
+            PLATFORM=Win32_i386 ;;
+  Linux*)   PROCESSOR=`uname -m`
+            VERSION=`uname -v`
+            PLATFORM=Linux_i386 ;;
+  Darwin*)  PROCESSOR=`uname -p`
+  	    VERSION=`uname -r`
+        PROCESSOR=`uname -m`
+        case "${PROCESSOR}" in
+          x86_64*) PLATFORM=Darwin_x86_64 ;;
+          *) PLATFORM=Darwin_PPC ;;
+        esac ;;
+  *) ;;
+esac
+
+case "${PLATFORM}" in
+  unsupported*) echo "unsupported system: ${MYOS} ${VERSION} ${PROCESSOR}" ;;
+  unknown*)     echo "unknown system: ${MYOS} ${VERSION} ${PROCESSOR}" ;;
+  *)            HOX_HOST=$PLATFORM
+                export HOX_HOST
+                ;;
+esac
+
+echo HOX_HOST=$PLATFORM
+
+#
+# Set variables
+#
+
+OLD_HOME=${HOX_HOME:-}
+OLD_LD_LIBRARY_PATH=${LD_LIBRARY_PATH:-}
+
+HOX_HOME=`pwd`
+export HOX_HOME
+TL2_PATH=$HOX_HOME/src/TL2
+export TL2_PATH
+
+case "$OLD_HOME" in
+    "")	OLD_HOME=$PATH ;; #Do not match anything in next case statement
+esac				
+
+case "$PATH" in
+    *$OLD_HOME/bin/$HOX_HOST*)	PATH=`echo $PATH | \
+			    	sed "s;$OLD_HOME/bin/$HOX_HOST;$HOX_HOME/bin/$HOX_HOST;g"` ;;
+    *$HOX_HOME/bin/$HOX_HOST*)	;;
+    *:)				PATH=${PATH}$HOX_HOME/bin/$HOX_HOST: ;;
+    "")				PATH=$HOX_HOME/bin/$HOX_HOST ;;
+    *)				PATH=$PATH:$HOX_HOME/bin/$HOX_HOST ;;
+esac
+
+export PATH 
+
+case "$OLD_LD_LIBRARY_PATH" in
+    *$OLD_HOME/lib/$HOX_HOST*)	LD_LIBRARY_PATH=`echo $OLD_LD_LIBRARY_PATH | \
+			  	sed "s;$OLD_HOME/lib/$HOX_HOST;$HOX_HOME/lib/$HOX_HOST;g"` ;;
+    *$HOX_HOME/lib/$HOX_HOST*)	;;
+    *:)				LD_LIBRARY_PATH=${OLD_LD_LIBRARY_PATH}$HOX_HOME/lib/$HOX_HOST: ;;
+    "")				LD_LIBRARY_PATH=$HOX_HOME/lib/$HOX_HOST ;;
+    *)				LD_LIBRARY_PATH=$OLD_LD_LIBRARY_PATH:$HOX_HOME/lib/$HOX_HOST ;;
+esac
+
+export LD_LIBRARY_PATH
+
+# sgmls (will soon be obsolete):
+SGML_DIR=${HOX_HOME}/lib/sgml
+SGML_PATH=$SGML_DIR/%T.%Y:${SGML_DIR}/%N.%Y
+export SGML_DIR
+export SGML_PATH
+
+# nsgmls (a replacement for sgmls):
+OLD_SGML_CATALOG_FILES=${SGML_CATALOG_FILES:-}
+case "$OLD_SGML_CATALOG_FILES" in
+    "")	 SGML_CATALOG_FILES=${HOX_HOME}/lib/sgml/CATALOG ;;
+    *)	 SGML_CATALOG_FILES=${HOX_HOME}/lib/sgml/CATALOG:${OLD_SGML_CATALOG_FILES} ;;
+esac
+export SGML_CATALOG_FILES
+
+OLD_SGML_SEARCH_PATH=${SGML_SEARCH_PATH:-}
+case "$OLD_SGML_SEARCH_PATH" in
+    "")	 SGML_SEARCH_PATH=${HOX_HOME}/lib/sgml ;;
+    *)	 SGML_SEARCH_PATH=${HOX_HOME}/lib/sgml:${OLD_SGML_SEARCH_PATH} ;;
+esac
+export SGML_SEARCH_PATH
+
+#env|grep $HOX_HOME
+echo HOX_HOME=$HOX_HOME
+

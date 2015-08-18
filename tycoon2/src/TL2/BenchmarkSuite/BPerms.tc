@@ -1,0 +1,81 @@
+class BPerms
+super Benchmark
+(**)
+meta SimpleConcreteClass(BPerms)
+{
+private
+
+permArray :MutableArray(Int)
+
+permCount :Int
+
+permSwap(i :Int, j :Int) :Void
+  (*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ Exchange elements at index i and j. *)
+{
+  temp ::= permArray[i]
+  permArray[i] := permArray[j]
+  permArray[j] := temp 
+  }
+
+permute(n :Int) :Void
+  (* *)
+{
+ permCount := permCount + 1
+ if( n != 1
+   then: { permute(n - 1)
+       k ::= n - 1
+       while( { k >= 1} do:
+              { permSwap(n,k)
+	        permute(n - 1)
+		permSwap(n,k)
+		k := k - 1 })
+      })
+}
+
+permInit() :Void
+  (* *)
+{
+  for(1 to: 7 do:
+    fun(i :Int)
+    { permArray[i] := i - 1 })
+}
+
+_setup() :Void
+  (* *)
+{
+}
+
+_run() :Void
+  (* *)
+{
+  permCount := 0
+  permArray := MutableArray.new(10)
+  for(1 to:5 do:
+    fun(i :Int)
+    { permInit()
+      permute(7) })
+  if( permCount != 43300
+     then: { "Error in permutations\n".print }
+     else: { "Permutations completed\n".print })
+}
+
+}

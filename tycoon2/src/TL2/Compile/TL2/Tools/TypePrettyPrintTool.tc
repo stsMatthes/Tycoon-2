@@ -1,0 +1,142 @@
+class TypePrettyPrintTool
+super SignaturePrintMixin, TL2TypeVisitor(Void), Tools
+meta TypePrettyPrintToolClass
+{
+visitApplyType(t :TL2ApplyType) :Void
+  (*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ *)
+{ t.oper.accept(self)
+  out << '('
+  t.args.doBetween(fun(t :TL2Type) {
+    t.accept(self)
+  }, {
+    out << ", "
+  })
+  out << ')'
+}
+
+visitCPLType(t :TL2CPLType) :Void
+  (* *)
+{ visitApplyType(t) }
+
+visitClassInstanceType(t :TL2ClassInstanceType) :Void
+  (* *)
+{ out << '*' << t.class_.name }
+
+visitIdeType(t :TL2IdeType) :Void
+  (* *)
+{
+  ide ::= t.ide
+  out << if( ide.name.isNil then: { "?" } else: { ide.name })
+; out << "[" << ide.identityHash << "]"
+}
+
+visitMethodType(t :TL2MethodType) :Void
+  (* *)
+{
+  printSelector(t.selectorSansAt)
+  if( !t.positionalDomain.isEmpty || t.hasKeywords then: {
+    out << '('
+    printDomain(t)  ;; from SignaturePrintMixin
+    out << ')'
+  })
+  out << if(t.isComponent then: {" @:"} else: {" :"})
+  if( t.range.isNil then: {
+    out.writeAll("??")
+  } else: {
+    t.range.accept(self)
+  })
+}
+
+visitNilType( :TL2NilType) :Void
+  (* *)
+{ out << "Nil" }
+
+visitObjectType(t :TL2ObjectType) :Void
+  (* *)
+{ out << t  ;; ###
+}
+
+visitOperType(t :TL2OperType) :Void
+  (* *)
+{ out << "(\\-/"
+  t.domain.doBetween(fun(i :TL2TypeIde) {
+    printPositionalParameter(i)  ;; from SignaturePrintMixin
+  }, {
+    out << ", "
+  })
+  out << "."
+  t.range.accept(self)
+  out << ")"
+}
+
+visitSubstType(t :TL2SubstType) :Void
+  (* *)
+{ out << '('
+  t.type.accept(self)
+  out << t.substi << ')'
+}
+
+visitUnifyType(t :TL2UnifyType) :Void
+  (* *)
+{
+  out<<"U?["<<t.identityHash<<"]("
+  printBound(t.lowerBoundType)
+  out<<", "
+  printBound(t.upperBoundType)
+  out<<")"
+}
+
+visitVoidType( :TL2VoidType) :Void
+  (* *)
+{ out << "Void" }
+
+out :Printer
+{ _out }
+
+private
+
+_out :Printer
+
+printBound(t :TL2Type) :Void
+  (* *)
+{
+  passThrough ::= fun(t:TL2Type) {
+    t.accept(self)
+  }    
+  v ::= TL2FunTypeVisitor.new
+    .ifIdeType(passThrough)
+    .ifNilType(passThrough)
+    .ifVoidType(passThrough)
+    .ifApplyType(fun(a :TL2ApplyType) {
+       a.oper.accept(self)
+       out<<"(...)"
+     })
+    .otherwise(fun(t:TL2Type) {
+      out<<"a "<<t."class".name
+    })
+  t.accept(v)
+}
+
+printType(t :TL2Type) :Void
+{ t.accept(self) }
+
+}

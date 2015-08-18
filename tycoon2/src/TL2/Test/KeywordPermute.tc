@@ -1,0 +1,168 @@
+class KeywordPermute
+super Object
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+;
+tycoon.tl.loader.registerFile("Test/KeywordPermute.tc");
+tycoon.tl.loader.update;
+tycoon.tl.typeChecker.checkClass(KeywordPermute);
+tycoon.tl.typeChecker.finalize;
+KeywordPermute.new.run;
+
+*)
+meta SimpleConcreteClass(KeywordPermute)
+{
+
+computePermute(km :Array(Symbol), ks :Array(Symbol)) :ByteArray
+  require km.as(Set).size = km.size
+       && ks.as(Set).size = ks.size
+       && km.includesAll(ks)
+{
+  if( !( km.as(Set).size = km.size
+         && ks.as(Set).size = ks.size
+         && km.includesAll(ks)) then: {
+    tycoon.stdout << "This will not work.\n";
+  })
+
+  posInMsg :MutableArray(Int) := MutableArray.new(km.size)
+  for(0 to: km.size-1 do: fun(im:Int) {
+    is ::= ks.locate(km[im])
+    if( is.isNil then: {
+      ;; undefined keywords coinciding with pushed undefined values
+      ;; keep their position (no push).  For others, the position
+      ;; is determined later
+      is := if( im >= ks.size then: { im } else: { -1 })
+    })
+    posInMsg[im] := is
+  })
+  ;; find good source positions (posInMsg) for undefined keywords
+  undefSearch ::= ks.size
+  for(0 to: ks.size-1 do: fun(im:Int) {
+    if( posInMsg[im] = -1 then: {
+      while({ posInMsg[undefSearch] = undefSearch } do: {
+	;; skip undefined keywords
+	undefSearch := undefSearch + 1
+      })
+      ;; undefSearch is the index of a defined keyword,
+      ;; at an index where an undefined value has been pushed
+      ;; take the undefined value from this index to avoid
+      ;; fruitless permutation of undefined elements
+      posInMsg[im] := undefSearch
+      undefSearch := undefSearch + 1
+    })
+  })
+
+  output :GapByteArray := GapByteArray.new(posInMsg.size / 2 * 3 + 2)
+  for(0 to: posInMsg.size-1 do: fun(i :Int) {
+    if( posInMsg[i] != i then: {
+      ;; Zyklen der Länge 1 ignorieren
+      cycleSizeIdx ::= output.size  ;; remember pos for backpatch
+      output.add(0)
+
+      output.add(km.size-1-i)
+      current :Int := posInMsg[i]
+      posInMsg[i] := i  ;; just for beauty, unnecessary
+      repeat({
+	output.add(km.size-1-current)
+	next ::= posInMsg[current]
+	posInMsg[current] := current
+	current := next
+      } until: {
+	current = i
+      })
+      output[cycleSizeIdx] := output.size - cycleSizeIdx - 2
+    })
+  })
+  output.add(0)
+  output.asByteArray
+}
+
+execute( nMissing :Int, 
+         permutation :ByteArray, 
+         stack :Stack(Object)) :Void
+{
+  for(1 to: nMissing do: fun(:Int){
+    stack.addFirst(#undef)
+  })
+
+  p ::= permutation.reader
+  cycleLen :Int := nil
+  while({ (cycleLen := p.read) > 0 } do: {
+    prevIdx :Int := p.read
+    first :Object := stack[prevIdx]
+    while({
+      idx ::= p.read
+      stack[prevIdx] := stack[idx]
+      prevIdx := idx
+      (cycleLen := cycleLen-1) > 0
+    } do: { })
+    stack[prevIdx] := first
+  })
+  assert({ p.read.isNil })
+}
+
+test(km :Array(Symbol), ks :Array(Symbol), keyargs :Array(Object)) :Void
+{
+  assert({ ks.size = keyargs.size })
+  stack :Stack(Object) := Stack.new
+  keyargs.do(fun(o:Object){ stack.addFirst(o) })
+
+  nMissing ::= km.size - ks.size
+  tycoon.stdout << "( "
+  ks.keysAndElementsDo(fun(i :Int, s :Symbol) {
+    tycoon.stdout << s << ": " << stack[ks.size-1-i] << " "
+  })
+  tycoon.stdout << ")-["
+  permutation ::= computePermute(km, ks)
+  tycoon.stdout << permutation
+  execute(nMissing, permutation, stack)
+  assert({ km.size = stack.size })
+  tycoon.stdout << "]-> ( "
+  km.keysAndElementsDo(fun(i :Int, s :Symbol) {
+    tycoon.stdout << s << ": " << stack[km.size-1-i] << " "
+  })
+  tycoon.stdout << ")\n"
+}
+
+run :Void
+{
+  test(#(#a,#b,#c), #(), #())
+  test(#(#a,#b,#c), #(#a), #("A"))
+  test(#(#a,#b,#c), #(#b), #("B"))
+  test(#(#a,#b,#c), #(#c), #("C"))
+  test(#(#a,#b,#c), #(#a, #b), #("A", "B"))
+  test(#(#a,#b,#c), #(#a, #c), #("A", "C"))
+  test(#(#a,#b,#c), #(#b, #a), #("B", "A"))
+  test(#(#a,#b,#c), #(#b, #c), #("B", "C"))
+  test(#(#a,#b,#c), #(#c, #a), #("C", "A"))
+  test(#(#a,#b,#c), #(#c, #b), #("C", "B"))
+  test(#(#a,#b,#c), #(#a, #b, #c), #("A", "B", "C"))
+  test(#(#a,#b,#c), #(#a, #c, #b), #("A", "C", "B"))
+  test(#(#a,#b,#c), #(#b, #a, #c), #("B", "A", "C"))
+  test(#(#a,#b,#c), #(#b, #c, #a), #("B", "C", "A"))
+  test(#(#a,#b,#c), #(#c, #a, #b), #("C", "A", "B"))
+  test(#(#a,#b,#c), #(#c, #b, #a), #("C", "B", "A"))
+
+  test(#(#a,#b,#c,#d,#e,#f), #(#b,#c,#d,#e), #("B","C","D","E"))
+}
+
+
+}

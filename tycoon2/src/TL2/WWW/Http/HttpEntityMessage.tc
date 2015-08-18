@@ -1,0 +1,86 @@
+class HttpEntityMessage
+super HttpMessage
+(**)
+meta HttpEntityMessageClass()
+
+{
+hasContentEncoding :Bool
+  (*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ HTTP/1.1 'Entity headers' *)
+{ hasHeader("content-encoding") }
+
+contentEncoding :String
+  (* *)
+{ headerValue("content-encoding") }
+
+"contentEncoding:="(ce :String) :Void
+  (* *)
+{ setHeaderValue("content-encoding", MimeString, ce) }
+
+hasContentLength :Bool
+  (* *)
+{ hasHeader("content-length") }
+
+contentLength :Int
+  (* *)
+{ headerValue("content-length") }
+
+"contentLength:="(cl :Int) :Void
+  (* *)
+{ setHeaderValue("content-length", MimeInt, cl) }
+
+hasLastModified :Bool
+  (* *)
+{ hasHeader("last-modified") }
+
+lastModified :Date
+  (* *)
+{ headerValue("last-modified") }
+
+"lastModified:="(lm :Date) :Void
+  (* *)
+{ setHeaderValue("last-modified", MimeDate, lm) }
+
+withOutput(contentType :MediaType, statement :Fun(:Output):Void) :Self
+  (* call statement with an output buffer and
+     set the receivers content and header fields accordingly
+   *)
+{
+   out ::= StringBuilderOutput.new1(1000)
+   statement[out]
+   buf ::= out.contents
+   contentLength := buf.size
+   self.contentType := contentType
+   body := StringInput.new(buf)
+   self
+}
+
+withHtmlGenerator(statement :Fun(:HtmlGenerator):Void) :Self
+  (* execute statement with a newly created HtmlGenerator object and
+     set the receivers content and header fields accordingly
+   *)
+{
+  withOutput(MediaType.TEXT_HTML, fun(o :Output) {
+    statement[HtmlGenerator.new(o)]
+  })
+}
+
+}

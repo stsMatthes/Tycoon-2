@@ -1,0 +1,24 @@
+class WorkItem(T <: Object)
+super Object
+(**)
+meta WorkItemClass(T)
+{
+eval :Void
+  (* *)
+{
+  _result := _process[]
+}
+
+result :T
+  (* *)
+{
+  _result
+}
+
+private
+
+_process :Fun():T
+
+_result :T
+
+}

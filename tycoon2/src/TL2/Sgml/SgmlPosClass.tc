@@ -1,0 +1,16 @@
+class SgmlPosClass
+super ConcreteClass(SgmlPos)
+(**)
+meta MetaClass
+{
+new(path :String, line :Int) :SgmlPos
+  (* *)
+{
+  instance ::= _new
+  instance.path := path
+  instance._line := line
+  instance._init
+  instance
+}
+
+}

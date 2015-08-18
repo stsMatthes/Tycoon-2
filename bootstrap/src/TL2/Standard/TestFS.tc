@@ -1,0 +1,278 @@
+class TestFS
+super Object
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+   Author: ??
+   Date:   ??
+   Updates:	(Date)		(Name)		(Description)
+		03-May-1999	A.Willomat	Some adaptions & WinNT Tests
+*)
+meta SimpleConcreteClass(TestFS)
+{
+fix(s: String): String
+  (* *)
+{ if( s==nil then: {"nil"} else: {s}) }
+
+a_test(got: String, expected: String) :Void
+  (* *)
+{
+	if( got = expected then: {
+	  tycoon.stdout.writeln("OK, got \""+fix(got)+"\"")
+	} else: {
+	  tycoon.stdout.writeln("Failure, got \""+fix(got)+"\", expected \""+fix(expected)+"\"")
+	})
+}
+
+do_tests :Void
+  (* *)
+{
+	fs ::= tycoon.os.fs
+	
+	a_test(fs.pathPrefix("/a"), "/")
+	a_test(fs.lastArc("/a"), "a")
+
+	a_test(fs.pathPrefix("/a/b"), "/a")
+	a_test(fs.lastArc("/a/b"), "b")
+
+	a_test(fs.pathPrefix("/a/"), "/")
+	a_test(fs.lastArc("/a/"), "a")
+
+	a_test(if( fs.isAbsolutePath("/a/b/c") then: {"YES"} else: {"NO"}), "YES")
+	a_test(if( fs.isAbsolutePath("/") then: {"YES"} else: {"NO"}), "YES")
+	a_test(if( fs.isAbsolutePath("a/b/c") then: {"YES"} else: {"NO"}), "NO")
+	a_test(if( fs.isAbsolutePath("") then: {"YES"} else: {"NO"}), "NO")
+	
+	a_test(try({
+	  fs.extendPath("", "tar")
+	} else: fun(e: Exception) {
+	  "EXCEPTION"
+	}), "EXCEPTION")
+
+	a_test(try({
+	  fs.extendPath("/", "tar")
+	} else: fun(e: Exception) {
+	  "EXCEPTION"
+	}), "EXCEPTION")
+
+	a_test(try({
+	  fs.extendPath("a", "tar")
+	} else: fun(e: Exception) {
+	  "EXCEPTION"
+	}), "./a.tar")
+
+
+	a_test(try({
+	  fs.extendPath("/a", "tar")
+	} else: fun(e: Exception) {
+	  "EXCEPTION"
+	}), "/a.tar")
+
+	a_test(try({
+	  fs.extendPath("/a/b", "tar")
+	} else: fun(e: Exception) {
+	  "EXCEPTION"
+	}), "/a/b.tar")
+
+	a_test(try({
+	  fs.extendPath("a/b", "tar")
+	} else: fun(e: Exception) {
+	  "EXCEPTION"
+	}), "./a/b.tar")
+
+	
+	a_test(try({
+	  fs.extendPath(fs.extendPath("a/b", "tar"), "gz")
+	} else: fun(e: Exception) {
+	  "EXCEPTION"
+	}), "./a/b.tar.gz")
+
+
+	a_test(fs.pathExtension("/"), nil)
+	a_test(fs.pathExtension("a"), nil)
+	a_test(fs.pathExtension("/a"), nil)
+	a_test(fs.pathExtension("a.b"), "b")
+	a_test(fs.pathExtension("/a.b"), "b")
+	a_test(fs.pathExtension("/a/b.tar.gz"), "gz")
+	a_test(fs.pathExtension("."), nil) ; arkward 
+	a_test(fs.pathExtension("a/b.tar."), "")
+	a_test(fs.pathExtension("/home/mernst/.chsrc"), nil)
+
+	; fs.pathBase("") => FSError 
+	; fs.pathBase("/") => FSError 
+
+	; these are a little arkward 
+       	; fs.pathBase(".") => FSError 
+	a_test(fs.pathBase(".."), ".") ; this one fails 
+
+	a_test(fs.pathBase("a.b"), "./a")
+	a_test(fs.pathBase("/a.b"), "/a")
+	; fs.pathBase("/a/") => FSError 
+
+	a_test(fs.pathBase("/a/b/Python.tar.gz"), "/a/b/Python.tar")
+	a_test(fs.pathBase("/a/b."), "/a/b")
+	; fs.pathBase("/a/.tar") => FSError 
+
+	; fs.pathPrefix("/") => FSError 
+	; fs.pathPrefix("") => FSError 
+	a_test(fs.pathPrefix("."), "")
+	a_test(fs.pathPrefix("/a"), "/")
+	a_test(fs.pathPrefix("/a/b/c"), "/a/b")
+	a_test(fs.pathPrefix("/a/b/"), "/a")
+	a_test(fs.pathPrefix("a/b/c"), "./a/b")
+	a_test(fs.pathPrefix("a/b/"), "./a")
+
+	a_test(fs.lastArc("/a"), "a")
+	a_test(fs.lastArc("a"), "a")
+	a_test(fs.lastArc("/a/b"), "b")
+	a_test(fs.lastArc("/a/b/"), "b")
+	a_test(fs.lastArc("/"), "/")
+	a_test(fs.lastArc(""), ".")
+
+	a_test(fs.replaceExtension("/a.tar", "gz"), "/a.gz")
+	a_test(fs.replaceExtension("a.tar.gz", "Z"), "./a.tar.Z")
+	a_test(fs.replaceExtension("/a/b/c/d.e", "f"), "/a/b/c/d.f")
+
+	a_test(fs.canonicalizePath("////hier/./././//.///.///wohne/..//.././ich"), "/hier/wohne/../../ich")
+	
+	nil
+}
+
+do_tests_Win32 :Void
+  (* *)
+{
+	fs ::= tycoon.os.fs
+	
+	a_test(fs.pathPrefix("\\a"), "\\")
+	a_test(fs.lastArc("\\a"), "a")
+
+	a_test(fs.pathPrefix("\\a\\b"), "\\a")
+	a_test(fs.lastArc("\\a\\b"), "b")
+
+	a_test(fs.pathPrefix("\\a\\"), "\\")
+	a_test(fs.lastArc("\\a\\"), "a")
+
+	a_test(if( fs.isAbsolutePath("\\a\\b\\c") then: {"YES"} else: {"NO"}), "YES")
+	a_test(if( fs.isAbsolutePath("\\") then: {"YES"} else: {"NO"}), "YES")
+	a_test(if( fs.isAbsolutePath("a\\b\\c") then: {"YES"} else: {"NO"}), "NO")
+	a_test(if( fs.isAbsolutePath("") then: {"YES"} else: {"NO"}), "NO")
+
+        ; special on Win32
+	a_test(if( fs.isAbsolutePath("C:\\a\\b\\c") then: {"YES"} else: {"NO"}), "YES")
+	a_test(if( fs.isAbsolutePath("C:a\\b\\c") then: {"YES"} else: {"NO"}), "NO")
+	a_test(if( fs.isAbsolutePath("\\a\\b\\c") then: {"YES"} else: {"NO"}), "YES")
+
+	
+	a_test(try({
+	  fs.extendPath("", "tar")
+	} else: fun(e: Exception) {
+	  "EXCEPTION"
+	}), "EXCEPTION")
+
+	a_test(try({
+	  fs.extendPath("\\", "tar")
+	} else: fun(e: Exception) {
+	  "EXCEPTION"
+	}), "EXCEPTION")
+
+	a_test(try({
+	  fs.extendPath("a", "tar")
+	} else: fun(e: Exception) {
+	  "EXCEPTION"
+	}), ".\\a.tar")
+
+
+	a_test(try({
+	  fs.extendPath("\\a", "tar")
+	} else: fun(e: Exception) {
+	  "EXCEPTION"
+	}), "\\a.tar")
+
+	a_test(try({
+	  fs.extendPath("\\a\\b", "tar")
+	} else: fun(e: Exception) {
+	  "EXCEPTION"
+	}), "\\a\\b.tar")
+
+	a_test(try({
+	  fs.extendPath("a\\b", "tar")
+	} else: fun(e: Exception) {
+	  "EXCEPTION"
+	}), ".\\a\\b.tar")
+
+	
+	a_test(try({
+	  fs.extendPath(fs.extendPath("a\\b", "tar"), "gz")
+	} else: fun(e: Exception) {
+	  "EXCEPTION"
+	}), ".\\a\\b.tar.gz")
+
+
+	a_test(fs.pathExtension("\\"), nil)
+	a_test(fs.pathExtension("a"), nil)
+	a_test(fs.pathExtension("\\a"), nil)
+	a_test(fs.pathExtension("a.b"), "b")
+	a_test(fs.pathExtension("\\a.b"), "b")
+	a_test(fs.pathExtension("\\a\\b.tar.gz"), "gz")
+	a_test(fs.pathExtension("."), nil) ; arkward 
+	a_test(fs.pathExtension("a\\b.tar."), "")
+	a_test(fs.pathExtension("\\home\\mernst\\.chsrc"), nil)
+
+	; fs.pathBase("") => FSError 
+	; fs.pathBase("\\") => FSError 
+
+	; these are a little arkward 
+       	; fs.pathBase(".") => FSError 
+	a_test(fs.pathBase(".."), ".") ; this one fails 
+
+	a_test(fs.pathBase("a.b"), ".\\a")
+	a_test(fs.pathBase("\\a.b"), "\\a")
+	; fs.pathBase("\\a\\") => FSError 
+
+	a_test(fs.pathBase("\\a\\b\\Python.tar.gz"), "\\a\\b\\Python.tar")
+	a_test(fs.pathBase("\\a\\b."), "\\a\\b")
+	; fs.pathBase("\\a\\.tar") => FSError 
+
+	; fs.pathPrefix("\\") => FSError 
+	; fs.pathPrefix("") => FSError 
+	a_test(fs.pathPrefix("."), "")
+	a_test(fs.pathPrefix("\\a"), "\\")
+	a_test(fs.pathPrefix("\\a\\b\\c"), "\\a\\b")
+	a_test(fs.pathPrefix("\\a\\b\\"), "\\a")
+	a_test(fs.pathPrefix("a\\b\\c"), ".\\a\\b")
+	a_test(fs.pathPrefix("a\\b\\"), ".\\a")
+
+	a_test(fs.lastArc("\\a"), "a")
+	a_test(fs.lastArc("a"), "a")
+	a_test(fs.lastArc("\\a\\b"), "b")
+	a_test(fs.lastArc("\\a\\b\\"), "b")
+	a_test(fs.lastArc("\\"), "\\")
+	a_test(fs.lastArc(""), ".")
+
+	a_test(fs.replaceExtension("\\a.tar", "gz"), "\\a.gz")
+	a_test(fs.replaceExtension("a.tar.gz", "Z"), ".\\a.tar.Z")
+	a_test(fs.replaceExtension("\\a\\b\\c\\d.e", "f"), "\\a\\b\\c\\d.f")
+
+	a_test(fs.canonicalizePath("\\\\\\\\hier\\.\\.\\.\\\\\\.\\\\\\.\\\\\\wohne\\..\\\\..\\.\\ich"), "\\hier\\wohne\\..\\..\\ich")
+	
+	nil
+}
+
+}

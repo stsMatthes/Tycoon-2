@@ -1,0 +1,155 @@
+class StmlTypeVariable
+super StmlType
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ hacked implementation of type unification variables.
+   "unification" is never undone. used for tycoon values (whose type is unknown to us) *)
+meta StmlSimpleTypeClass(StmlTypeVariable)
+{
+printOn(out :Output) :Void
+  (* *)
+{
+  if( isBound
+  then: { out.writeString("{") boundTo.printOn(out) out.write('}') }
+  else: { out.writeString("??") })
+}
+
+isBound :Bool
+  (* *)
+{ boundTo.isNotNil }
+
+bindTo(t :StmlType) :Void
+  (* *)
+require !isBound
+{ assert({ !isBound })
+  boundTo := t
+}
+
+boundType :StmlType
+  (* *)
+require isBound
+{ boundTo }
+
+equalType(t :StmlType) :Bool
+  (* *)
+{ if( isBound
+  then: { boundTo.equalType(t) }
+  else: { boundTo := t
+      true })
+}
+
+before(t :StmlType) :StmlType
+  (* *)
+{ if( isBound
+  then: { boundTo.before(t) }
+  else: { t.afterTypeVariable(self) })
+}
+
+afterFun(t :StmlFunType) :StmlType
+  (* *)
+{
+  if( isBound
+  then: { boundTo.afterString(t) }
+  else: { ; If the tycoon value is a string, it collides with the fun;
+;         If it is a fun, the other fun is not used. Hence: A complete failure. 
+      StmlWrongType.new(position, "Incompatible adjacent types", nil, t, nil, self) })
+}
+
+afterString(t :StmlStringType) :StmlType
+  (* *)
+{
+  if( isBound
+  then: { boundTo.afterString(t) }
+  else: { boundTo := t
+      t })
+}
+
+afterWhiteString(t :StmlWhiteStringType) :StmlType
+  (* *)
+{
+  if( isBound
+  then: { boundTo.afterWhiteString(t) }
+  else: { ; no restriction on my type 
+      self })
+}
+
+afterTypeVariable(t :StmlTypeVariable) :StmlType
+  (* *)
+require !t.isBound
+{
+  if( isBound
+  then: { boundTo.afterTypeVariable(t) }
+  else: { ; two adjacent values only make sense for strings 
+      stringT ::= StmlStringType.new(t.position)
+      bindTo(stringT)
+      t.bindTo(stringT)
+      stringT })
+}
+
+afterBottom(t :StmlBottomType) :StmlType
+  (* *)
+{
+  if( isBound
+  then: { boundTo.afterBottom(t) }
+  else: { ; no restriction on my type 
+      self })
+}
+
+isSubTypeOf(t :StmlType) :Bool
+  (* *)
+{ if( isBound
+  then: { boundTo.isSubTypeOf(t) }
+  else: { boundTo := t  ; ### ?? 
+      true })
+}
+
+isSuperTypeOfFun(t :StmlFunType) :Bool
+  (* *)
+{ if( isBound
+  then: { boundTo.isSuperTypeOfFun(t) }
+  else: { boundTo := t
+      true })
+}
+
+isSuperTypeOfString(t :StmlStringType) :Bool
+  (* *)
+{ if( isBound
+  then: { boundTo.isSuperTypeOfString(t) }
+  else: { boundTo := t
+      true })
+}
+
+isSuperTypeOfWhiteString(t :StmlWhiteStringType) :Bool
+  (* *)
+{ if( isBound
+  then: { boundTo.isSuperTypeOfWhiteString(t) }
+  else: { boundTo := t
+      true })
+}
+
+isStringContext :Bool
+  (* isSuperTypeOfBottom: as inherited *)
+{ true }
+
+private
+
+boundTo :StmlType
+
+}

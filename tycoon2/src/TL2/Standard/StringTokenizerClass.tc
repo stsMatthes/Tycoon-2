@@ -1,0 +1,15 @@
+class StringTokenizerClass
+super ConcreteClass(StringTokenizer)
+meta MetaClass
+{
+
+new(str :String, separators :String) :StringTokenizer
+{
+  instance ::= _new
+  instance._str := str
+  instance.separators := separators
+  instance._init
+  instance
+}
+
+}

@@ -1,0 +1,183 @@
+class X_TL2FunTypeVisitor(T <: Void)
+super X_TL2TypeVisitor(T)
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+*)
+meta SimpleConcreteClass(X_TL2FunTypeVisitor(T))
+{
+visitApplyType          (t :X_TL2ApplyType)  :T
+  (* *)
+{ if( _ifApplyType.isNil then: { super.visitApplyType(t) } else: { _ifApplyType[t] }) }
+
+visitCPLType            (t :X_TL2CPLType)    :T
+  (* *)
+{ if( _ifCPLType.isNil then: { super.visitCPLType(t) } else: { _ifCPLType[t] }) }
+
+visitClassInstanceType  (t :X_TL2ClassInstanceType) :T
+  (* *)
+{ if( _ifClassInstanceType.isNil then: { super.visitClassInstanceType(t) } else: { _ifClassInstanceType[t] }) }
+
+visitIdeType            (t :X_TL2IdeType)    :T
+  (* *)
+{ if( _ifIdeType.isNil then: { super.visitIdeType(t) } else: { _ifIdeType[t] }) }
+
+visitMethodType         (t :X_TL2MethodType) :T
+  (* *)
+{ if( _ifMethodType.isNil then: { super.visitMethodType(t) } else: { _ifMethodType[t] }) }
+
+visitNilType            (t :X_TL2NilType)    :T
+  (* *)
+{ if( _ifNilType.isNil then: { super.visitNilType(t) } else: { _ifNilType[t] }) }
+
+visitObjectType         (t :X_TL2ObjectType) :T
+  (* *)
+{ if( _ifObjectType.isNil then: { super.visitObjectType(t) } else: { _ifObjectType[t] }) }
+
+visitOperType           (t :X_TL2OperType)   :T
+  (* *)
+{if( _ifOperType.isNil then: { super.visitOperType(t) } else: { _ifOperType[t] }) }
+
+visitSubstType          (t :X_TL2SubstType)  :T
+  (* *)
+{ if( _ifSubstType.isNil then: { super.visitSubstType(t) } else: { _ifSubstType[t] }) }
+
+visitUnifyType          (t :X_TL2UnifyType)  :T
+  (* *)
+{ if( _ifUnifyType.isNil then: { super.visitUnifyType(t) } else: { _ifUnifyType[t] }) }
+
+visitVoidType           (t :X_TL2VoidType)   :T
+  (* *)
+{ if( _ifVoidType.isNil then: { super.visitVoidType(t) } else: { _ifVoidType[t] }) }
+
+visitDefault            (t :X_TL2Type)       :T
+  (* *)
+{ if( _otherwise.isNil then: { super.visitDefault(t) } else: { _otherwise[t] }) }
+
+ifApplyType(action :Fun(:X_TL2ApplyType):T) :Self
+  (* *)
+{
+    _ifApplyType := action
+    self
+  }
+
+ifCPLType(action :Fun(:X_TL2CPLType):T) :Self
+  (* *)
+{
+    _ifCPLType := action
+    self
+  }
+
+ifClassInstanceType(action :Fun(:X_TL2ClassInstanceType):T) :Self
+  (* *)
+{
+    _ifClassInstanceType := action
+    self
+  }
+
+ifIdeType(action :Fun(:X_TL2IdeType):T) :Self
+  (* *)
+{
+    _ifIdeType := action
+    self
+  }
+
+ifMethodType(action :Fun(:X_TL2MethodType):T) :Self
+  (* *)
+{
+    _ifMethodType := action
+    self
+  }
+
+ifNilType(action :Fun(:X_TL2NilType):T) :Self
+  (* *)
+{
+    _ifNilType := action
+    self
+  }
+
+ifObjectType(action :Fun(:X_TL2ObjectType):T) :Self
+  (* *)
+{
+    _ifObjectType := action
+    self
+  }
+
+ifOperType(action :Fun(:X_TL2OperType):T) :Self
+  (* *)
+{
+    _ifOperType := action
+    self
+  }
+
+ifSubstType(action :Fun(:X_TL2SubstType):T) :Self
+  (* *)
+{
+    _ifSubstType := action
+    self
+  }
+
+ifUnifyType(action :Fun(:X_TL2UnifyType):T) :Self
+  (* *)
+{
+    _ifUnifyType := action
+    self
+  }
+
+ifVoidType(action :Fun(:X_TL2VoidType):T) :Self
+  (* *)
+{
+    _ifVoidType := action
+    self
+  }
+
+otherwise(action :Fun(:X_TL2Type):T) :Self
+  (* *)
+{
+    _otherwise := action
+    self
+  }
+
+private
+
+_ifApplyType  :Fun(:X_TL2ApplyType):T
+
+_ifCPLType    :Fun(:X_TL2CPLType):T
+
+_ifClassInstanceType  :Fun(:X_TL2ClassInstanceType):T
+
+_ifIdeType    :Fun(:X_TL2IdeType):T
+
+_ifMethodType :Fun(:X_TL2MethodType):T
+
+_ifNilType    :Fun(:X_TL2NilType):T
+
+_ifObjectType :Fun(:X_TL2ObjectType):T
+
+_ifOperType   :Fun(:X_TL2OperType):T
+
+_ifSubstType  :Fun(:X_TL2SubstType):T
+
+_ifUnifyType  :Fun(:X_TL2UnifyType):T
+
+_ifVoidType   :Fun(:X_TL2VoidType):T
+
+_otherwise    :Fun(:X_TL2Type):T
+
+}

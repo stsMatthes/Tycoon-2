@@ -1,0 +1,38 @@
+class HandlerTCB
+super TaskControlBlock
+(**)
+meta HandlerTCBClass(HandlerTCB)
+{
+handle :HandlerTaskRec
+
+actionFunc(p :Packet,  noWork :Bool) :List(TaskControlBlock)
+  (* *)
+{
+  bm ::= TaskControlBlock.benchmark
+  if( !noWork
+    then:  { if( p.kind == bm.workPacket
+         then: { handle.setWorkIn(p) }
+         else: { handle.setDeviceIn(p) })
+       })
+  if( handle.workInQueue.isEmpty
+    then: { bm.wait }
+    else: { work ::= handle.workIn
+        count ::= work.datum
+	if( count > 4
+	  then: { bm.queuePacket(handle.workInQueue.removeFirst) }
+	  else: { if( handle.deviceInQueue.isEmpty
+	       then: { bm.wait }
+	       else: { devicePacket ::= handle.deviceInQueue.removeFirst
+	           devicePacket.datum := work.data[count - 1].asInt
+		   work.datum := count + 1
+		   bm.queuePacket(devicePacket)
+		 })
+	    })
+	})
+}
+
+print() :Void
+  (* *)
+{}
+
+}

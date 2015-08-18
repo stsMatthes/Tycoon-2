@@ -1,0 +1,196 @@
+;; DO load "WWW/WWW2.tyc";
+;; DO load "SQL/SQL2.tyc";
+;; DO load "SQL/ODBC/ODBC2.tyc";
+;; DO load "SQL/OCI/OCI2.tyc";
+
+;; open database-connection 
+
+define connection:SQLConnection ?
+
+;; Connecting with an Oracle-database: 
+connection:=SQLDriverManager.instance.connect(
+  URL.fromString("tysql:/oci/DBIS;user=scott;password=tiger")) ?
+
+;; Connecting with an Adabas-database (ODBC): 
+connection:=SQLDriverManager.instance.connect(
+  URL.fromString("tysql:/odbc/hoxsun01:ADABAS;user=hox;password=hox")) ?
+
+;; create statement 
+
+define statement:SQLStatement ?
+statement:=connection.newStatement ?
+
+;; insert values directly 
+statement.executeDirectUpdate
+  ("insert into testtable values (1,1111.11,\'first\',\'1996-10-10 17:50:00\')") ?
+
+;; returns 1 (-> 1 row updated/inserted) 
+
+;; if testtable does not exist execute createDemoTable.adabas.tyc or
+;; createDemoTable.oracle.tyc first
+
+;; insert values as parameters of a prepared statement 
+
+  ;; define the TWL-types of the input-parameters 
+  define names:MutableArray(String) ?
+  names:=MutableArray.with4("a","b","c","d") ?
+  define classes:MutableArray(Class); 
+  classes:=#(Int,Real,String,Date) ?
+
+statement.defineParameterClasses(classes,names) ?
+;; Oracle: set maximium length of String-Input-Parameter
+;; statement.setMaxLength(2,20); 
+
+
+statement.prepare("insert into testtable values (:a,:b,:c,:d)") ?
+
+define string:MutableString ? ;; create parts of a string 
+string := MutableString.new(11) ?
+string[0]:='x' ?
+
+define date:Date ? ;; create date 
+date:=Date.now ?
+
+for(2,10,fun (i:Int)
+  {
+    statement.setInt(0,i)
+    statement.setReal(1,tycoon.rts.tyreal_fromInt(i)/100.0)
+    string[i-1]:='x'
+    statement.setString(2,string)
+      ;; value of string for third column 
+    date.day := date.day+1,date.minute := date.minute+1
+    statement.setDate(3,date)
+      ;; value of date for third column 
+    statement.execute
+  }
+) ?
+
+;; insert NULL-Values - no further "prepare" required 
+statement.setInt(0,nil); 
+statement.setReal(1,0.0) ?
+statement.setString(2,"NULL-VALUE ->") ?
+statement.setDate(3,nil) ?
+statement.execute ?
+
+statement.setInt(0,0); 
+statement.setReal(1,nil) ?
+statement.setString(2,nil) ?
+statement.setDate(3,Date.fromString("01.03.1996","%d.%m.%Y")) ?
+statement.execute ?
+
+;; statement.execute returns false, because insert statements do not
+;; produce result sets. statement.getUpdateCount returns 1 for the one
+;; row that was successfully inserted during the last statement.execute
+
+;; Query without parameters 
+define cursor:SQLCursor ?
+cursor:=statement.executeDirectQuery
+  ("select * from testtable order by int_column") ?
+
+cursor.next ?         ;; fetch first result-row 
+cursor.getObjects ?   ;; get all items of one row 
+cursor.getInt(0) ?    ;; get int-item in column 0 
+cursor.getReal(1) ?   ;; get real-item in column 1 
+cursor.getString(2) ? ;; get string-item in column 2 
+cursor.getDate(3) ?   ;; get date-item in column 3 
+cursor.getString(0) ? ;; get "string-item" in column 0 -> error,
+                      ;; column 0 is no string-type
+
+;; get the following rows 
+while({ cursor.next } do: {
+  tycoon.stdout
+    << cursor.getInt(0)
+    << " "
+    << cursor.getReal(1)
+    << " "
+    << cursor.getString(2)
+    << " "
+    << cursor.getDate(3)
+    << "\n"
+}) ?
+
+;; Query with parameters 
+  names:=MutableArray.with1("a") ?
+  classes:=#(Int) ?
+
+statement.defineParameterClasses(classes,names) ?
+
+statement.prepare("select * from testtable where int_column > :a") ?
+
+;; set int-parameter 0 to 5 
+statement.setInt(0,5) ?
+statement.execute ?
+cursor:=statement.getCursor ?
+
+;; call this until cursor.next returns false 
+if( cursor.next then:{ cursor.getObjects } else: {nil}); 
+
+;; set int-parameter 0 to 8 
+statement.setInt(0,8) ?
+statement.execute ?
+cursor:=statement.getCursor ?
+
+;; call this until cursor.next returns false 
+if( cursor.next then:{ cursor.getObjects } else: {nil}); 
+
+;; close statement 
+statement.close ?
+
+;; transaction handling 
+define updateStatement:SQLStatement ?
+define selectStatement:SQLStatement ?
+updateStatement:=connection.newStatement ?
+selectStatement:=connection.newStatement ?
+
+connection.setAutoCommit(false) ? ;; disable autoCommit 
+
+selectStatement.prepare("select * from testtable") ?
+updateStatement.prepare("delete from testtable where int_column > 5") ?
+
+selectStatement.execute ?
+cursor:=selectStatement.getCursor ?
+
+;; call this until cursor.next returns false
+;; to show all result-rows
+if( cursor.next then:{ cursor.getObjects } else: {nil}); 
+
+
+updateStatement.execute ? ;; perform changes 
+
+selectStatement.execute ?
+cursor:=selectStatement.getCursor ?
+;; call this until cursor.next returns false
+;; to show all result-rows, some rows were
+;; deleted:
+if( cursor.next then:{ cursor.getObjects } else: {nil}); 
+
+connection.rollback ?     ;; discard changes 
+
+selectStatement.execute ?
+cursor:=selectStatement.getCursor ?
+;; call this until cursor.next returns false
+;; to show all result-rows, no rows were
+;; affected:
+if( cursor.next then:{ cursor.getObjects } else: {nil}); 
+
+updateStatement.execute ? ;; perform changes once again 
+connection.commit ?       ;; make changes persistent 
+connection.rollback ?     ;; try to rollback 
+
+selectStatement.execute ?
+cursor:=selectStatement.getCursor ?
+;; call this until cursor.next returns false
+;; to show all result-rows, rows were deleted:
+if( cursor.next then:{ cursor.getObjects } else: {nil}); 
+
+;; close all open resources 
+
+cursor.close ?
+selectStatement.close ?
+updateStatement.close ?
+connection.close ?
+
+
+
+
+

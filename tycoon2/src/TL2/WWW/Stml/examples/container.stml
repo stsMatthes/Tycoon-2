@@ -1,0 +1,30 @@
+<!doctype stml system>
+<html>
+<title>
+Container
+</title>
+<body>
+
+<tycoon>
+  let c = List.with5("a", "b", "laenger", "d", "e")
+</tycoon>
+
+<send receiver=c selector=do>
+<arg>
+<fun param=text>
+<p><if true="text.size < 2">
+  <b>kurzer</b>
+<else>
+  <b>langer</b>
+</if>
+ Text lautet <i><ref name=text//</i></p>
+</fun>
+</send>
+
+<send receiver='"hallo".map(fun(c:Char){String.with1(c)})' selector=do>
+<arg>
+<fun param=zeichen><ref name=zeichen// </fun>
+</send>
+
+</body>  
+</html>  

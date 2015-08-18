@@ -1,0 +1,26 @@
+<!doctype stml system>
+
+<stml processor=HttpdAdminProcessor language='tycoon-1.0'>
+
+<title>Active Admin Sessions</title>
+
+<body>
+
+<h3>Active Admin Sessions:</h3>
+
+<script language=tycoon>
+  ;; do not create a new session for listing all sessions!
+  application.endSession(session)
+</script>
+ 
+<ul>
+<send receiver='application.sessions' selector='do'>
+  <arg><fun param='s :HttpdAdminSession'>
+    <if true='s.lastUrl.isNotNil'>
+      <li><a href='`s.lastUrl.asString`'><script language=tycoon> out << s.name </script></a></li>
+    </if>
+  </fun></arg></send>
+</ul>
+
+</body>
+

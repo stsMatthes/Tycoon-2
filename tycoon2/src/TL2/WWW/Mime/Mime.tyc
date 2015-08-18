@@ -1,0 +1,8 @@
+tycoon.tl.loader.registerDirectory("WWW/Mime") ?
+tycoon.tl.loader.registerDirectory("WWW/Mime/Encoding") ?
+tycoon.tl.loader.registerDirectory("WWW/Mime/Headers") ?
+tycoon.tl.loader.update ?
+tycoon.tl.typeChecker.check ?
+
+DO load "WWW/Mime/Encoding/Init.tyc" ?
+DO load "WWW/Mime/Init.tyc" ?

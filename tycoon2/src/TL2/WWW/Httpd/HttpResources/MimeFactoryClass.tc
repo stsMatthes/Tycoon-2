@@ -1,0 +1,6 @@
+class MimeFactoryClass
+super SingletonClass(MimeFactory)
+(**)
+meta MetaClass
+{
+}

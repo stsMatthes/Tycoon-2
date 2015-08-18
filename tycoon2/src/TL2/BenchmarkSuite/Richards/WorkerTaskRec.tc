@@ -1,0 +1,23 @@
+class WorkerTaskRec
+super TaskRec
+(**)
+meta WorkerTaskRecClass(WorkerTaskRec)
+{
+destination :Int
+
+count       :Int
+
+init() :Self
+  (* *)
+{
+  bm ::= TaskControlBlock.benchmark
+  destination := bm.handlerA
+  count := 0
+  self
+}
+
+print() :Void
+  (* *)
+{}
+
+}

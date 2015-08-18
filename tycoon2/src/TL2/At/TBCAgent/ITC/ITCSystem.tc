@@ -1,0 +1,132 @@
+class ITCSystem(M <: ITCMessage)
+super MutexHolder
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ ITCSystem.tc
+
+   Tycoon Business Conversations (TBC) for Tycoon 2
+   ------------------------------------------------
+   The main class for the ITC-System. Contains the entire inteface to it.
+   The main task accomplished by the itc system is to link ITCAddresses and
+   MessagesPorts together by providing a service to send messages
+   without knowing the port, but only the address.
+   Further an hierarchical naming scheme is supported. See send().
+   
+   03.10.97 hw : created
+   29.10.97 hw : implemented hierarchical naming scheme
+   
+
+
+   * A list of corresponding addresses and ports.
+   * The key  of type :String is the 'name' slot of the ITCAddress. 
+   * All accesses must be protected by lock({...}) to be thread-safe.
+   *)
+meta SimpleConcreteClass(ITCSystem(M))
+{
+
+newPort(adr :ITCAddress) :ITCMessagePort(M)
+  (* 
+   * This method registers a port within the itc-sytem under the given itc
+   * address.  Further accessors have to know the itcadr only.
+   *)
+{
+  lock({
+    _addressesAndPorts.lookup(adr.name,
+      fun(p:ITCMessagePort(M)) {
+        ITCError.new("duplicate definition for port",adr).raise
+	p
+      }, {
+        p @::= ITCMessagePort.new@
+	pRef ::= p
+        _addressesAndPorts[adr.name] := p@
+	pRef
+      })
+  })
+}
+
+unregisterPort(port :ITCMessagePort(M)):Void
+  (*
+   * Deregister a previously registered port.
+   *)
+{
+  lock({
+    p @::= _addressesAndPorts.giveByKey(_addressesAndPorts.locate(port))@
+    ;; p is dropped (### define AtDictionary::removeKey!)
+  })
+}
+
+send(msg @:M) :Void
+  (* 
+   * Send an ITCmessage to its receivers port.  If nil, it will be ignored.
+   * We support a hierarchical naming scheme where the parts are separated
+   * by a slash '/', eg. "Hotel/reservation".
+   * Resolving first tries to find a port having exactly the name given in
+   * the 'to' slot of the itc-message. If this fails, search continues one
+   * level above.  In our example "Hotel" would by tried next.  If no port
+   * is found, an exception of type ITCError will be raised.
+   *)
+{
+  if( msg.isNotNil then: {
+    to ::= msg.to
+    _send(msg@, to)
+  })
+}
+
+private
+
+_addressesAndPorts @:AtDictionary(String, ITCMessagePort(M))
+
+_init :Void
+  (* *)
+{
+  super._init
+  _addressesAndPorts := AtDictionary.new@
+}
+
+_send(msg @:M, to :ITCAddress) :Void
+  (* *)
+{
+  port ::= _find(to)
+  if( port.isNotNil then: {
+    port.put(msg@)
+  } else: {
+    next ::= to.nameButLast
+    if( next.isNil then: {
+      ITCError.new("unknown", to).raise
+    } else: {
+      _send(msg@, ITCAddress.new(next))
+    })
+  })
+}
+
+_find(address:ITCAddress):ITCMessagePort(M)
+  (*
+   *  Return port or nil, if not found. ### hat dictionary das nicht?
+   *)
+{
+  lock({
+    _addressesAndPorts.lookup(address.name, :ITCMessagePort(M),
+      fun(p:ITCMessagePort(M)){p},
+      {nil}
+    )
+  })
+}
+
+}

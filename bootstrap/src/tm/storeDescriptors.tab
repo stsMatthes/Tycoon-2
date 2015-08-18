@@ -1,0 +1,97 @@
+Unused	Array	
+WeakRef	WeakRef	
+Array	Array	
+String	ByteArray	
+ByteArray	ByteArray	
+ShortArray	ShortArray	
+IntArray	IntArray	
+LongArray	LongArray	
+Thread	Thread	
+TVMStack	Stack	
+MutableArray	Array	
+MutableString	ByteArray	
+Symbol	ByteArray	
+True	Struct	i
+False	Struct	i
+Bool	Struct	i
+Char	Struct	C
+Int	Struct	i
+Long	Struct	w
+Real	Struct	d
+Nil	Array	
+Fun3	Array	
+Fun4	Array	
+Fun5	Array	
+Fun6	Array	
+Fun7	Array	
+Fun8	Array	
+Fun9	Array	
+Fun10	Array	
+EmptyList	Array	
+List	Array	
+Class	Array	
+X_TL2MethodDictionary	Array	
+DLL	Array	
+X_TL2Selector	Struct	oiio
+X_TL2Method	Struct	ooooooiiioi
+X_TL2CompiledMethod	Struct	ooooooiiioiooioooiio
+X_TL2BuiltinMethod	Struct	ooooooiiioiooioooiioii
+X_TL2ExternalMethod	Struct	ooooooiiioiooooii
+X_TL2SlotMethod	Struct	ooooooiiioioi
+X_TL2SlotAccessMethod	Struct	ooooooiiioioi
+X_TL2SlotUpdateMethod	Struct	ooooooiiioioi
+X_TL2PoolMethod	Struct	ooooooiiioio
+X_TL2PoolAccessMethod	Struct	ooooooiiioio
+X_TL2PoolUpdateMethod	Struct	ooooooiiioio
+X_TL2CSlotAccessMethod	Struct	ooooooiiioioiC
+X_TL2CSlotUpdateMethod	Struct	ooooooiiioioiC
+X_TL2SlotReferenceMethod	Struct	ooooooiiioioi
+X_TL2SlotTakeFromMethod	Struct	ooooooiiioioi
+X_TL2SlotMoveToMethod	Struct	ooooooiiioioi
+X_TL2CSlotReferenceMethod	Struct	ooooooiiioioiC
+X_TL2CSlotTakeFromMethod	Struct	ooooooiiioioiC
+X_TL2CSlotMoveToMethod	Struct	ooooooiiioioiC
+X_TL2CompiledFun	Struct	ooooooiiioiooioooiiooi
+Function	Array	
+X_TL2DeferredMethod	Struct	ooooooiiioi
+X_TL2UnimplementedMethod	Struct	ooooooiiioi
+X_TL2ReorderMethod	Struct	ooooooiiioiioioCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+X_TL2Slot	Struct	ooooiio
+TypeError	Array	
+DoesNotUnderstand	Array	
+MustBeBoolean	Array	
+DLLOpenError	Array	
+DLLCallError	Array	
+DivisionByZero	Array	
+IndexOutOfBounds	Array	
+BlockingCallInterrupt	Array	
+ThreadCancelled	Array	
+CommitError	Array	
+UnknownSelectorError	Array	
+WrongSignature	Array	
+FetchBoundComponent	Array	
+PerformArityMismatch	Array	
+WriteToImmutable	Array	
+CyclicComponent	Array	
+Root	Struct	ooooooooiiooio
+Tycoon	Array	
+X_TL2Debugger	Array	
+Object	Array	
+Mutex	Struct	io
+Condition	Struct	i
+BroadcastingCondition	Struct	i
+AtArray	Array	
+Fun0	Array	
+FunC	Array	
+Fun1	Array	
+FunCR	Array	
+FunRC	Array	
+FunCC	Array	
+Fun2	Array	
+FunCRR	Array	
+FunRCR	Array	
+FunCCR	Array	
+FunRRC	Array	
+FunCRC	Array	
+FunRCC	Array	
+FunCCC	Array	

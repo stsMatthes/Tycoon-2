@@ -1,0 +1,246 @@
+class X_BEDisassembler
+super X_BEByteCodeWriter
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+*)
+meta SimpleConcreteClass(X_BEDisassembler)
+{
+argumentNames :Array(String)
+
+globalNames :Array(String)
+
+newLabel :X_BELabel
+  (* *)
+{ labelCnt := labelCnt + 1
+  l ::= X_BELabel.new
+  l.n := labelCnt
+  l
+}
+
+defineLabel(l :X_BELabel) :Void
+  (* *)
+{ wrln(l.printString+":") }
+
+send(selector :X_TL2Selector) :Void
+{
+  wrln("send "+selector.printString)
+}
+
+sendShort(selector :X_TL2Selector) :Void
+{
+  wrln("send"+selector.arity.printString+" "+selector.printString)
+}
+
+sendSpecial(selector :X_TL2Selector) :Void
+  (* *)
+{
+  wrln("sendSpecial "+selector.printString)
+}
+
+sendTail(selector :X_TL2Selector) :Void
+  (* *)
+{ wrln("sendTail "+selector.printString) }
+
+sendSuper(selector :X_TL2Selector) :Void
+  (* nbArgs implicit in selectorId *)
+{ wrln("sendSuper "+selector.printString) }
+
+loadLiteral(literalIdx :Int) :Void
+  (* *)
+{ arg1("literal", literalIdx) }
+
+loadChar(c :Char) :Void
+  (* special literals *)
+{ wrln("char "+c.printString) }
+
+loadByte(b :Int) :Void
+  (* *)
+{ arg1("byte", b) }
+
+loadShort(s :Int) :Void
+  (* *)
+{ arg1("short", s) }
+
+loadSpecial(o :Object) :Void
+{ arg0("literal_"+o.printString) }
+
+loadArgument(argIdx :Int) :Void
+  (* *)
+{ if( argumentNames.isNotNil
+  &&  argumentNames.includesKey(argIdx) 
+  then: { arg1C("arg", argIdx, argumentNames[argIdx]) }
+  else: { arg1("arg", argIdx) })
+}
+
+loadLocal(localIdx :Int) :Void
+  (* *)
+{ arg1("local", localIdx) }
+
+storeArgument(argIdx :Int) :Void
+  (* *)
+{ arg1("storeArgument", argIdx) }
+
+storeLocal(localIdx :Int) :Void
+  (* *)
+{ arg1("storeLocal", localIdx) }
+
+loadGlobal(globalIdx :Int) :Void
+  (* *)
+{ if( globalNames.isNotNil
+  &&  globalNames.includesKey(globalIdx) 
+  then: { arg1C("global", globalIdx, globalNames[globalIdx]) }
+  else: { arg1("global", globalIdx) })
+}
+
+cellNew :Void
+  (* *)
+{ arg0("cellNew") }
+
+cellStore :Void
+  (* *)
+{ arg0("cellStore") }
+
+cellLoad :Void
+  (* *)
+{ arg0("cellLoad") }
+
+drop(n :Int) :Void
+  (* *)
+{ arg1("drop", n) }
+
+pop :Void
+  (* *)
+{ arg0("pop") }
+
+adjust(n :Int) :Void
+  (* *)
+{ arg1("adjust", n) }
+
+closure(nbGlobals :Int) :Void
+  (* *)
+{ arg1("closure", nbGlobals) }
+
+makeArray(nSlots :Int) :Void
+  (* *)
+{ arg1("makeArray", nSlots) }
+
+sync :Void
+  (* *)
+{ arg0("sync") }
+
+return :Void
+  (* *)
+{ arg0("return") }
+
+ifTrue(dest :X_BELabel) :Void
+  (* *)
+{ wrln("ifTrue "+dest.printString) }
+
+ifFalse(dest :X_BELabel) :Void
+  (* *)
+{ wrln("ifFalse "+dest.printString) }
+
+jump(dest :X_BELabel) :Void
+  (* *)
+{ wrln("jump "+dest.printString) }
+
+referenceArgument(argIdx :Int) :Void
+  (* self == nb_args, last argument is 1 *)
+{ arg1("referenceArgument", argIdx) }
+
+takeFromArgument(argIdx :Int) :Void
+  (* self == nb_args, last argument is 1 *)
+{ arg1("takeFromArgument", argIdx) }
+
+moveToArgument(argIdx :Int) :Void
+  (* self == nb_args, last argument is 1 *)
+{ arg1("moveToArgument", argIdx) }
+
+referenceLocal(localIdx :Int) :Void
+  (* 0 <= n < current stack size *)
+{ arg1("referenceLocal", localIdx) }
+
+takeFromLocal(localIdx :Int) :Void
+  (* 0 <= n < current stack size *)
+{ arg1("takeFromLocal", localIdx) }
+
+moveToLocal(localIdx :Int) :Void
+  (* 0 <= n < current stack size *)
+{ arg1("moveToLocal", localIdx) }
+
+componentCellNew :Void
+  (* *)
+{ arg0("componentCellNew") }
+
+cellReference :Void
+  (* *)
+{ arg0("cellReference") }
+
+takeFromCell :Void
+  (* *)
+{ arg0("takeFromCell") }
+
+moveToCell :Void
+  (* *)
+{ arg0("moveToCell") }
+
+componentPop :Void
+  (* *)
+{ arg0("componentPop") }
+
+componentAdjust :Void
+  (* let x = pop, componentPop, push(x) *)
+{ arg0("componentAdjust") }
+
+finished :List(String)
+  (* *)
+{ List.reverse(output) }
+
+private
+
+labelCnt :Int
+
+output :List(String)
+
+wrln(s :String) :Void
+  (* *)
+{ output := List.cons(s, output) }
+
+arg1(opcode :String, n :Int) :Void
+  (* *)
+{ wrln(opcode + " " + n.printString) }
+
+arg1C(opcode :String, n :Int, comment :String) :Void
+  (* *)
+{ wrln(opcode + " " + n.printString+"\t;; "+comment) }
+
+arg0(opcode :String) :Void
+  (* *)
+{ wrln(opcode) }
+
+_init :Void
+  (* *)
+{ super._init
+  labelCnt := 0
+  output := List.with0
+  self
+}
+
+}

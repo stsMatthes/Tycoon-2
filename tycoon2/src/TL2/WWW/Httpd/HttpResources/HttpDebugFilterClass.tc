@@ -1,0 +1,16 @@
+class HttpDebugFilterClass
+super ConcreteClass(HttpDebugFilter)
+(**)
+meta MetaClass
+{
+new(resource :HttpResource, debugResource :HttpDebugResource) :HttpDebugFilter
+  (* *)
+{
+  instance ::= _new
+  instance._init
+  instance.resource := resource
+  instance.debugResource := debugResource
+  instance
+  }
+
+}

@@ -1,0 +1,10 @@
+;; File: SQL2.tyc
+;; Author: Axel Wienberg
+;; Date: 10-Jan-1997
+;; Purpose: Tycoon-2 load script for SQL classes
+
+tycoon.tl.loader.registerDirectory("C") ?
+tycoon.tl.loader.registerDirectory("WWW") ?
+tycoon.tl.loader.registerDirectory("SQL") ?
+tycoon.tl.loader.update ?
+SQLDriverManager.init ?

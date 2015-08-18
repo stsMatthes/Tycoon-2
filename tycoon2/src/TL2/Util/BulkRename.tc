@@ -1,0 +1,81 @@
+class BulkRename
+super Filter
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ replace many words in a stream with different words *)
+meta SimpleConcreteClass(BulkRename)
+{
+filter(input :Input, output :Output) :Void
+  (* replace words in <input> according to table and
+     write on <output>.  buffering for <input> is performed
+     here, for <output> not. *)
+{
+  scanner ::= Scanner.new(scannerTables, input)
+  scanner.do(fun(s:String) {
+    output.writeString(s)
+  })
+}
+
+outputNeedsBuffering :Bool
+  (* *)
+{ true }
+
+table :Dictionary(String, String)
+  (* *)
+{ _table }
+
+parseTable(path :String) :Void
+  (* *)
+{
+  input ::= File.openRead(path)
+  protect({
+    _table := NameValueParser.instance.parse(input)
+  }, {
+    input.close
+  })
+}
+
+private
+
+_table :Dictionary(String, String)
+
+scannerTables :ScannerTables(String)
+
+_init :Void
+  (* *)
+{
+  _table := Dictionary.new
+  ; build scanner 
+  sb ::= ScannerBuilder(:String, :Void).new
+  sb.addToken("[_a-zA-Z0-9]+", fun(s:Scanner(String)) {
+    t ::= s.token
+    _table.lookup(t,
+      fun(replacement :String) { replacement },
+      { t })
+  })
+  sb.addToken("[^_a-zA-Z0-9]+", fun(s:Scanner(String)) {
+    s.token
+  })
+  scannerTables := sb.generate
+
+  self
+}
+
+}

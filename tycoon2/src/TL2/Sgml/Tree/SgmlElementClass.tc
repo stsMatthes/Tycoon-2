@@ -1,0 +1,19 @@
+class SgmlElementClass
+super ConcreteClass(SgmlElement)
+(**)
+meta MetaClass
+{
+new( name :String,
+     contentType :SgmlContentType,
+     defAttrVal :Dictionary(String, String)) :SgmlElement
+  (* *)
+{
+  instance ::= _new
+  instance.name := name
+  instance.contentType := contentType
+  instance.defAttrVal := defAttrVal
+  instance._init
+  instance
+}
+
+}

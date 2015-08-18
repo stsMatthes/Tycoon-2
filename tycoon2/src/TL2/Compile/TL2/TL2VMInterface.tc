@@ -1,0 +1,106 @@
+class TL2VMInterface
+super TL2
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+*)
+meta TL2VMInterfaceClass
+{
+opcodes :Dictionary(Symbol, TL2OpcodeDescriptor)
+
+specialLiterals :Dictionary(Object, Symbol)
+  (* literal object --> opcode name *)
+
+builtins :Array(TL2BuiltinDescriptor)
+
+shortSends :Array(Symbol)
+  (* number of arguments --> opcode name *)
+
+specialSends :Dictionary(TL2Selector, Symbol)
+  (* TL2Selector --> opcode name *)
+
+shortSendMax :Int
+  (* maximum arity for short send *)
+{ 
+  if( _shortSendMax.isNil then: {
+    i ::= 0
+    while({ opcodes.includesKey(shortSends[i]) } do: {
+      i := i + 1
+    })
+    _shortSendMax := i - 1
+  })
+  _shortSendMax
+}
+
+argMax :Int
+  (* maximum number of arguments, including self *)
+{ 256 }
+
+localMax :Int
+  (* maximum number of local variables *)
+{ 256 }
+
+globalMax :Int
+  (* maximum number of global variables in closure *)
+{ 256 }
+
+literalMax :Int
+  (* maximum number of objects in literal vector *)
+{ 65536 }
+
+maxKeywords :Int
+  (* maximum number of keywords in method selector *)
+{ 32 }
+
+private
+
+_shortSendMax :Int
+
+_init :Void
+  (* *)
+{ super._init
+  specialLiterals := Dictionary.new1(6)
+  specialLiterals[(-1)] := #minusOne
+  specialLiterals[0] := #zero
+  specialLiterals[1] := #one
+  specialLiterals[2] := #two
+  specialLiterals[true] := #true
+  specialLiterals[false] := #false
+
+; opcodes and builtins are set via script 
+
+  specialSends := Dictionary.new1(9)
+  specialSends[TL2Selector.new(#"+", #(false),#())] := #sendAdd
+  specialSends[TL2Selector.new(#"-", #(false),#())] := #sendSub
+  specialSends[TL2Selector.new(#"<=", #(false),#())] := #sendLessOrEqual
+  specialSends[TL2Selector.new(#"==", #(false),#())] := #sendEqual
+  specialSends[TL2Selector.new(#"!==", #(false),#())] := #sendNotEqual
+  specialSends[TL2Selector.new(#"[]", #(),#())] := #sendFun0Apply
+  specialSends[TL2Selector.new(#"[]", #(false),#())] := #sendFun1Apply
+  specialSends[TL2Selector.new(#isNil, #(),#())] := #sendIsNil
+  specialSends[TL2Selector.new(#isNotNil, #(),#())] := #sendIsNotNil
+
+  shortSends := #( #send0, #send1, #send2, #send3, #send4,
+		   #send5, #send6, #send7, #send8, #send9 ;; , ...
+		 )
+
+  self
+}
+
+}

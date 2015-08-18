@@ -1,0 +1,110 @@
+class RealRandom
+super Random(Real)
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ 
+  *  Author:   Henrik Ortlepp
+  *  Date:     13-Aug-1997
+  *  Updates: (Date)	  (Name)	(Description)
+  *
+  *  An instance of this class is used to generate a stream of pseudorandom
+  *  numbers. The same initial seed will allways generate the same stream of
+  *  numbers. To  *  prevent this, instances are initialized with the tycoon -
+  *  system clock as a first seed.
+  *
+  *  By setting the slot gaussian it can be chosen between gaussian and uniform
+  *  distribution.
+  *
+  *  Algorithm used:
+  *  random_number = (multiplier * _seed + addend) % mask
+  *  For more detail see Donald Knuth, The Art of Computer
+  *  Programming, Vol.2, Section 3.2.1.  
+  *)
+meta SimpleConcreteClass(RealRandom)
+{
+gaussian		  :Bool
+  (*  If gaussian is set to true, the read method below will return a stream
+  *  of gaussian ("normally") distributed random numbers - as supposed to a
+  *  uniform distribution for gaussian = false.
+  *  default value: false
+  *)
+
+read :Real
+  (*  If the public slot gaussian is set to true, read returns a gaussian
+  *  ("normally") distributed pseudorandom number with mean 0.0 and standard
+  *  derivation 1.0.The algorithm actually produces two numbers at a time.
+  *  To use the second it is temporarily stored in the private slot
+  *  _secondGaussian.
+  *
+  *  If gaussian is set to false, read will return the next pseudorandom 
+  *  uniformly distributed Real number r  with 0 <= r <= 1.
+  *
+  *  For more detail concerning the algorithm see Donald Knuth, The Art of
+  *  Computer Programming, Vol.2, Section 3.2.1.
+  *)
+{  if( gaussian then:
+    
+    {if( _haveSecondGaussian then:
+        ; uses the second number (_secondGaussian) from algorithm below:  
+	{ _haveSecondGaussian := false _secondGaussian}
+
+     else:  { v1 :Real := nil v2 :Real := nil s :Real := 1.7
+          while({s >= 1.0} do:{
+              v1 := 2.0 * _readReal - 1.0
+              v2 := 2.0 * _readReal - 1.0 ; values between -1 and 1 
+              s  := v1 * v1 + v2 * v2
+          })
+          multipl :Real := ((-2.0 )* s.ln / s).sqrt
+
+          _haveSecondGaussian := true
+
+          _secondGaussian := v2 * multipl   ; compute second number 
+          v1 * multipl
+         })
+    }
+    
+    else:{_readReal})
+}
+
+private
+
+_haveSecondGaussian   :Bool
+
+  (* indicates if _secondGaussian has been used yet *)
+
+_secondGaussian       :Real
+  (* stores the second number produced by the algorithm in method read*)
+
+_readReal : Real
+  (* returns a Real random number r with 0 <= r <= 1 *)
+{   _seed := (_multiplier * _seed + _addend) % _mask
+    Real.fromLong(_seed) / Real.fromLong(_mask - Long.fromInt(1))
+    
+}
+
+_init :Void
+  (* *)
+{
+    gaussian           := false
+    _haveSecondGaussian:= false
+    super._init
+}
+
+}

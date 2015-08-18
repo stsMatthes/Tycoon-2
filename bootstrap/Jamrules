@@ -1,0 +1,543 @@
+#
+# Jamrules 1.0  98/17/02  Andre Willomat
+#
+# Build Tycoon-2.
+# Replacement for all configuration informations of the good old makefiles.
+# The Jamfiles only contain informations of locations and dependencies.
+#
+# The following shell variable must be set:
+#
+# HOX_HOME    : Root directory of Tycoon-2 development environment
+# HOX_HOST    : Current machine architecture (set by def_tl2)
+#
+
+
+#
+#  BUILDMODE    : debug  -> Debug version
+#                 rt     -> Optimized runtime version 
+#
+BUILDMODE    = rt ;
+#BUILDMODE    = debug ;
+
+
+#
+#  Following optional variables will later be set
+#  by a comfortable java dialog...
+#
+#TMDEBUG_TEST = ON ;
+#TVM_DEBUG = ON ;
+#TSP_DEBUG = ON ;
+#TVM_TRACE = ON ;
+#TSP_SUPERCOMPONENTS = ON ;
+#ASSERTIONS = ON ;
+BOOTSTRAP = ON ;
+
+
+#
+# Operating system specific settings.
+#
+# The plattform-dependend define now derived from the jam builtin variable OS,
+# because jam knows well on which operating system it's reside...
+#
+switch $(OS)
+{
+
+  case NT : {
+    HOX_CC_FLAGS  = -Drt_LIB_WinNT_i386 -D_WINNT -D_WIN32_WINNT=0x0400 ;
+    # HOX_COMPILER  = BCC32 ;
+    HOX_COMPILER  = MSVC ;
+    WINSOCKLIBS   = ws2_32.lib mswsock.lib ;
+    SECURITYLIBS  = advapi32.lib ;
+  }
+
+  case WIN95 : {
+    HOX_CC_FLAGS  = -Drt_LIB_Win95_i386 -D_WIN95 -D_WIN32_WINDOWS=0x0400 ;
+    HOX_COMPILER  = MSVC ;
+    WINSOCKLIBS   = wsock32.lib ;
+
+    HOX_COPT_FLAGS = /MD /Od ;
+    HOX_CDBG_FLAGS = /MDd /Zi /Od -D_DEBUG -D_CRTDBG_MAP_ALLOC ;
+  }
+
+  case WIN98 : {
+    HOX_CC_FLAGS  = -Drt_LIB_Win98_i386 -D_WIN95 -D_WIN32_WINDOWS=0x0400 ;
+    HOX_COMPILER  = MSVC ;
+    WINSOCKLIBS   = ws2_32.lib mswsock.lib ;
+
+    HOX_COPT_FLAGS = /MD /Od ;
+    HOX_CDBG_FLAGS = /MDd /Zi /Od -D_DEBUG -D_CRTDBG_MAP_ALLOC ;
+  }
+
+  case SOLARIS : {
+    HOX_CC_FLAGS   = -Drt_LIB_Solaris2_SPARC -D_REENTRANT ;
+    HOX_COMPILER   = GCC ;
+    HOX_LINK_FLAGS = -lpthread -ldl -lm -lsocket -lnsl ;
+    HOX_COPT_FLAGS = ;
+    HOX_CDBG_FLAGS = -g ;
+  }
+
+  case LINUX : {
+    HOX_CC_FLAGS   = -Drt_LIB_Linux_i386 -Wall -pipe -fno-builtin -D_REENTRANT -D_GNU_SOURCE -DHAS_MMAP -Dtvm_THREADED_CODE ;
+    HOX_COMPILER   = GCC ;
+    HOX_LINK_FLAGS = -i -lpthread -ldl -lm ;
+    HOX_COPT_FLAGS = -O2 -fomit-frame-pointer ;
+    HOX_CDBG_FLAGS = -g ;
+
+    # needed for shared libraries on linux
+    LDSHARE_FLAGS  += -shared -fpic ;
+  }
+
+  case HPUX : {
+    HOX_CC_FLAGS   = -Drt_LIB_HPUX_PARISC ;
+    HOX_COMPILER   = GCC ;
+    HOX_COPT_FLAGS = -O2 ;
+    HOX_CDBG_FLAGS = -g ;
+  }
+
+  case NEXT : {
+    HOX_CC_FLAGS   = -Drt_LIB_Nextstep_i386 -Dtvm_THREADED_CODE ;
+    HOX_COMPILER   = GCC ;
+    HOX_COPT_FLAGS = -O2 ;
+    HOX_CDBG_FLAGS = -g ;
+  }
+
+  case MACOSX : {
+    HOX_CC_FLAGS   = -Drt_LIB_Darwin_PPC -Wall -pipe -fno-builtin -D_REENTRANT -D_GNU_SOURCE -DHAS_MMAP -Dtvm_THREADED_CODE ;
+    HOX_COMPILER   = GCC ;
+    HOX_LINK_FLAGS = -i -lpthread -ldl -lm ;
+    HOX_COPT_FLAGS = -O2 -fomit-frame-pointer ;
+    HOX_CDBG_FLAGS = -g ;
+
+    # needed for shared libraries on macosx
+    LDSHARE_FLAGS  += -dynamic -r ;
+  }
+}
+
+
+#
+# General settings, make base, empty directories
+#
+makeDirName HOX_LIB	: $(HOX_HOME) lib $(HOX_HOST) ;
+makeDirName HOX_BIN	: $(HOX_HOME) bin $(HOX_HOST) ;
+
+
+#
+# Compiler specific settings.
+#
+switch $(HOX_COMPILER)
+{
+  case MSVC : {
+    # win95, win98, winNT,...
+    HOX_CC_FLAGS += -Drt_LIB_Win32_i386 ;
+
+    HOX_COPT_FLAGS = /MD /Od ;
+    HOX_CDBG_FLAGS = /MDd /Zi /Od -D_DEBUG -D_CRTDBG_MAP_ALLOC ;
+
+    HOX_DBGSYM_SUFFIX = .pdb ;
+
+    if $(BUILDMODE) = debug {
+       HOX_LINK_FLAGS ?= /DEBUG /DEBUGTYPE:BOTH ;
+       LDSHARE_FLAGS  += /DEBUG /DEBUGTYPE:BOTH ;
+    }
+  }
+
+  case BCC32 : {
+    # win95, win98, winNT,...
+    HOX_CC_FLAGS += -Drt_LIB_Win32_i386 ;
+
+    #
+    # -q means "no banner"
+    # -v- means "no debug info" (overridden below)
+    # -w means "warnings on"
+    # -tWM means "multithreaded runtime library (interface)"
+    #
+    HOX_CC_FLAGS += -q -v- -w -tWM ;
+    HOX_LINK_FLAGS = -tWM ;
+
+    HOX_COPT_FLAGS = -O2 ;
+    HOX_CDBG_FLAGS = -v -D_DEBUG -D_CRTDBG_MAP_ALLOC ;
+
+    HOX_DBGSYM_SUFFIX = .tds ;
+
+    if $(BUILDMODE) = debug {
+       HOX_LINK_FLAGS ?= /v ;
+       LDSHARE_FLAGS  += /v ;
+    }
+  }
+}
+
+if $(BUILDMODE) = rt {
+   HOX_CC_FLAGS += $(HOX_COPT_FLAGS) ;
+} else {
+   HOX_CC_FLAGS += $(HOX_CDBG_FLAGS) ;
+}
+
+
+#
+# Mapping of jam variables to implicit compiler settings
+#
+if $(TMDEBUG_TEST) = ON { HOX_CC_FLAGS += -Dtmdebug_TEST ; }
+if $(TVM_DEBUG)    = ON { HOX_CC_FLAGS += -Dtvm_DEBUG ;    }
+if $(TSP_DEBUG)    = ON { HOX_CC_FLAGS += -Dtsp_DEBUG ;    }
+if $(TVM_TRACE)    = ON { HOX_CC_FLAGS += -Dtvm_TRACE ;    }
+if ! $(ASSERTIONS) = ON { HOX_CC_FLAGS += -DNDEBUG ;       }
+if $(BOOTSTRAP)    = ON { HOX_CC_FLAGS += -DBOOTSTRAP ;    }
+if $(TSP_SUPERCOMPONENTS) = ON { HOX_CC_FLAGS += -Dtsp_STORED_SUPERCOMPONENT ;    }
+
+if $(BUILDMODE) = debug {
+   HOX_CC_FLAGS += -DBUILDMODE_DEBUG ;
+}
+else {
+   HOX_CC_FLAGS += -DBUILDMODE_RT ;
+}
+
+
+#
+# HDRS:		Header-file search-path
+#
+# CCFLAGS:	Flags for C compiler
+#
+HDRS      += $(HOX_INCLUDE) ;
+CCFLAGS   += $(HOX_CC_FLAGS) ;
+LINKFLAGS += $(HOX_LINK_FLAGS) ;
+LINKLIBS   = ;
+
+
+
+#############################################################################
+# Rules for building dynamic libraries
+# From Jam Mailing list archieve
+# Following replacements are made for Tycoon-2:
+# - Replacing $(TOP) with $(HOX_LIB)
+# - Make .map file creation depending from $(BUILDMODE)
+# - Under WinNT copy the dll's to $(HOX_BIN)
+#############################################################################
+
+NOTFILE libs dlls objs lists ;
+
+ALL_LIBS_TO_BUILD ?= libs dlls ;
+
+BUILDMODE         ?= debug ;
+LIBPREFIX         ?= lib ;
+LIBLISTSUFFIX     ?= .list ;
+TOUCH              = touch ;
+
+if $(UNIX)
+{
+   PUSHD           = "( cd" ;
+   POPD            = ")" ;
+   LDSHARE        ?= ld ;
+   LDSHARE_FLAGS  ?= -G ;
+   SUFLIBSHR      ?= .so ;
+   ECHO            = echo ;
+   rule MainFromObjectsAndShlibs {
+	MainFromObjects $(<) : $(>) $(LIBPREFIX)$(3)$(SUFLIBSHR) ;
+   }
+}
+else if $(NT) || $(WIN95) || $(WIN98)
+{
+   CD              = cd ;
+   PUSHD           = pushd ;
+   POPD            = popd ;
+   if $(HOX_COMPILER) = BCC32 {
+     LDSHARE        ?= ilink32 ;
+     # DLL output, case sensitive linking, generate import library, no state files
+     LDSHARE_FLAGS  += /Tpd /c /Gi /Gn ;
+     LINKSTARTUP     = c0d32 ;
+     # import lib for windows32 api, import lib for multithreaded runtime
+     LINKLIBSLAST    = import32.lib cw32mti.lib ;
+   } else if $(HOX_COMPILER) = MSVC {
+     LDSHARE        ?= $(MSLINK) ;
+     LDSHARE_FLAGS  += /DLL ;
+   }
+   SUFLIBSHR       = .dll ;
+   # ilink32 cannot handle newline at end of response file
+   ECHO            = cygecho -n ;
+   rule MainFromObjectsAndShlibs {
+	MainFromObjects $(<) : $(>) ;
+	# link import libraries
+	LinkLibraries $(<) : $(LIBPREFIX)$(3) ;
+   }
+}
+
+makeDirName LIBDIR : $(HOX_LIB) ;
+
+rule LibMember
+{
+   # $(1) is short name of lib these sources are destined for.
+   # $(2) is list of source files.
+
+   local l o ;
+
+   SOURCE_GRIST = ; # (Implicit grist is a pain.)
+
+   makeDirName LOCATE_TARGET : $(LIBDIR) lib$(1) ;
+        #
+        # e.g., binaries for 'foo' library go in $(HOX_LIB)/debug/libfoo
+        # directory.
+
+   Objects $(2) ; 
+
+   # Set up a list file for this library:
+
+   getLibListName l : $(1) ;
+   LOCATE on $(l) = $(LIBDIR) ;
+        # 
+        # e.g., for the 'foo' library, the list file is 
+        # $(HOX_LIB)/debug/libfoo.list.
+
+   if ! $(LIST-STARTED-$(<))
+   {
+      LIST-STARTED-$(<) = true ;
+      RemoveExistingFile $(l) : $(l) ;
+        #
+        # The RemoveTarget rule has to be invoked once only,
+        # and before any of the EchoToFile rules are invoked.
+      if $(LINKSTARTUP) {
+	# some initial content for the linker list file
+        NOTFILE $(LINKSTARTUP) ;
+        EchoToFile $(l) : $(LINKSTARTUP) ;
+      }
+   }
+
+   o = $(2:S=$(SUFOBJ):G=:D=lib$(1)) ;
+   NOTFILE $(o) ;
+           #
+           # $(o) is a list of object file names, sans grist, and
+           # qualified by the subdir in which it is stored. Thus,
+           # each element of $(o) uniquely identifies a compiled object
+           # associated with a built library. Elements of $(o) will be
+           # used as dependencies but are not bindable.
+
+   EchoToFile $(l) : $(o) ;
+   Depends $(l) : $(2:S=$(SUFOBJ)) ;
+        #
+        # The list file depends on the compiled objects. If any
+        # of them are newer, the list file gets recreated. Seems odd,
+        # but it works, because a list is only updated when you're
+        # updating a library.
+
+   Depends objs : $(2:S=$(SUFOBJ)) ;
+}
+
+rule BuildLib
+{
+   # $(1) is short name of lib to build.
+   # $(2) is list of dependent lib short names
+   # $(3) is .def file, for NT, Win95/98.
+   # $(4) is list of join lib short names. 
+
+   local list libs binlib ;
+
+   SOURCE_GRIST = ;
+
+   if $(LIB$(1)) 
+   {
+        Exit BuildLib used more than once on $(1) ;
+   }
+   LIB$(1) = $(LIBPREFIX)$(1)$(SUFLIB) ;
+   DLL$(1) = $(LIBPREFIX)$(1)$(SUFLIBSHR) ;
+   libs = $(LIB$(1)) $(DLL$(1)) ;
+   MakeLocate $(libs) : $(LIBDIR) ;
+
+   if $(4)
+   {
+       getLibListName list : $(4) ;
+   }
+   else
+   {
+       getLibListName list : $(1) ;
+       MakeLocate $(list) : $(LIBDIR) ;
+       Clean clean : $(list) ;
+       Depends lists : $(list) ;
+   }
+
+   Depends $(libs) : $(list) ;
+
+   LIBLIST on $(libs) = $(list) ;
+
+   LDSHARE_FLAGS on $(DLL$(1)) += $(LDSHARE_FLAGS) ;
+
+   if $(NT) || $(WIN95) || $(WIN98)
+   {
+       local lp ;
+       makeString lp : .;$(LIBDIR); $(EXTLIBDIRS); ;
+       NTLIBPATH on $(DLL$(1)) += $(lp) ;
+
+       if $(1) in $(STATIC_LIB_ONLY)
+       {
+            RemoveExistingFile $(LIB$(1)) : $(LIB$(1)) ;
+            ArchiveStaticLib $(LIB$(1)) ;
+       }
+       else
+       {
+            LinkDynamicLib $(DLL$(1)) ;
+            TouchFile $(LIB$(1)) ;
+            Depends $(LIB$(1)) : $(DLL$(1)) ;
+       }
+
+       if $(2)
+       {
+            local deps ;
+            deps = $(LIBPREFIX)$(2)$(SUFLIB) ;
+            NEEDLIBS on $(DLL$(1)) += $(deps) ;
+            Depends $(DLL$(1)) : $(deps) ;
+            LOCATE on $(deps) = $(LIBDIR) ;
+       }
+
+       if $(3) 
+       {
+            local def ;
+            def = $(3:G=copied) ;
+	    if $(HOX_COMPILER) = MSVC {
+              File $(def) : ms$(3) ;
+	    } else if $(HOX_COMPILER) = BCC32 {
+              File $(def) : bo$(3) ;
+            }
+            LOCATE on $(def) = $(LIBDIR) ;
+            DEFFILE on $(DLL$(1)) = $(def:G=) ;
+            Depends $(DLL$(1)) : $(def) ;
+            Depends $(def) : $(LIBDIR) ;
+            Clean clean : $(def) ;
+       }
+   }
+   else
+   {
+       LinkDynamicLib $(DLL$(1)) ;
+       RemoveExistingFile $(LIB$(1)) : $(LIB$(1)) ;
+       ArchiveStaticLib $(LIB$(1)) ;
+
+       if $(RANLIB)
+       {
+           Ranlib $(LIB$(<)) ;
+       }
+
+       if $(2)
+       {
+            local deps ;
+            deps = $(LIBPREFIX)$(2)$(SUFLIB) ;
+            NEEDLIBS on $(DLL$(1)) += $(deps) ;
+            Depends $(DLL$(1)) : $(deps) ;
+            LOCATE on $(deps) = $(LIBDIR) ;
+       }
+   }
+
+   Depends libs : $(LIB$(1)) ;
+   Depends dlls : $(DLL$(1)) ;
+
+   Depends all : $(ALL_LIBS_TO_BUILD) ;
+
+   makeDirName binlib : $(HOX_BIN) $(LIBPREFIX)$(1)$(SUFLIBSHR) ;
+   Clean clean : $(libs) $(binlib) ;
+
+   MakeLocate $(binlib) : $(HOX_BIN) ;
+   File $(binlib) : $(LIBPREFIX)$(1)$(SUFLIBSHR) ;
+   TouchFile $(binlib) ;
+
+   if $(NT) || $(WIN95) || $(WIN98) {
+      MakeLocate $(LIBPREFIX)$(1).exp : $(LIBDIR) ;
+      MakeLocate $(LIBPREFIX)$(1).map : $(LIBDIR) ;
+      MakeLocate $(LIBPREFIX)$(1)$(HOX_DBGSYM_SUFFIX) : $(LIBDIR) ;
+      Clean clean : $(LIBPREFIX)$(1).exp
+                    $(LIBPREFIX)$(1).map
+                    $(LIBPREFIX)$(1)$(HOX_DBGSYM_SUFFIX) ;
+   }
+}
+
+actions quietly existing RemoveExistingFile
+{
+        $(RM) $(>)
+}
+
+actions quietly together piecemeal EchoToFile
+{
+        $(ECHO) $(>) >> $(<)
+}
+
+rule getLibListName
+{
+   # $(1) is var to set.
+   # $(2) is lib short name.
+   #
+   # E.g., "getLibListName l : foo ;" sets
+   # l to libfoo.list.
+
+   $(1) = lib$(2:S=$(LIBLISTSUFFIX)) ;
+}
+
+if $(UNIX)
+{
+    actions LinkDynamicLib
+    {
+        $(PUSHD) $(<:D)
+        $(LDSHARE) $(LDSHARE_FLAGS) $(LDSHARE_NAME_FLAG)$(<:BS) -o $(<:BS) `cat $(LIBLIST:BS) `
+        $(POPD)
+    }
+
+    actions ArchiveStaticLib
+    {
+        $(PUSHD) $(<:D)
+        $(AR) $(<:BS) `cat $(LIBLIST:BS) `      
+        $(POPD)
+    }
+}
+else if $(NT)
+{
+  if $(HOX_COMPILER) = MSVC {
+    actions LinkDynamicLib
+    {
+        set LIB=$(NTLIBPATH);%LIB%||exit
+        $(PUSHD) $(<:D) || goto :cd_failed
+        $(LDSHARE) $(LDSHARE_FLAGS) /out:$(<:BS) /def:$(DEFFILE) @$(LIBLIST) $(NEEDLIBS:BS) $(LINKSYSLIBS) || goto :link_failed
+        $(CP) $(<:B).pdb $(HOX_BIN) >NUL
+        $(POPD)
+    }
+
+    actions ArchiveStaticLib
+    {
+        $(PUSHD) $(<:D) || goto :cd_failed
+        $(MSLIB) /out:$(<:BS) @$(LIBLIST) || goto :link_failed
+        $(POPD)
+    }
+  } else if $(HOX_COMPILER) = BCC32 {
+    actions LinkDynamicLib
+    {
+        set LIB=$(NTLIBPATH);%LIB%||exit
+        $(PUSHD) $(<:D) || goto :cd_failed
+        $(LDSHARE) $(LDSHARE_FLAGS) @$(LIBLIST) , $(<:BS) , , $(NEEDLIBS:BS) $(LINKSYSLIBS) $(LINKLIBSLAST) , $(DEFFILE),  || goto :link_failed
+        $(CP) $(<:B).tds $(HOX_BIN) >NUL
+        $(POPD)
+    }
+
+    actions ArchiveStaticLib
+    {
+        $(PUSHD) $(<:D) || goto :cd_failed
+        TLIB $(<:BS) @$(LIBLIST) || goto :link_failed
+        $(POPD)
+    }
+  }
+}
+else if $(WIN95) || $(WIN98)
+{
+    actions LinkDynamicLib
+    {
+        @set LIB=$(NTLIBPATH);%LIB%
+        @$(CD) $(<:D)
+        $(LDSHARE) $(LDSHARE_FLAGS) /out:$(<:BS) /def:$(DEFFILE) @$(LIBLIST) $(NEEDLIBS:BS) $(LINKSYSLIBS)
+        @$(CP) $(<:B).pdb $(HOX_BIN) >NUL
+        @$(CD) $(SUBDIR) >NUL
+    }
+
+    actions ArchiveStaticLib
+    {
+        @$(CD) $(<:D)
+        $(MSLIB) /out:$(<:BS) @$(LIBLIST)
+        @$(CD) $(SUBDIR)
+    }
+}
+
+actions quietly TouchFile
+{
+    $(TOUCH) $(<)
+}
+

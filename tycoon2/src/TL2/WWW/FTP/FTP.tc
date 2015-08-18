@@ -1,0 +1,6 @@
+class FTP
+super Object
+(**)
+meta AbstractClass
+{
+}

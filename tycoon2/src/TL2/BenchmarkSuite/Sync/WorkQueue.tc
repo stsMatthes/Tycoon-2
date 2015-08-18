@@ -1,0 +1,62 @@
+class WorkQueue(T <: Object)
+super MutexHolder
+(**)
+meta SimpleConcreteClass(WorkQueue(T))
+{
+addWork(work :T) :Void
+  (* *)
+{
+  lock({
+    _queue.addLast(work)
+    if( _slaveWaiting > 0
+    then: { _barrier.signal })
+  })
+}
+
+getWork() :T
+  (* *)
+{
+  lock({
+    while({_queue.isEmpty && !_finished} do: {
+
+       _slaveWaiting := _slaveWaiting + 1
+       _barrier.wait(_mx)
+       _slaveWaiting := _slaveWaiting - 1
+    })
+    if( _queue.isEmpty && _finished
+    then: { nil }
+    else: { _queue.removeFirst })
+  })
+}
+
+setFinished :Void
+  (* *)
+{
+  lock({
+    _finished := true
+    _barrier.signal
+  })
+}
+
+private
+
+_queue :Queue(T)
+
+_slaveWaiting :Int
+
+_barrier :BroadcastingCondition
+
+_finished :Bool
+
+_init() :Self
+  (* *)
+{
+  super._init
+  _queue := Queue.new1(100)
+  _slaveWaiting := 0
+  _barrier := BroadcastingCondition.new
+  _finished := false
+  self
+}
+
+}

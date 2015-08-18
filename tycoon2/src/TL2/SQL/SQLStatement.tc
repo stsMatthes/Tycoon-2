@@ -1,0 +1,272 @@
+class SQLStatement
+super SQL
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+SQL-Statement produced by SQLConnection
+
+Author:  Michael Skusa
+Date:    27-Aug-1996
+Updates: (Date)	  (Name)	(Description)
+*)
+meta AbstractClass
+{
+parameterMetaData:SQLParameterMetaData
+
+open(hdbc:Int32, c:SQLConnection):Void
+  (* *)
+{
+  _open(hdbc)
+  _connection:=c
+  _connection.addStatement(self)
+  parameterMetaData:=nil
+  _parameterDataArea:=nil
+  _parameterLengthDataArea:=nil
+  _parameterNames:=MutableArray.new(0)
+  _parameterClasses:=MutableArray.new(0)
+}
+
+cancel:Void
+  (* *)
+deferred
+
+close:Void
+  (* cancels and closes database-cursors 
+ Closes cursor,
+     deallocates statement-handle,
+     removes statement from the open-statement-list of
+     the associated connection.
+     Is called automatically when connection is being closed.
+   *)
+{
+ if( (_hstmt != nil) then: {if( !_connection.isClosing then:
+                    {_connection.removeStatement(self)})
+                    cancel
+		    _freeParameterAreas
+		    parameterMetaData:=nil
+		    _parameterClasses:=nil
+		    _parameterMaxLength:=nil
+		    _parameterNames:=nil
+		    _parameterClasses:=nil
+		    _dropStatement
+                    _hstmt:=nil})
+}
+
+prepare(sql:String) :Void
+  (* Prepares sql-statement for use with execute *)
+{
+  cancel()
+  _freeParameterAreas
+  _prepare(sql)
+  parameterMetaData:=_createParameterMetaData(_hstmt)
+  _allocateParameterDataArea
+  _allocateParameterLengthDataArea
+  _bindParameters
+}
+
+execute:Bool
+  (* Executes prepared sql-statement,
+     answers true if statement produced a result-set (e.g. select),
+             false if statement returns no result-set (e.g. insert, update)
+   *)
+{
+   cancel()
+   _execute()
+   _cursor := _createCursor(_hstmt)
+   _cursor.metaData.columnCount() != 0
+     ; >0 --> select-statement --> true 
+     ; =0 --> insert,update,etc --> false 
+}
+
+defineParameterClasses(classes:MutableArray(Class),
+                       identifier:MutableArray(String))
+                       :MutableArray(String)
+  (* *)
+{
+  _parameterNames:=MutableArray.new(classes.size)
+  result:MutableArray(String) := MutableArray.new(classes.size)
+  _parameterClasses:=MutableArray.new(classes.size)
+  _parameterMaxLength:=MutableArray.new(classes.size)
+  for(0 to:classes.size-1 do:fun(i:Int)
+  {
+    _parameterClasses[i]:=classes[i]
+    _parameterMaxLength[i]:=0
+    result[i]:=_nativeParameter(identifier[i])
+    _parameterNames[i]:=result[i]
+  })
+  result
+}
+
+setInt(parameterIndex:Int, value:Int):Int
+  (* *)
+deferred
+
+setReal(parameterIndex:Int, value:Real):Real
+  (* *)
+deferred
+
+setString(parameterIndex:Int, value:String):String
+  (* *)
+deferred
+
+setDate(parameterIndex:Int,value:Date):Date
+  (* *)
+deferred
+
+setRaw(parameterIndex:Int, value:File):File
+  (* *)
+deferred
+
+executeDirect(sql:String):Bool
+  (* Executes sql-statement,
+     answers true if statement produced a result-set (e.g. select),
+             false if statement returns no result-set (e.g. insert, update)
+   *)
+{
+   cancel
+   _freeParameterAreas
+   _executeDirect(sql)
+   _cursor := _createCursor(_hstmt)
+   parameterMetaData:=nil
+   _cursor.metaData.columnCount != 0
+     ; >0 --> select-statement --> true 
+     ; =0 --> insert,update,etc --> false 
+}
+
+getUpdateCount:Int
+  (* *)
+deferred
+
+executeDirectUpdate(sql:String):Int
+  (* Executes sql-statement and returns number of affected rows,
+     returns nil when called with a select-statement,
+     raises ODBCError.
+   *)
+{
+  if( !executeDirect(sql) then: {getUpdateCount}
+                      else: {n:Int := nil})
+}
+
+getCursor:SQLCursor
+  (* Answers result-set produced by execute,
+     returns nil when execute was called with an update-statement
+     (e.g. insert, update, delete).
+   *)
+{
+  _cursor
+}
+
+executeDirectQuery(sql:String):SQLCursor
+  (* Executes select-statement and returns the result-set,
+     returns nil when called with an update-Statement,
+     raises ODBCError.
+  *)
+{
+  if( executeDirect(sql) then: {getCursor}
+                     else: {n:SQLCursor := nil})
+}
+
+setMaxLength(parameterIndex:Int,length:Int) :Void
+  (* *)
+{ _parameterMaxLength[parameterIndex]:=length }
+
+private
+
+_hstmt:Int32
+
+_connection:SQLConnection
+
+_cursor:SQLCursor
+
+_parameterClasses:MutableArray(Class)
+
+_parameterNames:MutableArray(String)
+
+_parameterMaxLength:MutableArray(Int)
+
+_parameterDataArea:MutableArray(AnyCValueHolder)
+
+_parameterLengthDataArea:MutableArray(AnyCValueHolder)
+
+_open(hdbc:Int32):Void
+  (* *)
+deferred
+
+_createParameterMetaData(hstmt:Int32):SQLParameterMetaData
+  (* *)
+deferred
+
+_allocateParameterDataArea:Void
+  (* *)
+deferred
+
+_allocateParameterLengthDataArea:Void
+  (* *)
+deferred
+
+_bindParameters:Void
+  (* *)
+deferred
+
+_nativeParameter(name:String):String
+  (* *)
+deferred
+
+_freeParameterAreas:Void
+  (* *)
+{
+  if( (_parameterDataArea.isNotNil & _parameterLengthDataArea.isNotNil) then:
+  {
+    for(0 to:_parameterDataArea.size-1 do:fun (i:Int)
+      {
+        _unbindParameters
+        _parameterDataArea[i].close
+        _parameterLengthDataArea[i].close
+      })
+    _parameterDataArea:=nil
+    _parameterLengthDataArea:=nil
+  })
+}
+
+_dropStatement:Void
+  (* *)
+deferred
+
+_prepare(sql:String):Void
+  (* *)
+deferred
+
+_execute:Void
+  (* *)
+deferred
+
+_executeDirect(sql:String):Void
+  (* *)
+deferred
+
+_unbindParameters:Void
+  (* *)
+deferred
+
+_createCursor(_hstmt:Int32):SQLCursor
+  (* *)
+deferred
+
+}

@@ -1,0 +1,15 @@
+class PersonClass
+super ConcreteClass(Person)
+meta MetaClass
+{
+
+new(name :String, birthdate :Date) @:Person
+{
+  instance @::= _new@
+  instance.name := name
+  instance.birthdate := birthdate
+  instance._init
+  instance@
+}
+
+}

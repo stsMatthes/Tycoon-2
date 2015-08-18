@@ -1,0 +1,299 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<title>Using TreeControl</title>
+<meta name="GENERATOR" content="Microsoft FrontPage 3.0">
+</head>
+
+<body>
+<font FACE="Arial" SIZE="4"><b>
+
+<p></b></font><a target href="treeControl.html"><small><font face="Arial"><img
+src="../images/back-sbox.jpg" alt="back-sbox.jpg (2425 bytes)" align="right"
+start="fileopen"></font></small></a><b><font FACE="Arial" SIZE="4"><a
+name="Using TreeControl">Using TreeControl</a></font> 
+
+<ul>
+  <li><a href="#Using TreeControl"><font face="Arial" size="2">Item String Format</font></a></li>
+  <li><a href="#Prama Tags"><font face="Arial" size="2">Prama Tags </font></a></li>
+  <li><a href="#JavaScript"><font face="Arial" size="2">Java Script </font></a></li>
+  <li><a href="#Example"><font face="Arial" size="2">Example</font></a></li>
+</ul>
+<font face="Arial"><i>
+
+<p></i></b><small>Describing the applet breaks into two. Firstly before I can describe the
+param tags you need to understand the way items are defined.</small><i><b></p>
+</b></i></font><font face="Arial" size="2">
+
+<p>All items in the applet are made up of an item string. This string is made up of all
+the arguments needed to define an item. Each argument is sperarted by a ';' semi colon.
+Each Item string is made up of 4 components</p>
+
+<p>Title Path ; Icon ; Link ; Status string</p>
+<b>
+
+<p>Title Path</p>
+</b>
+
+<p>The title path gives the name of the item and its path separated by the forward slash
+or the backward slash. So the title path of one/two would break into folder one containing
+the item two. The title path one would be item one in the root directory. You may add
+items in any order if the directory for an item is not present the folder item is added
+for you. To add a directory you either add it indirectly by defining it in another item
+such as one/two defines the directory one. Or by defining item one and then upgrading it
+to a directory by adding a child item as it one/two. These paths may be of any depth say
+as in one/two/three/four we add the directories one two and three to add the item four.</p>
+<b>
+
+<p>Icon</p>
+</b>
+
+<p>The icon is a graphic that is displayed to the left of the item and is the file path to
+a &quot;.gif&quot; or &quot;.jpg&quot; image. Items may have two images separated by a
+&quot;,&quot; comma eg folder.gif,open_folder.gif the second image being used if the item
+is a folder when its in an opened state. </p>
+<b>
+
+<p>Link</p>
+</b>
+
+<p>The link is a URL to a page or resource you wish to fetch when the item is activated.
+The URL need not be complete as the missing elements will be processed from the baseURL
+string which is a prama of the applet. This allows you to have links to local pages which
+you may not be able to give a full URL for. Eg with a baseURL = <a
+HREF="http://www.mcsoftware.com.au/">http://www.mcsoftware.com.au</a> a link
+&quot;local.html&quot; would be added to the baseURL giving <a
+HREF="http://www.mcsoftware.com.au/">http://www.mcsoftware.com.au</a>/local.html. Links
+may also define a frame to post the link into. This second argument is seperated by a
+&quot;,&quot; comma eg &quot;local.html,child&quot; would post the page to the frame
+child. The default frame is _top which is the top most frame. </p>
+<b>
+
+<p>Status string</p>
+</b>
+
+<p>This is a string that appears after the URL link information on the status bar when an
+item is activated or the mouse is over the item. It is intended to give more information
+to the user as they browse the tree control.</p>
+
+<p>When defining an item string components may be left blank or left off the end the only
+compulsory component is the title path.</p>
+<b>
+
+<p>Example</p>
+</b>
+
+<p>The item one/two</p>
+
+<p>&quot;One/two;http.gif;http://local.html;This is an item two under directory one&quot;</p>
+
+<p>may be defined without the end link of status</p>
+
+<p>&quot;One/two;http.gif;http&quot; 
+
+<dir>
+  <dir>
+    <p>Or again just as the title</p>
+    <p>&quot;One/two&quot;</p>
+    <p>Or without and icon or status text</p>
+    <p>&quot;One/two;;http://local.html&quot;</p>
+    <p>&nbsp;</p>
+  </dir>
+</dir>
+</font><font face="Arial"><b><i>
+
+<p></i></b><strong><small>Rem out unused item strings</small></strong><i><b></p>
+
+<p></b></i><small>To rem out unused item strings or to allocate place holding items in
+numerical list you can now use a double * at the beginning of any item and that item will
+not be processed.</small><i><b></p>
+
+<p><small>Example</b> - With the list of tags below only item three would be processed and
+added to the list.</small><b></p>
+
+<p></b><small>&lt;param name=item1 value=&quot;**&quot; &gt; </small></p>
+
+<p><small>&lt;param name=item2 value=&quot;**Item Two;link&quot; &gt; </small></p>
+
+<p><small>&lt;param name=item3 value=&quot;Item Three;link&quot; &gt; </small></p>
+
+<p><b><small>&nbsp;</small></p>
+
+<p><a name="Prama Tags">Prama Tags </a>
+
+<dir>
+  <dir>
+    </b></i></font><font face="Arial" size="2"><p>The prama tags are used to add items to the
+    control on intalisation. The</p>
+    <b><p>expanded</p>
+    </b><p>&lt;param name=&quot;expanded&quot; value=&quot;true&quot;&gt;</p>
+    <p>Expanded tells the applet wether to initaly expand the root directory folder. </p>
+    <b><p>baseURL</p>
+    </b><p>&lt;param name=&quot;baseURL&quot;
+    value=&quot;http://www.mcsoftware.com.au/&quot;&gt;</p>
+    <p>This is the URL base used in links defined by diferent items. Items may define a
+    complete URL but if they don&#146;t missing items will be used from the baseURL. This
+    defines where the local folder is from which links are referenced off.</p>
+    <b><p>rootTitle</p>
+    </b><p>&lt;param name=&quot;rootTitle&quot; value=&quot;Root
+    Directory;folder.gif,o_folder.gif;;Status&quot;&gt;</p>
+    <p>This is an item sting that allows you to define the root folder properties with a
+    standard item sting (see item string above). You may define its title graphic, link and
+    status text.</p>
+    <b><p>itemX</p>
+    </b><p>&lt;param name=&quot;item1&quot; value=&quot;One;folder.gif,o_folder.gif;;Folder
+    One&quot;&gt;</p>
+    <p>Items are added with the item tag. You may have as may items as you wish each with a
+    sequential number added to the end eg item1, item2 item3, item4 .. itemX. Item numbers
+    must be sequential and start from one as the program stops adding items if it can't find
+    the next item. Item strings are a list of components and arguments that make up the item
+    and tell the program how to display it. (See item strings above) </p>
+    </font><p><font face="Arial" size="2"><b>bgImage</b></font></p>
+    <p><font face="Arial" size="2">&lt;param name=bgImage value=&quot;sbox-title.jpg&quot;&gt;</font></p>
+    <p><font 2"" face="Arial"><small>As promised I've added background images to the applet.
+    The image's path is defined relative to the applets codebase and contains the filename of
+    the image.&nbsp;</small></font></p>
+    <p><font face="Arial"><small><b>Specifying colours</b></small></font><dir>
+      <dir>
+        <p><small><font face="Arial"><b>bgColor </b>- set the background colour for the window
+        (default white).</font></small></p>
+        <p><small><font face="Arial"><b>fgColor </b>- This is the colour which is use to draw the
+        layout links for the directory structure (default lightgray).</font></small></p>
+        <p><small><font face="Arial"><b>bgHighlight </b>- The colour used as the background on
+        highlighted text items (default rose).</font></small></p>
+        <p><small><font face="Arial"><b>textColor </b>- The colour for text items( default black).</font></small></p>
+        <b><p></b><small><font face="Arial"><strong>textHighlight</strong> - The colour of
+        highlighted text (default white). </font></small></p>
+      </dir>
+    </dir>
+    <p><small><font face="Arial">&lt;param name=bgColor value=&quot;black&quot;&gt;</font></small></p>
+    <p><small><font face="Arial">&lt;param name=bgHighlight value=&quot;lightgray&quot;&gt;</font></small></p>
+    <p><small><font face="Arial">&lt;param name=fgColor value=&quot;A0A0A0&quot;&gt;</font></small></p>
+    <p><small><font face="Arial">&lt;param name=textColor value=&quot;white&quot;&gt;</font></small></p>
+    <p><small><font face="Arial">&lt;param name=textHighlight value=&quot;FF00A0&quot;&gt;</font></small></p>
+    <p><small><font face="Arial">Colours can be specified by a hex constant broken into the
+    RGB components (&quot;FFFFFF&quot;) or by a shorthand name (&quot;white&quot;). Available
+    names are black, blue, cyan, darkgray, gray, green, lightgray, magenta, orange, pink, red,
+    white, yellow or rose. If a colour is note specified or its invalid the control will use
+    the default colour.</font></small></p>
+    <b><p><small><font face="Arial">font</font></small></p>
+    </b><p><small><font face="Arial">&lt;param name=font
+    value=&quot;Helvetica-plain-18&quot;&gt;</font></small></p>
+    <p><small><font face="Arial">The font used by the applet can be defined with a standard
+    font string made up of the font name style and size. Styles can be either plain, italic,
+    bold or bold italic. The size is the point size as a number and the font names can be any
+    of the supported fonts for your platform. Widely supported standard fonts are Helvetica,
+    TimesRoman, Courier and Dialog. The defualt font is Helvetica-plain-12 if the specified
+    font is not available. </font></small></p>
+  </dir>
+</dir>
+
+<p><b><small><font face="Arial">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+offset </font></small>
+
+<dir>
+  <dir>
+    </b><p><small><font face="Arial">&lt;param name=&quot;offset&quot;
+    value=&quot;25,5&quot;&gt;</font></small></p>
+    <p><small><font face="Arial">Use offset to set the coordinate offset of the top of the
+    directory tree. This is useful if you want to shift the directory right and or down to fit
+    better with a background graphic. </font></small></p>
+    <p><font face="Arial" size="2"><strong>dotted</strong></p>
+    <p>&lt;param name=&quot;dotted&quot; value=true&gt;</p>
+    <p>Draw item links, the lines between items in dotted lines instead of solid lines. </p>
+    <p><strong>showURL</strong></p>
+    <p>&lt;param name=&quot;showURL&quot; value=false &gt;</p>
+    <p>Stop the applet from showing the URL that it links to on the status bar. The links can
+    be a bit messy also some people wish to hide exactly what is happening. </p>
+  </dir>
+</dir>
+</font><font face="Arial"><i><b>
+
+<p><a name="JavaScript">JavaScript </a>
+
+<dir>
+  <dir>
+    </b></i></font><font face="Arial" size="2"><p>You can program the applet either using the
+    prama tags on initialisation or by calling the public functions via JavaScript. From
+    JavaScript you can add and remove items, highlight items, select the next and previous
+    items and activate the current selection. </p>
+    <p>The publicly available functions are as follows;</p>
+    <p>Add an item to the control on the fly</p>
+    <b><p>public void addItem( String Item_string );</p>
+    </b><p>The item_string being the path and components of the item (see item string)</p>
+    <p>Highlight a particular item</p>
+    <b><p>public void highlight( String Item_string );</p>
+    </b><p>The item_string being the path of the item in question (see item string)</p>
+    <p>Highlight next visible item</p>
+    <b><p>public void next( );</p>
+    </b><p>Highlight previous visible item</p>
+    <b><p>public void previous( );</p>
+    </b><p>Activate current selection</p>
+    <b><p>public void activate( );</p>
+    </b><p>&nbsp;</p>
+    <b><p>Example</b> </p>
+    <p>add Item button adds an element to the control. </p>
+    <p>&lt;input type=&quot;button&quot; value=&quot;Add Item&quot;</p>
+    <p>onclick=&quot;Tree.addItem('One/Three/Four;http.gif;http://www.mcsoftware.com.au,_top;Software')&quot;&gt;</p>
+    <p>&nbsp;</p>
+    <p>In this example we are using a standard html button </p>
+    <p>&lt;input type=&quot;button&quot; value=&quot;Add Item&quot; &gt;</p>
+    <p>with the acitvation command being</p>
+    <p>onclick=&quot;Tree.addItem('One/Three/Four;http.gif;http://www.mcsoftware.com.au,_top;Software')&quot;</p>
+    <p>We are calling the function addItem with the argument being made up of an item string
+    containing path and link information. (see item string)</p>
+    <p>&nbsp;</p>
+  </dir>
+</dir>
+</font><font face="Arial"><i><b>
+
+<p><a name="Example">Example</a></p>
+</b></i></font><font face="Arial" size="2">
+
+<p>&lt;applet code=&quot;TreeApp.class&quot; name=&quot;Tree&quot; width=&quot;320&quot;
+height=&quot;400&quot;&gt;</p>
+<b>
+
+<p>// define the root directory image and title</p>
+</b>
+
+<p>&lt;param name=&quot;rootTitle&quot; value=&quot;Root
+Directory;folder.gif,o_folder.gif;; Software&quot;&gt;</p>
+<b>
+
+<p>// set the tree to be initially expanded </p>
+</b>
+
+<p>&lt;param name=&quot;expanded&quot; value=&quot;true&quot;&gt;</p>
+<b>
+
+<p>// set the base URL for all the http links that follow</p>
+</b>
+
+<p>&lt;param name=&quot;baseURL&quot; value=&quot;http://www.mcsoftware.com.au/&quot;&gt;</p>
+<b>
+
+<p>// add the items made up of path/title ; image, open_image; link ;</p>
+
+<p>// and message to appear on status bar</p>
+</b>
+
+<p>&lt;param name=&quot;item1&quot; value=&quot;One;folder.gif,o_folder.gif;;Folder
+One&quot;&gt;</p>
+
+<p>&lt;param name=&quot;item2&quot; value=&quot;One/Two/Three/Four;http.gif;;Item Four
+without&quot;&gt;</p>
+
+<p>&lt;param name=&quot;item3&quot; value=&quot;Item4;book.gif;;Item4 book Image&quot;&gt;</p>
+
+<p>&lt;param name=&quot;item4&quot; value=&quot;Item5;;;Item 5&quot;&gt;</p>
+
+<p>&lt;param name=&quot;item5&quot; value=&quot;Item6;;;Item 6&quot;&gt;</p>
+
+<p>&lt;param name=&quot;item6&quot; value=&quot;Item7;;;Item 7&quot;&gt;</p>
+
+<p>&lt;/applet&gt;</p>
+</font>
+</body>
+</html>

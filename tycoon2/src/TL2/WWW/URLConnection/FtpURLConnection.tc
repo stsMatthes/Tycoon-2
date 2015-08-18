@@ -1,0 +1,98 @@
+class FtpURLConnection
+super URLConnection
+(**)
+meta AbstractURLConnectionClass(FtpURLConnection)
+{
+openRead :Input
+  (* *)
+{
+  ftpClient.open
+  stringBuilderOutput ::= StringBuilderOutput.new
+  protect({
+    ftpClient.binary
+    ftpClient.retrieve(url.path, fun(in :Input) {
+      buffer ::= MutableString.new(512)
+      n ::= in.readBuffer(buffer, 0, buffer.size)
+      while({n > 0} do: {
+        stringBuilderOutput.writeBuffer(buffer, 0, n)
+	n := in.readBuffer(buffer, 0, buffer.size)
+      })
+      in.close
+    })
+    StringInput.new(stringBuilderOutput.contents)
+  }, { ftpClient.close })
+}
+
+writeTo(content :String) :Void
+  (* *)
+{
+  ftpClient.open
+  protect({
+    remotePath ::= url.path
+    pos ::= remotePath.locateLastChar('/')
+    mkdirhier(remotePath.subString(0, pos))
+    ftpClient.binary
+    ftpClient.store(remotePath, fun(out :Output) {
+      stringInput ::= StringInput.new(content)
+      buffer ::= MutableString.new(512)
+      n ::= stringInput.readBuffer(buffer, 0, buffer.size)
+      while({n >0} do: {
+        out.writeBuffer(buffer, 0, n)
+	n := stringInput.readBuffer(buffer, 0, buffer.size)
+      })
+      out.close
+    })
+  }, { ftpClient.close })
+}
+
+delete :Void
+  (* *)
+{
+  ftpClient.open
+  protect({
+    ftpClient.delete(url.path)
+  }, { ftpClient.close })
+}
+
+basicAuthorization(user :String, password :String) :Void
+  (* *)
+{
+  ftpClient.user := user
+  ftpClient.password := password
+}
+
+private
+
+ftpClient :FTPClient
+
+mkdirhier(path :String) :Void
+  (* *)
+{
+  try({
+    ftpClient.changeDirectory(path)
+  } else: fun(e :Exception) {
+    if( e.clazz = FTPError then: {
+      ftpError ::= _typeCast(e, :FTPError)
+      if( ftpError.response.code = FTPResponse.ACTION_NOT_TAKEN then: {
+        pos ::= path.locateLastChar('/')
+	if( pos > 0 then: {
+          mkdirhier(path.subString(0, pos))
+	})
+	ftpClient.makeDirectory(path)
+      } else: { e.raise })
+    } else: { e.raise })
+  })
+}
+
+_init1(u :URL) :Self
+  (* *)
+{
+  super._init1(u)
+  ftpClient := FTPClient.new(ipAddressFromHost, "", "", false)
+  if( u.port.isNotNil then: {
+    ftpClient.port := u.port
+  })
+  self
+}
+
+}

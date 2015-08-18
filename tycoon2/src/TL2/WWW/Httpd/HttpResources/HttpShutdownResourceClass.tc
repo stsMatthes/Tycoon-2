@@ -1,0 +1,15 @@
+class HttpShutdownResourceClass
+super ConcreteClass(HttpShutdownResource)
+(**)
+meta MetaClass
+{
+new(httpd :Httpd): HttpShutdownResource
+  (* *)
+{
+  instance ::= _new
+  instance._init
+  instance.httpd := httpd
+  instance
+}
+
+}

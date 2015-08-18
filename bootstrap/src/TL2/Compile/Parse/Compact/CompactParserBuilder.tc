@@ -1,0 +1,161 @@
+class CompactParserBuilder
+super AbstractParserBuilder(ReentrantCompactParser)
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ An Algorithm for building an actual Parser from transition tables
+
+   The result is compact, but is it fast enough?
+ *)
+meta SimpleConcreteClass(CompactParserBuilder)
+{
+generate(D <: Object,
+	 gram :Grammar(D),
+	 start :LR1State, 
+	 actionsT :Dictionary(LR1State, Dictionary(TerminalO, LALRAction)),
+	 goto :Dictionary(NonterminalO, Dictionary(LR1State, LR1State)))
+  :ReentrantCompactParser(D)
+  (* *)
+{
+  nbStates ::= actionsT.size
+
+  actionOffsets ::= MutableArray(:Int).new(nbStates)
+  terminalTable ::= GapArray(:TerminalO).new(nbStates) ; minimum! 
+  actionTable ::= GapArray(:Int).new(nbStates)
+
+  actionsT.keysAndElementsDo(
+    fun(state: LR1State, d :Dictionary(TerminalO, LALRAction)) {
+      actionOffsets[state.n] := terminalTable.size
+      defaultAction ::= decideDefault(d)
+      d.keysAndElementsDo(fun(term :TerminalO, action :LALRAction) {
+	if( action != defaultAction then: {
+	  terminalTable.add(term)
+	  actionTable.add(encodeAction(action))
+	})
+      })
+      terminalTable.add(nil)  ; default marker 
+      actionTable.add(encodeAction(defaultAction))
+    }
+  )
+  assert({ terminalTable.size = actionTable.size })
+
+  gotoOffsets ::= Dictionary(:NonterminalO, :Int).new
+  gotoTable ::= GapArray(:Int).new(2)
+  goto.keysAndElementsDo(
+    fun(nt :NonterminalO, d :Dictionary(LR1State, LR1State)) {
+      gotoOffsets[nt] := gotoTable.size
+      d.keysAndElementsDo(fun(from :LR1State, to :LR1State) {
+        gotoTable.add(from.n)
+	gotoTable.add(to.n)
+      })
+    }
+  )
+
+  actions ::= MutableArray.new(gram.rules.size + 3)
+  actions[1] :=
+    fun(p:CompactParser(Object)) {
+      p.error
+    }
+  actions[2] :=
+    fun(p:CompactParser(Object)) {
+      p.accept
+    }
+  gram.rules.do(fun(rule:RuleO) {
+    actions[rule.number+3] :=
+      reduceMessage(
+        gotoOffsets[rule.lhs],
+	rule.action,
+	rule.rhs.size
+      )
+  })
+
+  ; convert GapArray -> Array for faster access 
+  ReentrantCompactParser.new(
+	start.n,
+	actionOffsets,
+	terminalTable.as(Array),
+	actionTable.as(Array),
+	actions,
+	gotoTable.as(Array),
+	gram.eofTerminal.token)
+}
+
+private
+
+decideDefault(d :Dictionary(TerminalO, LALRAction)) :LALRAction
+  (* return most frequent LALRAction *)
+{
+  best :LALRAction := nil
+  bestCount ::= 0
+  counts ::= Dictionary(:LALRAction, :Int).new
+  d.do(fun(a :LALRAction) {
+    a ::= a.asReduce
+    if( a.isNotNil then: {
+      ; a.rule.lhs != startSymbol ???? 
+      countA ::= 
+	counts.lookup(a, 
+	  fun(c :Int) { c + 1 },
+	  { 1 }
+	)
+      counts[a] := countA
+      if( countA > bestCount then: {
+	bestCount := countA
+	best := a
+      })
+    })
+  })
+  best
+}
+
+encodeAction(action :LALRAction) :Int
+  (* *)
+{
+  if( action.isNil then: {
+    1  ; error 
+  } else: {
+    action.case(
+      fun(s :ShiftAction) {
+	s.newstate.n.negated
+      },
+      fun(r :ReduceAction) {
+	r.rule.number + 3
+      },
+      ; accept 
+{
+	2
+      },
+      ; error 
+{
+	1
+      }
+    )
+  })
+}
+
+reduceMessage(gotoOffset :Int,
+              action :Fun(:Stack(Object)):Object,
+	      rhssize :Int) :Fun(:CompactParser(Object)):Void
+  (* *)
+{
+  fun(p:CompactParser(Object)) {
+    p.reduce(gotoOffset, action, rhssize)
+  }
+}
+
+}

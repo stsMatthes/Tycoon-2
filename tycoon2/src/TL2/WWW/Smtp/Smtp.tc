@@ -1,0 +1,6 @@
+class Smtp
+super Object
+(**)
+meta AbstractClass
+{
+}

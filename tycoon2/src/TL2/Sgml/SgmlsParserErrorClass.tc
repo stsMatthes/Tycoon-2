@@ -1,0 +1,16 @@
+class SgmlsParserErrorClass
+super ConcreteClass(SgmlsParserError)
+(**)
+meta MetaClass
+{
+new(sourceFile :String, errorText :String) :SgmlsParserError
+  (* *)
+{
+  instance ::= _new
+  instance.sourceFile := sourceFile
+  instance.errorText := errorText
+  instance._init
+  instance
+}
+
+}

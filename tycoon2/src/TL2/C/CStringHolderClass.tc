@@ -1,0 +1,15 @@
+class CStringHolderClass
+super ConcreteClass(CStringHolder)
+(**)
+meta MetaClass
+{
+new(length:Int):CStringHolder
+  (* *)
+{
+  s ::= _new()
+  s._length := length
+  s._allocate(length)
+  s
+}
+
+}

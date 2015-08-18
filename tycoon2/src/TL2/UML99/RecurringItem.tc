@@ -1,0 +1,8 @@
+class RecurringItem
+super Event
+meta RecurringItemClass
+{
+_this_is_a_recurring_item :Void
+   (* schmuh *)
+{ }
+}

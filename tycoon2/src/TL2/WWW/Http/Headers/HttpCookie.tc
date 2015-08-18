@@ -1,0 +1,28 @@
+class HttpCookie
+super Http
+(**)
+meta HttpCookieClass()
+
+{
+name :String
+  (* *)
+{ _name }
+
+value :String
+  (* *)
+{ _value }
+
+private
+
+_name :String
+
+_value :String
+
+_init2(n :String, v :String) :Void
+  (* *)
+{
+  _name := n
+  _value := v
+}
+
+}

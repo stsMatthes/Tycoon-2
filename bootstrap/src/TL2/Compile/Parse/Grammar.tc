@@ -1,0 +1,124 @@
+class Grammar(D <: Object)
+super Parse
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ a Grammar whose start symbol has the derived attribute D *)
+meta GrammarClass(D)
+{
+startSymbol :Nonterminal(D)
+  (* *)
+{ _startSymbol }
+
+terminals :Set(TerminalO)
+  (* *)
+{ _terminals }
+
+nonterminals :Set(NonterminalO)
+  (* *)
+{ _nonterminals }
+
+rules :GapArray(RuleO)
+  (* *)
+{ _rules }
+
+eofTerminal :SimpleTerminal
+  (* *)
+{ _eofTerminal }
+
+private
+
+_startSymbol :Nonterminal(D)
+
+_terminals :Set(TerminalO)
+
+_nonterminals :Set(NonterminalO)
+
+_rules :GapArray(RuleO)
+
+_eofTerminal :SimpleTerminal
+
+log :Output
+  (* *)
+{ tycoon.stdout }
+
+recur(sym :NonterminalO) :Void
+  (* *)
+{
+  if( !_nonterminals.includes(sym) then: {
+    _nonterminals.add(sym)
+
+    if( ParserUtil.instance.debug then: {
+      log.writeAll("visit ")
+      sym.printOn(log)
+      log.nl
+    })
+
+    if( sym.rules.size == 0 then: {
+      log.writeAll("warning: ")
+      sym.printOn(log)
+      log.writeAll(" has no rules")
+      log.nl
+    })
+    sym.rules.do(fun(r:RuleO){
+      r.number := _rules.size
+      _rules.add(r)
+      assert({ _rules[r.number] == r })
+    })
+    sym.rules.do(fun(r:RuleO){
+      if( ParserUtil.instance.debug then: {
+        r.printOn(log)
+      })
+
+      r.rhs.do(fun(s :SymbolO) {
+	s.case(:Void,
+	  fun(s :TerminalO) {
+	    if( !_terminals.includes(s) then: {
+	      _terminals.add(s)
+	    })
+	  },
+	  fun(s :NonterminalO) {
+	    recur(s)
+	  }
+	)
+      })
+    })
+  })
+}
+
+_init :Void
+  (* *)
+{
+  super._init
+  ; Make sure start symbol has only one rule and has EOF marker 
+  mstart ::= MutableNonterminal.new("Start")
+  _eofTerminal := SimpleTerminal.new("end of input")
+  mstart.addRule2(_startSymbol, _eofTerminal, fun(x:D, :Object):D {x})
+  _startSymbol := mstart
+
+  log.writeln("Collecting Nonterminals and Rules")
+
+  _nonterminals := Set.new
+  _terminals := Set.new
+  _rules := GapArray.new(2)
+  recur(startSymbol)
+  self
+}
+
+}

@@ -1,0 +1,300 @@
+class Currency
+super Number(Currency)
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ Currency.tc
+
+   Tycoon Business Conversations (TBC) for Tycoon 2
+   ------------------------------------------------
+   Implementation of a currency type implementing the :Number interface and 
+   supporting multiple national currencies.  All mathematical operations do 
+   exchange-rate calculations transparently, so we can e.g. add "DM" and "$"
+   without loosing the real value.
+   For a more clearer terminology, we use the term 'currency' for an entire 
+   instance, 'value' for the sole numeric value it has and 'unit' for the
+   identifier of the currency, e.g. "DM", "US$" or "NOK".
+   Note that the numeric 'value' is represented by a :Long counting the parts
+   of the currency, i.e. "Penny" or "Pfennige". So the value of "$3,14" is
+   represented by the longint 314.
+   
+   31.10.97 hw : created
+   
+*)
+Self = Currency
+meta CurrencyClass
+{
+order(x :Currency) :Int
+  (*
+   * ### Must be overridden to prevent infinite recursion between 
+   * Number::ordered and Number::sign !
+   *)
+{
+    (_valueAs(x.unit) - x.value).sign
+  }
+
+zero :Currency
+  (* ======== implementation of deferred :Numbers methods =================== *)
+{
+    Currency.fromLong(0.asLong, _unit)
+  }
+
+one :Currency
+  (* *)
+{
+    Currency.fromLong(100.asLong, _unit)
+  }
+
+ten :Currency
+  (* *)
+{
+    Currency.fromLong(1000.asLong, _unit)
+  }
+
+truncated :Currency
+  (* *)
+{
+    h:Long := 100.asLong
+    Currency.fromLong((_value/h)*h, _unit)
+  }
+
+rounded :Currency
+  (* *)
+{
+    h:Long := 100.asLong
+    Currency.fromLong(((_value+50.asLong)/h)*h, _unit)
+  }
+
+ceiling :Currency
+  (* *)
+{
+    self
+  }
+
+floor :Currency
+  (* *)
+{
+    self
+  }
+
+asInt :Int
+  (* *)
+{
+    (_value/100.asLong).asInt
+  }
+
+asLong :Long
+  (* *)
+{
+    _value/100.asLong
+  }
+
+asReal :Real
+  (* *)
+{
+    _value.asReal/100.0
+  }
+
+asString :String
+  (* *)
+{
+    printString
+  }
+
+"+"(other :Currency) :Currency
+  (*
+   * Add a currency to the receiver.  A new instance, having the
+   * added values of both is returned in the unit of the receiver, eg.
+   * "5,00 DM" + "20,00 NOK" -> "10,00 DM" assuming DM:NOK is 1:4.
+   *)
+{
+    if( _unit = other.unit
+      then: { Currency.fromLong(_value + other.value, _unit) }
+      else: { Currency.fromLong(_value + other.asCurrency(_unit).value, _unit) })
+  }
+
+"-"(other :Currency) :Currency
+  (* *)
+{
+    if( _unit = other.unit
+      then: { Currency.fromLong(_value - other.value, _unit) }
+      else: { Currency.fromLong(_value - other.asCurrency(_unit).value, _unit) })
+  }
+
+multiply(F<:Number(F), factor :F) :Currency
+  (*
+   * Send a real value to the receiver and return a currency with 
+   * multiplicated, divided or modulo'ed values -- correctly rounded.
+   * The unit remains unchanged.
+   * These methods accept all subtypes of Number -- including Currency,
+   * although the meaning of "10,00 DM" * "10,00 NOK" is not defined.
+   * However, the result would be 10.000,00 DM.
+   *)
+{
+    ; ### Real.asLong needed! 
+    Currency.fromLong(
+      (_value.asReal*factor.asReal+0.5).asInt.asLong, 
+      _unit
+    )
+  }
+
+divide(F<:Number(F), factor :F) :Currency
+  (* *)
+{
+    Currency.fromLong(
+      (_value.asReal/factor.asReal+0.5).asInt.asLong, 
+      _unit
+    )
+  }
+
+modulo(F<:Number(F), factor :F) :Currency
+  (* *)
+{
+    Currency.fromLong(
+      (_value.asReal%factor.asReal+0.5).asInt.asLong, 
+      _unit
+    )
+  }
+
+copy :Self
+  (* ======== specializations of :Object methods ============================ *)
+{
+    Currency.fromLong(_value, _unit)
+  }
+
+printOn(out :Output) :Void
+  (*
+   * Print currency on an output stream in format "###.###.##0,00 XXX"
+   * where XXX is the unit. Leading zeros except the last one before
+   * the comma will be suppressed, after each three digits an point will
+   * be inserted and parts will be generated always. If an dollar is 
+   * part of the unit, the unit will prefixed instaed of suffixed.
+   *)
+{        
+    radix:Long := 10.asLong
+
+    if( _value.isNegative then:
+      { out.write('-') })    
+
+    unitFirst ::= _unit.locateChar('$').isNotNil
+    if( unitFirst then: {
+      out.writeAll(_unit)
+    })
+
+    buffer:Stack(Char) := Stack.new1(64)    
+    mark:Long := _value/100.asLong.abs      
+    i:Int := 0
+    repeat({
+      buffer.addFirst(Char.digit((mark % radix).asInt))
+      mark := mark / radix
+      i := i + 1
+      if( ((i % 3) = 0 && mark.isStrictlyPositive) then:
+       { buffer.addFirst('.') })
+    }until:{ mark.isZero })
+    out.writeAll(buffer)
+    
+    out.write(',')
+    out.write(Char.digit(((_value/radix)%radix).asInt.abs))
+    out.write(Char.digit((_value%radix).asInt.abs))
+    
+    if( !unitFirst then: {
+      out.write(' ')
+      out.writeAll(_unit)
+    })
+  }
+
+unit :String
+  (* ======== introduce more methods ======================================== 
+
+   * Return the unit of the currency, e.g. "DM", "NOK", "$" etc.
+   *)
+{
+    _unit
+  }
+
+"unit:="(name :String) :Void
+  (*
+   * Set a new unit. The new one must be registered within CurrencyClass
+   * together with the actual one.
+   * If this is not the case, an exception is thrown.
+   * If defined, the value will be automatically recalculated using the
+   * registered exchange rate.
+   *)
+{
+    if( name != _unit then: {
+      _value := _valueAs(name)
+      _unit := name
+    })
+  }
+
+"value:="(x :Long) :Void
+  (*
+   * Set a new value.  The unit remains unchanged.
+   *)
+{
+    _value:=x
+  }
+
+value :Long
+  (*
+   * Return the value without unit as a longint, represented in parts,
+   * eg. "14,03 DM" will be 1403
+   *)
+{
+    _value
+  }
+
+to(F<:Number(F), x :F) :Void
+  (*
+   * Set a new value.  The unit remains unchanged.  Every subtype of Number
+   * may be used as new value.  Its representation corrsponds to these of
+   * the as... methods, i.e. the mark-value.
+   *)
+{
+    _value:=(x.asReal*100.0).asInt.asLong
+  }
+
+asCurrency(name :String) :Currency
+  (*
+   * Return a copy of self having the same real value in an arbitrary unit.
+   * The numeric value is recalculated usinf the exchange rate of CurrencyClass.
+   *)
+{
+    Currency.fromLong(
+      _valueAs(name),
+      name
+    )
+  }
+
+private
+
+_value :Long
+
+_unit :String
+
+_valueAs(unit :String) :Long
+  (* *)
+{
+    if( _unit = unit
+     then: {_value}
+                                                 ; ### need Real::asLong 
+     else: {((_value.asReal * Currency.getRate(_unit, unit)) +0.5).asInt.asLong})
+  }
+
+}

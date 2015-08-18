@@ -1,0 +1,143 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+   <TITLE>Beispielsitzung</TITLE>
+</HEAD>
+<BODY>
+
+<H2>Beispielsitzung</H2>
+
+<P>Nach dem Start erscheint eine kurze Meldung und eine Eingabeaufforderung,
+an der Tycoon-2-Ausdr&uuml;cke ausgewertet werden k&ouml;nnen. </P>
+
+<PRE>Tycoon-2 restarted.
+|&gt; 1+1;
+2
+|&gt; &quot;hallo&quot;.reversed;
+&quot;ollah&quot;
+</PRE>
+
+<P>Neue Klassen definiert man folgenderma&szlig;en: </P>
+
+<P>Zun&auml;chst erzeugt man die Quelltextdatei, etwa <TT>ErsteKlasse.tc</TT>
+mit folgendem Inhalt: </P>
+
+<PRE>class ErsteKlasse
+super Object
+metaclass SimpleConcreteClass(ErsteKlasse)
+public methods
+
+tuwas :Bool
+{  tycoon.stdout.writeln(&quot;Ich tu was.&quot;),
+   true
+}
+;
+</PRE>
+
+<P>Dabei ist wichtig, da&szlig; Klassenname und Dateiname zueinander passen.
+Diese Klasse mu&szlig; nun dem <A HREF="classloader.html">ClassLoader</A>
+bekannt gemacht werden (Details siehe dort). </P>
+
+<PRE>|&gt; tycoon.tl.loader.registerFile(&quot;ErsteKlasse.tc&quot;);
+[Building class ErsteKlasse
+]
+nil
+|&gt;
+</PRE>
+
+<P>Das System baut zun&auml;chst nur einen Platzhalter f&uuml; die Klasse.
+Wir m&uuml;ssen es noch auffordern, nach ge&auml;nderten Quelltexten zu
+suchen: </P>
+
+<PRE>|&gt;  tycoon.tl.loader.update;
+[./ErsteKlasse.tc
+]
+[Checking for unknown class names...]
+[Building class ErsteKlasse
+New class object for ErsteKlasse: old metaclass AbstractClass(), new SimpleConcreteClass(ErsteKlasse)
+]
+nil
+|&gt;
+</PRE>
+
+<P>Nun definieren wir eine Pool-Variable und weisen ihr ein Exemplar der
+Klasse zu. </P>
+
+<PRE>|&gt; define erstesObjekt :ErsteKlasse;
+|&gt; erstesObjekt := ErsteKlasse.new;
+an ErsteKlasse
+|&gt; erstesObjekt.tuwas;
+Ich tu was.
+true
+|&gt;
+</PRE>
+
+<P>Wir &auml;ndern nun den Quelltext, um eine etwas sinnvollere Meldung
+zu bekommen. Der neue Text sieht so aus: </P>
+
+<PRE>class ErsteKlasse
+super Object
+metaclass SimpleConcreteClass(ErsteKlasse)
+public methods
+
+tuwas :Int
+{  tycoon.stdout.writeln(&quot;Berechne 1+1&quot;),
+   1+1
+}
+;
+</PRE>
+
+<P>Nachdem wir die Datei ge&auml;ndert und abgespeichert haben, geben wir
+dem System bescheid. </P>
+
+<PRE>|&gt;  tycoon.tl.loader.update;
+...
+</PRE>
+
+<P>Unser existierendes Objekt verwendet sofort die neue Definition. </P>
+
+<PRE>|&gt; erstesObjekt.tuwas;
+Berechne 1+1
+2
+|&gt;
+</PRE>
+
+<P>Damit die Klasse beim n&auml;chsten Systemstart nicht noch einmal eingelesen
+werden mu&szlig;, f&uuml;hren wir ein persistentes commit durch. </P>
+
+<PRE>|&gt; tycoon.saveSystem;
+System saved.
+true
+|&gt;
+</PRE>
+
+<P>Dann beenden wir die Sitzung, entweder durch Control-C oder durch </P>
+
+<PRE>|&gt; tycoon.ansiC.exit(0);
+</PRE>
+
+<P>Wer sich f&uuml;r die Schnittstelle einer Klasse interessiert, kann
+sich diese durch eine <TT>prettyPrint</TT>-Nachricht ans Klassenobjekt
+anschauen, z.B. <TT>Tycoon.prettyPrint</TT>. Kommentare etc. gibt es allerdings
+nur in den urspr&uuml;nglichen Quelltext-Dateien. </P>
+
+<P>Mit <TT>DO load &quot;Datei&quot;;</TT> ist es auch m&ouml;glich, mehrere
+Ausdr&uuml;cke aus einem Skript einzulesen. Der Dateiname kann absolut
+oder relativ zur Umgebungsvariable <TT>TL2_PATH</TT> sein.
+<HR WIDTH="100%">
+<ADDRESS><A HREF="mailto:tycoon2@sun01.sts.tu-harburg.de">Tycoon-2 Administrator</A>
+/ 13.01.98</ADDRESS>
+</BODY>
+</HTML>
+
+
+
+
+
+
+
+
+
+
+

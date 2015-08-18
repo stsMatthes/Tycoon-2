@@ -1,0 +1,66 @@
+class Briefkorb
+super Buero
+{
+
+ablegen(vorgang @: Vorgang) :Void
+{
+  mutex.withLock({
+    ;; warte, bis freier Platz vorhanden ist
+    while({ abgelegt.size >= kapazitaet } do: {
+      etwasEntnommen.wait(mutex)
+    })
+    abgelegt.add(vorgang@)
+    etwasAbgelegt.signal
+  })
+}
+
+abholen() @: Vorgang
+{
+  ergebnis @:Vorgang := nil@    ;; eine lokale Komponentenvariable
+  mutex.withLock({
+    ;; warte, bis ein Vorgang abgelegt ist
+    while({ abgelegt.isEmpty } do: {
+      etwasAbgelegt.wait(mutex)
+    })
+    ergebnis := abgelegt.giveFirst@
+    etwasEntnommen.signal
+  }) ;; verlasse den Monitor
+  ;; nimm die Komponente aus der lokalen Variable und liefere sie als Ergebnis
+  ergebnis@
+}
+
+leeren @: AtArray(Vorgang)
+{
+  mutex.withLock({
+    ergebnis @::= AtArray.new(abgelegt.size)@
+    for(0 to: abgelegt.size-1 do: fun(i:Int) {
+      ergebnis[i] := abgelegt.giveFirst@
+    })
+    etwasEntnommen.signal
+    ergebnis@
+  })@
+}
+
+private
+
+_init :Void
+{
+  super._init
+  abgelegt := AtQueue.new@
+  mutex := Mutex.new
+  etwasEntnommen := Condition.new
+  etwasAbgelegt := Condition.new
+}
+
+abgelegt @:AtQueue(Vorgang)
+
+mutex :Mutex
+
+etwasEntnommen :Condition
+
+etwasAbgelegt :Condition
+
+kapazitaet :Int
+{ 5 }
+
+}

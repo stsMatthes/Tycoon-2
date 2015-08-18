@@ -1,0 +1,56 @@
+class SmtpResponse
+super Smtp
+(**)
+meta SmtpResponseClass()
+
+{
+code :Int
+
+msg :String
+
+parse(in :Input, verbose :Bool) :Void
+  (*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ ------------------------------------------------------------ *)
+require in.isNotNil &
+    verbose.isNotNil
+  
+  {
+    line ::= in.readln
+    if( line.size < 3 ||
+	( !line[0].isDigit ||
+	( !line[1].isDigit ||
+	 !line[2].isDigit))
+      then: { SmtpError.new(nil).raise })
+
+    code := Int.fromReader(line.subSequenceReader(0,3))
+    msg := String.fromSubSequence(line, 3, line.size-3).trim  
+    if( verbose then: { tycoon.stdout << self })
+  }
+
+printOn(out :Output) :Void
+  (* ------------------------------------------------------------ *)
+require out.isNotNil
+  
+  { if( code.isNotNil & msg.isNotNil then:
+      { out << clazz.name << ": " << code << " " << msg << '\n' })
+  }
+
+}

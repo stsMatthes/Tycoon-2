@@ -1,0 +1,13 @@
+TL2NilType.init ?
+TL2EmptySubst.init ?
+TL2VoidType.init ?
+TL2SubTypeRelation.init ?
+
+TL2WeakRefDescriptor.init ?
+TL2ArrayDescriptor.init ?
+TL2ByteArrayDescriptor.init ?
+TL2ShortArrayDescriptor.init ?
+TL2IntArrayDescriptor.init ?
+TL2LongArrayDescriptor.init ?
+TL2StackDescriptor.init ?
+TL2ThreadDescriptor.init ?    

@@ -1,0 +1,79 @@
+class MessageHandler
+super Object
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ MessageHandler.tc
+
+   Tycoon Business Conversation (TBC) for Tycoon 2
+   -----------------------------------------------
+   Abstract superclass for handler to handle :Messages by a visitor-like 
+   pattern.  For each concrete subclass of :Message a corresponding deferred 
+   method in MessageHandler must exist, which exactly receives the messages 
+   class' objects as parameter.  These methods can be implemented in subclasses 
+   of :MessageHandler.  Handling a message then simply calls the 'handle'-method 
+   of a received message, which calls the corresponding method of the given 
+   handler.
+   Not all methods must be implemented, doing so will cause 'method not 
+   implemented' exceptions at runtime.  This can be used to detect wrong
+   message-passing etc.
+   Note that :Role will be a MessageHandler.
+   
+   22.08.97 hw : created
+   
+*)
+meta AbstractClass
+{
+errorReply(m :MessageErrorReply) :Message
+  (* *)
+deferred
+
+setDebug(m :MessageSetDebug) :Message
+  (* *)
+deferred
+
+setSpec(m :MessageSetSpec) :Message
+  (* *)
+deferred
+
+getSpec(m :MessageGetSpec) :Message
+  (* *)
+deferred
+
+startConversation(m :MessageStartConversation) :Message
+  (* *)
+deferred
+
+requestConversation(m :MessageRequestConversation) :Message
+  (* *)
+deferred
+
+acceptConversation(m :MessageAcceptConversation) :Message
+  (* *)
+deferred
+
+performerDialog(m :MessagePerformerDialog) :Message
+  (* *)
+deferred
+
+customerDialogRequest(m :MessageCustomerDialogRequest) :Message
+  (* *)
+deferred
+
+}

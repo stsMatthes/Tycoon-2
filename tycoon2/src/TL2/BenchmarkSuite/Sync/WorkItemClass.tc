@@ -1,0 +1,14 @@
+class WorkItemClass(T <: Object)
+super ConcreteClass(WorkItem(T))
+(**)
+meta MetaClass
+{
+new1(f :Fun():T) :WorkItem(T)
+  (* *)
+{
+  w ::= _new
+  w._process := f
+  w
+}
+
+}

@@ -1,0 +1,267 @@
+class X_TL2Class
+super X_TL2MutableClassState, X_TL2ClassPublic
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ invariant
+          no two slots with the same name
+	  no two methods with the same name *)
+meta X_TL2MetaClass
+{
+id :Int
+  (* unique code for this class. Used to encode class information 
+	    within object headers. *)
+
+instanceSize :Int
+  (* size of instances in slots, used by the 'new' method.
+       -> depends on _slotMap *)
+
+cpl :List(X_TL2Class)
+  (* all superclasses in lookup order.
+       This slot is maintained by the X_TL2ClassManager. 
+       -> depends on directSuperClasses and on their cpls. *)
+
+methodDictionaries :List(X_TL2MethodDictionaryPublic)
+  (* contains all method dictionaries of the classes in the cpl
+       in lookup order. May also contain shadow method 
+       dictionaries that hide slot methods with access
+       and upate methods with the right indices (due 
+       to multiple inheritance).
+       This slot is maintained by the X_TL2ClassManager.
+       Used by TM during method lookup.
+       -> depends on cpl, slots, methodDictionary,
+       and on the slots and methodDictionaries of
+       all superclasses. *)
+
+typeIde :X_TL2TypeIde
+ (* "<name> = <asType>"
+    typeIde == X_TL2TypeManager.instance.signature(name) *)
+
+classManager :X_TL2ClassManager
+
+isSubClassOf(other :X_TL2ClassPublic) :Bool
+  (* *)
+{ classManager.superclasses(self).includes(other) }
+
+isSuperClassOf(other :X_TL2ClassPublic) :Bool
+  (* *)
+{ ; slow, but safe 
+  subclasses.includes(other)
+}
+
+subclasses :Reader(X_TL2ClassPublic)
+{ classManager.subclasses(self)
+}
+
+superclasses :Reader(X_TL2ClassPublic)
+{ classManager.superclasses(self)
+}
+
+"metaclass" :X_TL2ClassPublic
+  (* *)
+{ classManager."metaclass"(self) }
+
+asType :X_TL2Type
+  (* either an X_TL2ObjectType or X_TL2OperType, depending on whether domain is empty *)
+{ typeIde.type }
+
+setState(state :X_TL2ClassState) :Void
+  (* *)
+require state.name == name
+{
+  super.setState(state)
+
+  methodDictionary.setClass(self)
+
+  ; ### gleich hier berechnen? 
+  typeIde.type := nil
+}
+
+printOn(out:Output) :Void
+  (* *)
+{
+  out.writeString(name)
+}
+
+disassemble(vmInterface :X_TL2VMInterface) :Void
+  (* *)
+{
+  reader ::= X_BEByteCodeReader.new(vmInterface, classManager.root)
+  out ::= Printer.new(tycoon.stdout)
+  methodDictionary.do(fun(m :X_TL2Method) {
+    m.disassembleOn(out, reader)
+  })
+}
+
+recompile(compiler :X_TL2Compiler, errorLog :ErrorLog) :Void
+  (* recompile a given class (after changes in code generation).
+     Warning: the "accessedFromClosure" flag is not reset, so
+     variables may be stored in cells unnecessary. *)
+{
+  selfSig ::= extractSelfSig
+  selfSig ::=
+    if( selfSig.isNotNil then: { selfSig }
+      else: { tycoon.stdout << "Warning: no selfSig found!\n"
+	  X_TL2ValueIde.new(selfTypeSig.pos, "self", false, X_TL2IdeType.new(selfTypeSig)) })
+  methodDictionary.do(fun(m :X_TL2Method) {
+    try({
+      compiler.errorLog := errorLog
+      m.compileMethod(selfSig, compiler)
+    } else: fun(e :Exception) {
+      tycoon.stdout.writeln("While compiling "+m.selector+":")
+      e.raise
+    })
+  })
+}
+
+finalize :Void
+  (* *)
+{
+  methodDictionary.do(fun(m :X_TL2Method) {
+    m.finalize
+  })
+}
+
+makeSlotMethods(slotPos :Fun(:X_TL2Slot):Int, isStruct :Bool) 
+		:X_TL2MethodDictionary(X_TL2SlotMethod)
+  (* create a dictionary with slot access/update methods 
+   for all my slots, either tycoon or cstruct methods. Indices are fetched by
+   calling slotPos with the slot object.  slotPos returns a different position
+   for different slot objects.
+     return the created method dictionary, or nil if this class
+   contributes no slots.
+  *)
+{
+  if( !slots.isEmpty then: {
+    dic ::= X_TL2MethodDictionary.new1(slots.size)
+    dic.setClass(self)
+    slots.do(fun(s :X_TL2Slot) {
+      offset ::= slotPos[s]
+      dic.addAll( s.accessMethods(offset, isStruct) )
+    })
+    dic
+  } else: { nil })
+}
+
+slotMap :Array(X_TL2Slot)
+  (* all slots, including those inherited from superclasses.
+     the nth slot (as returned by __basicAt) of an instance of self 
+     is described by the nth element of slotMap. *)
+{ _slotMap }
+
+storeDescriptor :X_TL2TspDescriptor
+  (* *)
+{
+  classManager.root.storeDescriptors.lookup(name,
+      fun(d :X_TL2TspDescriptor){ d },
+      { X_TL2ArrayDescriptor.instance })
+}
+
+setBehaviour(methodDictionaries :List(X_TL2MethodDictionaryPublic),
+	     slotMap :Array(X_TL2Slot),
+	     instanceSize :Int) :Void
+  (* set the runtime behaviour in an atomic operation.
+     Only to be called by the classManager. *)
+{
+  if( classManager.root.active then: {
+    _set(methodDictionaries, slotMap, instanceSize)
+  } else: {
+    self.methodDictionaries := methodDictionaries
+    self._slotMap := slotMap
+    self.instanceSize := instanceSize
+  })
+}
+
+private
+
+_slotMap :Array(X_TL2Slot)
+
+extractSelfSig :X_TL2ValueIde
+  (* *)
+{
+  selfSig :X_TL2ValueIde := nil
+  hunter : X_TL2FunValueVisitor(Void) := nil
+  hunter := X_TL2FunValueVisitor.new(nil)
+    .ifSend(fun(v :X_TL2SendValue) {
+       v.receiver.accept(hunter)
+       v.args.do(fun(a :X_TL2Argument) {
+	 if( selfSig.isNil
+	 then: { a.argumentCase(
+	       fun(a :X_TL2Value){ a.accept(hunter) },
+	       fun(:X_TL2Type){ ; despise 
+}) })
+       })
+     })
+    .ifAssign(fun(v :X_TL2AssignValue) {
+      v.rhs.accept(hunter)
+     })
+    .ifIde(fun(r:X_TL2IdeValue){
+      if( r.ide.name = "self" then: { selfSig := r.ide })
+     })
+    .ifFun(fun(v :X_TL2CompiledFun) {
+      v.body.accept(hunter)
+     })
+    .ifLet(fun(v :X_TL2LetValue) {
+      v.value.accept(hunter)
+      if( selfSig.isNil then: { v.body.accept(hunter) })
+     })
+    .ifBlock(fun(v :X_TL2BlockValue) {
+      v.values.do(fun(v :X_TL2Value) {
+   	if( selfSig.isNil
+	then: { v.accept(hunter) })
+      })
+     }).ifLiteral(fun(:Object) {
+       ; nop 
+     })
+  methodDictionary.do(fun(m :X_TL2Method) {
+    ; a visitor would be better! 
+    if( selfSig.isNil
+    then: { if( m."class" == X_TL2CompiledMethod
+	then: { m :X_TL2CompiledMethod := _typeCast(m)
+	    m.body.accept(hunter) }) })
+  })
+  selfSig
+}
+
+_init :Void
+  (* *)
+{
+  super._init
+  methodDictionary.setClass(self)
+  _slotMap := nil
+  instanceSize := 0
+  cpl := nil
+  typeIde := classManager.typeManager.newClassSignature(name)
+
+  self
+}
+
+isStruct :Bool
+  (* *)
+{ storeDescriptor.isStruct
+}
+
+_set(methodDictionaries :List(X_TL2MethodDictionaryPublic),
+     slotMap :Array(X_TL2Slot),
+     instanceSize :Int) :Void
+  (* set the runtime behaviour in an atomic operation.
+     Only to be called by the classManager. *)
+builtin
+
+}

@@ -1,0 +1,111 @@
+class X_NewTL2Syntax
+super X_AbstractTL2Syntax
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+*)
+meta SimpleConcreteClass(X_NewTL2Syntax)
+{
+grammar :X_NewTL2Gram
+{ _grammar }
+
+private
+
+terminals :X_NewTL2Terminals
+
+scanner :X_ReentrantNewTL2Scanner
+
+_grammar :X_NewTL2Gram
+
+makeScanner(where :String, input :Input, errorLog :ErrorLog, bufferCapacity :Int) :X_NewTL2Scanner
+  (* *)
+{ scanner.scan1(where, input, errorLog, bufferCapacity) }
+
+normalizeClass(builder:X_TL2ClassBuilder, errorLog :ErrorLog) :Void
+  (* *)
+{ normalizer ::= X_TL2Normalizer.new(errorLog)
+
+  if( builder.selfTypeSig.isNil then: {
+    builder.selfTypeSig := X_TL2SubTypeIde.new(builder.pos, "Self", makeClassType(builder))
+  })
+  if( builder.metaClassDeclaration.isNil then: {
+    builder.metaClassDeclaration := makeMetaClassType(builder)
+  })
+
+  ; hack for keyword arguments: walk over all send values 
+  visitor ::=
+    X_TL2FunMethodVisitor.new.ifCompiled(fun(m :X_TL2CompiledMethod) {
+      m.body.accept(normalizer)
+      if( m.precondition.isNotNil then: { m.precondition.accept(normalizer) })
+      if( m.postcondition.isNotNil then: { m.postcondition.accept(normalizer) })
+    }).otherwise(fun(m :X_TL2Method) {
+      if( m.precondition.isNotNil then: { m.precondition.accept(normalizer) })
+      if( m.postcondition.isNotNil then: { m.postcondition.accept(normalizer) })
+    })
+  builder.privateMethods.do(fun(m:X_TL2Method){
+    m.acceptMethodVisitor(visitor)
+  })
+  builder.publicMethods.do(fun(m:X_TL2Method){
+    m.acceptMethodVisitor(visitor)
+  })
+}
+
+normalizeBindings(v :X_TL2BlockValue, errorLog :ErrorLog) :Void
+  (* *)
+{
+; hack for keyword arguments: walk over all send values 
+  norm ::= X_TL2Normalizer.new(errorLog)
+  v.accept(norm)
+}
+
+makeClassType(builder :X_TL2ClassBuilder) :X_TL2CPLType
+  (* *)
+{
+  classIde ::= X_TL2TypeIde.newRef(builder.pos, builder.name)
+  X_TL2CPLType.new(classIde, 
+    builder.domain.map(fun(i :X_TL2TypeIde){ X_TL2IdeType.new(i) }).as(List))
+}
+
+makeMetaClassType(builder :X_TL2ClassBuilder) :X_TL2CPLType
+  (* *)
+{
+  classIde ::= X_TL2TypeIde.newRef(builder.pos, builder.name)
+  X_TL2CPLType.new( X_TL2TypeIde.newRef(builder.pos, "SimpleConcreteClass"),
+    List.with1(
+      X_TL2ApplyType.new(X_TL2IdeType.new(classIde),
+        builder.domain.map(fun(i :X_TL2TypeIde){ X_TL2IdeType.new(i) }).as(List))))
+}
+
+_init :Void
+  (* *)
+{
+  terminals := X_NewTL2Terminals.new
+  _grammar := X_NewTL2Gram.new(terminals)
+  buildParser
+  scanner := X_ReentrantNewTL2Scanner.new(terminals)
+  self
+}
+
+buildParser :Void
+{
+  parserBuilder ::= ParserGen(:ReentrantCompactParser).new(CompactParserBuilder.new)
+  _parser := parserBuilder.generate(grammar.grammar)
+}
+
+}

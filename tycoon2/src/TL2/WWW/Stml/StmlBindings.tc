@@ -1,0 +1,95 @@
+class StmlBindings
+super Stml, KeyedContainer(String, StmlType)
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+*)
+meta SimpleConcreteClass(StmlBindings)
+{
+bindings :Dictionary(String, StmlType)
+
+printOn(out :Output) :Void
+  (* Decorator for bindings *)
+{
+  bindings.printOn(out)
+}
+
+"[]"(name :String) :StmlType
+  (* *)
+{ bindings[name] }
+
+keys :Reader(String)
+  (* *)
+{ bindings.keys }
+
+reader :Reader(StmlType)
+  (* *)
+{ bindings.reader }
+
+size :Int
+  (* *)
+{ bindings.size }
+
+withBinding(T <: Void, name :String, value :StmlType, proc :Fun(:StmlBindings):T) :T
+  (* *)
+{
+  if( name.isNil then: {
+    proc[self]
+  } else: {
+    ; tycoon.stdout.writeln("[bind "+name+" to "+value.printString), 
+    result ::=
+      bindings.lookup(name, fun(prev :StmlType) {
+	bindings[name] := value
+	result ::= proc[self]
+	bindings[name] := prev
+	result
+      }, {
+	bindings[name] := value
+	result ::= proc[self]
+	bindings.removeKey(name)
+	result
+      })
+    ; tycoon.stdout.writeln("unbind "+name+"]"), 
+    result
+  })
+}
+
+withBindings(T <: Void, b :List(Pair(String, StmlType)), proc :Fun(:StmlBindings):T) :T
+  (* *)
+{ if( b.isEmpty then: {
+    proc[self]
+  } else: {
+    head ::= b.head
+    tail ::= b.tail
+    withBinding(head.first, head.second, fun(bindings1 :StmlBindings) {
+      bindings1.withBindings(tail, proc)
+    })
+  })
+}
+
+private
+
+_init :Void
+  (* *)
+{ super._init
+  bindings := Dictionary.new
+  self
+}
+
+}

@@ -1,0 +1,107 @@
+class HeaderParser
+super Http
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+  Parsing MIME headers
+  Author: Matthias Ernst 12/96
+  Change: me 6.1.96 Names
+*)
+meta HeaderParserClass
+{
+in :Reader(Char)
+
+parseHeaders: MimeHeaderDictionary(MimeHeaderValue)
+  (* *)
+{
+  result ::= MimeHeaderDictionary(:MimeHeaderValue).new
+  parser ::= MimeParser.new(in)
+  
+  while({
+    ; Empty line ends headers
+;       should be CRLF but we allow LF only too 
+    !(parser.char == '\n' || 
+      parser.char == '\r' && ( parser.next parser.char == '\n' )
+    )
+  } do: {
+    name ::= headerName(parser)
+    parser.skip(':')
+    value ::= headerValue(parser)
+
+    ; Lookup (or enter) headerValue 
+    headerValue ::= result.lookup(name,
+      fun(hv: MimeHeaderValue) { hv },
+      { result[name] := newHeaderValue(name) }
+    )
+
+    ; if this header already exists, we should build a list from the values.
+;       should this be a special behaviour of the 'string:=' message, or should
+;       the knowledge be here ?
+;    
+    headerValue.string := value
+  })
+
+  result
+}
+
+private
+
+newHeaderValue(name :String) :MimeHeaderValue
+  (* *)
+{
+  MimeHeaderRegistry.instance.newHeaderValue(name)
+}
+
+headerName(parser :MimeParser) :String
+  (* *)
+{
+  parser.nextToken
+}
+
+headerValue(parser :MimeParser) :String
+  (* *)
+{
+  parser.skiphws
+  value ::= GapString.new(10)
+  
+  break ::= false
+  while({!break} do: {
+    if( parser.char == nil then: { MimeParserError.new("Premature end of headers").raise })
+
+    if( parser.char == '\n' ||  parser.char == '\r' && ( parser.next parser.char == '\n' ) then: {
+	 parser.next
+	 if( parser.char != ' ' &&  parser.char != '\t'  then: {
+	   break := true nil
+	 } else: {
+	   parser.skiphws
+	   value.add(' ') nil   ; LWS is equivalent to SP 
+	 })
+    } else: {
+      value.add(parser.char)
+      parser.next
+
+      nil
+    })
+  })
+
+  value.asString
+}
+
+}

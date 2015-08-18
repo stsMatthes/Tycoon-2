@@ -1,0 +1,15 @@
+class HttpSetCookieClass
+super ConcreteClass(HttpSetCookie)
+(**)
+meta MetaClass
+{
+new(n :String, v :String, e :Date, d :String, p :String, s :Bool) :HttpSetCookie
+  (* *)
+{
+  setCookie ::= _new
+  setCookie._init6(n, v, e, d, p, s)
+
+  setCookie
+}
+
+}

@@ -1,0 +1,14 @@
+class ConcreteEncoderClass(Instance <: Encoder)
+super ConcreteClass(Instance)
+(**)
+meta MetaClass
+{
+new(i :Input) :Instance
+  (* *)
+{
+  instance ::= _new
+  instance._init1(i)
+  instance
+}
+
+}

@@ -1,0 +1,67 @@
+class CroArrayDescriptor
+super CroAbstractArrayDescriptor
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+*)
+meta CroTspDescriptorClass(CroArrayDescriptor)
+{
+layout :Int
+  (* *)
+{ layoutArray }
+
+elementFmt :Char
+  (* *)
+{ 'o' }
+
+objectSize(o :Object) :Int
+  (* only for speed *)
+{ o.__basicSize * 4 }
+
+dumpInstance(o :Object) :Void
+  (* only for speed *)
+{
+  _tracer ::= _tracer
+  for(0 to:o.__basicSize-1 do:fun(i:Int){
+    _tracer.dumpOID(o.__basicAt(i))
+  })
+}
+
+allocate(o :Object, tl2Class :X_TL2Class) :Int
+  (* *)
+require o."class".name = tl2Class.name
+{
+  if( o.__basicSize != tl2Class.instanceSize
+  then: { if( o."class" !== Array
+      && ( o."class" !== MutableArray
+           && ( o."class" !== TVMStack
+	        && ( ; FunN: only after bootstrap 
+		     name ::= o."class".name  
+		     name.size != 4
+		     || ( name.subString(0,3) != "Fun"
+		          ||  !name[3].isDigit ))))
+      then: { tycoon.stdout <<
+	   "object size mismatch: "<<o."class".name<<": found "
+	    <<o.__basicSize<<" slots, expected "<<tl2Class.instanceSize<<'\n'
+	    <<"History: "
+	  _tracer.showHistory})})
+  super.allocate(o,tl2Class)
+}
+
+}

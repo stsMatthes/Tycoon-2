@@ -1,0 +1,134 @@
+class SQLConnection
+super SQL
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+Handle connections with data-sources
+
+Author:  Michael Skusa
+Date:    16-Aug-1996
+Updates: (Date)	  (Name)	(Description)
+*)
+meta AbstractClass
+{
+isClosing:Bool
+
+newStatement():SQLStatement
+  (* *)
+deferred
+
+addStatement(s:SQLStatement) :Void
+  (* Creates SQLStatement,
+     returns nil if connection is closed
+   
+ Adds s to internal set of open statements,
+     is called automatically by SQLStatement.new (i.e. newStatement) *)
+{
+  _statements.add(s)
+}
+
+removeStatement(s:SQLStatement):Void
+  (* Deletes s from internal set of open statements,
+     is called automatically by SQLStatement.close. *)
+{
+  _statements.remove(s)
+}
+
+setAutoCommit(on:Bool):Void
+  (* *)
+deferred
+
+commit():Void
+  (* on = true  enables AutoCommit, each single sql-statement is executed
+                and commited immediately,
+                this is the default,
+     on = false changes become persistent only if commit is called after
+                their execution
+   *)
+deferred
+
+rollback():Void
+  (* Commits all statements associated with the current connection,
+     MUST be called to make changes persistent if AutoCommit was disabled,
+     especially before disconnecting from the database (close)
+   *)
+deferred
+
+close():Void
+  (* Discards all changes which were made after the last commit,
+     does only work if AutoCommit was disabled.
+   
+ Closes connection and all associated SQLStatements. *)
+{
+  if( !isClosed() then: {isClosing:=true
+                 _statements.do(fun (s:SQLStatement) {s.close()})
+                 isClosing:=false
+		 _statements.clear
+                 _releaseHandles()
+		 _hdbc:=nil _henv:=nil})
+}
+
+open(url:URL):Self
+  (*
+     Uses url to establish a database-connection. Returns nil, if url
+     does not specify a protocol (e.g. odbc), which is known by the
+     current instance of SQLConnection. Raises SQLError, if the protocol-
+     specification is correct, but connection fails because of missing
+     or invalid connection-parameters (e.g. wrong password).
+   *)
+{
+  if( !isClosed then: {close()})
+  _open(url)
+  setAutoCommit(true)
+  self
+}
+
+isClosed():Bool
+  (* *)
+{ (_hdbc = nil) | (_henv = nil) }
+
+private
+
+_henv:Int32
+
+_hdbc:Int32
+
+_statements:Set(SQLStatement)
+
+_init:Self
+  (* *)
+{
+  super._init
+  _statements:=Set.new
+  _henv:=nil
+  _hdbc:=nil
+  isClosing:=false
+  self
+}
+
+_open(url:URL):Void
+  (* *)
+deferred
+
+_releaseHandles():Void
+  (* *)
+deferred
+
+}

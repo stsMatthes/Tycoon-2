@@ -1,0 +1,167 @@
+class TL2FunValueVisitor(T <: Void)
+super TL2ValueVisitor(T)
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+*)
+meta TL2FunValueVisitorClass(T)
+{
+target :TL2Value
+
+visit :T
+  (* this method and the target slot allow the following code:
+   someValue.visitor.ifFoo(...).visit
+ *)
+{ target.accept(self) }
+
+visitLiteral(v :TL2LiteralValue) :T
+  (* *)
+{ if( _ifLiteral.isNil then: { super.visitLiteral(v) } else: { _ifLiteral[v] }) }
+
+visitSend(v :TL2SendValue) :T
+  (* *)
+{ if( _ifSend.isNil then: { super.visitSend(v) } else: { _ifSend[v] }) }
+
+visitSuperSend(v :TL2SuperSendValue) :T
+  (* *)
+{ if( _ifSuperSend.isNil then: { super.visitSuperSend(v) } else: { _ifSuperSend[v] }) }
+
+visitAssign(v :TL2AssignValue) :T
+  (* *)
+{ if( _ifAssign.isNil then: { super.visitAssign(v) } else: { _ifAssign[v] }) }
+
+visitIde(v :TL2IdeValue) :T
+  (* *)
+{ if( _ifIde.isNil then: { super.visitIde(v) } else: { _ifIde[v] }) }
+
+visitTakeFrom(v :TL2TakeFromValue) :T
+  (* *)
+{ if( _ifTakeFrom.isNil then: { super.visitTakeFrom(v) } else: { _ifTakeFrom[v] }) }
+
+visitFun(v :TL2CompiledFun) :T
+  (* *)
+{ if( _ifFun.isNil then: { super.visitFun(v) } else: { _ifFun[v] }) }
+
+visitLet(v :TL2LetValue) :T
+  (* *)
+{ if( _ifLet.isNil then: { super.visitLet(v) } else: { _ifLet[v] }) }
+
+visitBlock(v :TL2BlockValue) :T
+  (* *)
+{ if( _ifBlock.isNil then: { super.visitBlock(v) } else: { _ifBlock[v] }) }
+
+visitArray(v :TL2ArrayValue) :T
+  (* *)
+{ if( _ifArray.isNil then: { super.visitArray(v) } else: { _ifArray[v] }) }
+
+visitDefault(v :TL2Value) :T
+  (* *)
+{ if( _otherwise.isNil then: { super.visitDefault(v) } else: { _otherwise[v] }) }
+
+ifLiteral(action :Fun(:TL2LiteralValue):T) :Self
+  (* *)
+{ _ifLiteral := action
+  self
+}
+
+ifSend(action :Fun(:TL2SendValue):T) :Self
+  (* *)
+{ _ifSend := action
+  self
+}
+
+ifSuperSend(action :Fun(:TL2SuperSendValue):T) :Self
+  (* *)
+{ _ifSuperSend := action
+  self
+}
+
+ifAssign(action :Fun(:TL2AssignValue):T) :Self
+  (* *)
+{ _ifAssign := action
+  self
+}
+
+ifIde(action :Fun(:TL2IdeValue):T) :Self
+  (* *)
+{ _ifIde := action
+  self
+}
+
+ifTakeFrom(action :Fun(:TL2TakeFromValue):T) :Self
+  (* *)
+{ _ifTakeFrom := action
+  self
+}
+
+ifFun(action :Fun(:TL2CompiledFun):T) :Self
+  (* *)
+{ _ifFun := action
+  self
+}
+
+ifLet(action :Fun(:TL2LetValue):T) :Self
+  (* *)
+{ _ifLet := action
+  self
+}
+
+ifBlock(action :Fun(:TL2BlockValue):T) :Self
+  (* *)
+{ _ifBlock := action
+  self
+}
+
+ifArray(action :Fun(:TL2ArrayValue):T) :Self
+  (* *)
+{ _ifArray := action
+  self
+}
+
+otherwise(action :Fun(:TL2Value):T) :Self
+  (* *)
+{ _otherwise := action
+  self
+}
+
+private
+
+_ifLiteral :Fun(:TL2LiteralValue):T
+
+_ifSend :Fun(:TL2SendValue):T
+
+_ifSuperSend :Fun(:TL2SuperSendValue):T
+
+_ifAssign :Fun(:TL2AssignValue):T
+
+_ifIde :Fun(:TL2IdeValue):T
+
+_ifTakeFrom :Fun(:TL2TakeFromValue):T
+
+_ifFun :Fun(:TL2CompiledFun):T
+
+_ifLet :Fun(:TL2LetValue):T
+
+_ifBlock :Fun(:TL2BlockValue):T
+
+_ifArray :Fun(:TL2ArrayValue):T
+
+_otherwise :Fun(:TL2Value):T
+
+}

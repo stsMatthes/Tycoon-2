@@ -1,0 +1,242 @@
+class LALRItemFA
+super AbstractFA(SymbolO, LR1State), Parse
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ only public for debugging *)
+meta LALRItemFAClass
+{
+g :Grammar(Object)
+
+progress :ProgressIndicator
+
+first :FirstSetMap
+
+lr0m :LR0ItemFA
+
+tailEpsilon :Set(LR1Item)
+
+  (* tailEpsilon.includes(i) <=> i.shifted.firstHere.includes(first.epsilon) 
+private*)
+
+propaGraph :Graph(LR1Item)
+
+itemToNode :Dictionary(LR1Item, Node(LR1Item))
+
+partition :Container(Container(Node(LR1Item)))
+
+blockGraph :Graph(PropagateBlock)
+
+private
+
+initFromLR0ItemFA(lr0m: LR0ItemFA) :Void
+  (* *)
+{
+  progress := ProgressIndicator.new(
+     "Converting LR0 -> LR1 States", lr0m.states.size)
+
+  states.remove(start)  ; got there by init 
+  ; create a bijection between lr0m.states and my states 
+  ; ## use .n slot for fast access 
+  lr0Tolr1 ::= Dictionary(:LR0State,:LR1State).new
+  lr0m.states.do(fun(lr0state :LR0State) {
+    lr0Tolr1[lr0state] := newState
+  })
+  start := lr0Tolr1[lr0m.start]
+
+  ; copy and convert all the transitions and items 
+  lr0m.states.do(fun(lr0state :LR0State) {
+    progress.click
+    lr1state ::= lr0Tolr1[lr0state]
+    lr0state.transitions.keysAndElementsDo(
+      fun(sym :SymbolO, dest :LR0State) {
+        lr1state.addTransition(sym, lr0Tolr1[dest])
+      }
+    )
+    lr1state.items :=
+      Set.fromContainerWithMap(
+        lr0state.items,
+	fun(item :Item) {
+	  LR1Item.fromItem(item)
+	})
+  })
+  progress.finish
+}
+
+createNodes :Void
+  (* *)
+{
+  progress := ProgressIndicator.new(
+     "Creating propagation graph nodes", states.size)
+
+  propaGraph := Graph.new
+  itemToNode := Dictionary.new
+  states.do(fun(state :LR1State) {
+    progress.click
+    state.items.do(fun(item :LR1Item) {
+      itemToNode[item] := propaGraph.newNode(item)
+    })
+  })
+  progress.finish
+}
+
+initSpontaneous :Void
+  (* *)
+{
+  progress := ProgressIndicator.new(
+     "Initialising spontaneous lookahead symbols", states.size)
+
+  tailEpsilon := Set.new
+  states.do(fun(state :LR1State) {
+    progress.click
+    state.items.do(fun(i :LR1Item) {
+      X ::= i.symAtDot
+      if( X.isNotNil &&  X.isNonterminal  then: {
+        spontan ::= i.shifted.firstHere(first)
+	if( spontan.includes(first.epsilon) then: {
+	  spontan.remove(first.epsilon)
+	  tailEpsilon.add(i)
+	})
+        state.items.do(fun(i2 :LR1Item) {
+	  if( i2.atStart &&  i2.rule.lhs == X  then: {
+	    ; was added by closure from i 
+	    i2.lookahead.addAll(spontan)
+	  })
+	})
+      })
+    })
+  })
+  progress.finish
+}
+
+itemAddLookahead(i2 :LR1Item, i :LR1Item, n :Node(LR1Item)) :Void
+  (* propagating lookahead symbols *)
+require n.value == i
+{
+  dest ::= itemToNode[i2]
+  dest.successors.add(n)
+}
+
+propagateShift(state :LR1State, i :LR1Item, n :Node(LR1Item)) :Void
+  (* *)
+require n.value == i
+{
+  state2 ::= state.transitions[i.symAtDot]
+  state2.items.do(fun(i2 :LR1Item) {
+    if( i.rule == i2.rule &&  i2.dot = i.dot + 1  then: {
+      ; i2 was created by shift from i 
+      itemAddLookahead(i2, i, n)
+    })
+  })
+}
+
+propagateClosure(state :LR1State, i :LR1Item, n :Node(LR1Item)) :Void
+  (* If i's tail can produce the empty string,
+   then i's modified lookahead set must be passed on
+   to the items created by closure from i *)
+require n.value == i
+
+{
+  X ::= i.symAtDot
+  if( X.isNonterminal then: {
+    if( tailEpsilon.includes(i) then: {
+      state.items.do(fun(i2 :LR1Item) {
+	if( i2.atStart && i2.rule.lhs == X then: {
+	  ; i2 was created by closure from i1 
+	  itemAddLookahead(i2, i, n)
+	})
+      })
+    })
+  })
+}
+
+computePropagate :Void
+  (* *)
+{
+  progress := ProgressIndicator.new(
+     "Computing propagation graph for lookahead syms", states.size)
+
+  states.do(fun(state :LR1State) {
+    progress.click
+    state.items.do(fun(item :LR1Item) {
+      if( !item.atEnd then: {
+	node ::= itemToNode[item]
+	propagateShift(state, item, node)
+	propagateClosure(state, item, node)
+      })
+    })
+  })
+  progress.finish
+  propaGraph.statistics(tycoon.stdout)
+}
+
+computeCondensation :Void
+  (* *)
+{
+  blockGraph := 
+    propaGraph.condensation(Graph, partition, 
+      fun(r :Container(Node(LR1Item))) {
+	PropagateBlock.new(
+	  MutableArray.fromContainerWithMap(r,
+	    fun(n :Node(LR1Item)){n.value}))
+      }
+    )
+  blockGraph.statistics(tycoon.stdout)
+  ; ###: 
+  blockGraph.nodes.do(fun(n :Node(PropagateBlock)) {
+    n.value.node := n
+  })
+}
+
+computeLookahead :Void
+  (* *)
+{
+  progress ::=
+    ProgressIndicator.new(
+      "Computing final lookahead sets", blockGraph.nodes.size)
+
+  blockGraph.nodes.do(fun(n :Node(PropagateBlock)) {
+    n.value.writeBack(progress)
+  })
+  progress.finish
+}
+
+_init :Void
+  (* *)
+{
+  super._init
+  first := FirstSetMap.new(g)
+  lr0m := LR0ItemFA.new(g)
+  initFromLR0ItemFA(lr0m)
+  createNodes
+  initSpontaneous
+  computePropagate
+  partition := propaGraph.stronglyConnectedComponents()
+  computeCondensation
+  computeLookahead
+  self
+}
+
+_newState :LR1State
+  (* *)
+{
+  LR1State.new
+}
+
+}

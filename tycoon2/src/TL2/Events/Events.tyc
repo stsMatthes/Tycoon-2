@@ -1,0 +1,8 @@
+;; DO load "Events/Events.tyc" ?
+
+tycoon.tl.loader.registerDirectory("Events") ?
+
+tycoon.tl.loader.update ?
+tycoon.tl.typeChecker.check ?
+
+DO load "Events/Init.tyc" ?

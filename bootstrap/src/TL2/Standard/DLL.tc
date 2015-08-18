@@ -1,0 +1,147 @@
+class DLL
+super Resource, OSVisitor(String)
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+External dynamic link libraries
+
+DLLs visit the operating system object
+to select the platform specific physical name of the DLL.
+
+By default, DLLs as Resources are not synchronized on system commitments.  They
+are intended to be used by methods of higher-level Resources, which normally do
+already include the usual synchronization protocol
+(e.g. File::_synchronizeCommit).
+
+If you need direct access to a DLL from within a multithreaded application, you
+should inherit form Monitor and synchronize each external method call.
+Otherwise, on system restart, an external method may be called at a time where
+the DLL is not properly reopened yet.
+
+Updates: (Date)	   (Name)	     (Description)
+         03-Mar-99 Andre Willomat    new tycoonOS, new error management
+
+*)
+meta AbstractClass
+{
+handle :Int
+  (* *)
+{ _handle }
+
+path :String
+  (* *)
+{ _path }
+
+isOpen :Bool
+  (* *)
+{
+  _handle.isNotNil
+}
+
+;
+; Error manager for external system calls
+;
+errorCode :Int
+  (* *)
+{ _errorCode }
+
+errorCodeDetail :Int
+  (* *)
+{ _errorCodeDetail }
+
+resetError :Void
+  (* *)
+{
+  _errorCode := 0
+  _errorCodeDetail := 0
+}
+
+getErrorText :String
+  (* *)
+{
+  buffer ::= MutableString.new(256)
+  _getErrorText(_errorCode, _errorCodeDetail, buffer, buffer.size)
+  buffer.trim
+}
+
+logError :Void
+  (* *)
+{
+  _logError(_errorCode, _errorCodeDetail)
+}
+
+private
+
+_handle :Int
+  (* must be slot 1 for use in TVM *)
+  
+_path :String
+  (* must be slot 2 for use in TVM *)
+
+_errorCode :Int
+  (* must be slot 3 for use in TVM *)
+
+_errorCodeDetail :Int
+  (* must be slot 4 for use in TVM *)
+
+
+_open :Void
+  (* *)
+{
+  _resolve
+  _handle := __open(_path)
+  if( _handle = 0 then: {
+    DLLOpenError.new(self).raise
+    })
+}
+
+_close :Void
+  (* *)
+{
+  result ::= __close(_handle)
+  ;##raise error if result != 0 ?
+  _handle := nil
+}
+
+_resolve :Void
+  (* *)
+{
+  os ::= tycoon.os
+  _path := os.resolveDLL(os.visit(self))
+}
+
+_getErrorText(code :Int, codeDetail :Int, msg :String, msgSize :Int) :Void 
+  (* *)
+  extern "tosError_getText"
+
+_logError(code :Int, codeDetail :Int) :Void 
+  (* *)
+  extern "tosError_log"
+
+__open(path :String) :Int
+  (* *)
+builtin
+
+__close(handle :Int) :Void
+  (* *)
+builtin
+
+}
+

@@ -1,0 +1,171 @@
+(*
+%token TK_number TK_sin
+
+%left '+' '-'
+%left '*' '/'
+
+%right TK_sin
+%right UNARY
+
+
+	Lines : S
+	      | S ',' Lines
+	      ;
+
+	S : E			{ printf("\nda kommt raus: %g", $1); }
+	  |			{ printf("\nda kommt gar nichts raus"); }
+	  ;
+
+	E : E '+' E		{ $$ = $1 + $3; }
+	  | E '-' E		{ $$ = $1 - $3; }
+	  | E '*' E		{ $$ = $1 * $3; }
+	  | E '/' E		{ $$ = $1 / $3; }
+	  | '(' E ')'		{ $$ = $2; }
+	  | '+' E %prec UNARY	{ $$ = $2; }
+	  | '-' E %prec UNARY	{ $$ = -$2; }
+	  | TK_sin E		{ $$ = sin($2); }
+	  | TK_number
+	  ;
+
+*)
+
+define Lines :MutableNonterminal(Object);
+define S :MutableNonterminal(Object);
+define E :MutableNonterminal(Int);
+
+Lines := MutableNonterminal.new("Lines");
+S := MutableNonterminal.new("S");
+E := MutableNonterminal.new("E");
+
+define t :Dictionary(String, SimpleTerminal);
+t := Dictionary.new;
+t[","] := SimpleTerminal.new(",");
+t["+"] := SimpleTerminal.new("+");
+t["-"] := SimpleTerminal.new("-");
+t["*"] := SimpleTerminal.new("*");
+t["/"] := SimpleTerminal.new("/");
+t["("] := SimpleTerminal.new("(");
+t[")"] := SimpleTerminal.new(")");
+t["sin"] := SimpleTerminal.new("sin");
+
+t["+"].precedence := Precedence.left(1);
+t["-"].precedence := Precedence.left(1);
+t["*"].precedence := Precedence.left(2);
+t["/"].precedence := Precedence.left(2);
+t["sin"].precedence := Precedence.right(3);
+define precUnary :Precedence;
+precUnary := Precedence.right(4);
+
+define tNumber :ValueTerminal(Int);
+tNumber  := ValueTerminal.new("number");
+
+Lines.addRule1(
+	S,
+	fun(:Object) { nil });
+Lines.addRule3(
+	S, t[","], Lines,
+	fun(:Object, :Object, :Object) { nil });
+
+
+S.addRule1(
+	E,
+	fun(i :Int) {
+	  tycoon.stdout.nl,
+	  tycoon.stdout.writeln("Ergebnis: "),
+	  i.print,
+	  tycoon.stdout.nl,
+	  nil
+	});
+S.addRule0(
+	{ nil });
+
+E.addRule3(
+	E, t["+"], E,
+	fun(i1 :Int, :Object, i2 :Int) :Int {
+	  i1 + i2
+	});
+E.addRule3(
+	E, t["-"], E,
+	fun(i1 :Int, :Object, i2 :Int) :Int {
+	  i1 - i2
+	});
+E.addRule3(
+	E, t["*"], E,
+	fun(i1 :Int, :Object, i2 :Int) :Int {
+	  i1 * i2
+	});
+E.addRule3(
+	E, t["/"], E,
+	fun(i1 :Int, :Object, i2 :Int) :Int {
+	  i1 / i2
+	});
+E.addRule3(
+	t["("], E, t[")"],
+	fun(:Object, i :Int, :Object) :Int {
+	  i
+	});
+E.addRule(Rule.new2(E,
+	t["+"], E,
+	fun(:Object, i :Int) :Int {
+	  i
+	}).withPrecedence(precUnary));
+E.addRule(Rule.new2(E,
+	t["-"], E,
+	fun(:Object, i :Int) :Int {
+	  0 - i
+	}).withPrecedence(precUnary));
+E.addRule2(
+	t["sin"], E,
+	fun(:Object, i :Int) :Int {
+	  i * 7
+	});
+E.addRule1(
+	tNumber,
+	fun(i :Int) :Int {
+	  i
+	});
+
+
+define g :Grammar(Object);
+g := Grammar.new(Lines);
+
+define parserGen :ParserGen(NaiveParser);
+parserGen := ParserGen(:NaiveParser).new(NaiveParserBuilder.new);
+
+define p :NaiveParser(Object);
+p := parserGen.generate(g);
+
+
+define sg :ScannerGenerator(Token(Object));
+sg := ScannerGenerator.new;
+sg.addToken("[ \n\t\r\f]+",
+  fun(s :Scanner(Token(Object))) {
+    s.read
+  }
+);
+sg.addToken("[0-9]+",
+  fun(s :Scanner(Token(Object))) {
+    tNumber.token(tycoon.ansiCDLL.atoi(s.tokenString))
+  }
+);
+t.keysAndElementsDo(fun(k :String, e :SimpleTerminal) {
+  let re =
+    k.size = 1 ? {"\\" + k} : { k },  (* ### HACK *)
+  sg.addToken(re,
+    fun(s :Scanner(Token(Object))) {
+      e.token
+    }
+  )
+});
+sg.addToken(";",
+  fun(s :Scanner(Token(Object))) {
+    parserUtil.dollarToken
+  }
+);
+
+define s :Scanner(Token(Object));
+s := sg.generate;
+
+s.in := File.stdin;
+p.logging := false;
+p.parse(s);

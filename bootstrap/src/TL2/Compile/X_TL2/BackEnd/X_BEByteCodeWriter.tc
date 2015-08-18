@@ -1,0 +1,199 @@
+class X_BEByteCodeWriter
+super X_BEBackEnd
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+   write assembler instructions.
+   subclasses may restrict possible arguments (e.g. in X_BECompiledCodeWriter,
+   capabilities depend on the X_TL2VMInterface)
+ *)
+meta AbstractClass
+{
+newLabel :X_BELabel
+  (* *)
+deferred
+
+defineLabel(l :X_BELabel) :Void
+  (* *)
+deferred
+
+send(selector :X_TL2Selector) :Void
+  (*  *)
+deferred
+
+sendShort(selector :X_TL2Selector) :Void
+  (*  *)
+deferred
+
+sendSpecial(selector :X_TL2Selector) :Void
+  (*  *)
+deferred
+
+sendTail(selector :X_TL2Selector) :Void
+  (* *)
+deferred
+
+sendSuper(selector :X_TL2Selector) :Void
+  (* *)
+deferred
+
+loadLiteral(literalIdx :Int) :Void
+  (* *)
+deferred
+
+loadChar(c :Char) :Void
+  (* special literals *)
+deferred
+
+loadByte(b :Int) :Void
+  (* *)
+require (-128 )<= b & b < 128
+  deferred
+
+loadShort(s :Int) :Void
+  (* *)
+require (-32768 )<= b & b < 32767
+  deferred
+
+loadSpecial(o :Object) :Void
+  (* *)
+  deferred
+
+loadArgument(argIdx :Int) :Void
+  (* self == nb_args, last argument is 1 *)
+deferred
+
+loadLocal(localIdx :Int) :Void
+  (* 0 <= n < current stack size *)
+deferred
+
+storeArgument(argIdx :Int) :Void
+  (* self == nb_args, last argument is 1 *)
+deferred
+
+storeLocal(localIdx :Int) :Void
+  (* 0 <= n < current stack size *)
+deferred
+
+loadGlobal(globalIdx :Int) :Void
+  (* *)
+deferred
+
+cellNew :Void
+  (* *)
+deferred
+
+cellStore :Void
+  (* *)
+deferred
+
+cellLoad :Void
+  (* *)
+deferred
+
+drop(n :Int) :Void
+  (* n times pop *)
+deferred
+
+pop :Void
+  (* *)
+deferred
+
+adjust(n :Int) :Void
+  (* let x = pop, drop(n), push(x) *)
+deferred
+
+closure(nb_globals :Int) :Void
+  (* *)
+deferred
+
+makeArray(nSlots :Int) :Void
+  (* *)
+deferred
+
+sync :Void
+  (* *)
+deferred
+
+return :Void
+  (* *)
+deferred
+
+ifTrue(dest :X_BELabel) :Void
+  (* *)
+deferred
+
+ifFalse(dest :X_BELabel) :Void
+  (* *)
+deferred
+
+jump(dest :X_BELabel) :Void
+  (* *)
+deferred
+
+referenceArgument(argIdx :Int) :Void
+  (* self == nb_args, last argument is 1 *)
+deferred
+
+takeFromArgument(argIdx :Int) :Void
+  (* self == nb_args, last argument is 1 *)
+deferred
+
+moveToArgument(argIdx :Int) :Void
+  (* self == nb_args, last argument is 1 *)
+deferred
+
+referenceLocal(localIdx :Int) :Void
+  (* 0 <= n < current stack size *)
+deferred
+
+takeFromLocal(localIdx :Int) :Void
+  (* 0 <= n < current stack size *)
+deferred
+
+moveToLocal(localIdx :Int) :Void
+  (* 0 <= n < current stack size *)
+deferred
+
+componentCellNew :Void
+  (* *)
+deferred
+
+cellReference :Void
+  (* *)
+deferred
+
+takeFromCell :Void
+  (* *)
+deferred
+
+moveToCell :Void
+  (* *)
+deferred
+
+componentPop :Void
+  (* *)
+deferred
+
+componentAdjust :Void
+  (* let x = pop, componentPop, push(x) *)
+deferred
+
+}

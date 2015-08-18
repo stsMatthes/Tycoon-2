@@ -1,0 +1,11 @@
+<!-- Copyright (c) 1996 Higher-Order GmbH, Hamburg. All rights reserved.
+
+     $RCSfile$ $Revision$ %D%  Andreas Gawecki, Axel Wienberg
+
+     Stml entity declarations common to all STML DTDs.
+-->     
+
+     
+<!ENTITY % stml "define | ref | assign | if | fun | apply | send | tycoon | script">
+
+

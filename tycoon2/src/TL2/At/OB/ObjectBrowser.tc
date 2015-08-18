@@ -1,0 +1,110 @@
+class ObjectBrowser
+super OB, MutexHolder
+meta SingletonClass(ObjectBrowser)
+{
+
+oidToObject(oid :Int) :Object
+{ if( oid.isZero then: { nil } else: {
+    lock({
+      byOid.lookup(oid, fun(assoc :OBOidAssoc){
+	assoc.object
+      }, {
+	nil
+      })
+    })
+  })
+}
+
+objectToOid(o :Object) :Int
+{
+  if( o.isNil then: { 0 } else: {
+    lock({
+      byObject.lookup(o, fun(assoc :OBOidAssoc){
+	assoc.oid
+      }, {
+	oid ::= nextOid
+	nextOid := nextOid + 1
+	;; if we get worried about integer overflow, we will have to
+	;; recycle freed associations
+	assoc ::= OBOidAssoc.new(oid, o)
+	byOid[oid] := assoc
+	byObject[o] := assoc
+	oid
+      })
+    })
+  })
+}
+
+subObjectsDo(o :Object, f :Fun(slotName :String, o :Object, isComponent :Bool):Void) :Void
+{
+  c ::= o."class"
+  size ::= o.__basicSize
+  if( size > 0 then: {
+    if( c.slotMap.size = size then: {
+      ;; regular object
+      c.slotMap.keysAndElementsDo(fun(idx:Int, slot :TL2Slot) {
+	f[slot.name, o.__basicAt(idx), slot.isComponent]
+      })
+    } else: {
+      if( c.slotMap.size = 0 then: {
+	;; some array class
+	isComponent ::= c == AtArray
+	for(0 to: size-1 do: fun(idx :Int) {
+	  f[idx.printString, o.__basicAt(idx), isComponent]
+	})
+      } else: {
+	tycoon.stdout << "Object size mismatch: class "<<c.name<<" requires "<<c.slotMap.size<<" slots, object size is "<<size<<"\n"
+      })
+    })
+  })
+}
+
+private
+
+byObject :IdDictionary(Object, OBOidAssoc)
+byOid :Dictionary(Int, OBOidAssoc)
+nextOid :Int
+reaper :Thread(Void)
+stopReaping :Bool
+
+_init :Void
+{
+  super._init
+  byObject := IdDictionary.new
+  byOid := Dictionary.new
+  nextOid := 1
+  stopReaping := false
+  reaper := Thread.new({ reapLoop })
+}
+
+reapLoop :Void
+{
+  if( stopReaping then: {
+    tycoon.stdout << "Reaping terminated.\n";
+  } else: {
+    Thread.sleep(60L)  ;; sleep for one minute
+    tycoon.stdout << "[Reap...\n"
+    deathRow ::= GapArray.new0
+    lock({
+      byOid.do(fun(assoc :OBOidAssoc) {
+        if( assoc.timeToLive < 0L then: {
+	  tycoon.stdout << "Reaping a "<<assoc.object."class".name<<"\n"
+          deathRow.add(assoc)
+	})
+      })
+      if( !deathRow.isEmpty then: {
+        pi ::= ProgressIndicator.new("Execution in progress", deathRow.size)
+	deathRow.do(fun(assoc :OBOidAssoc) {
+	  pi.click
+	  byOid.removeKey(assoc.oid)
+	  byObject.removeKey(assoc.object)
+	})
+	pi.finish
+      })
+    })
+    tycoon.stdout << "Reap]\n"
+    reapLoop
+  })
+}
+
+}

@@ -1,0 +1,104 @@
+class SQLCursorMetaData
+super SQL
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+Data about properties of the associated SQL-Statement
+
+Author:  Michael Skusa
+Date:    16-Aug-1996
+Updates: (Date)	  (Name)	(Description)
+*)
+meta AbstractClass
+{
+columnCount():Int
+  (* answers number of columns in associated result-set *)
+{
+  _columnCount
+}
+
+columnName(n:Int):String
+  (* answers name of column n,
+     n>=0 & n<getColumnCount(),
+     raises IndexOutOfBounds,
+   *)
+{
+  _columnNames[n]
+}
+
+isNullable(n:Int):Bool
+  (* answers true if column may contain NULL-values,
+     n>=0 & n<getColumnCount(),
+     raises IndexOutOfBounds,
+   *)
+{
+  _nulls[n]
+}
+
+precision(n:Int):Int
+  (* answers "precision" of values in column n,
+     for char-values this is the maximum length, allowed for this column,
+     for numeric-values this is the maximum number of digits,
+     n>=0 & n<getColumnCount(),
+     raises IndexOutOfBounds,
+   *)
+{
+  _precisions[n]
+}
+
+scale(n:Int):Int
+  (* answers "scale" of values in column n,
+     for non-integer numbers this value is > 0,
+     for char-values this is usually 0,
+     n>=0 & n<getColumnCount(),
+     raises IndexOutOfBounds,
+   *)
+{
+  _scales[n]
+}
+
+sqlType(n:Int):Int
+  (* answers the SqlType of values in column n, 
+     n>=0 & n<getColumnCount(),
+     raises IndexOutOfBounds,
+   *)
+{
+  _types[n]
+}
+
+retrieveColumnData(hstmt:Int32):Void
+  (* *)
+deferred
+
+private
+
+_columnCount:Int
+
+_columnNames:MutableArray(String)
+
+_nulls:MutableArray(Bool)
+
+_precisions:MutableArray(Int)
+
+_scales:MutableArray(Int)
+
+_types:MutableArray(Int)
+
+}

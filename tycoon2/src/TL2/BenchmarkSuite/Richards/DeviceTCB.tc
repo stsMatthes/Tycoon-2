@@ -1,0 +1,30 @@
+class DeviceTCB
+super TaskControlBlock
+(**)
+meta DeviceTCBClass(DeviceTCB)
+{
+handle :DeviceTaskRec
+
+actionFunc(p :Packet,  noWork :Bool) :List(TaskControlBlock)
+  (* *)
+{
+  bm ::= TaskControlBlock.benchmark
+  if( noWork
+   then: { if( handle.pendingPackets.isEmpty
+         then: { bm.wait }
+	 else: { packet ::= handle.pendingPackets.removeFirst()
+	     bm.queuePacket(packet)
+	   })
+     }
+   else: { handle.pendingPackets.addLast(p)
+       if( bm.tracing 
+         then: { bm.trace(p.datum, "d") })
+       bm.holdSelf
+     })
+}
+
+print() :Void
+  (* *)
+{}
+
+}

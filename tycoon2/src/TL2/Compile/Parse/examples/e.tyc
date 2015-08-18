@@ -1,0 +1,201 @@
+
+;; ------------------------------------------------------------
+;;			  expression grammar
+;; ------------------------------------------------------------
+
+
+;; %token TK_number TK_sin
+;; 
+;; %left '+' '-'
+;; %left '*' '/'
+;; 
+;; %right TK_sin
+;; %right UNARY
+;; 
+;; 
+;; 	   E : E '+' E		{ $$ = $1 + $3; }
+;; 	     | E '-' E		{ $$ = $1 - $3; }
+;; 	     | E '*' E		{ $$ = $1 * $3; }
+;; 	     | E '/' E		{ $$ = $1 / $3; }
+;; 	     | '(' E ')'		{ $$ = $2; }
+;; 	     | '+' E %prec UNARY	{ $$ = $2; }
+;; 	     | '-' E %prec UNARY	{ $$ = -$2; }
+;; 	     | TK_sin E		{ $$ = sin($2); }
+;; 	     | TK_number
+;; 	     ;
+;; 
+
+define E :MutableNonterminal(Int) ?
+
+E := MutableNonterminal.new("E") ?
+
+define t :Dictionary(String, SimpleTerminal) ?
+t := Dictionary.new ?
+t[","] := SimpleTerminal.new(",") ?
+t["+"] := SimpleTerminal.new("+") ?
+t["-"] := SimpleTerminal.new("-") ?
+t["*"] := SimpleTerminal.new("*") ?
+t["/"] := SimpleTerminal.new("/") ?
+t["("] := SimpleTerminal.new("(") ?
+t[")"] := SimpleTerminal.new(")") ?
+t["sin"] := SimpleTerminal.new("sin") ?
+
+t["+"].precedence := Precedence.left(1) ?
+t["-"].precedence := Precedence.left(1) ?
+t["*"].precedence := Precedence.left(2) ?
+t["/"].precedence := Precedence.left(2) ?
+t["sin"].precedence := Precedence.right(3) ?
+define precUnary :Precedence ?
+precUnary := Precedence.right(4) ?
+
+define tNumber :ValueTerminal(Int) ?
+tNumber  := ValueTerminal.new("number") ?
+
+E.addRule3(
+	E, t["+"], E,
+	fun(i1 :Int, :Object, i2 :Int) :Int {
+	  i1 + i2
+	}) ?
+E.addRule3(
+	E, t["-"], E,
+	fun(i1 :Int, :Object, i2 :Int) :Int {
+	  i1 - i2
+	}) ?
+E.addRule3(
+	E, t["*"], E,
+	fun(i1 :Int, :Object, i2 :Int) :Int {
+	  i1 * i2
+	}) ?
+E.addRule3(
+	E, t["/"], E,
+	fun(i1 :Int, :Object, i2 :Int) :Int {
+	  i1 / i2
+	}) ?
+E.addRule3(
+	t["("], E, t[")"],
+	fun(:Object, i :Int, :Object) :Int {
+	  i
+	}) ?
+E.addRule(Rule.new2(E,
+	t["+"], E,
+	fun(:Object, i :Int) :Int {
+	  i
+	}).withPrecedence(precUnary)) ?
+E.addRule(Rule.new2(E,
+	t["-"], E,
+	fun(:Object, i :Int) :Int {
+	  0 - i
+	}).withPrecedence(precUnary)) ?
+E.addRule2(
+	t["sin"], E,
+	fun(:Object, i :Int) :Int {
+	  i * 7
+	}) ?
+E.addRule1(
+	tNumber,
+	fun(i :Int) :Int {
+	  i
+	}) ?
+
+define g :Grammar(Int) ?
+g := Grammar.new(E) ?
+
+;; take a look...
+
+g.rules ?
+
+;; ------------------------------------------------------------
+;;			 generator and parser
+;; ------------------------------------------------------------
+
+define parserGen :ParserGen(NaiveParser) ?
+parserGen := ParserGen(:NaiveParser).new(NaiveParserBuilder.new) ?
+
+define p :NaiveParser(Int) ?
+p := parserGen.generate(g) ?
+
+;; curiosity!
+parserGen.debugDump ?  ;; with multiple actions 
+parserGen.debugDump1 ? ;; selected actions 
+
+;; test the parser without scanner
+
+define errHandler :Fun(:Token(Object)):Void ?
+errHandler := fun(t:Token(Object)) { tycoon.stdout << "Error on "<<t<<"\n" } ?
+
+define testInput :Array(Token(Object)) ?
+
+testInput := #(
+	  tNumber.token(2), 
+          t["*"].token, 
+	  tNumber.token(1),
+          t["+"].token, 
+          t["("].token, 
+	  tNumber.token(3),
+          t[")"].token) ?
+
+p.parse(testInput.reader, errHandler) ?  ;; 8 or 5 ? 
+
+;; ------------------------------------------------------------
+;;			 building the scanner
+;; ------------------------------------------------------------
+
+
+define sg :ScannerBuilder(Token(Object)) ?
+sg := ScannerBuilder.new ?
+sg.addToken("[ \n\t\r\f]+",
+  fun(s :Scanner(Token(Object))) {
+    s.read
+  }) ?
+sg.addToken("[0-9]+",
+  fun(s :Scanner(Token(Object))) {
+    tNumber.token(s.token.asInt)
+  }) ?
+t.keysAndElementsDo(fun(k :String, e :SimpleTerminal) {
+  re ::=
+    if( k.size = 1 then: {"\\" + k} else: { k })
+  sg.addToken(re,
+    fun( :Scanner(Token(Object))) {
+      e.token
+    })
+}) ?
+sg.addToken(";",
+  fun(s :Scanner(Token(Object))) {
+    nil  (* end of input *)
+  }) ?
+
+
+define st :ScannerTables(Token(Object)) ?
+st := sg.generate ?
+
+define sc :Scanner(Token(Object)) ?
+
+;; ------------------------------------------------------------
+;;				examples
+;; ------------------------------------------------------------
+
+sc := Scanner.new(st,StringInput.new("2 * 1 + ( 3 )")) ?
+List.fromReader(sc) ?
+
+sc := Scanner.new(st,StringInput.new("2 * 1 + ( 3 )")) ?
+p.parse(sc,errHandler) ?
+
+sc := Scanner.new(st,StringInput.new("2 + 10 * 3")) ?
+p.parse(sc,errHandler) ?
+
+;; sc := Scanner.new(st,File.stdin) ?
+;; p.parse(sc,errHandler) ?
+
+;; ------------------------------------------------------------
+;;			 compact representation
+;; ------------------------------------------------------------
+
+define cparserGen :ParserGen(CompactParser) ?
+cparserGen := ParserGen(:CompactParser).new(CompactParserBuilder.new) ?
+
+define cp :CompactParser(Object) ?
+cp := cparserGen.generate(g) ?
+cp.logging := true ?
+
+cp.parse(sc,errHandler) ?
+

@@ -1,0 +1,94 @@
+class TL2VoidType
+super TL2ObjectType, TL2LeafMixin
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+*)
+meta SingletonClass(TL2VoidType)
+{
+accept(T <: Void, visitor :TL2TypeVisitor(T)) :T
+  (* *)
+{
+    visitor.visitVoidType(self)
+  }
+
+reduce(T <: Void, s :TL2Subst, cont: Fun(:TL2Type, :TL2Subst):T) :T
+  (* *)
+{
+    cont[self, TL2EmptySubst.instance]
+  }
+
+selfTypeSig :TL2TypeIde
+  (* *)
+{ _selfTypeSig }
+
+lookupWithSelf(T <: Void,
+		 selector :Symbol,
+		 subst :TL2Subst,
+		 withPrivate :Bool,
+		 selfType :TL2Type,
+		 selfTypeSubst :TL2Subst,
+		 cont :Fun(:TL2Method, :TL2Subst):T) :T
+  (* *)
+{
+    raiseError
+  }
+
+methodsWithSelfDo(subst :TL2Subst,
+		    withPrivate :Bool,
+		    selfType :TL2Type,
+		    selfTypeSubst :TL2Subst,
+	            callback :Fun(:TL2Method, :TL2Subst):Void) :Void
+  (* *)
+{
+    ; ready or not, here I come 
+  }
+
+doExpose(T <: Void, subst :TL2Subst, exact :Bool, cont :Fun(:TL2Type, :TL2Subst):T) :T
+  (* *)
+{
+    cont[self, subst]
+  }
+
+prettyPrint(out :Output) :Void
+  (* *)
+{
+    out.writeAll("Void")
+  }
+
+charCode :Char
+  (* *)
+{ nil }
+
+resultCharCode :Char
+  (* *)
+{ 'V' }
+
+private
+
+_selfTypeSig :TL2TypeIde
+
+_init :Void
+  (* *)
+{ super._init
+    _selfTypeSig := TL2TypeIde.new(nil, "Self", TL2VoidType.instance)
+    self
+  }
+
+}

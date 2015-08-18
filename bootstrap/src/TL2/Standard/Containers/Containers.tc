@@ -1,0 +1,5 @@
+class Containers
+super Object
+meta AbstractClass
+{
+}

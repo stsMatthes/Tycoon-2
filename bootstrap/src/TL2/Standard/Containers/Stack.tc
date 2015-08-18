@@ -1,0 +1,124 @@
+class Stack(E <: Object)
+super DynSequence(E)
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+*)
+meta StackClass(E)
+{
+"[]"(i :Int) :E
+  (* *)
+{ _elements[_elementStart + i] }
+
+"[]:="(i :Int, e :E) :E
+  (* Set the value of the element with index 'i' to 'e' *)
+  require validKey(i)
+  ensure self[i] == e
+{ _elements[_elementStart + i] := e }
+
+size :Int
+  (* *)
+{ _elements.size - _elementStart }
+
+removeSubSequence(n :Int, at :Int) :Void
+  (* remove n elements starting at position <at>.
+   All following elements move <n> positions back,
+   the receiver`s size shrinks by <n>. *)
+{
+  _elements.replace(
+    at, _elementStart + n,
+    _elements, _elementStart)
+  _elements.fill(n, _elementStart, nil)  ; avoid storage leak 
+  _elementStart := _elementStart + n
+}
+
+removeFirst :E
+  (* more efficient redefinition *)
+{
+  idx ::= _elementStart
+  e ::= _elements[idx]
+  _elements[idx] := nil  ; avoid storage leak 
+  _elementStart := idx + 1
+  e
+}
+
+insert(e :E, at :Int)  :E
+  (* insert element <e> at position <at>.
+   All elements at positions >= <at> move one position forward,
+   the receiver`s size grows by one. *)
+require 0 <= at & at <= size
+{
+  if( _elementStart = 0
+  then: { _grow })
+  _elements.replace(
+    at, _elementStart - 1,
+    _elements, _elementStart)
+  _elementStart := _elementStart - 1
+  self[at] := e
+}
+
+addFirst(e :E) :Void
+  (* aka push 
+ insert(e, 0) *)
+{
+  if( _elementStart = 0
+  then: { _grow })
+  _elementStart := _elementStart - 1
+  _elements[_elementStart] := e
+  e
+}
+
+reader :Reader(E)
+  (* *)
+{
+  _elements.subSequenceReader(_elementStart,size)
+}
+
+as(T <: Object,
+   containerClass :AbstractContainerGenerator(E,T)):T
+  (* *)
+{ containerClass.fromSubSequence(_elements, _elementStart, size)
+}
+
+private
+
+_elements @: MutableArray(E)
+
+_elementStart :Int
+
+_grow :Void
+  (* *)
+{
+  delta ::= 8
+  newElements @::= MutableArray.new(_elements.size + delta)@
+  newElements.replace(_elements.size, delta, _elements, 0)
+  _elements := newElements@
+  _elementStart := delta
+}
+
+addPosition :Int
+  (* for DynSequence: *)
+{ 0 }
+
+removePosition :Int
+  (* *)
+require !isEmpty
+{ 0 }
+
+}

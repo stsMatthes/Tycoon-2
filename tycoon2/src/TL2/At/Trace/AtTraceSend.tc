@@ -1,0 +1,20 @@
+class AtTraceSend
+super AtTraceOutgoingEvent
+meta AtTraceSendClass
+{
+receiver :Object
+selector :TL2Selector
+args :Array(Object)
+
+case(T<:Void,
+     ifSend :Fun(:AtTraceSend):T,
+     :Fun(:AtTraceReturn):T,
+     :Fun(:AtTraceStart):T) :T
+{ ifSend[self] }
+
+printOn(out :Output) :Void
+{
+  out<<"Send{a "<<sender."class".name<<" -> a "<<receiver."class".name<<"."<<selector<<"}"
+}
+
+}

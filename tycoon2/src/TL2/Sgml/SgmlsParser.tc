@@ -1,0 +1,258 @@
+class SgmlsParser
+super Sgml
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ *)
+meta SimpleConcreteClass(SgmlsParser)
+{
+verbose :Bool
+
+parse(additionalFiles :Sequence(String), inputPath :String, output :SgmlOutput) :Void
+  (* parse all <additionalFiles> followed by <inputPath>,
+     writing structured output to SgmlOutput.
+     Reentrant (except for "verbose" switch). *)
+{
+  ; create temp file names for Sgmls output and errors 
+  sgmlsOutPath ::= tycoon.os.fs.tmpnam
+  errPath ::= tycoon.os.fs.tmpnam
+
+  ; build command line 
+  cmd ::= StringBuilderOutput.new
+   ; warning: like -wall, but without -wmixed, which conflicts with stml 
+  cmd << "nsgmls -wshould -wdefault -wundefined -wsgmldecl -wunused-map -wunused-param -wempty -wunclosed -oempty"
+  if( output.interestedInPosition
+  then: { cmd << " -oline" })
+  ; output.interestedInComments
+;     ? { cmd << " -n" },
+;  
+  additionalFiles.do(fun(s :String) {
+    cmd<<' '<< s
+  })
+  cmd<<' '<<inputPath<<" >"<<sgmlsOutPath<<" 2>"<<errPath
+  command ::= cmd.contents
+
+  ; call it 
+  if( verbose then: { tycoon.stdout << "[SgmlsParser: "<<command<<"]\n" })
+  try({
+    tycoon.os.exec(command)
+    ; ignore result 
+  } else: fun(;e
+:Exception) {
+    ; ignore exception, check errFile 
+  })
+
+  errFile ::= File.new(errPath)
+  errText ::=
+    if( errFile.exists
+    then: { errFile.openRead
+	errTextSize ::= errFile.size.asInt
+	errText ::= MutableString.new(errTextSize)
+	errFile.readBuffer(errText, 0, errText.size)
+	errFile.close
+	errFile.remove
+	errText :String := errText }
+    else: { "Could not start nsgmls" })
+
+  sgmlsOutFile ::= File.new(sgmlsOutPath)
+  if( errText.isEmpty then: {
+    if( verbose then: { tycoon.stdout << "[SgmlsParser: parsing output]\n" })
+    sgmlsOutFile.openRead   ; exception is OK here 
+    exception :Exception := nil
+    try({
+      parseNsgmlsOutput(sgmlsOutFile, output)
+    } else: fun(e:Exception) {
+      ; patch sourceFile information here so we do not have to
+;         pass it around 
+      if( e."class" = SgmlsParserError
+      then: { e ::= _typeCast(e, :SgmlsParserError)
+	  if( e.sourceFile.isNil
+	  then: { e.sourceFile := inputPath }) })
+      exception := e
+    })
+    sgmlsOutFile.close
+    sgmlsOutFile.remove
+    if( exception.isNotNil
+    then: { exception.raise })
+  } else: {
+    if( sgmlsOutFile.exists then: { sgmlsOutFile.remove })
+    if( verbose then: { tycoon.stdout << "[SgmlsParser: there were errors]\n" })
+    SgmlsParserError.new(inputPath, errText).raise
+  })
+}
+
+private
+
+contentTypes :Array(SgmlContentType)
+
+unquoterTables :ScannerTables(Char)
+
+lineScannerTables :UserScannerTables(Bool, SgmlsParserData)
+
+parseNsgmlsOutput(input :File, out :SgmlOutput) :Void
+  (* *)
+{
+  data ::= SgmlsParserData.new
+  data.out := out
+  lineScanner ::= UserScanner.new(lineScannerTables, input, data)
+  goon ::= true
+  while({goon.isNotNil &&  goon } do: {
+    goon := lineScanner.read
+  })
+  if( goon.isNil then: {
+    ; ended without 'C' line, or found a line that did not match anything 
+    SgmlsParserError.new(nil, "non-conforming document / malformed nsgmls output").raise
+  })
+}
+
+build_linescanner :Void
+  (* ### out.defineElement  defaultAttributeValues ?? *)
+{
+  sg ::= ScannerBuilder.new
+  
+  sg.addToken("-[^\r\n]*\r?\n", fun(s :UserScanner(Bool,SgmlsParserData)) {
+    token ::= s.token
+    len ::= token.size-2
+    if(token[len]='\r' then:{ len:=len-1 })
+    unquoter ::= Scanner.new1(unquoterTables,
+      StringInput.new2(s.token, 1, len),
+      len)
+    s.userState.out.writeAll(unquoter)
+    true
+  })
+
+  sg.addToken("A{[^ \n\r]+} {CDATA |TOKEN |[^ \n\r]+}{[^\r\n]*}\r?\n",
+    fun (s:UserScanner(Bool,SgmlsParserData)) {
+      name ::= s.submatchString(0)
+      type ::= s.submatchString(1)
+      if( type = "IMPLIED"
+      then: { ; nop ### defaults!!! 
+}
+      else: { if( type = "CDATA "
+       then: { unquoter ::= Scanner.new1(unquoterTables,
+	     StringInput.new(s.submatchString(2)),
+	     s.submatchSize(2))
+	   data ::= String.fromReader(unquoter)
+	   s.userState.attribute(name, data) }
+       else: { if( type = "TOKEN "
+	then: { tokens ::= s.submatchString(2)
+	    s.userState.attribute(name, tokens) }
+	else: { if( verbose
+	    then: {tycoon.stdout.writeln(
+	         "unknown type: ignoring attribute line:\n>>"+s.token) })})})})
+      true
+    }
+  )
+
+  sg.addToken("\\([^ \r\n]+\r?\n", fun(s :UserScanner(Bool,SgmlsParserData)) {
+    token ::= s.token
+    len ::= token.size-2
+    if(token[len]='\r' then:{ len:=len-1 })
+    s.userState.openTag(String.fromSubSequence(token, 1, len))
+    true
+  })
+
+  sg.addToken("\\)[^ \r\n]+\r?\n", fun(s :UserScanner(Bool,SgmlsParserData)) {
+    token ::= s.token
+    len ::= token.size-2
+    if(token[len]='\r' then:{ len:=len-1 })
+    s.userState.closeTag(String.fromSubSequence(token, 1, len))
+    true
+  })
+
+  sg.addToken("C\r?\n", fun(s :UserScanner(Bool,SgmlsParserData)) {
+    false
+  })
+
+  sg.addToken("e\r?\n", fun(s :UserScanner(Bool,SgmlsParserData)) {
+    s.userState.nextIsEmpty := true
+    true
+  })
+
+  sg.addToken("L{[0-9]+}{( [^\r\n]*)?}\r?\n",
+    fun (s:UserScanner(Bool,SgmlsParserData)) {
+      out ::= s.userState.out
+      out.lineNumber := Int.fromReader(s.submatchReader(0))
+      pathReader ::= s.submatchReader(1)
+      if( pathReader.read.isNotNil
+      then: { out.path := String.fromReader(pathReader) })
+      true
+    })
+
+  sg.addToken("[^-A()CLe][^\r\n]*\r?\n", fun(s :UserScanner(Bool,SgmlsParserData)) {
+    if( verbose then: {
+      tycoon.stdout.writeln("ignoring input line:")
+      tycoon.stdout.writeString(s.token)
+    })
+    true
+  })
+
+  lineScannerTables := sg.generate
+}
+
+build_unquoter :Void
+  (* *)
+{
+  sg ::= ScannerBuilder(:Char).new
+
+  sg.addToken("[^\\\r\n]", fun(s :Scanner(Char)) {
+    s.token[0]
+  })
+
+  ; two consecutive backslashes, escaped for Tycoon Strings
+;     and another time for regexp recognition 
+  sg.addToken("\\\\\\\\", fun( :Scanner(Char)) {
+    '\\'
+  })
+  
+  sg.addToken("\\\\[0-9]([0-9][0-9]?)?", fun(s :Scanner(Char)) {
+    val ::= Int.fromReader(s.token.subSequenceReader(1,s.tokenSize-1))
+    third ::= val / 100
+    minus ::= third * 100
+    second ::= (val - minus) / 10
+    minus := minus + second * 10
+    first ::= val - minus
+    decimalVal ::= third * 64 + second * 8 + first
+    decimalVal.asChar
+  })
+
+  sg.addToken("\\\\n", fun( :Scanner(Char)) {
+    '\n'
+  })
+
+  ;; ### handle SDATA delimited by \|...\|
+  sg.addToken("\\\\\\|", fun(s :Scanner(Char)) {
+    ; currently ignored 
+    s.read
+  })
+
+  unquoterTables := sg.generate
+}
+
+_init :Self
+  (* *)
+{ super._init
+  build_unquoter
+  build_linescanner
+
+  verbose := false
+  self
+}
+
+}

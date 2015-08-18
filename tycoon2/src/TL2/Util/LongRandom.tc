@@ -1,0 +1,80 @@
+class LongRandom
+super Random(Long)
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ 
+  *  Author:   Henrik Ortlepp
+  *  Date:     13-Aug-1997
+  *  Updates: (Date)	  (Name)	(Description)
+  *
+  *  An instance of this class is used to generate a stream of pseudorandom
+  *  numbers. The same initial seed will allways generate the same stream of
+  *  numbers. To prevent this, instances are initialized with the tycoon -
+  *  system clock as a first seed.
+  *
+  *  By setting the slot maxRandom to an integer-value, the maximum random
+  *  number can be determined. 
+  *
+  *  Algorithm used:
+  *  random_number = (multiplier * _seed + addend) % mask
+  *  For more detail see Donald Knuth, The Art of Computer
+  *  Programming, Vol.2, Section 3.2.1.
+  *)
+meta SimpleConcreteClass(LongRandom)
+{
+maxRandom :Int
+  (*  If maxRandom is equal to 0, the biggest random number will be
+      *  4294967295. For a different maximum, maxRandom can be set to any
+      *  positive integer-value smaller than that.
+      *)
+
+read :Long
+  (*  returns the next pseudorandom integer i with 0 <= i <= maxRandom
+  *  If maxRandom = 0 the upper limit is 4294967295.
+  *)
+{   if( maxRandom == 0 then:
+    {   _seed := (_multiplier * _seed + _addend) % _mask   }
+    else: {_readMax})
+}
+
+private
+
+_readMax :Long
+  (*  The method readMax uses Real values so that the most significant bits
+  *  - which are 'more random' than the lower ones - are used for determination
+  *  of the random value.
+  *)
+{   oldMaxRandom :Int := maxRandom    maxRandom := 0
+    random :Long := (Real.fromLong(read) / Real.fromLong(_mask - Long.fromInt(1)) * Real.fromInt(oldMaxRandom+1)).asInt.asLong
+    maxRandom := oldMaxRandom
+    random
+}
+
+_init :Void
+  (* *)
+{
+    maxRandom    := 0
+    ; The default value 0 for maxRandom results in an upper limit
+    ; of _mask - 1 (_mask is inherited from Random).
+    ;	
+    super._init
+}
+
+}

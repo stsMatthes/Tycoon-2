@@ -1,0 +1,114 @@
+class X_TL2Ide
+super X_TL2ProgramObject
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ File: X_TL2Ide.tc
+ Author: Axel Wienberg
+   Date: ??-Jun-1996
+Purpose: names with a type in the abstract syntax tree
+*)
+meta AbstractClass
+{
+name :String
+
+type :X_TL2Type
+
+case( T <: Void,
+      value :Fun(:X_TL2ValueIde):T,
+      type :Fun(:X_TL2TypeIde):T,
+      subType :Fun(:X_TL2SubTypeIde):T) :T
+  (* *)
+deferred
+
+asTypeIde :X_TL2TypeIde
+  (* X_TL2SubTypeIde or X_TL2TypeIde *)
+{
+  case( :X_TL2TypeIde,
+        fun(i:X_TL2ValueIde){ nil },
+	fun(i:X_TL2TypeIde){ i },
+	fun(i:X_TL2SubTypeIde){ i })
+}
+
+asSubTypeIde :X_TL2SubTypeIde
+  (* *)
+{
+  case( :X_TL2TypeIde,
+        fun(i:X_TL2ValueIde){ nil },
+	fun(i:X_TL2TypeIde){ nil },
+	fun(i:X_TL2SubTypeIde){ i })
+}
+
+asValueIde :X_TL2ValueIde
+  (* *)
+{
+  case( fun(i:X_TL2ValueIde){ i },
+	fun(i:X_TL2TypeIde){ nil },
+	fun(i:X_TL2SubTypeIde){ nil })
+}
+
+isValueIde :Bool
+  (* *)
+{ asValueIde.isNotNil
+}
+
+isTypeIde :Bool
+  (* *)
+{ asTypeIde.isNotNil }
+
+isSubTypeIde :Bool
+  (* *)
+{ asSubTypeIde.isNotNil }
+
+isAnonymous :Bool
+  (* *)
+{ name.isNil }
+
+setImmutable :Void
+  (* *)
+{ }
+
+scope(env :X_TL2Scoper) :X_TL2Ide
+  (* *)
+{
+  assert({ !isAnonymous })
+    ; anonymous ides can only appear in signatures, but ides in signatures
+;       are never scoped themselves 
+  env[name]
+}
+
+relationName :String
+  (* *)
+deferred
+
+prettyPrint(out :Printer) :Void
+  (* *)
+{
+  if( name.isNotNil then: {
+    out.writeAll(name)
+;    out.writeAll("[" + identityHash.printString + "]") 
+  })
+  out.writeAll(relationName)
+  if( type.isNil then: {
+    out.writeAll("??")
+  } else: {
+    type.prettyPrint(out)
+  })}
+
+}

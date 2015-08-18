@@ -1,0 +1,509 @@
+class HtmlGenerator
+super Html, SgmlGenerator
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+
+A simple HTML Generator to create HTML documents on-the-fly.
+Useful for generating error messages, say.
+
+Use SgmlEntityOutputFilter (also an OutputDecorator, to be written)
+to replace special characters with entity references...
+
+09-Jan-1997 Andreas Gawecki
+
+##enhance (waiting for optional parameters...sooon Bart)
+*)
+meta HtmlGeneratorClass()
+
+{
+allowBreak :Void
+  (* indicate that this is a goot place for a line break.
+     ## enhance with quality factor *)
+{
+  if( _preformatted == 0 then: { nl })
+  }
+
+validName(name :String) :Bool
+  (* *)
+{
+  ; this implements the relevant part of the HTML SGML-Declaration:
+;	 NAMING   LCNMSTRT ""
+;		  UCNMSTRT ""
+;		  LCNMCHAR ".-"
+;		  UCNMCHAR ".-"
+;	 NAMELEN  72  
+
+  !name.isEmpty
+  && ( name.size <= 72
+  && ( name[0].isAlpha
+  &&  name.all(fun(c:Char){
+	 c.isAlphaNumeric || ( c = '.' ||  c = '-'  )
+       })  ) )
+}
+
+urlAttr(name :String, value :String) :Void
+  (* URL attribute: if value is not nil, write 'name="value"'
+     to the output stream. *)
+{
+  if( value !== nil then: { attr(name, value) })
+  }
+
+a(href :String, target :String, contents :Fun():Void) :Void
+  (* write an HMTL anchor element.
+     body is called to write the contents of the anchor. *)
+{
+  tag ::= "A"
+  beginStartTag(tag)
+  if( href.isNotNil then: { urlAttr("HREF", href) })
+  if( target.isNotNil then: { attr("TARGET", target) })
+  endStartTag
+  contents[]
+  endTag(tag)
+  nl
+  }
+
+base(href :String) :Void
+  (* *)
+{
+  beginStartTag("BASE")
+  urlAttr("HREF", href)
+  endStartTag
+  nl
+  }
+
+address(contents :Fun():Void) :Void
+  (* *)
+{
+  _h("ADDRESS", contents)
+  }
+
+b(contents :Fun():Void) :Void
+  (* *)
+{
+  _b("B", contents)
+  }
+
+blockquote(contents :Fun():Void) :Void
+  (* *)
+{
+  _h("BLOCKQUOTE", contents)
+  }
+
+body(contents :Fun():Void) :Void
+  (* *)
+{
+  _h("BODY", contents)
+  nl
+  }
+
+br :Void
+  (* *)
+{
+  allowBreak
+  startTag("BR")
+  nl
+  }
+
+cite(contents :Fun():Void) :Void
+  (* *)
+{
+  _h("CITE", contents)
+  }
+
+cmd(contents :Fun():Void) :Void
+  (* *)
+{
+  _b("CMD", contents)
+  }
+
+code(contents :Fun():Void) :Void
+  (* *)
+{
+  _h("CODE", contents)
+  }
+
+dd(contents :Fun():Void) :Void
+  (* *)
+{
+  _p("DD", contents)
+  }
+
+dir(contents :Fun():Void) :Void
+  (* *)
+{
+  _h("DIR", contents)
+  }
+
+dt(contents :Fun():Void) :Void
+  (* *)
+{
+  _p("DT", contents)
+  }
+
+em(contents :Fun():Void) :Void
+  (* *)
+{
+  _b("EM", contents)
+  }
+
+form(action :String, contents :Fun():Void) :Void
+  (* *)
+{
+  tag ::= "FORM"
+  beginStartTag(tag)
+  urlAttr("ACTION", action)
+  attr("METHOD", "GET") 
+  endStartTag
+  nl
+  contents[]
+  endTag(tag)
+  nl
+  }
+
+h1(contents :Fun():Void) :Void
+  (* *)
+{
+  _h("H1", contents)
+  }
+
+h2(contents :Fun():Void) :Void
+  (* *)
+{
+  _h("H2", contents)
+  }
+
+h3(contents :Fun():Void) :Void
+  (* *)
+{
+  _h("H3", contents)
+  }
+
+h4(contents :Fun():Void) :Void
+  (* *)
+{
+  _h("H4", contents)
+  }
+
+h5(contents :Fun():Void) :Void
+  (* *)
+{
+  _h("H5", contents)
+  }
+
+h6(contents :Fun():Void) :Void
+  (* *)
+{
+  _h("H6", contents)
+  }
+
+head(contents :Fun():Void) :Void
+  (* *)
+{
+  _h("HEAD", contents)
+  }
+
+hr :Void
+  (* *)
+{
+  allowBreak
+  startTag("HR")
+  nl
+  }
+
+html(contents :Fun():Void) :Void
+  (* *)
+{
+  _h("HTML", contents)
+  nl
+  }
+
+i(contents :Fun():Void) :Void
+  (* *)
+{
+  _b("I", contents)
+  }
+
+img(src :String, align :String, alt :String, border :Int, isMap :Bool, seeThru :Bool) :Void
+  (* *)
+{
+  tag ::= "IMG"
+  beginStartTag(tag)
+  urlAttr("SRC", src)
+  if( align.isNotNil then: { tokenAttr("ALIGN", align) })
+  attr("ALT", alt)
+  intAttr("BORDER", border)
+  flagAttr("ISMAP", isMap)
+  flagAttr("SEETHRU", seeThru)
+  endStartTag
+  nl  
+  }
+
+input(type :String, name:String, value :String,
+    align :String,
+    checked :Bool,
+    disabled :Bool,
+    maxLength :Int,
+    min :Int,
+    size :Int) :Void
+  (* *)
+{
+  tag ::= "INPUT"
+  beginStartTag(tag)
+  if( align !== nil then: {tokenAttr("ALIGN", align)})
+  flagAttr("CHECKED", checked)
+  flagAttr("DISABLED", disabled)
+  intAttr("MAXLENGTH", maxLength)
+  intAttr("MIN", min)
+  attr("NAME", name) 
+  intAttr("SIZE", size)
+  tokenAttr("TYPE", type)
+  attr("VALUE", value)
+  endStartTag
+  nl
+  }
+
+checkbox(name:String, value :String,
+    align :String,
+    checked :Bool,
+    disabled :Bool) :Void
+  (* *)
+{
+  input("checkbox", name, value,
+    align, checked, disabled, nil, nil, nil) 
+  }
+
+font(size :String, color :String, contents :Fun():Void) :Void
+  (* *)
+{
+  beginStartTag("FONT")
+  attr("SIZE", size)
+  attr("COLOR", color)
+  endStartTag
+  contents[]
+  endTag("FONT")
+  }
+
+kbd(contents :Fun():Void) :Void
+  (* *)
+{
+  _b("KBD", contents)
+  }
+
+li(compact :Bool, contents :Fun():Void) :Void
+  (* *)
+{
+  _li("LI", compact, contents)
+  }
+
+listing(contents :Fun():Void) :Void
+  (* *)
+{
+  _h("LISTING", contents)
+  }
+
+menu(contents :Fun():Void) :Void
+  (* *)
+{
+  _h("MENU", contents)
+  }
+
+ol(compact :Bool, contents :Fun():Void) :Void
+  (* *)
+{
+  _li("OL", compact, contents)
+  }
+
+option(value :String, selected :Bool) :Void
+  (* *)
+{
+  nl
+  tag ::= "OPTION"
+  beginStartTag(tag)
+  attr("VALUE", value)
+  flagAttr("SELECTED", selected)
+  endStartTag
+  }
+
+p(contents :Fun():Void) :Void
+  (* *)
+{
+  _p("P", contents)
+  endTag("P")
+  nl
+  }
+
+pre(contents :Fun():Void) :Void
+  (* *)
+{
+  _h("PRE", fun() {
+    _preformatted := _preformatted+1
+    contents[]
+    _preformatted := _preformatted-1
+    })
+  }
+
+quote(contents :Fun():Void) :Void
+  (* *)
+{
+  _b("QUOTE", contents)
+  }
+
+select(multiple :Bool, name :String, size :Int) :Void
+  (* *)
+{
+  beginStartTag("SELECT")
+  flagAttr("MULTIPLE", multiple)
+  attr("NAME", name)
+  intAttr("SIZE", size)
+  endStartTag
+  }
+
+strong(contents :Fun():Void) :Void
+  (* *)
+{
+  _b("STRONG", contents)
+  }
+
+table(border :Bool, contents :Fun():Void) :Void
+  (* *)
+{
+  tag ::= "TABLE"
+  beginStartTag(tag)
+  flagAttr("BORDER", border)
+  endStartTag
+  contents[]
+  endTag(tag)
+  }
+
+td(align :String, colspan :Int, rowspan :Int, contents :Fun():Void) :Void
+  (* *)
+{
+  _td("TD", align, colspan, rowspan, contents)
+  }
+
+th(align :String, colspan :Int, rowspan :Int, contents :Fun():Void) :Void
+  (* *)
+{
+  _td("TH", align, colspan, rowspan, contents)
+  }
+
+title(contents :Fun():Void) :Void
+  (* *)
+{
+  tag ::= "TITLE"
+  beginStartTag(tag)
+  endStartTag
+  contents[]
+  endTag(tag)
+  nl
+  }
+
+tr(contents :Fun():Void) :Void
+  (* *)
+{
+  _p("TR", contents)
+  }
+
+tt(contents :Fun():Void) :Void
+  (* *)
+{
+  _b("TT", contents)
+  }
+
+ul(compact :Bool, contents :Fun():Void) :Void
+  (* *)
+{
+  _li("UL", compact, contents)
+  }
+
+nameLen :Int
+  (* details of the HTML Stml declaration 
+ maximum allowed name length.
+   Corresponds to the NAMELEN attribute in the Sgml declaration`s SYNTAX section *)
+{ 72 }
+
+nameChars :String
+  (* set of additional characters that may appear in names.
+     uses default *)
+{ super.nameChars }
+
+private
+
+_preformatted :Int
+  (* nesting level of <pre> *)
+
+_init :Void
+  (* *)
+{
+  super._init
+  _preformatted := 0
+}
+
+_td(tag :String, align :String, colspan :Int, rowspan :Int,
+    contents :Fun():Void) :Void
+  (* *)
+{
+  allowBreak
+  beginStartTag(tag)
+  if( align.isNotNil then: { tokenAttr("ALIGN", align) })
+  intAttr("COLSPAN", colspan)
+  intAttr("ROWSPAN", rowspan)
+  endStartTag
+  contents[]
+  endTag(tag)
+  }
+
+_li(tag :String, compact :Bool, contents :Fun():Void) :Void
+  (* *)
+{
+  allowBreak
+  beginStartTag(tag)
+  flagAttr("COMPACT", compact)
+  endStartTag
+  contents[]
+  endTag(tag)
+  }
+
+_b(tag :String, contents :Fun():Void) :Void
+  (* *)
+{
+  beginStartTag(tag)
+  endStartTag
+  contents[]
+  endTag(tag)
+  }
+
+_h(tag :String, contents :Fun():Void) :Void
+  (* *)
+{
+  allowBreak
+  _b(tag, contents)
+  }
+
+_p(tag :String, contents :Fun():Void) :Void
+  (* *)
+{
+  allowBreak
+  startTag(tag)
+  contents[]
+  }
+
+}

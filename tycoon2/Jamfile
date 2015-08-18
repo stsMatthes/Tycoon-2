@@ -1,0 +1,18 @@
+#
+# Jamfile 1.0  98/05/03  Andre Willomat
+#
+
+#
+# Make all Subdirs
+#
+
+SubInclude HOX_HOME src ;
+
+#
+# Cleanup of debug symbols for MS Visual C++
+#
+if $(HOX_COMPILER) = MSVC {
+   Clean clean : vc50.pdb ;
+   Clean clean : vc60.pdb ;
+}
+

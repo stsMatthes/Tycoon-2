@@ -1,0 +1,160 @@
+class DFAGenerator(Action <:Object)
+super Eager
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+*)
+meta SimpleConcreteClass(DFAGenerator(Action))
+{
+genDFA(tokens :Sequence(Pair(NFA, Action)),
+       dfaActionTable :Dictionary(DFAState, Action)) :DFA
+  (* generate a DFA equivalent to the nfas,
+     put the actions into dfaActionTable at
+     the corresponding final DFA states
+  
+ ensure  dfaActionTable.size <= old dfaActionTable.size + nfaActionTable.size 
+ '<' due to conflict resolution *)
+{
+  _dfaActionTable := dfaActionTable
+  _nfaActionTable := computeNfaActionTable(tokens)
+
+  nfaStateSets := Dictionary.new1(100)
+  dfa := DFA.new
+  dfa.start := dfa.newState
+  startSet ::=
+    Set.fromReader(tokens.map(fun(p :Pair(NFA,Action)) {
+      p.first.start
+    }))
+  close(startSet)
+  nfaStateSets[startSet] := dfa.start
+  dfa.start.nfaStates := startSet
+
+  queue := List.with1(dfa.start)
+    
+  while({!queue.isEmpty} do: {
+      dfaState ::= queue.head
+      queue := queue.tail
+      genMoves(dfaState)
+    })
+
+  dfa
+  }
+
+private
+
+dfa :DFA
+
+nfaStateSets :Dictionary(Set(NFAState), DFAState)
+
+queue :List(DFAState)
+
+  (* for fast priority/action lookup *)
+
+_nfaActionTable :Dictionary(NFAState, Pair(Int,Action))
+
+_dfaActionTable :Dictionary(DFAState, Action)
+
+  (* a mapping from dfa final states to nfa final states: *)
+
+_dfa2nfaTable :Dictionary(DFAState, NFAState)
+
+computeNfaActionTable(tokens :Sequence(Pair(NFA, Action)))
+  :Dictionary(NFAState, Pair(Int,Action))
+  (* compute table for fast priority/action lookup *)
+{
+  nfaActionTable ::= Dictionary.new
+  tokens.keysAndElementsDo(fun(i:Int, p :Pair(NFA,Action)) {
+    nfaActionTable[p.first.final] := Pair.new(i, p.second)
+  })
+  nfaActionTable
+}
+
+genMoves(s1 :DFAState) :Void
+  (* *)
+{
+  moves ::= MutableArray(:Set(NFAState)).new(256)
+
+  ; compute action (if any) 
+  ; simple conflict resolution:
+;     take the state corresponding to the first RE entered 
+
+  lowestPriority ::= Int.MAX_VALUE
+  action :Action := nil
+  s1.nfaStates.do(fun(nfaState :NFAState) {
+    _nfaActionTable.lookup(nfaState, fun(p:Pair(Int,Action)) {
+      if( p.first < lowestPriority
+      then: { lowestPriority := p.first
+	  action := p.second })
+    }, {})
+  })
+  if( action.isNotNil
+  then: { _dfaActionTable[s1] := action })
+
+  ; compute moving sets for all input symbols 
+
+  s1.nfaStates.do(fun(nfaState :NFAState) {
+
+      nfaState.transitions.keysAndElementsDo(
+        fun(ch :Char, nfaState2 :NFAState) {
+	  move ::= moves[ch.asInt]
+	  if( move.isNil
+	  then: { move := moves[ch.asInt] := Set.new1(10) })
+	  move.add(nfaState2)
+        })
+  })
+
+  ; close the sets, generate new DFA states iff necessary: 
+  
+  moves.keysAndElementsDo(fun(i :Int, nfaStates :Set(NFAState)) {
+    if( nfaStates.isNotNil then: {
+	ch ::= i.asChar
+	close(nfaStates)
+	s2 ::= nfaStateSets.lookup(nfaStates,
+	    ; ifPresent 
+fun(s2 :DFAState) { s2 },
+	    ; ifAbsent 
+{
+		s2 ::= nfaStateSets[nfaStates] := dfa.newState
+		s2.nfaStates := nfaStates
+		queue := List.cons(s2, queue)
+		s2
+	      })
+        s1.addTransition(ch, s2)
+      })})
+}
+
+close(t :Set(NFAState)) :Void
+  (* add to the set of NFA states t all NFA states
+     reachable via epsilon transitions *)
+{
+  q :List(NFAState) := List.new
+  t.do(fun(s :NFAState) {
+    q := List.cons(s, q)})
+    
+  while({!q.isEmpty} do: {
+    s1 ::= q.head
+    q := q.tail
+    s1.epsilonMoves.do(fun(s2 :NFAState) {
+      n ::= t.size
+      t.add(s2)
+      if( n != t.size then: {
+        q := List.cons(s2, q)})})})
+  }
+
+}

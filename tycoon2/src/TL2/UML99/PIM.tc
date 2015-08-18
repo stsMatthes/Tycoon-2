@@ -1,0 +1,21 @@
+class PIM
+super UML99
+{
+calendar @:Calendar
+contacts @:Contacts
+insertPerson(name :String, birthdate: Date) :Void
+{
+  contacts.insert(name, birthdate)
+}
+insertEvent(event @:Event) :Void
+{
+  calendar.insert(event@)
+}
+private
+_init :Void
+{
+  super._init
+  contacts := Contacts.new(self)@
+  calendar := Calendar.new(self)@
+}
+}

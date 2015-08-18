@@ -1,0 +1,140 @@
+class AtMutableSequence(E <: Object)
+super Sequence(E), AtMutableKeyedContainer(Int, E)
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+Sequence with component update operations
+
+mostly copy and paste from MutableSequence
+
+## fill is not possible, use clearSubSequence instead
+## cursor omitted (later if at all)
+
+Author:  Axel Wienberg
+Date:    25-Jun-1998
+*)
+meta AbstractClass
+{
+
+clearSubSequence(n :Int, at :Int) :Void
+  (* set all elements in the range at..at+(n-1) to nil@ *)
+  require n >= 0 && 0 <= at && at+n <= size
+{
+  for(at to: at+n do: fun(i:Int) {
+    self[i] := nil@
+  })
+}
+
+replace(n :Int, at :Int, with :AtMutableSequence(E), startingAt :Int) :Void
+  (* Replace the elements in the range at..at+(n-1)
+     with consecutive elements of 'with' in
+     the range startingAt..startingAt+(n-1).
+     The elements are taken out of 'with'.
+     'with' may denote the receiver, overlapping is handled correctly. *)
+require n >= 0
+	  & 0 <= at
+	  & at+n <= size
+	  & 0 <= startingAt
+	  & startingAt+n <= with.size
+{
+  if( startingAt > at then: { 
+    for(0 to:n-1 do:fun(i :Int) { 
+      self[at+i] := with[startingAt+i]@
+    })
+  } else: { 
+    forDown(n-1 to:0 do:fun(i :Int) { 
+      self[at+i] := with[startingAt+i]@
+    })
+  })
+}
+
+reverse :Void
+  (* destructive reverse *)
+{
+  j ::= size-1
+  for(0 to:(size/2)-1 do:fun(i :Int) {
+    swap(i,j)
+    j := j - 1
+  })
+}
+
+reversed :Self
+  (* Answer a sequence of the same kind of the receiver, but in reverse order *)
+{
+  c @::= componentCopy@
+  c.reverse
+  c
+}
+
+quicksort(compare :Fun(:E,:E):Int) :Void
+  (* Sort self using quicksort. This algorithm is not stable.
+   A presorted sequence is best case.
+
+                     | <0   if a "<=" b and not b "<=" a
+      compare(a,b)   | =0   if a "<=" b and b "<=" a
+	             | >0   if b "<=" a and not a "<=" b
+
+   a suitable comparison function would be
+      fun(a:E,b:E){a.order(b)}
+   for E <: Ordered
+*)
+{ _quicksort(compare, 0, size-1) }
+
+validKey(k:Int) :Bool
+  (* May <k> be used as a key for assignment ? *)
+{ ;; by default, assignment can not be used to introduce new keys
+  includesKey(k)
+}
+
+private
+
+_quicksort(compare :Fun(:E,:E):Int, from :Int, to :Int) :Void
+  (* *)
+{
+  if( from < to then: {
+    i ::= from
+    j ::= to
+    x ::= self[(from + to) / 2]
+    ; partition 
+    while({i <= j} do: {
+      while({compare[self[i], x] < 0} do: {
+	i := i + 1
+      })
+      while({compare[x, self[j]] < 0} do: {
+	j := j - 1
+      })
+      if( i <= j then: {
+        ; from <= i <= j <= to 
+	swap(i,j)
+	i := i + 1
+	j := j - 1
+      })
+    })
+    ; reduce stack usage from O(n) to O(log n)
+;       (when sendTail comes) 
+    if( j-from < to-i
+    then: { _quicksort(compare, from, j)
+	_quicksort(compare, i, to) }
+    else: { _quicksort(compare, i, to)
+	_quicksort(compare, from, j) })
+  })
+}
+
+}

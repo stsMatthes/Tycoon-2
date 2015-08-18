@@ -1,0 +1,24 @@
+class HttpdAdminSession
+super Object
+meta  HttpdAdminSessionClass
+{
+
+name :String
+lastStep :Int
+lastUrl :URL
+lastResponse :String
+lastOidMap :Array(Object)
+;; to do: expire etc.
+
+history :List(Object)
+
+private
+
+_init :Void
+{
+  super._init
+  lastStep := 0
+  history := List.with0
+}
+
+}

@@ -1,0 +1,6 @@
+class HttpMessageParser(Message <: HttpMessage)
+super MimeMessageParser
+(**)
+meta SimpleConcreteClass(HttpMessageParser(Message))
+{
+}

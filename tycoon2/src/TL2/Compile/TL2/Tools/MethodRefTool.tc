@@ -1,0 +1,116 @@
+class MethodRefTool
+super Tools, TL2RecursiveValueVisitor
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+*)
+meta MethodRefToolClass
+{
+methodName :Symbol
+
+arity :Int
+
+  (* may be nil *)
+
+inPackage :String
+
+  (* prefix of relative class path, may be nil *)
+
+occurrences :GapArray(TL2Value)
+
+printClassNames :Void
+  (* *)
+{
+  foundClassNames.do(fun(s:String){ tycoon.stdout.writeln(s) })
+}
+
+printPositions :Void
+  (* *)
+{
+  foundPositions.do(fun(s:SourcePos){ tycoon.stdout.writeln(s.printString) })
+}
+
+foundClassNames :Set(String)
+  (* *)
+{
+  occurrences.map(fun(v :TL2Value){ v.pos.where }).as(Set)
+}
+
+foundPositions :Array(SourcePos)
+  (* *)
+{
+  positions ::=
+    occurrences.map(fun(v :TL2Value){ v.pos }).as(MutableArray)
+  positions.quicksort(fun(p1 :SourcePos, p2 :SourcePos) {
+    p1.order(p2)
+  })
+  positions
+}
+
+searchAllClasses :Void
+  (* *)
+{
+  occurrences.clear
+  progress ::= ProgressIndicator.new("Searching classes...", tycoon.tl.classManager.classTable.size)
+  inPackage ::= inPackage
+  tycoon.tl.classManager.classTable.do(fun(c:TL2ClassPublic) {
+    progress.click
+    path ::= c.pos.where
+    if( inPackage.isNil ||  path.startsWith(inPackage) 
+    then: { searchClass(c) })
+  })
+  progress.finish
+}
+
+searchClass(c :TL2ClassPublic) :Void
+  (* *)
+{
+  methodVisitor ::=
+    TL2FunMethodVisitor.new
+      .ifCompiled(fun(m :TL2CompiledMethod) {
+        ; builtin or compiled 
+        m.body.accept(self)
+      })
+      .otherwise(fun( :TL2Method) {
+      })
+  c.methodDictionary.do(fun(m :TL2Method) {
+    m.acceptMethodVisitor(methodVisitor)
+  })
+}
+
+visitSend(v :TL2SendValue) :Void
+  (* *)
+{
+  if( v.selector = methodName
+  && ( arity.isNil
+       ||  v.args.count(fun(arg :TL2Argument){ arg.isValue }) = arity  )
+  then: { occurrences.addLast(v) })
+  super.visitSend(v)
+}
+
+private
+
+_init :Void
+  (* *)
+{
+  super._init
+  occurrences := GapArray.new0
+}
+
+}

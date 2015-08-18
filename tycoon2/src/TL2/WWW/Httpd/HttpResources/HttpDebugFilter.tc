@@ -1,0 +1,16 @@
+class HttpDebugFilter
+super HttpResourceDecorator
+(**)
+meta HttpDebugFilterClass()
+
+{
+debugResource :HttpDebugResource
+
+postProcess(request :HttpRequest, response :HttpResponse) :HttpResponse
+  (* *)
+{
+  debugResource.logResponse(response)
+  super.postProcess(request, response)
+}
+
+}

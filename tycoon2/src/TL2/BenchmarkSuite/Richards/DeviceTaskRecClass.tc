@@ -1,0 +1,12 @@
+class DeviceTaskRecClass(Instance <: DeviceTaskRec)
+super ConcreteClass(Instance)
+(**)
+meta MetaClass
+{
+new :Instance
+  (* *)
+{
+  _new.init
+}
+
+}

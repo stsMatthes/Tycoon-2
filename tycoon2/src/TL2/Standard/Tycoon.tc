@@ -1,0 +1,287 @@
+class Tycoon
+super Monitor
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+My single instance represents the Tycoon system
+
+Author:  Andreas Gawecki
+Date:    21-Feb-1996
+Updates: (Date)		(Name)		(Description)
+         06-APR-1999	A.Willomat	Portable tycoonOS
+*)
+meta TycoonClass()
+
+{
+stdin :Input
+
+stdout :Output
+
+debug :Bool
+
+os :OS
+  (* *)
+{ _os  }
+
+ansiC :AnsiC
+  (* *)
+{  _ansiC  }
+
+tycoonOS :TycoonOS
+  (*  *)
+{  _tycoonOS  }
+
+tl :TL2TL
+  (* *)
+{ _tl }
+
+"tl:="(newTL :TL2TL) :TL2TL
+  (* ### only for bootstrap *)
+{ _tl := newTL }
+
+clock :TycoonClock
+  (* answer a clock to measure elapsed real time.
+     ask this clock for the 'current time'
+  *)
+{
+  _clock
+}
+
+cpuClock :CPUClock
+  (* answer a clock to measure elapsed cpu time
+     for this process *)
+{
+  _cpuClock
+}
+
+hoxHome :String
+  (* *)
+{
+  ; this environment variable must be set, Tycoon won't
+  ; be runnig if not: 
+  ansiC.getenv("HOX_HOME")
+}
+
+hoxHost :String
+  (* *)
+{
+  ; this environment variable must be set, Tycoon won't
+  ; be runnig if not: 
+  ansiC.getenv("HOX_HOST")
+}
+
+saveSystem :Void
+  (* *)
+{
+  synchronize({
+    commit(
+      ; ifCommitted 
+{
+	  tycoon.stdout.writeln("System saved.")
+	},
+      ; ifRolledBack 
+{
+	  tycoon.stdout.writeln("System rolled back.")
+        },
+      ; ifRestarted 
+{
+	  tycoon.stdout.writeln("System re-started.")
+        })
+  })
+}
+
+atomic(T <:Void, statement :Fun():T) :T
+  (* perform statement atomically w.r.t. Tycoon::commit *)
+{
+  synchronize(statement)
+}
+
+commit(T <:Void,
+    ifCommitted :Fun():T,
+    ifRolledBack :Fun():T,
+    ifRestarted :Fun():T) :T
+  (* *)
+{
+  commitment ::= Commitment.new
+  synchronize({
+    Finalizer.instance.commit(fun(){
+      Resource.commit(commitment, fun() {
+	commitment.via := _commit
+	if( commitment.via !== Commitment.VIA_COMMIT
+	  then: { _restarted })
+      })
+
+      commitment.case(:Void,
+	  fun() { },
+	  fun() { _rolledBack },
+	  fun() { _restarted }
+      )
+    })
+
+    if( !commitment.errors.isEmpty then: {
+      tycoon.stdout.writeln("Tycoon::commit: There where errors: ")
+      commitment.errors.do(fun(e :Exception) {
+	e.printOn(tycoon.stdout)
+	tycoon.stdout.nl
+      })
+    })
+    if( !commitment.maliciousResources.isEmpty then: {
+      commitment.maliciousResources.do(fun(resource :Resource) {
+	tycoon.stdout.writeln("Tycoon::commit: trying to close resource: " + resource.printString)
+	resource.close
+      })
+    })
+  })   
+  commitment.case(:T, ifCommitted, ifRolledBack, ifRestarted)
+}
+
+rollback :Nil
+  (* *)
+{
+  _rollback
+}
+
+argv :Array(String)
+  (* *)
+{
+  _argv
+}
+
+backTrace :Void
+  (* dump a stack backtrace *)
+builtin
+
+private
+
+_os :OS
+
+  (* the current OS we are running on *)
+
+_argv :Array(String)
+
+  (* the argument vector for Tycoon *)
+
+_ansiC :AnsiC
+
+_tycoonOS :TycoonOS
+
+_clock @:TycoonClock
+
+_cpuClock @:CPUClock
+
+_tl :TL2TL
+
+;
+; Following constants must be the same as in tosSystem.h (TycoonOS)
+; Legal values are n with: _osInvalid < n < _osUnknown
+;
+_osInvalid   :Int {0}     ; Invalid value
+_osSunOS5    :Int {1}     ; Solaris2_SPARC
+_osLinux     :Int {2}     ; Linux_i386
+_osHPUX      :Int {3}     ; HPUX_PARISC
+_osNextStep3 :Int {4}     ; Nextstep_i386
+_osWinNT     :Int {5}     ; WinNT_i386
+_osWin95     :Int {6}     ; Win95_i386
+_osWin98     :Int {7}     ; Win98_i386
+_osUnknown   :Int {8}     ; Unknown host
+
+
+_rollback :Nil
+  (* *)
+builtin
+
+_commit :Int
+  (* *)
+builtin
+
+_init :Void
+  (* *)
+{
+  super._init
+  
+  debug := false
+  _getArgv
+  _getOS
+  
+  _ansiC := AnsiC.new.open
+  _tycoonOS := TycoonOS.new.open
+  _tycoonOS.tos_init
+
+  File.init
+  
+  stdin := File.stdin
+  stdout := File.stdout
+  _clock := TycoonClock.new@
+  _cpuClock := CPUClock.new@
+  self
+  }
+
+_restarted :Void
+  (* *)
+{
+  _getArgv
+  _getOS
+}
+
+_rolledBack :Void
+  (* *)
+{
+  _restarted
+}
+
+builtinArgv :Array(String)
+  (* *)
+builtin
+
+_getArgv :Void
+  (* *)
+{
+  _argv := builtinArgv
+}
+
+_getEnv :Void
+  (* *)
+{
+}
+
+_platformCode :Int
+  (* *)
+builtin
+
+_getOS :Void
+  (* *)
+{
+  platform ::= _platformCode
+  _os :=
+    if( platform = _osSunOS5
+    then: { SunOS5.new }
+    else: { if( platform = _osLinux
+	then: { Linux.new }
+	else: { if( platform = _osHPUX
+	    then: { HPUX.new }
+	    else: { if( platform = _osWinNT || platform = _osWin95 || platform = _osWin98
+	        then: { ; Same basics on windows plattforms
+                        WinNT.new
+                      }
+	        else: { ; unknown OS - Solaris is as good as any 
+	            SunOS5.new }) }) }) })
+}
+
+}

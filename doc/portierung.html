@@ -1,0 +1,79 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+   <TITLE></TITLE>
+   <META NAME="GENERATOR" CONTENT="Mozilla/3.0Gold (X11; I; SunOS 5.5.1 sun4u) [Netscape]">
+</HEAD>
+<BODY>
+
+<H1>Wie portiere ich Tycoon-2 auf eine neue Unix-&auml;hnliche Plattform (z.B.
+Foos) ?</H1>
+
+<H2>Erg&auml;nzung der Tycoon-Quellen:</H2>
+
+<UL>
+<LI>Eine konkrete Nachfahrenklasse Foos von <TT>OS </TT>erzeugen. Diese
+mu&szlig;: </LI>
+
+<UL>
+<LI>bei <TT>getFS </TT>ein korrektes Filesystem liefern. Evtl. mu&szlig; dazu
+eine neue Nachfahrenklasse von <TT>FS </TT>geschrieben werden. </LI>
+
+<LI>korrekte Werte f&uuml;r diverse Betriebssystem-Konstanten aus den
+C-Header-Files liefern</LI>
+</UL>
+
+<LI>In <TT>OSVisitor </TT>eine Methode <TT>visitFoos(foos :Foos)</TT> definieren,
+die ein default- Verhalten entsprechend der Vererbungshierarchie vorgibt.</LI>
+
+<LI>In allen Nachfahrenklassen von <TT>OSVisitor </TT>pr&uuml;fen, ob eine
+spezielle <TT>visitFoos</TT>-Methode ben&ouml;tigt wird (insbesondere DLL-Namen)</LI>
+
+<LI>Einen neuen Platform-Code festlegen. Dies ist ein Integer, der per
+builtin von der Maschine geliefert wird (s.u.).</LI>
+
+<LI>Eine Methode <TT>Tycoon::_osFoos </TT>schreiben, die den Platform-Code
+liefert (konstante)</LI>
+
+<LI>Die Methode <TT>Tycoon::_getOS </TT>erg&auml;nzen, so da&szlig; beim Hochfahren
+ein <TT>Foos </TT>erzeugt wird, wenn _<TT>platformCode </TT>= _<TT>osFoos</TT></LI>
+</UL>
+
+<H2>&Auml;nderungen auf der C-Seite:</H2>
+
+<UL>
+<LI>Das Script <TT>hox/configure</TT> erg&auml;nzen, so da&szlig; <TT>PLATFORM </TT>und
+<TT>PROCESSOR </TT>korrekt gesetzt werden.</LI>
+
+<LI>Eine Datei <TT>hox/conf/hox-foos.mk</TT> erzeugen, die zumindest die
+Zeile <TT>CPPFLAGS += -Drt_LIB_foos </TT>enth&auml;lt.</LI>
+
+<LI>Falls gcc benutzt werden soll, die Datei <TT>conf/hox-foos-gcc.mk</TT>
+erzeugen, die ein include f&uuml;r <TT>hox-foos.mk</TT> und <TT>hox-gcc.mk</TT>
+enth&auml;lt und evtl. weitere Flags setzt.</LI>
+
+<LI>In <TT>hox/src/tm/rt.c</TT> die Konstanten <TT>HOSTID</TT> und <TT>HOSTNAME</TT>
+definieren korrespondierend zu _<TT>platformCode </TT>in TWL (s.o.)</LI>
+
+<LI>In <TT>hox/src/tm/tsp.c</TT> einen Eintrag in der <TT>archTable</TT>
+erg&auml;nzen ( <TT>HOSTNAME, byte order, alignment)</TT>. Evtl mu&szlig; daf&uuml;r
+eine neue Alignment-Tabelle geschrieben werden. Wie man das Alignment herausfindet,
+wei&szlig; Marc.</LI>
+
+<LI>In <TT>hox/src/rts/ </TT>und <TT>hox/src/tm</TT> m&uuml;ssen evtl. auch
+noch Anpassungen vorgenommen werden. Dies merkt man sp&auml;testens, wenn der
+Compiler streikt oder die Maschine sp&auml;ter abst&uuml;rzt ;-)Die Maschine wird
+auf der ne&uuml;n Plattform mit <TT>&quot;sh configure&quot;</TT> konfiguriert
+und sollte dann durch <TT>&quot;make clean;make depend;make&quot;</TT>
+ohne weitere Umst&auml;nde &uuml;bersetzbar sein. Man mu&szlig; nun nur noch auf einer
+bereits unterst&uuml;tzten Plattform einen Store erzeugen, der die aktuellsten
+Tycoon-Klassen enth&auml;lt, und diesen auf der neuen Plattform ausf&uuml;hren
+(<TT>&quot;tycoon2 Store.ts&quot;</TT>).</LI>
+</UL>
+
+<P>Viel Gl&uuml;ck.</P>
+
+<ADDRESS>Axel Wienberg, 03-Jan-1997</ADDRESS>
+
+</BODY>
+</HTML>

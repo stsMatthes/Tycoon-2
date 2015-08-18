@@ -1,0 +1,14 @@
+class BQuicksort
+super BSort
+(**)
+meta BSortClass(BQuicksort)
+{
+private
+
+_run() :Void
+  (* *)
+{
+  _arr.quicksort(fun(e1 :Int, e2 :Int) {e1 - e2})
+}
+
+}

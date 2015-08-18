@@ -1,0 +1,58 @@
+class HttpProductListHeader
+super MimeHeaderValueImpl(List(HttpProduct))
+(**)
+meta MimeHeaderValueImplClass(List(HttpProduct))
+{
+private
+
+parseValue(s :String) :List(HttpProduct)
+  (* *)
+{
+  parser ::= MimeParser.new(s.reader)
+
+  result :List(HttpProduct) := EmptyList.new
+
+  while({parser.char.isNotNil} do: {
+    parser.skipws
+    if( parser.char = '(' then: {
+      while({parser.char != ')'} do: {
+        if( parser.char = nil then: {
+	  MimeParserError.new("Unmatched comment parenthesis "+s.printString).raise
+	  nil
+	} else: {
+	  parser.next
+	  nil
+	})
+      })
+      parser.next
+      nil
+    } else: {
+      product :String := nil
+      version :String := nil
+  
+      product := parser.nextToken
+      tycoon.stdout.writeAll("Parsed p:"+product+"\n")
+      if( parser.char = '/' then: {
+        parser.next
+        version := parser.nextToken
+        tycoon.stdout.writeAll("Parsed v:"+version+"\n")
+      })
+
+      result := List.cons(HttpProduct.new(product, version), result)
+      nil
+    })
+  })
+
+  List.reverse(result)
+}
+
+unparseValue(value :List(HttpProduct)) :String
+  (* *)
+{
+  value.fold(fun(product :HttpProduct) {
+    product.product + if( product.version.isNil then: { "" } else: { product.version })
+  }, fun(s1 :String, s2 :String) { s1+" "+s2 }
+  )  
+}
+
+}

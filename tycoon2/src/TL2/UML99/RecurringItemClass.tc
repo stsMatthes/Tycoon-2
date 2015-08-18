@@ -1,0 +1,16 @@
+class RecurringItemClass
+super ConcreteClass(RecurringItem)
+meta MetaClass
+{
+
+new(date: Date, description :String, action :Fun():Void) @:RecurringItem
+{
+  instance @::= _new@
+  instance.date := date
+  instance.description := description
+  instance.action := action
+  instance._init
+  instance@
+}
+
+}

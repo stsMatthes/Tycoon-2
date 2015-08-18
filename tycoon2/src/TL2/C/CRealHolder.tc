@@ -1,0 +1,40 @@
+class CRealHolder
+super CValueHolder(Real)
+(**)
+meta SimpleConcreteClass(CRealHolder)
+{
+valueClass:Class
+  (* *)
+{ Real }
+
+value:Real
+  (* *)
+{ if( handle.isNotNil then: {tycoon.tycoonOS.memory_peekReal(handle,0)}
+                  else: {i:Real := nil}) }
+
+realValue:Real
+  (* *)
+{ value }
+
+"value:="(v:Real):Real
+  (* *)
+{ if( handle.isNotNil then: {tycoon.tycoonOS.memory_pokeReal(handle,0,v)
+                     tycoon.tycoonOS.memory_peekReal(handle,0)}
+		  else: {nil})}
+
+setRealValue(v:Real):Real
+  (* *)
+{ value:=v }
+
+private
+
+_init:Self
+  (* *)
+{
+  super._init
+  super._allocate(8)
+  tycoon.tycoonOS.memory_pokeReal(handle,0,0.0)
+  self
+}
+
+}

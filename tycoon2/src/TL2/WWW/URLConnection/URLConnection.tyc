@@ -1,0 +1,4 @@
+tycoon.tl.loader.registerDirectory("WWW/URLConnection") ?
+tycoon.tl.loader.update ?
+tycoon.tl.typeChecker.check ?
+

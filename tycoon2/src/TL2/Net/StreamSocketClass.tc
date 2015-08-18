@@ -1,0 +1,77 @@
+class StreamSocketClass
+super ConcreteClass(StreamSocket)
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+Metaclass of StreamSocket.
+
+## check Ansi C specification on mixed read/write IO
+
+Author:  Andreas Gawecki
+Date:    27-Feb-1996
+Updates: (Date)	      (Name)	(Description)
+         20-Dec-1996  ME	added new2
+*)
+meta MetaClass
+{
+new2(destinationHost :IPAddress, destinationPort :Int) :StreamSocket
+  (* deprecated, use new() instead *)
+{
+  new(destinationHost, destinationPort)
+}
+
+new(destinationHost :IPAddress, destinationPort :Int) :StreamSocket
+  (* *)
+{
+  s ::= _new
+  s._dll := tycoon.tycoonOS
+  s._init
+  s.open
+  try({
+    s._connect(destinationHost, destinationPort)
+  } else: fun(e :Exception) {
+    s.close
+    e.raise
+  })
+  s    
+}
+
+fromHandle(handle :Int) :StreamSocket
+  (* create a new StreamSocket object with the given OS handle.
+  *)
+{
+  s ::= _new
+  s._dll := tycoon.tycoonOS
+  s._handle := handle
+  s._init
+  Resource.openResourceTransaction(fun() {
+    s._open
+    s
+  })
+  s._initRemoteAddress
+  s._initRemotePort
+  s._initAddress
+  s._initPort
+  s
+}
+
+private
+
+}

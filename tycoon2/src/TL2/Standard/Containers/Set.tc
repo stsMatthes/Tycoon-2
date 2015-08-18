@@ -1,0 +1,200 @@
+class Set(E <: Object)
+super AbstractSet(E), LinearProbingMixin(Object,E)
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+Container which contains every element only once
+
+Author:  Andreas Gawecki
+Date:    14-Feb-1996
+Updates: (Date)	  (Name)	(Description)
+	 25-Jun-96 Axel Wienberg  moved some functionality to AbstractSet
+*)
+meta SetClass(E)
+{
+
+includes(x :Object) :Bool
+  (* *)
+{
+  _elements[_findIndex(x)].isNotNil
+}
+
+find(x :Object) :E
+  (* *)
+{
+  _elements[_findIndex(x)]
+}
+
+clear :Void
+  (* *)
+  ensure isEmpty
+{
+  for(0 to: _elements.size-1 do: fun(i :Int) {
+    _elements[i] := nil
+  })
+  _elementCount := 0
+  _changed  
+}
+
+remove(e :Object) :E
+  (* *)
+ensure !includes(e)
+{
+  i ::= _findIndex(e)
+  el ::= _elements[i]
+  if( el.isNotNil then: {
+    _elements[i] := nil
+    _elementCount := _elementCount-1
+    _fixCollisions(i)
+    _changed
+  })
+  el
+}
+
+add(e :E) :Void
+  (* *)
+ensure includes(e)
+{
+  _add(e)
+  e
+}
+
+addNew(e :E) :Void
+  (* *)
+  require !includes(e)
+  ensure includes(e)
+{
+  add(e)
+}
+
+equalityHash :Int
+  (* answer a hash value reflecting the receivers contents. *)
+{
+  ;
+;  _equalityHash == nil ? {
+;    _equalityHash := _elements.inject(size, fun(h :Int, e :E) {
+;    e == nil
+;      ? { h }
+;      : { h + e.equalityHash }})
+;     },
+;  _equalityHash
+size
+  
+  ;##
+;  _elements.inject(size, fun(h :Int, e :E) {
+;    e == nil
+;      ? { h }
+;      : { h + e.equalityHash }})
+;  
+  }
+
+copy :Self
+  (* *)
+{ c ::= shallowCopy
+  _elements := _elements.componentCopy@
+  ; _elements := fetch(_typeCast(_elements.copy, :MutableArray(E)))@
+  ; ### type checker bug ??
+  c
+}
+
+private
+
+_elements @:MutableArray(E)
+
+; _equalityHash :Int
+
+_changed :Void
+  (* the abstract state of the set has changed *)
+{
+  ;; _equalityHash := nil
+}
+
+_init1(initialSize :Int) :Void
+  (* *)
+{
+  n ::= 2
+  while({n <= initialSize} do:{n := 2*n })
+  _elements := MutableArray.new(n)@
+  _elementCount := 0
+  _init
+}
+
+_keys :MutableArray(E)
+  (* *)
+{
+  _elements
+}
+
+_elementHash(e :E) :Int
+  (* *)
+{
+  _keyHash(e)
+}
+
+_elementEqual(e1 :E, x :Object) :Bool
+  (* *)
+{
+  _keyEqual(e1, x)
+}
+
+_moveTo(i :Int, ii :Int) :Void
+  require _keys[ii].isNil
+       && _elements[ii].isNil
+  ensure _keys[ii] == old _keys[i]
+      && _elements[ii] == old _elements[i]
+      && _keys[i].isNil
+      && _elements[i].isNil
+{
+  _elements[ii] := _elements[i]
+  _elements[i] := nil
+}
+
+_add(e :E) :Void
+  (* *)
+{
+  i ::= _findIndex(e)
+  oldElement ::= _elements[i]
+  _elements[i] := e
+  if( oldElement.isNil then: {
+    _elementCount := _elementCount+1
+    _adjustSize
+  })
+  _changed
+}
+
+_grow :Void
+  (* *)
+{
+  oldElements ::= _elements
+  oldElementCount ::= _elementCount
+  oldSize ::= oldElements.size
+  _init1(oldSize) ; this doubles size 
+  for(0 to: oldSize-1 do: fun(i :Int) {
+    e ::= oldElements[i]
+    if( e.isNotNil then: {
+      j ::= _findIndex(e)
+      assert({ _elements[j].isNil })
+      _elements[j] := e
+    })
+  })
+  _elementCount := oldElementCount
+}
+
+}

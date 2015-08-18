@@ -1,0 +1,14 @@
+class VorgangClass
+super ConcreteClass(Vorgang)
+meta MetaClass
+{
+
+new(ziele :Sequence(Arbeitsplatz)) @:Vorgang
+{
+  instance@ ::= _new@
+  instance.ziele := fetch(ziele.as(Queue))@
+  instance._init
+  instance@
+}
+
+}

@@ -1,0 +1,110 @@
+class ConversationSpec
+super AtNameIndex(DialogSpec), NamedMixin
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ ConversationSpec.tc
+
+   Tycoon Business Conversation (TBC) for Tycoon 2
+   -----------------------------------------------
+   The specification of a Tycoon-Business-Conversation. This is the root of 
+   every complex TBC-Spec.
+   A ConvSpec is an index (by inheritance) which contains all 
+   dialog-specs keyed by their names.  The ConvSpec further has a 
+   ConversationIdentifier (name of type String) and the specification of the 
+   initial DialogSpec.  Both values are passed to the new-constructor.  The 
+   slot initialDialog just holds the name (String) of the DialogSpec, 
+   which itself resides among all others in the index.
+
+   13.08.97 hw : created
+   
+*)
+meta ConversationSpecClass
+{
+
+initialDialogName :String
+
+newDialog(dialogName :String) :DialogSpec
+{
+  dialogSpec @::= DialogSpec.new(dialogName)@
+  dialogSpecRef ::= dialogSpec
+  add(dialogSpec@)
+  dialogSpecRef
+}
+
+visit(v :TBCSpecVisitor) :Void
+  (* *)
+{
+  v.conversationSpec(self)
+}
+
+printOn(out :Output) :Void
+  (* *)
+{
+  visit(TBCSpecPrettyPrinter.new(out))
+}
+
+breakdownDialogName() :String
+  (* Return the name of the special breakdown dialog. *)
+{
+  "*breakdown*"
+}
+
+breakdownDialogSpec() :DialogSpec
+  (* Return specification of the special breakdown dialog.
+     Note: As the breakdown dialog is not part of any conversation 
+     specification, this is the only way to get its content specification.  
+     Furthermore the breakdown dialog is always final for a conversation.  
+   *)
+{
+  b @::= DialogSpec.new(breakdownDialogName)@
+  b.contentSpec["String_Reason"]:= StringContentSpec.new@
+  b.contentSpec["String_Conversation"]:= StringContentSpec.new@
+  b.contentSpec["String_Dialog"]:= StringContentSpec.new@
+  b.contentSpec["String_Request"]:= StringContentSpec.new@
+  ref(b@)  ;; ### drop?
+}
+
+breakdownRequestName() :String
+  (* Return the name of the special breakdown request *)
+{
+  "*breakdown*request*"
+}
+
+initialRequestName() :String
+  (* Return the name of the special initial request, which only can send
+     a customer to a performer to begin a new conversation. *)
+{
+  "*initial*request*"
+}
+
+matches(other :Self) :Bool
+  (* Test conformance between two specifications. This is done by
+     calling matches for all dialogs.
+     self is the spec requested by the customer (old),
+     other is the spec implemented by the performer (new). *)
+{
+  name = other.name &
+  initialDialogName = other.initialDialogName &
+  keys.all(fun(dia :String){
+    other.includesKey(dia) &&  self[dia].matches(other[dia]) 
+  })
+}
+
+}

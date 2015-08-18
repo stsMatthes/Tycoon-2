@@ -1,0 +1,43 @@
+class KoltarRow
+super StructurePrintingMixin, Koltar
+meta KoltarRowClass
+{
+date :Date
+
+werWas :Dictionary(KoltarSklave, KoltarDienst)
+
+save(out :Output) :Void
+{
+  p ::= Properties.new
+  p["date"] := date.format("%d.%m.%y")
+  werWasP ::= Properties.new
+  werWas.keysAndElementsDo(fun(sklave :KoltarSklave, dienst :KoltarDienst) {
+    werWasP[sklave.name] := dienst.name
+  })
+  stringo ::= StringBuilderOutput.new
+  werWasP.save(stringo)
+  p["werWas"] := stringo.contents
+  p.save(out)
+}
+
+private
+
+_load(in :Input, application :KoltarApplication) :Void
+{
+  props ::= Properties.new
+  props.load(in)
+  date := Date.fromString(props["date"], "%d.%m.%y")
+  werWasP ::= Properties.new
+  werWasP.load(StringInput.new(props["werWas"]))
+  werWas := Dictionary.new1(werWasP.size)
+  werWasP.keysAndElementsDo(fun(sklave :String, dienst :String) {
+    werWas[application.sklaveFromName(sklave)]
+       := application.dienstFromName(dienst)
+  })
+}
+
+_init :Void
+{ super._init
+  werWas := Dictionary.new1(4)
+}
+}

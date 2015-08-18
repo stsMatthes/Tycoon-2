@@ -1,0 +1,15 @@
+class OBOidAssocClass
+super ConcreteClass(OBOidAssoc)
+meta MetaClass
+{
+
+new(oid :Int, object :Object) :OBOidAssoc
+{
+  i ::= _new
+  i._oid := oid
+  i._object := object
+  i._init
+  i
+}
+
+}

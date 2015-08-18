@@ -1,0 +1,119 @@
+class BlockingExternalMethodCaller
+super Monitor
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+My instances issue calls to potentially blocking external methods.
+these must be synchronized with _synchronizeBlockingCall.
+*)
+meta AbstractClass
+{
+private
+
+_priorityRequests :Int
+  (* count of threads to be served first *)
+
+_init :Void
+  (* *)
+{
+  super._init
+  _priorityRequests := 0
+  self
+}
+
+_createMonitorWaiters @:BroadcastingCondition
+  (* *)
+{
+  BroadcastingCondition.new@
+}
+
+_synchronizeBlockingCall(T <:Void, statement :Fun():T) :T
+  (* when inside a blocking external method, the commit thread
+   may cause a BlockingCallInterrupt.
+   catch BlockingCallInterrupt and retry statement. *)
+{
+  try({ synchronize({ statement[] }) } else:
+    fun(e :Exception) {
+      if( e.clazz == BlockingCallInterrupt
+        then: { _synchronizeBlockingCall(statement) }
+	else: { if( e.clazz == IOError
+	    then: {e :IOError := _typeCast(e)
+	       if( e.error == tycoon.os.EINTR
+	       then: {Thread.testCancel})
+	       e.raise}
+	    else: {e.raise })})
+      })    
+}
+
+_synchronizeCommit(T <:Void, statement :Fun():T) :T
+  (* before commit, suspend the owner thread in blocking call, if any.
+   assumption: mutex & condition variable scheduling is fair.
+   
+   IMPORTANT NOTE:
+   Since the recources monitor state is permanently locked until the
+   commit is finished NONE of the methods executed in the inner statement
+   (i.e. _saveState, _reopen) must synchronize the resource.
+   Doing so will result in a persistent deadlock! 
+ *)
+{
+  _mx.lock
+  monitorOwner ::= _monitorOwner
+  if( monitorOwner == nil
+    then: { __synchronize(statement, {__aquire}) }
+    else: { if( __suspendBlockingCall(monitorOwner)
+          then: { protect({ statement[] }, {
+  	       __resumeBlockingCall(monitorOwner)
+	       _mx.unlock
+	      })
+	    }
+	  else: { protect({ __synchronize(statement, {__priorizedAquire}) }, {
+		__resumeBlockingCall(monitorOwner)
+	      })
+	    })
+      })
+}
+
+__suspendBlockingCall(thread :Thread(Void)) :Bool
+  (* *)
+builtin
+
+__resumeBlockingCall(thread :Thread(Void)) :Void
+  (* *)
+builtin
+
+__aquire :Void
+  (* *)
+{
+  while({(_monitorNestingLevel !== 0) || _priorityRequests !== 0} do: {
+    _monitorWaiters.wait(_mx)
+  })
+}
+
+__priorizedAquire :Void
+  (* *)
+{
+  _priorityRequests := _priorityRequests + 1
+  while({_monitorNestingLevel !== 0} do: {
+    _monitorWaiters.wait(_mx)
+  })
+  _priorityRequests := _priorityRequests - 1 
+}
+
+}

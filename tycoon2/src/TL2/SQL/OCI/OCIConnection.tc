@@ -1,0 +1,119 @@
+class OCIConnection
+super SQLConnection
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+Handle connections with data-sources via Oracle-Call-Interface
+
+Author:  Michael Skusa
+
+Date:    03-Sep-1996
+
+Updates: (Date)		(Name)	(Description)
+	 14-mar-1997	MS	replaced integers for return-, type- and
+				error-codes with named constants
+*)
+meta SimpleConcreteClass(OCIConnection)
+{
+newStatement:OCIStatement
+  (* *)
+{
+  if( !isClosed
+  then: {
+      s::=OCIStatement.new
+      s.open(_hdbc,self)
+      s
+    }
+  else: {nil})
+}
+
+setAutoCommit(on:Bool):Void
+  (* on = true  enables AutoCommit, each single sql-statement is executed
+                and commited immediately,
+     on = false changes become persistent only if commit is called after
+                their execution,
+
+     raises OCIError.
+   *)
+{
+  er ::= if( on then: {oci.ocon(_hdbc)} 
+              else: {oci.ocof(_hdbc)})
+  if( er != 0 then: {OCIError.new(_hdbc,_hdbc).raise})
+}
+
+commit():Void
+  (* *)
+{
+  if( oci.ocom(_hdbc) != 0 then: {OCIError.new(_hdbc,_hdbc).raise})
+}
+
+rollback():Void
+  (* *)
+{
+  if( oci.orol(_hdbc) != 0 then: {OCIError.new(_hdbc,_hdbc).raise})
+}
+
+private
+
+_connect(database:String,user:String,password:String):Void
+  (* *)
+{
+   _henv := tycoon.ansiC.malloc(256)
+   _hdbc := tycoon.ansiC.malloc(64)
+   er ::= oci.olog(_hdbc,_henv,user,oci.NTS,password,oci.NTS,
+                     database,oci.NTS)
+   if( er != 0 then: {error ::= OCIError.new(_hdbc,_hdbc)
+              tycoon.ansiC.free(_hdbc)_hdbc:=nil
+              tycoon.ansiC.free(_henv)_henv:=nil
+	      error.raise})
+   _setDateFormat
+}
+
+_open(url:URL):Void
+  (* *)
+{
+  database ::= ""
+  user ::= ""
+  password ::= ""
+  if( url.arcs.size > 1 then: { database := url.arcs[1] }) 
+  if( url.parameters.includesKey("user")
+  then: { user := url.parameters["user"].head })
+  if( url.parameters.includesKey("password") 
+  then: { password := url.parameters["password"].head })
+  _connect(database,user,password)
+}
+
+_releaseHandles():Void
+  (* *)
+{
+  oci.ologof(_hdbc)
+  tycoon.ansiC.free(_hdbc)
+  tycoon.ansiC.free(_henv)
+}
+
+_setDateFormat:Void
+  (* *)
+{
+  statement ::= newStatement
+  statement.executeDirectUpdate("alter session set nls_date_format = \'YYYY-MM-DD HH24:MI:SS\'")
+  statement.close 
+}
+
+}

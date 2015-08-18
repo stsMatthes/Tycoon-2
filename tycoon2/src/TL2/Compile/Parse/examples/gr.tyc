@@ -1,0 +1,79 @@
+;; example grammar from "compiler construction", eds. Bauer, Eickel,
+;;   2nd edition, Springer, page 86
+
+
+;;  Block ::= "begin" Declarations ";" Statements "end";
+;;  Declarations ::= Dec
+;;		   | Declarations ";" Dec
+;;		   ;
+;;  Statements ::= St
+;;		 | St ";" Statements
+;;		 ;
+
+define blockG :MutableNonterminal(Object) ?
+define declarationsG :MutableNonterminal(Object) ?
+define statementsG :MutableNonterminal(Object) ?
+
+blockG := MutableNonterminal.new("Block") ?
+declarationsG := MutableNonterminal.new("Declarations") ?
+statementsG := MutableNonterminal.new("Statements") ?
+
+define t :Dictionary(String, SimpleTerminal) ?
+t := Dictionary.new ?
+t["begin"] := SimpleTerminal.new("begin") ?
+t["end"] := SimpleTerminal.new("end") ?
+t["dec"] := SimpleTerminal.new("dec") ?
+t["st"] := SimpleTerminal.new("st") ?
+t[";"] := SimpleTerminal.new(";") ?
+
+blockG.addRule5(
+	t["begin"], declarationsG, t[";"], statementsG, t["end"],
+	fun(:Object,:Object,:Object,:Object,:Object) {nil}) ?
+
+declarationsG.addRule1(
+	t["dec"],
+	fun(:Object){nil}) ?
+declarationsG.addRule3(
+	declarationsG, t[";"], t["dec"],
+	fun(:Object,:Object,:Object){nil}) ?
+
+statementsG.addRule1(
+	t["st"],
+	fun(:Object){nil}) ?
+statementsG.addRule3(
+	t["st"], t[";"], statementsG,
+	fun(:Object,:Object,:Object){nil}) ?
+
+
+define gr :Grammar(Object) ?
+gr := Grammar(:Object).new(blockG) ?
+
+define parserGen :ParserGen(NaiveParser) ?
+parserGen := ParserGen(:NaiveParser).new(NaiveParserBuilder.new) ?
+
+define p :AbstractParser(Object) ?
+p := parserGen.generate(gr) ?
+
+define testInput :List(Token(Object)) ?
+
+testInput := 
+  #("begin", "dec", ";", "dec", ";", "st", "end")
+      .map(fun(s :String){t[s].token}).as(List) ?
+
+p.logging := true ?
+
+p.parse(testInput.reader,fun(t:Token(Object)){tycoon.stdout << "Error on "<<t<<"\n"}) ?
+
+;; S4
+;; S2
+;; R2
+;; S9
+;; S12
+;; R3
+;; S9
+;; S5
+;; R4
+;; S0
+;; R1
+;; A
+

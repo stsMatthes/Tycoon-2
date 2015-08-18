@@ -1,0 +1,180 @@
+class StreamSocket
+super Socket, ExternalStream
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+Socket Streams
+
+All I/O operations in this class are unbuffered, they invoke
+the corresponding system calls directly.
+Use Socket::bufferedInput or  Socket::bufferedOutput for buffered I/O.
+
+Note that there is no way to guarantee persistence of StreamSocket objects
+with the Resource protocol alone. That is, the handle of a StreamSocket
+becomes inevitably invalid at system restart time and will raise an exception
+upon the next access. Applications must deal with restarted StreamSocket
+objects themselves.
+
+Author:  Andreas Gawecki
+Date:    13-Feb-1996
+Updates: (Date)	  (Name)	(Description)
+
+*)
+meta StreamSocketClass()
+
+{
+remoteAddress :IPAddress
+  (* *)
+{
+  _remoteAddress
+}
+
+remotePort :Int
+  (* *)
+{
+  _remotePort
+}
+
+read :Char
+  (* *)
+{
+  synchronize({
+    assert({ _handle !== nil })
+
+    i ::= _dll.socket_readChar(_handle)
+    if( i >= 0
+      then: { i.asChar }
+      else: { if( _dll.errorCode == 0
+	    then: { nil }	   ; eof 
+	    else: { _ioError })    ; error 
+	})  
+  })
+}
+
+readBuffer(buffer :MutableString, start :Int, n :Int) :Int
+  (* *)
+{
+  synchronize({
+    assert({ _handle !== nil })
+
+    ; force runtime error on bad argument: 
+    if( n !== 0 then: { buffer[start] := ' ' buffer[start+n-1] := ' '})
+    nn ::= _dll.socket_read(_handle, buffer, start, n)
+    _checkReturnCode(nn)
+  })
+}
+
+write(ch :Char) :Void
+  (* *)
+{
+  synchronize({
+    assert({ _handle !== nil })
+    _checkReturnCode(_dll.socket_writeChar(_handle, ch))  
+  })
+}
+
+writeBuffer(buffer :String, start :Int, n :Int) :Void
+  (* *)
+{
+  synchronize({
+    assert({ _handle !== nil })
+
+    ; force runtime error on bad argument: 
+    if( n !== 0 then: { buffer[start] buffer[start+n-1]})
+
+    _checkReturnCode(_dll.socket_write( _handle, buffer, start, n))  
+  })
+}
+
+printOn(out :Output) :Void
+  (* *)
+{
+  out << clazz.name << "(" << address << ":" << port
+    << " -> " << remoteAddress << ":" << remotePort <<  ")"
+}
+
+private
+
+_remoteAddress :IPAddress
+
+_remotePort :Int
+
+_connect(address :IPAddress, port :Int) :Void
+  (* *)
+{
+  synchronize({
+    _remoteAddress := address
+    _remotePort := port
+    _checkReturnCode(_dll.socket_connect(_handle, address.bytes, address.bytes.size, port))
+    _initAddress
+    _initPort
+  })
+}
+
+_open :Self
+  (* *)
+{
+  if( _handle == nil then: {
+     _handle := _checkReturnCode(_dll.socket_newStreamSocket())
+  })
+  super._open
+}
+
+_reopen :Void
+  (* *)
+{
+  _handle := nil ; will cause ccall error on next read/write access 
+  close  ; tell ResourceManager about it 
+}
+
+_synchronizeCommit(T <:Void, statement :Fun():T) :T
+  (* no need to synchronize commitments since reopen won't work anyway *)
+{
+  statement[]
+}
+
+_initRemoteAddress :Void
+  (* *)
+{
+  addr ::= IPAddress.new
+  _checkReturnCode(_dll.socket_remoteAddress(_handle, addr.bytes, addr.bytes.size))
+  _remoteAddress := addr
+}
+
+_initRemotePort :Void
+  (* *)
+{
+  _remotePort := _checkReturnCode(_dll.socket_remotePort(_handle))
+}
+
+_ioError :Nil
+  (* workaround for HP-UX crash on 'close' after timeout / connection refusion *)
+{
+  e ::= IOError.new(self, _dll)
+  if( e.os.clazz == HPUX &&  e.error == 238 | e.error == 239  then: {
+    _handle := nil
+    tycoon.stdout.writeln("close in _ioError")
+    close ; tell ResourceManager about it 
+    tycoon.stdout.writeln("done closing in _ioError")
+  })
+  e.raise
+}
+
+}

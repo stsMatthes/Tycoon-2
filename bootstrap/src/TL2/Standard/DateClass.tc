@@ -1,0 +1,180 @@
+class DateClass
+super SimpleConcreteClass(Date)
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+Metaclass of Date
+
+Author:  Andreas Gawecki
+Date:    20-May-1996
+Updates: (Date)    (Name)          (Description)
+         03-Mar-99 Andre Willomat  new tycoonOS subsystem
+*)
+meta MetaClass
+{
+
+now :Date
+  (* answer the current Date *)
+{
+  fromTime(tycoon.clock.time)
+}
+
+
+fromTime(time :Long) :Date
+  (* [* ### disabled as workaround for problem with UnimplementedMethods *]
+     fromTimeWithOffset(time :Long, offset :Int) :Date 
+     create a Date from a time value as returned by tycoon.clock.time,
+     offset seconds east of UCT. 
+
+     fromTimeWithZone(:Long, :TimeZone)
+
+     create a Date from a time value as observed observed by a Tycoon
+     clock (see Tycoon::time)
+   *)
+{
+  instance ::= _new
+  instance._init
+  instance._fromTime(time)
+}
+
+
+secondsPerMinute :Int
+  (* *)
+{
+  60
+}
+
+secondsPerHour :Int
+  (* *)
+{
+  60 * secondsPerMinute
+}
+
+secondsPerDay :Int
+  (* *)
+{
+  24 * secondsPerHour
+}
+
+
+isLeap(year :Int) :Bool
+  (* answer true if year is a leap year (every 4 years,
+     except every 100th isn't, and every 400th is). *)
+{
+  year % 4 == 0 && (year % 100 !== 0 || year % 400 == 0)
+}
+
+
+fromString(s :String, fmt :String) :Date
+  (* Scan the given character string and convert it into a Date
+     object, using the  format  specified  by  fmt.
+
+     fmt is composed of zero or more conversion specifications.  Each
+     conversion specification is composed of a `%' (percent) character followed
+     by one or two conversion characters which specify the replacement
+     required.  One or more white space characters may precede or follow a
+     conversion specification.  There must be white-space or other
+     non-alphanumeric characters between any two conversion specifications.
+
+     The following conversion specifications are supported:
+
+     %%      same as %
+     %a      day of  week,  using  the  locale's  weekday  names;
+             either the abbreviated or full name may be specified
+     %A      same as %a
+     %b      month, using the locale's month  names;  either  the
+             abbreviated or full name may be specified
+     %B      same as %b
+     %c      locale's appropriate date and time representation
+     %C      century number [0,99]; leading zero is permitted but
+             not required
+     %d      day of month [1,31]; leading zero is  permitted  but
+             not required
+     %D      date as %m/%d/%y
+     %e      same as %d
+     %h      same as %b
+     %H      hour (24-hour clock) [0,23]; leading zero is permit-
+             ted but not required
+     %I      hour (12-hour clock) [1,12]; leading zero is permit-
+             ted but not required
+     %j      day number of the year [1,366];  leading  zeros  are
+             permitted but not required
+     %m      month number [1,12]; leading zero is  permitted  but
+             not required
+     %M      minute [0-59]; leading zero  is  permitted  but  not
+             required
+     %n      any white space
+     %p      locale's equivalent of either a.m. or p.m.
+     %r      appropriate time representation in the 12-hour clock
+             format with %p
+     %R      time as %H:%M
+     %S      seconds [0,61]; leading zero is  permitted  but  not
+             required
+     %t      any white space
+     %T      time as %H:%M:%S
+     %U      week number of the year as a decimal number  [0,53],
+             with  Sunday  as  the first day of the week; leading
+             zeros are permitted but not required
+     %w      weekday as a decimal number [0,6], with 0 represent-
+             ing Sunday;
+     %W      week number of the year as a decimal number  [0,53],
+             with  Monday  as  the first day of the week; leading
+             zero is permitted but not required
+     %x      locale's appropriate date representation
+     %X      locale's appropriate time representation
+     %y      year within the century [0,99]; leading zero is per-
+             mitted but not required
+     %Y      year, including the century (for example, 1993)
+     %Z      timezone name or  no  characters  if  no  time  zone
+             information exists
+
+  General Specifications
+     A conversion specification that is an ordinary
+     character is executed by scanning the next character from the buffer.  If
+     the character scanned from the buffer differs from the one comprising the
+     specification, the specification fails, and a DateError is raised.
+
+     A series of specifications composed of %n, %t, white-space characters or
+     any combination is executed by scanning up to the first character that is
+     not white space (which remains unscanned), or until no more characters can
+     be scanned.
+
+     Any other conversion specification is executed by scanning characters
+     until a character matching the next specification is scanned, or until no
+     more characters can be scanned.  These characters, except the one matching
+     the next specifi- cation, are then compared to the locale values
+     associated with the conversion specifier.  If a match is found, the
+     corresponding field values of the resultind Date object are set to values
+     corresponding to the locale information.  If no match is found, 
+     fails and a DateError is raised.
+
+     The month names, weekday names,  era  names,  and  alternate
+     numeric  symbols can consist of any combination of upper and
+     lower case letters.
+
+     ## add locale support
+     *)
+{
+  instance ::= _new
+  instance._init
+  instance._fromString(s, fmt)
+}
+
+}

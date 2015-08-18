@@ -1,0 +1,412 @@
+class Sequence(E <: Object)
+super KeyedContainer(Int, E)
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+Containers with integers as keys
+
+Author:  Andreas Gawecki
+Date:    13-Feb-1996
+Updates: (Date)	  (Name)	(Description)
+*)
+meta AbstractClass
+{
+equalityHash :Int
+  (* answer a hash value reflecting the receivers contents. *)
+{
+  h ::= size
+  for(0 to:size-1 do:fun(i :Int) {
+    h := h * 7 + self[i].equalityHash
+  })
+  h
+}
+
+as(T <: Object,
+   containerClass :AbstractContainerGenerator(E,T)):T
+  (* *)
+{ containerClass.fromSequence(self) }
+
+do(statement :Fun(:E):Void) :Void
+  (* *)
+{
+  for(0 to:size-1 do:fun(i :Int) {statement[self[i]]})
+  }
+
+all(p :Fun(:E):Bool) :Bool
+  (* answer true if p(e) holds for all elements e in the receiver 
+ more efficient re-implementation including nil elements *)
+{
+  i ::= 0
+  n ::= size
+  while({i < n && p[self[i]]} do: {
+    i := i + 1
+  })
+  i >= n
+}
+
+some(p :Fun(:E):Bool) :Bool
+  (* answer true if p(e) holds for some element e in the receiver 
+ more efficient re-implementation including nil elements *)
+{
+  i ::= 0
+  n ::= size
+  while({i < n && !p[self[i]]} do: {
+    i := i + 1
+  })
+  i < n
+}
+
+keysAndElementsDo(statement :Fun(:Int,:E):Void) :Void
+  (* *)
+{
+  for(0 to:size-1 do:fun(i :Int) {statement[i, self[i]]})
+}
+
+includesKey(k :Int) :Bool
+  (* *)
+ensure result = keys.some(fun(k2 :Int){_keyEqual(k,k2)})
+{
+  k.isNotNil &&  (k >= 0) && (k < size) 
+}
+
+keys :Reader(Int)
+  (* *)
+{
+  n ::= size
+  i ::= 0
+  FunReader.new(fun(){
+    if( i < n
+      then: {ii ::= i i := i + 1 ii}
+      else: {nil})})
+}
+
+reader :Reader(E)
+  (* *)
+{
+  subSequenceReader(0, size)
+}
+
+subSequenceReader(start :Int, n :Int) :Reader(E)
+  (* *)
+{
+  i ::= start
+  bound ::= start+n
+  FunReader.new(fun(){
+    if( i < bound
+      then: {e ::= self[i] i := i + 1 e}
+      else: {nil})})
+}
+
+reverseReader :Reader(E)
+  (* *)
+{
+  i ::= size
+  FunReader.new({
+    if( i > 0 then: {
+      i := i - 1 self[i]
+    } else: {
+      nil
+    })
+  })
+}
+
+reverseDo(statement :Fun(:E):Void) :Void
+  (* Perform statement for each e in the receiver,
+     in reverse order. *)
+{
+  forDown(size-1 to:0 do:fun(i :Int) {
+    statement[self[i]]
+  })
+}
+
+locate(e :Object  ) :Int
+  (* , startingAt :Int := 0, before :Int := size 
+ for the indices at which the receiver contains an element
+     'equal' to 'e', answer the lowest index which
+     is greater than or equal to 'startingAt'.
+     answer nil if no such index exists.
+  *)
+ensure result = 
+	   keys.detect(fun(k:Int) {_elementEqual(self[k], e)})
+{
+  _locate(e, 0, size)
+}
+
+locate1(e :Object, startingAt :Int) :Int
+  (*## simulate optional arguments *)
+{
+  _locate(e, startingAt.max(0), size)
+}
+
+locate2(e :Object, startingAt :Int, before :Int) :Int
+  (*## simulate optional arguments *)
+{
+  _locate(e, startingAt.max(0), before.min(size))
+}
+
+locateLast(e :Object  ) :Int
+  (* , startingAt :Int := 0, before :Int := self.size 
+ for the indices at which the receiver contains an element
+     'equal' to 'e', answer the highest index which
+     is less than 'before'.
+     answer nil if no such index exists.
+  *)
+{
+  _locateLast(e, 0, size)
+}
+
+locateLast1(e :Object, before :Int) :Int
+  (*## simulate optional arguments *)
+{
+  _locateLast(e, 0, before.min(self.size))
+}
+
+locateLast2(e :Object, startingAt :Int, before :Int) :Int
+  (*## simulate optional arguments *)
+{
+  _locateLast(e, startingAt.max(0), before.min(size))
+}
+
+locateSome(elements :Container(Object), startingAt :Int ) :Int
+  (*##:= 0
+ for the indices at which the receiver contains an element
+     'equal' to some element included in 'elements', answer the lowest index
+     which is greater than or equal to 'startingAt'.
+     answer nil if no such index exists.
+  *)
+{
+  rangeDetect(startingAt.max(0), size-1, fun(i:Int) {
+    e ::= self[i]
+    elements.some(fun(o :Object) {
+      _elementEqual(e, o)
+    })
+  })
+}
+
+locateSomeBefore(elements :Container(Object), before :Int ) :Int
+  (*##:= self.size
+ for the indices at which the receiver contains an element
+     'equal' to some element included in 'elements', answer the highest index
+     which is less than 'before'.
+     answer nil if no such index exists.
+     ## before will become optional parameter with default value
+  *)
+{
+  rangeDetectLast(0, (before-1).min(size-1), fun(i:Int) {
+     elements.some(fun(o :Object) {
+       _elementEqual(self[i], o)
+     })
+  })
+}
+
+locateSubSequence(sub :Sequence(Object), startingAt :Int ) :Int
+  (*:= 0
+ for the indices at which the receiver contains
+     'seq' as a subsequence, answer the lowest index
+     which is greater than 'startingAt'.
+     answer nil if no such index exists.
+     ## startingAt will become optional parameter with default value
+   *)
+{
+  rangeDetect(startingAt.max(0), size - sub.size, fun(i:Int) {
+    subSequenceEqual(sub.size, i, sub, 0)
+  })
+}
+
+locateLastSubSequence(sub :Sequence(Object), before :Int ) :Int
+  (*:= self.size
+ for the indices at which the receiver contains
+     'sub' as a subsequence, answer the highest index
+     which is less than 'before'.
+     answer nil if no such index exists.
+     ## before will become optional parameter with default value
+   *)
+{
+  rangeDetectLast(0, (before-1).min(size-sub.size), fun(i:Int) {
+    subSequenceEqual(sub.size, i, sub, 0)
+  })
+}
+
+sequenceEqual(s :Sequence(Object)) :Bool
+  (* answer true if all elements of the receiver are equal to
+   the corresponding elements of the given Sequence,
+   else answer false. *)
+{
+  size = s.size && 
+    keys.all(fun(i:Int) {
+      self[i] = s[i]
+    })
+  
+}
+
+subSequenceEqual(n :Int, at :Int, other :Sequence(Object), startingAt :Int) :Bool
+  (* answer true if the n element sequence at..at+n-1 of
+     the receiver is equal to the n element sequence
+     startingAt..startingAt+n-1 of 'other',
+     else answer false
+     require n >= 0
+	   & 0<=at
+	   & at+n <= size
+	   & 0 <= startingAt
+	   & startingAt+n <= other.size
+  *)
+{
+  result ::= true
+  i ::= n
+  while({result && (i := i-1) >= 0} do: {
+    result := self[at+i] = other[startingAt+i]
+    })
+  result     
+}
+
+detectKey(p :Fun(:E):Bool
+	 ) :Int
+  (*, startingAt: startingAt :Int := 0
+	  , before: before :Int := size 
+ for the indices at which the receiver contains elements
+     for which p evaluates to true, answer the lowest index which
+     is greater than or equal to <startingAt> and less than <before>,
+     or nil if no such index exists.. 
+   *)
+{ detectKey2(p, 0, size) }
+
+detectKey1(p :Fun(:E):Bool, startingAt :Int) :Int
+  (*## simulate optional arguments *)
+{ detectKey2(p, startingAt, size) }
+
+detectKey2(p :Fun(:E):Bool, startingAt :Int, before :Int) :Int
+  (*## simulate optional arguments *)
+{
+  rangeDetect(startingAt.max(0), (before-1).min(size-1), fun(i:Int) {
+    p[self[i]]
+  })
+}
+
+detectLastKey(p :Fun(:E):Bool, before :Int ) :Int
+  (*:= self.size
+ answer the highest index which is less than before
+     and at which the receiver contains an element
+     for which p evaluates to true.
+     Answer nil if no such index exists.. 
+     ## before will become an optional parameter
+   *)
+{
+  rangeDetectLast(0, (before-1).min(size-1), fun(i:Int) {
+    p[self[i]]
+  })
+}
+
+detect(p :Fun(:E):Bool
+       ) :E
+  (*, startingAt: startingAt :Int := 0
+        , before: before :Int := size 
+ for the indices at which the receiver contains elements
+     for which p evaluates to true, answer the element at the
+     lowest index which is greater than or equal to <startingAt>
+     and less than <before>,
+     or nil if no such index exists.. 
+   *)
+{ detect2(p, 0, size) }
+
+detect1(p :Fun(:E):Bool, startingAt :Int) :E
+  (*## simulate optional arguments *)
+{
+  detect2(p, startingAt, size)
+}
+
+detect2(p :Fun(:E):Bool, startingAt :Int, before :Int) :E
+  (*## simulate optional arguments *)
+{
+  key ::= detectKey2(p, startingAt, before)
+  if( key.isNotNil
+  then: { self[key] }
+  else: { nil })
+}
+
+detectLast(p :Fun(:E):Bool, before :Int ) :E
+  (*:= self.size
+ for the indices at which the receiver contains elements
+     for which p evaluates to true, answer the element at the
+     highest index which is less than before,
+     answer nil if no such index exists.. 
+     ## before will become an optional parameter
+   *)
+{
+  key ::= detectLastKey(p, before)
+  if( key.isNotNil
+  then: { self[key] }
+  else: { nil })
+}
+
+insertInto(dynSequence :DynSequenceSink(E), at :Int) :Void
+  (* *)
+{
+  dynSequence.insertSequence(self, at)
+}
+
+private
+
+_locate(e :Object, startingAt :Int, before :Int) :Int
+  (* *)
+require 0 <= startingAt
+	& before <= size
+{
+  rangeDetect(startingAt, before-1, fun(i:Int) {
+    self[i] = e		; ### assumes _elementEqual is "=" 
+  })
+}
+
+_locateLast(e :Object, startingAt :Int, before :Int) :Int
+  (* *)
+require 0 <= startingAt
+	& before <= size
+{
+  rangeDetectLast(startingAt, before-1, fun(i:Int) {
+    self[i] = e		; ### assumes _elementEqual is "=" 
+  })
+}
+
+rangeDetect(from :Int, to :Int, p :Fun(:Int):Bool) :Int
+  (* return the lowest i, from <= i <= to,
+     for which p[i] evaluates to true. *)
+require 0 <= from & from <= to & to < size
+	| from > to
+{
+  i :Int := from
+  while({i <= to &&  !p[i] } do: {
+    i := i+1
+  })
+  if( i <= to then: { i } else: {nil})
+}
+
+rangeDetectLast(from :Int, to :Int, p :Fun(:Int):Bool) :Int
+  (* return the highest i, from <= i <= to,
+     for which p[i] evaluates to true. *)
+require 0 <= from & from <= to & to < size
+	| from > to
+{
+  i :Int := to
+  while({i >= from &&  !p[i] } do: {
+    i := i-1
+  })
+  if( i >= from then: { i } else: {nil})
+}
+
+}

@@ -1,0 +1,79 @@
+class ConsGeneratorMixin(E <: Object, Instance <: Object)
+super Containers
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+   withN implemented by cons
+   for Reader and for List
+ *)
+meta AbstractClass
+{
+
+cons(head :E, tail :Instance) :Instance
+  deferred
+
+with0 :Instance
+  deferred
+
+with1(e1 :E) :Instance
+  (* *)
+{cons(e1, with0)}
+
+with2(e1 :E, e2 :E) :Instance
+  (* *)
+{cons(e1, with1(e2))}
+
+with3(e1 :E, e2 :E, e3 :E) :Instance
+  (* *)
+{cons(e1, with2(e2, e3))}
+
+with4(e1 :E, e2 :E, e3 :E, e4 :E) :Instance
+  (* *)
+{cons(e1, with3(e2, e3, e4))}
+
+with5(e1 :E, e2 :E, e3 :E, e4 :E, e5 :E) :Instance
+  (* *)
+{cons(e1, with4(e2, e3, e4, e5))}
+
+with6(e1 :E, e2 :E, e3 :E, e4 :E, e5 :E, e6 :E) :Instance
+  (* *)
+{cons(e1, with5(e2, e3, e4, e5, e6))}
+
+with7(e1 :E, e2 :E, e3 :E, e4 :E, e5 :E, e6 :E, e7 :E) :Instance
+  (* *)
+{cons(e1, with6(e2, e3, e4, e5, e6, e7))}
+
+with8(e1 :E, e2 :E, e3 :E, e4 :E, e5 :E, e6 :E, e7 :E, e8 :E) :Instance
+  (* *)
+{cons(e1, with7(e2, e3, e4, e5, e6, e7, e8))}
+
+with9(e1 :E, e2 :E, e3 :E, e4 :E, e5 :E, e6 :E, e7 :E, e8 :E, e9 :E) :Instance
+  (* *)
+{cons(e1, with8(e2, e3, e4, e5, e6, e7, e8, e9))}
+
+with10(e1 :E, e2 :E, e3 :E, e4 :E, e5 :E, e6 :E, e7 :E, e8 :E, e9 :E, e10 :E) :Instance
+  (* *)
+{cons(e1, with9(e2, e3, e4, e5, e6, e7, e8, e9, e10))}
+
+with11(e1 :E, e2 :E, e3 :E, e4 :E, e5 :E, e6 :E, e7 :E, e8 :E, e9 :E, e10 :E, e11 :E) :Instance
+  (* *)
+{cons(e1, with10(e2, e3, e4, e5, e6, e7, e8, e9, e10, e11))}
+
+}

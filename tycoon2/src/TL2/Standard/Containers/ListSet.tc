@@ -1,0 +1,140 @@
+class ListSet(E <: Object)
+super CountedMixin(E), AbstractSet(E), KeyedContainer(Int, E)
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ A Set implemented with a List.
+   Testing for membership (includes, add etc.) is very slow compared with 
+   proper Sets, but addNew is very fast.
+   In addition, the set maintains positions for all elements.
+ *)
+meta ListSetClass(E)
+{
+clear :Void
+  (* *)
+ensure isEmpty
+{
+  _elementCount := 0
+  _elements := EmptyList.new
+}
+
+remove(e :Object) :E
+  (* *)
+ensure !includes(e)
+{
+  prev :MutableList(E) := nil
+  current ::= _elements
+  while({ !current.isEmpty 
+	  &&  !_elementEqual(current.head, e) } do: {
+     prev := current
+     current := prev.tail
+  })
+  if( !current.isEmpty then: {
+    result ::= current.head
+    if( prev == nil then: {
+      _elements := current.tail
+    } else: {
+      prev.tail := current.tail
+    })
+    _elementCount := _elementCount - 1
+    result
+  } else: {
+    nil
+  })
+}
+
+add(e :E) :Void
+  (* & (old includes(e) => locate(e) = old locate(e)) *)
+ensure includes(e)
+	 & find(e) == e
+      
+{
+  current ::= _elements
+  while({ !current.isEmpty 
+	  &&  !_elementEqual(current.head, e) } do: {
+    current := current.tail
+  })
+  if( current.isEmpty then: {
+    addNew(e)
+  } else: {
+    current.head := e
+  })
+}
+
+addNew(e :E) :Void
+  (* & size = old size + 1 
+ & (old reader).all(fun(e:E){ locate(e) = (old locate(e)) + 1 }) *)
+require !includes(e)
+  ensure includes(e) 
+       & locate(e) = 0
+    
+    
+{
+  _elements := MutableList.cons(e, _elements)
+  _elementCount := _elementCount + 1
+}
+
+reader :Reader(E)
+  (* *)
+{
+  _elements.reader
+}
+
+reverseReader :Reader(E)
+  (* *)
+{
+  Array.fromContainer(self).reverseReader
+}
+
+includesKey(k :Int) :Bool
+  (* methods from KeyedContainer *)
+{ _elements.includesKey(k) }
+
+locate(e :Object) :Int
+  (* *)
+{ _elements.locate(e) }
+
+"[]"(i :Int) :E
+  (* *)
+{ _elements[i] }
+
+keys :Reader(Int)
+  (* *)
+{ _elements.keys }
+
+copy :Self
+  (* *)
+{ c ::= shallowCopy
+  _elements := MutableList.fromReader(_elements.reader)
+  c
+}
+
+private
+
+_elements :MutableList(E)
+
+_init :Void
+  (* *)
+{
+  super._init
+  _elements := EmptyList.new
+  self
+}
+
+}

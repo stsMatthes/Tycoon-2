@@ -1,0 +1,542 @@
+class Httpd
+super Http
+(**)
+meta HttpdClass()
+
+{
+root :HttpRootResource
+
+  (*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ the root of the resource tree *)
+
+errorLog :Output
+
+  (* where to log error (and debug?) output *)
+
+accessLog :HttpdAccessLog
+  (* standard web server access log *)
+
+home :String
+  (* *)
+{ _properties.home }
+
+"home:="(home_ :String) :String
+  (* the home location containing config and log subdirs *)
+{ _properties.home := home_ }
+
+port :Int
+  (* *)
+{ _properties.port }
+
+host :String
+  (* *)
+{ _properties.host }
+
+user :String
+  (* *)
+{ _properties.user }
+
+group :String
+  (* *)
+{ _properties.group }
+
+documentRoot :String
+  (* *)
+{ _properties.documentRoot }
+
+url :URL
+  (* *)
+{ _properties.url }
+
+bind :Void
+  (* *)
+{
+  if( _socket.isNil then: {
+    ipadr ::= if( host.isNil ||  host = "localhost"  then: {
+      IPAddress.localHost
+    } else: {
+      if( host = Httpd.anyHost then: { nil } else: { IPAddress.byName(host) })
+    })
+    _socket := ServerSocket.new(ipadr, port, 20)
+  }) 
+}
+
+serve :Void
+  (* *)
+{
+  _shutdown := false
+
+  errorLog << "Serving requests at " << _socket.address << ":" << _socket.port << '\n'
+  
+  while({!_shutdown} do: {
+    try({
+      conn ::= _socket.accept
+      handle(conn)} else:
+     fun(e :Exception) {
+      try({ errorLog << "Error accepting connection: " << e << '\n' } else:
+        fun(e :Exception) {
+          tycoon.stdout << "Error while logging error: " << e << '\n' })})
+  })
+  
+  errorLog.writeln("Server shutdown")
+}
+
+handle(conn :StreamSocket) :Void
+  (* *)
+{
+  in ::= conn.bufferedInput
+  out ::= conn.bufferedOutput
+  request :HttpRequest := nil
+
+  response :HttpResponse := try({
+  
+    request := parseRequest(in)
+    request.connectedAddress := conn.remoteAddress
+    resource ::= pathLookup(request)
+    resource.process(request)
+    } else:
+    fun(e :Exception) {
+      if( e.clazz == HttpdError
+        then: { e :HttpdError := _typeCast(e) e.response }
+	else: { serverResponse("Exception", HttpResponse.INTERNAL_SERVER_ERROR, e.printString) })
+    })
+  response.setHeaderValue("Server", MimeString, "HoxHttp/0.1")
+
+  if( conn.isOpen then: { ; a commit/restart may have 'closed' the socket 
+    try({
+      response.emit(out)
+      out.flush
+    } else:
+    fun(e :Exception) {
+      try({
+        errorLog << "Ignoring Exception while emitting response: " << e << '\n'
+      } else: fun(e :Exception) {
+            tycoon.stdout << "Error while logging error: " << e << '\n'
+      })
+    })
+
+    if( request.isNotNil then: {
+      try({
+        accessLog.log(conn, request, response)
+      } else: fun(e :Exception) {
+        tycoon.stdout << "Error while logging request: " << e << '\n'
+      })
+    })
+  })
+ conn.close
+ if( tycoon.debug || Resource.allOpenResources.size > 20 then: {
+   try({
+      resources ::=
+        List.fromReader(Resource.allOpenResources.map(
+	  fun(wr :WeakRef(Resource)){wr.value}))
+      n ::= resources.size
+      if( n > 20 then: {
+        errorLog << "### " << n << " open resources:\n"
+	resources.do(
+	  fun(resource :Resource) {
+	    errorLog << " " << resource << "\n"
+	  })
+      })
+   } else: fun(e :Exception) {
+     tycoon.stdout << "Exception while printing open resource list: " << e << '\n'
+   })     
+  })
+}
+
+shutdown(request :HttpRequest) :HttpResponse
+  (* shutdown the server. wait until any running requests except the given one (which
+     announced the shutdown ##prevent deadlock with multiple simultanious shutdowns)
+     are processed.
+     answer a HttpResponse reflecting wheter the server is ready and will actually shut down
+     after answering the given request (status HttpResponse.OK),
+     or some error occured (status ?).
+   *)
+{
+  _shutdown := true
+  ;##no other threads, currently (8-( 
+  serverResponse("Server Shutdown", HttpResponse.OK, "The server is going down.") 
+}
+
+commit :Void
+  (* savepoint the server. wait until any running requests except the given one (which
+     announced the shutdown ##prevent deadlock with multiple simultanious shutdowns)
+     are processed.
+   *)
+{
+  errorLog.writeln("Server Savepoint")
+  
+  ;##introduce moving target resources? 
+;  _socket.isNotNil ? {
+;    _socket.close,
+;    _socket := nil
+;  }, 
+  _closeLogs
+
+  tycoon.commit(
+    ; ifCommitted 
+{
+      _openLogs
+      bind
+    },
+    ; ifRolledBack 
+{
+      _openLogs
+      bind
+    },
+    ; ifRestarted 
+{ _restarted }
+  )
+}
+
+serverResponse(title :String, status :Int, text :String) :HttpResponse
+  (* *)
+{
+  response ::= HttpResponse.new6(1, 1, status,
+    HttpResponse.status(status),
+    MimeHeaderDictionary.new,
+    nil)
+  response.withHtmlGenerator(fun(out :HtmlGenerator) {
+    out.title({out.writeString(title)})
+    out.h1({out.writeString(title)})
+    out.p({out.writeString(text)})
+  })
+  response
+}
+
+error(title :String, status :Int, text :String) :Nil
+  (* *)
+{
+  HttpdError.new(serverResponse(title,status,text)).raise
+}
+
+checkAuthorizationForPath(path :String, authorization :HttpCredentials) :Bool
+  (* return true if authorization authenticates path *)
+{
+  request ::=
+    HttpRequest.new6("GET", path, 1, 1, MimeHeaderDictionary.new, nil)
+  request.authorization := authorization
+  try({
+    resource ::= pathLookup(request)
+    if( resource.isNil then: { false } else: {
+      resource.get(request).statusCode !== HttpResponse.UNAUTHORIZED
+    })
+  } else: fun(:Exception) { false })
+}
+
+configure :Void
+  (* *)
+require home.isNotNil
+{
+  if( _socket.isNotNil then: {
+    _socket.close
+    _socket := nil
+  }) 
+
+  _properties.load
+  
+  _openLogs
+
+  errorLog << "Configuration loaded from \"" << _properties.path << "\"\n"
+
+  _changeOwners
+  _changeGroup
+  _changeUser
+  _changeRoot
+
+  root.documentRoot := documentRoot
+  
+  bind
+}
+
+saveConfiguration :Void
+  (* *)
+{
+  _properties.save
+  errorLog << "Configuration saved to \"" << _properties.path << "\"\n"
+}
+
+private
+
+_properties :HttpdProperties
+
+_socket :ServerSocket
+
+_shutdown :Bool
+  (*##do this better with STML!*)
+
+_init :Void
+  (* *)
+{
+  _shutdown := false
+  _properties := HttpdProperties.new
+  errorLog := HttpdErrorLog.new(tycoon.stdout)
+  accessLog := HttpdAccessLog.new(tycoon.stdout)
+  root := HttpRootResource.new(nil)
+  super._init
+}
+
+parseRequest(in :Input) :HttpRequest
+  (* *)
+{
+  request ::= HttpRequest.new
+  request.parser.parse(in, request)
+  request
+}
+
+pathLookup(request :HttpRequest) :HttpResource
+  (* *)
+{
+  arcs ::= request.url.arcs
+  resource ::= root.pathLookup(request, arcs)
+  if( resource.isNotNil then: { resource } else: { notFound(request) })
+}
+
+notFound( :HttpRequest) :Nil
+  (* *)
+{
+  error("Not Found",
+    HttpResponse.NOT_FOUND,
+    "The requested object does not exist on this server.")
+}
+
+_usage :Void
+  (* *)
+{
+  tycoon.stdout << "Usage: tycoon2 store serverHome\n"
+  _abort(Httpd.EXIT_USAGE)
+}
+
+_restarted :Void
+  (* *)
+{
+  argv ::= tycoon.argv
+  if( argv.size != 2 then: { _usage })
+
+  home := argv[1]
+
+  if( !Directory.new(home).exists then: { _usage })
+
+  _writePID
+
+  try({ configure } else: fun(e :Exception) {
+    errorLog << e << '\n'
+    _abort(Httpd.EXIT_BAD_CONFIGURATION)
+  })
+  
+  errorLog << "Server re-started, serving requests at " << _socket.address << ":" << _socket.port << '\n'
+  tycoon.stdout << "Serving requests ..." << '\n'
+}
+
+_writePID :Void
+  (* *)
+{
+  pidLog ::= File.new(_pidPath)
+  if( pidLog.exists then: {
+    pidLog.openRead
+    pid ::= Int.fromReader(pidLog)
+    pidLog.close
+    try({ tycoon.os.signal(pid, tycoon.os.SIGTESTPID)
+	  tycoon.stdout << "Server already running.\n"
+	  tycoon.stdout.flush
+	  _exit(99)
+	 } else: 
+      fun( :Exception) {
+    })    
+  })
+  pidLog.openWrite
+  pidLog << tycoon.os.pid.printString
+  pidLog.close
+}
+
+_removePID :Void
+  (* *)
+{
+  pidLog ::= File.new(_pidPath)
+  if( pidLog.exists then: {
+    pidLog.remove
+  })
+}
+
+_exit(code :Int) :Void
+  (* *)
+{
+  _removePID
+  tycoon.ansiC.exit(code)
+}
+
+_abort(code :Int) :Void
+  (* *)
+{
+  tycoon.stdout << "Tycoon Web Server aborted.\nSee " << _errorLogPath << " for more information\n"
+  tycoon.stdout.flush
+  _exit(code)
+}
+
+_tryAndAbort(msg :String, statement :Fun():Void) :Void
+  (* *)
+{
+  try({ statement[] } else:
+    fun(e :Exception) {
+      errorLog << msg << ": " <<
+        if( e.clazz == OSError ||  e.clazz == IOError 
+	   then: { _typeCast(e, :OSError).msg }
+	   else: { e.printString })
+      errorLog.nl
+      _abort(Httpd.EXIT_BAD_CONFIGURATION)
+    })
+}
+
+_changeOwners :Void
+  (* *)
+{
+  if( tycoon.os.fs.clazz == PosixFS then: {
+    fs ::= _typeCast(tycoon.os.fs, :PosixFS)
+    uid ::= _userId
+    if( uid.isNil then: { uid := (-1 )})
+    gid ::= _groupId
+    if( gid.isNil then: { gid := (-1 )})
+    _changeOwners1(fs, uid, gid)
+  })
+}
+
+_changeOwners1(fs :PosixFS, uid :Int, gid :Int) :Void
+  (* *)
+{
+  _changeOwner(fs, _errorLogPath, uid, gid)
+  _changeOwner(fs, _accessLogPath, uid, gid)
+  _changeOwner(fs, _pidPath, uid, gid)
+}
+
+_changeOwner(fs :PosixFS, path :String, uid :Int, gid :Int) :Void
+  (* *)
+{
+  if( File.new(path).exists then: {
+    try({
+      fs.chown(path, uid, gid)
+    } else: fun(e :Exception) {
+      try({
+	errorLog.writeln("Ignoring exception while changing owner of "+path+"\n"+
+	  e.printString)
+      } else: fun(:Exception) { tycoon.stdout.writeln("Error while logging error") })
+    })
+  })
+}
+
+_userId :Int
+  (* *)
+{
+  if( user.isNil then: fun() :Int { nil } else: {
+    uid ::= tycoon.os.user2uid(user)
+    if( uid.isNil then: {
+      errorLog << "No such user: \'" << user << "\'\n"
+      _abort(Httpd.EXIT_BAD_CONFIGURATION)
+      0
+    } else: { uid })
+  })
+}
+
+_groupId :Int
+  (* *)
+{
+  if( group.isNil then: fun() :Int { nil } else: {
+    gid ::= tycoon.os.group2gid(group)
+    if( gid.isNil then: {
+      errorLog << "No such group: \'" << group << "\'\n"
+      _abort(Httpd.EXIT_BAD_CONFIGURATION)
+      0
+    } else: { gid })
+  })
+}
+
+_changeUser :Void
+  (* *)
+{
+  uid ::= _userId
+  if( uid.isNotNil then: {
+    _tryAndAbort("Cannot change user id to " + user + "(" + uid.printString + ")",
+      fun(){ tycoon.os.uid := uid
+    })
+  })
+}
+
+_changeGroup :Void
+  (* *)
+{
+  gid ::= _groupId
+  if( gid.isNotNil then: {
+    _tryAndAbort("Cannot change group to " + group + "(" + gid.printString + ")", fun(){
+      tycoon.os.gid := gid
+    })
+  })
+}
+
+_changeRoot :Void
+  (*##implement change root 'feature'? (s. Apache, Netscape servers) *)
+{
+}
+
+_configFilePath :String
+  (* *)
+{
+  tycoon.os.fs.composePath(List.with3(home, "conf", "tyhttpd.conf"))
+}
+
+_errorLogPath :String
+  (* *)
+{
+  tycoon.os.fs.composePath(List.with3(home, "log", "error.log"))
+}
+
+_accessLogPath :String
+  (* *)
+{
+  tycoon.os.fs.composePath(List.with3(home, "log", "access.log"))
+}
+
+_pidPath :String
+  (* *)
+{
+  tycoon.os.fs.composePath(List.with3(home, "log", "tyhttpd.pid"))
+}
+
+_openLogs :Void
+  (* *)
+{
+  errorLog := HttpdErrorLog.new(File.open(
+    _errorLogPath, File.O_CREAT | File.O_WRONLY | File.O_APPEND, 0))
+  accessLog.out := File.open(
+    _accessLogPath, File.O_CREAT | File.O_WRONLY | File.O_APPEND, 0).bufferedOutput
+}
+
+_closeLogs :Void
+  (* *)
+{
+  if( errorLog.isNotNil then: {
+    errorLog.close
+    errorLog := nil
+  })
+  if( accessLog.isNotNil &&  accessLog.out.isNotNil  then: {
+    accessLog.out.close
+    accessLog.out := nil
+  })
+}
+
+}

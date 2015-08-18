@@ -1,0 +1,476 @@
+<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.02 [en] (Win95; I) [Netscape]">
+   <META NAME="Author" CONTENT="Florian Matthes">
+   <TITLE>Tycoon FAQ</TITLE>
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF" LINK="#FF0000" VLINK="#006699" ALINK="#0000FF">
+<BR>&nbsp;
+<H3>
+Tycoon-2 FAQ (Frequently Asked Questions)</H3>
+<B>Stand</B>: 4.11.1997 (FM) 13.01.1998 (Anpassungen JW)
+
+<P>Bitte weitere Fragen und Vorschl&auml;ge f&uuml;r Antworten an wahlen@tu-harburg.de
+schicken!
+<H4>
+Was sind Metaklassen?</H4>
+Jedes Objekt gehoert zu einer Klasse. Auch Klassen sind Objekte.
+<BR>Die Klassen, zu denen sie gehoeren, nennt man Metaklassen.&nbsp; Metaklassen
+<BR>bieten die Methoden, um Instanzen ihrer Klasse zu erzeugen.&nbsp; Im
+<BR>Normalfall (bei ConcreteClass und deren Nachfahren) gibt es ein
+<BR>"new"-Methode, die ein neues Exemplar liefert.&nbsp; Weitere wichtige
+<BR>Metaklassen sind "MetaClass" (die Metaklasse der Metaklassen) und
+<BR>"AbstractClass" (fuer Klassen, die nicht instantiiert werden sollen).
+
+<P>Wenn man nicht explizit mittels "metaclass ..." eine Metaklasse
+<BR>angibt, wird der Namen der Klasse mit einem angehaengten "Class"
+<BR>benutzt.&nbsp; Die Metaklasse zu Reader heisst demnach ReaderClass
+etc.
+
+<P>Fuer einfache Faelle gibt es SimpleConcreteClass, das ein generisches
+<BR>new ohne Argumente zur Verfuegung stellt.
+
+<P>Sollen bei der Erzeugung einige Slots schon mit sinnvollen Werten
+<BR>initialisiert werden, definiert man in der Metaklasse eine new-Methode
+<BR>mit spezifischen Argumenten. Diese new-Methode legt mittels "_new"
+<BR>(geerbt von ConcreteClass) eine Instanz an, weist einige Slots zu und
+<BR>gibt die erzeugte Instanz an den Klienten weiter.
+<H4>
+Wie bringe ich Tycoon-2 dazu, bei Set.new den Typ des zu erzeugenden Sets
+zu inferieren?</H4>
+Die Zauberformel heisst: Set(:Int).new
+
+<P>Nicht etwa: Set(Int).new
+
+<P>Das liegt daran, dass der Name der Klasse eine Bezeichner auf der Wertebene
+<BR>ist. "Set" ist implizit eine Methode der Klasse Object, die einen Typ-
+<BR>Parameter nimmt. Und wie immer bei Methodenaufrufen muss vor Typ-Parametern
+<BR>ein Doppelpunkt stehen.
+
+<P>Wird "Set" auf der Typebene benutzt, z.B.:&nbsp;&nbsp; "intset :Set(Int)",
+dann
+<BR>fungiert es als Typoperator. Dessen Args werden nicht gedoppelpunktet.
+
+<P><B>Wie erlaube ich nur lese-Zugriff auf Slots?</B>
+
+<P>Antwort: Den Slot private unter einem anderen Namen (z.B. mit
+<BR>underscore '_') definieren und eine Zugriffsmethode schreiben:
+
+<P>&nbsp; public methods
+<BR>&nbsp; value :Int
+<BR>&nbsp; { _value }
+
+<P>&nbsp; private
+<BR>&nbsp; _value :Int
+
+<P>Oder alternativ (weniger fein): Den Slot privat deklarieren, und die
+<BR>Zugriffsmethode mit gleichem Namen public.&nbsp; Die Zugriffsmethode
+kann dann
+<BR>mittels super.&lt;slotname> auf den Slot zugreifen:
+
+<P>&nbsp; public methods
+<BR>&nbsp; value :Int
+<BR>&nbsp; { super.value }
+<BR>&nbsp; private
+<BR>&nbsp; value :Int
+
+<P><B>Vorsicht Falle: Bei Methoden wird der Ergebnistyp im Gegensatz zu</B>
+<BR><B>anonymen Funkionen nicht inferiert, sondern als Void angenommen.</B>
+
+<P>Insbesondere in new-Methoden von Klassen vergisst man leicht, den
+<BR>Ergebnistyp hinzuschreiben, was zu Fehlern fuehrt, wenn man dann
+<BR>tatsaechlich so ein Objekt erzeugt und benutzen will.
+
+<P><B>Steckt ein Trick hinter der komischen if-Syntax?</B>
+
+<P>Ja. Die Syntax
+
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &lt;test> ? &lt;ifTrue>
+<BR>bzw.
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &lt;test> ? &lt;ifTrue>
+: &lt;ifFalse>
+
+<P>wird intern uebersetzt ("normalisiert") in einen Methodenaufruf:
+
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &lt;test>."?"(&lt;ifTrue>)
+<BR>bzw.
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &lt;test>."?:"(&lt;ifTrue>,
+&lt;ifFalse>)
+
+<P>&lt;ifTrue> und &lt;ifFalse> sind dabei Funktionen ohne Argumente (aka
+<BR>Bloecke, Fun0s). Je nachdem, ob &lt;test> zur Klasse True oder False
+<BR>gehoert (d.h. true oder false ist), wird einer der beiden aufgerufen.
+
+<P>&lt;ifTrue> und &lt;ifFalse> muessen Bloecke und keine einfachen Ausdruecke
+<BR>sein, da sonst immer beide Zweige ausgewertet wuerden (man simuliert
+<BR>lazy evaluation).
+
+<P>Aehnlich funktioniert die Mechanik hinter "||" und "&amp;&amp;", genaueres
+<BR>verraet der Quellcode (Klassen Bool, True, False).
+
+<P><B>Wie stelle ich "Variante Records" dar?</B>
+
+<P>Auf jeden Fall werden alle Varianten als Subklassen eines gemeinsamen
+<BR>Vorfahren implementiert.&nbsp; Nehmen wir folgenden Modula-Record:
+
+<P>&nbsp; TYPE A =
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; RECORD
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; i: INTEGER;
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CASE whichOne:
+[1..3] OF
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+1: c :CHAR;
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 2: b
+:BOOLEAN;
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 3: s
+:ARRAY OF CHAR;
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; END;
+
+<P>In Klassen saehe das so aus:
+<BR>class A public i :Int;
+<BR>class A1 super A public c :Char;
+<BR>class A2 super A public b :Boolean;
+<BR>class A3 super A public s :String;
+
+<P>Die Frage ist nun, wie man auf die verschiedenen Varianten zugreift,
+<BR>d.h. wie man herausfindet, mir welcher Variante man es konkret zu tun
+<BR>hat.
+
+<P>Es gibt vier verschiedene Ansaetze: den rein objektorientierten,
+<BR>Implementation mittels case-Methode, mittels Visitor, und mittels
+<BR>dynamischem Klassen-Test.
+
+<P>- <U>rein objektorientierter Ansatz</U>
+
+<P>Bei konsequent objektorientierter Implementation wird das gesamte
+<BR>Verhalten ins Objekt gesteckt, d.h. fuer jede moegliche Verwendung
+des
+<BR>Objekts gibt es eine eigene Methode.&nbsp; Diese Methode wird in der
+<BR>Vorfahrenklasse "deferred" oder mit einem default-Verhalten
+<BR>deklariert, und die Subklassen koennen sie dann redefinieren.&nbsp;
+Die
+<BR>Typ-Unterscheidung wird also durch Message-Dispatch ausgefuehrt.
+
+<P>&nbsp; Der Nachteil dieser Methode ist, dass das Verhalten sehr stark
+<BR>verteilt wird: in jeder Klasse steht ein bisschen Code.&nbsp; Es gibt
+<BR>Faelle, in denen der Zusammenhalt des Algorithmus wichtiger ist als
+<BR>der Zusammenhalt des Objekts.
+
+<P>&nbsp; In solchen Faellen kann man eine explizite case-Methode benutzen.
+
+<P>- <U>case</U>
+
+<P>Erstmal eine ganz abstrakte Erklaerung: Die case-Methode bekommt einen
+<BR>Block fuer jede moegliche Variante uebergeben.&nbsp; Es wird dann der
+zum
+<BR>Typ des Empfaengers passende Block aufgerufen.&nbsp; Um auf spezifische
+<BR>Felder der Subklassen zugreifen zu koennen, muss man den genauen Typ
+<BR>kennen; zu diesem Zweck uebergibt der Empfaenger sich selbst mit
+<BR>bekanntem Typ an den jeweiligen Block.
+<BR>&nbsp; An unserem Beispiel:
+
+<P>class A
+<BR>public
+<BR>&nbsp; i :Int
+<BR>methods
+<BR>case(T &lt;: Void,
+<BR>&nbsp;&nbsp;&nbsp;&nbsp; a1 :Fun1(A1,T),
+<BR>&nbsp;&nbsp;&nbsp;&nbsp; a2 :Fun1(A2,T),
+<BR>&nbsp;&nbsp;&nbsp;&nbsp; a3 :Fun1(A3,T)) :T
+<BR>&nbsp; deferred
+<BR>;
+
+<P>class A1
+<BR>super A
+<BR>public
+<BR>&nbsp; c :Char
+<BR>methods
+<BR>case(T &lt;: Void,
+<BR>&nbsp;&nbsp;&nbsp;&nbsp; a1 :Fun1(A1,T),
+<BR>&nbsp;&nbsp;&nbsp;&nbsp; a2 :Fun1(A2,T),
+<BR>&nbsp;&nbsp;&nbsp;&nbsp; a3 :Fun1(A3,T)) :T
+<BR>{
+<BR>&nbsp; a1[self]
+<BR>}
+<BR>;
+
+<P>Und so weiter fuer die anderen Klassen.&nbsp; Benutzt wird das z.B.
+so:
+
+<P>m(a :A)
+<BR>{
+<BR>&nbsp; a.case(
+<BR>&nbsp;&nbsp;&nbsp; fun(a1 :A1) {
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; "Character " + a1.c.printString
+<BR>&nbsp;&nbsp;&nbsp; },
+<BR>&nbsp;&nbsp;&nbsp; fun(a2 :A2) {
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; "Boolean " + (a2.b ? {"Ja"} : {"Nein"})
+<BR>&nbsp;&nbsp;&nbsp; },
+<BR>&nbsp;&nbsp;&nbsp; fun(a3 :A3) {
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; "String " + a3.s
+<BR>&nbsp;&nbsp;&nbsp; }
+<BR>&nbsp; ).printOn(tycoon.stdout)
+<BR>}
+
+<P>Siehe auch Klassen Bool, TWL/Compile/Parse/LALRAction,
+<BR>TWL/Compile/Parse/Symbol, TWL/Compile/TWL/Ide.
+
+<P>Wie man schon sieht, legt man sich mit diesem Muster auf eine feste
+Anzahl
+<BR>Varianten fest, was beim OO-Ansatz nicht der Fall ist.&nbsp; Will man
+nachtraeglich
+<BR>eine Variante hinzufuegen oder aendern, muessen die abstrakte Oberklasse
+und
+<BR>alle Varianten angefasst werden.
+
+<P>- <U>visitor</U>
+
+<P>Wird die Anzahl der zu unterscheidenden Faelle zu gross, greift man
+<BR>zum Visitor.&nbsp; Der Visitor ist ein Objekt, das alle oben einzeln
+<BR>uebergebenen Bloecke als Methoden enthaelt und zusammenfasst.&nbsp;
+Fuer
+<BR>jeden moeglichen "Gastgeber" gibt es also eine eigene Methode, die
+<BR>konventionell durch "visit&lt;Klassenname>" gebildet wird. Beispiel:
+
+<P>class A
+<BR>public
+<BR>&nbsp; i :Int
+<BR>methods
+<BR>visit(T &lt;: Void, visitor: AVisitor(T)) :T
+<BR>&nbsp; deferred
+<BR>;
+
+<P>class A1
+<BR>super A
+<BR>public
+<BR>&nbsp; c :Char
+<BR>methods
+<BR>visit(T &lt;: Void, visitor: AVisitor(T)) :T
+<BR>{
+<BR>&nbsp; visitor.visitA1(self)
+<BR>}
+<BR>;
+
+<P>class AVisitor(T &lt;: Void)
+<BR>public methods
+<BR>visitA1(a1 :A1) :T
+<BR>&nbsp; deferred
+<BR>visitA2(a2 :A2) :T
+<BR>&nbsp; deferred
+<BR>visitA3(a3 :A3) :T
+<BR>&nbsp; deferred
+<BR>;
+
+<P>Um ein konkretes Verhalten zu implementieren, muss man eine Subklasse
+von
+<BR>AVisitor erzeugen, z.B.:
+
+<P>class DummyAVisitor
+<BR>super AVisitor(String)
+<BR>metaclass SimpleConcreteClass(DummyAVisitor)
+<BR>public methods
+<BR>visitA1(a1 :A1) :String
+<BR>{ "Character " + a1.c.printString
+<BR>}
+<BR>visitA2(a2 :A2) :String
+<BR>{ "Boolean " + (a2.b ? {"Ja"} : {"Nein"})
+<BR>}
+<BR>visitA3(a3 :A3) :String
+<BR>{ "String " + a3.s
+<BR>}
+<BR>;
+
+<P>...und benutzt wird das so:
+
+<P>m(a :A)
+<BR>{
+<BR>&nbsp; a.visit(DummyAVisitor.new).printOn(tycoon.stdout)
+<BR>}
+
+<P>Dieses Muster ist u.a. dann vorteilhaft, wenn der Visitor
+<BR>weitergereicht werden soll (z.B. in Baeumen), da ein einzelnes Objekt
+<BR>natuerlich griffiger ist als ein halbes Dutzend Codebloecke.
+<BR>Ausserdem praktisch ist, dass der End-Benutzer (Methode m im obigen
+<BR>Beispiel) nicht wissen muss, welche Varianten es gibt.
+
+<P>- <U>dynamischer Klassen-Test</U>
+
+<P>In Tycoon-2 ist es zur Zeit schon (in wird in Zukunft noch viel mehr)
+<BR>moeglich, reflexiv zur Laufzeit auf Klassen und Metaklassen
+<BR>zuzugreifen.&nbsp; Mittels x."class" erhaelt man die Klasse, zu der
+x
+<BR>gehoert, als Laufzeitobjekt.&nbsp; Dieses Objekt kann man nach seinem
+Namen
+<BR>fragen (x."class".name) oder es mit anderen Objekten vergleichen
+<BR>(x."class" == Set).&nbsp; Folgender Hack waere also denkbar:
+
+<P>m(a :A)
+<BR>{
+<BR>&nbsp; let clazz = a."class",
+<BR>&nbsp; clazz == A1 ? {
+<BR>&nbsp;&nbsp;&nbsp; let a1 = _typeCast(a, :A1),
+<BR>&nbsp;&nbsp;&nbsp; "Character " + a1.c.printString
+<BR>&nbsp; } : {
+<BR>&nbsp;&nbsp;&nbsp; clazz == A2 ? {
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; let a2 = _typeCast(a, :A2),
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; "Boolean " + (a2.b ? {"Ja"} : {"Nein"})
+<BR>&nbsp;&nbsp;&nbsp; } : {
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; clazz == A3 ? {
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; let a3 = _typeCast(a, :A3),
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; "String " + a3.s
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; } : {
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; SomeError.new.raise
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }
+<BR>&nbsp;&nbsp;&nbsp; }
+<BR>&nbsp; }.printOn(tycoon.stdout)
+<BR>}
+
+<P>Dies ist <I>KEIN EMPFOHLENER PROGRAMMIERSTIL</I>.&nbsp; Ein wichtiger
+Nachteil
+<BR>ist, dass fuer Subklassen von z.B. A1 nicht mehr "class == A1" gilt;
+<BR>der Code ist also noch staerker als beim case/visitor-Ansatz vom
+<BR>aktuellen Klassen-Schema abhaengig.
+<H4>
+Was ist ein Typoperator, und wozu brauche ich ihn?</H4>
+Ein Typoperator ist eine Funktion auf der Typebene: Man uebergibt
+<BR>einige Typen als Argument, und das Ergebnis ist ein neuer Typ.&nbsp;
+In Tycoon-2
+<BR>definiert man Typoperatoren, indem man Klassen mit Argumenten
+<BR>definiert:
+
+<P>class Array(E &lt;: Object)
+<BR>(*...*)
+<BR>public methods
+<BR>"[]"(i :Int) :E
+<BR>;
+
+<P>Wenn ich jetzt einen bestimmten Arraytyp meine, muss ich den aktuellen
+<BR>Wert fuer E angeben. Das sieht so aus:
+
+<P>x :Array(Char)
+
+<P>Dabei fungiert "Array" als Tyoperator, dem ich "Char" uebergebe.
+<BR>Daraufhin werden alle Es in Array durch Char ersetzt, und ich erhalte
+<BR>einen Typ, der u.a. die Methode
+
+<P>&nbsp; "[]"(i :Int) :Char
+
+<P>enthaelt.&nbsp; Der Typ Array heisst "offen", weil der Parameter E offen
+<BR>bleibt; Array(Int) heisst dementsprechend "geschlossen".&nbsp; Nur
+fuer
+<BR>geschlossene Typen kann man Werte angeben.
+<H4>
+Unter welchen Annahmen ueber die Signatur von Self wird eine Klasse getypecheckt
+? Muss immer gelten Self &lt;: C ? Ist eine explizite Angabe der Signatur
+von Self ein zusaetzlicher oder ein ausschliesslicher Hinweis ?</H4>
+In einer Klasse "class A(B &lt;: C)" ist Self implizit deklariert als
+<BR>"Self &lt;: A(B)".&nbsp; Gibt man einen anderen bound fuer Self an,
+so muss
+<BR>die Signatur der Klasse dazu passen.&nbsp; Fuer interessante Verwendungen
+<BR>von Self siehe Number und dessen Subklassen.&nbsp; Will man die Signatur
+<BR>einer Klasse irgendwann einfrieren, kann man sie (im obigen Beispiel)
+<BR>als "Self = A(B)" deklarieren.&nbsp; Diese Einschraenkung muessen dann
+auch
+<BR>alle Subklassen erfuellen.
+<H4>
+Was bedeutet eine Fehlermeldung der folgenden Form?</H4>
+"&lt;&lt;
+<BR>Checking class 'NonterminalClass'
+<BR>../TWL/Compile/Parse/NonterminalClass.tc:1.1 Illegal inheritance (inconsistent
+class precedence list):
+<BR>>>"
+
+<P>Die Fehlermeldung bedeutet, dass eine Methode inkompatibel redefiniert
+<BR>wird.&nbsp; Inkompatibel heisst wohl "die Signatur der Methode in der
+<BR>Subklasse ist keine Subsignatur der Signatur in der Superklasse".
+
+<P>Das kann zum Beispiel daran liegen, dass man einen Typoperator statt
+<BR>eines geschlossenen Typs als Argument an eine Vorfahrenklasse
+<BR>uebergeben hat:
+<BR>class A(T &lt;: Void) methods m(x :T) ...;
+<BR>class B(E &lt;: Void) ... ;
+<BR>class C super A(B) ...&nbsp;&nbsp; ### Krach&nbsp;
+<H4>
+Pool-Variablen</H4>
+Ich wuerde gerne Objekte interaktiv testen. Kann ich auf dem Toplevel
+<BR>bindings deklarieren ?
+
+<P>let und Let sind am toplevel leider nicht moeglich.Fuer Typen muss man
+eine eigene Klasse erzeugen,
+<BR>fuer Werte benutzt man define:
+
+<P>&nbsp; define x :T;
+
+<P>Das definiert eine Pool-Variable mit Namen x und Typ T, die mit nil
+<BR>initialisiert wird.&nbsp; Pool-Variablen werden konzeptionell als Slots
+der
+<BR>Klasse Object eingehaengt.&nbsp; Dadurch kann man in jeder Klasse auf
+x wie
+<BR>auf einen eigenen Slot zugreifen: Effektiv ist x eine globale
+<BR>Variable.
+
+<P>&nbsp; Ausdruecke am Toplevel werden im Kontext der Klasse Nil ausgewertet.
+<BR>Da auch Nil Subklasse von Object ist, stehen einem die Pool-Variablen
+<BR>also auch am Toplevel zur Verfuegung.
+
+<P>&nbsp; Ueber den Pool-Mechanismus wird auch der Zugriff auf Klassen
+als
+<BR>Objekte geregelt: Wenn ich am Toplevel "List.new" schreibe, wird das
+<BR>uebersetzt ist "self.List.new".&nbsp; Da es in der Klasse nil keinen
+Slot
+<BR>"List" gibt, wird im Pool nachgeschaut, und siehe da, wir finden die
+<BR>gesuchte Klasse.&nbsp; Mal ausprobieren: <P>
+"tycoon.tl.pool.poolMethods.keys.do(fun(s :Symbol){tycoon.stdout << s, tycoon.stdout.nl});"
+<P>
+Siehe auch Abschnitt "Set.new".
+
+<P>&nbsp; 
+Pool-Variablen haben zwei Nachteile: 1. Man wird sie nicht wieder
+<BR>los (bzw. nur durch den reflektiven Aufruf tycoon.tl.pool.undefinePoolVariable("x")), und
+<BR>2. sie koennen zu Konflikten mit existierenden Methoden oder Slots
+<BR>fuehren.&nbsp; Als Ausweg empfiehlt es sich, fuer adhoc-Variablen
+<BR>moeglichst kryptische Namen zu waehlen - sowas kommt in unseren
+<BR>super-designten Libraries naemlich nicht vor ;-)
+
+<P>&nbsp; Um eine veraltete Klasse X loszuwerden, kann man sie mittels
+<BR>"class X metaclass AbstractClass;" leer ueberschreiben.
+<H4>
+Singletons</H4>
+Es gibt Klassen, von denen man nur eine einzige Instanz im System
+<BR>haben will (ein wichtiges Beispiel ist das Betriebssystem, Klasse
+<BR>Tycoon).&nbsp; Dies erreicht man, indem die new-Methode der Metaklasse
+neu
+<BR>erzeugte Objekte einer Pool-Variable zuweist.&nbsp; Der normale Benutzer
+<BR>greift dann nur noch auf diese Pool-Variable zu, mit der new-Methode
+<BR>hat er nichts mehr zu tun.
+
+<P>&nbsp; Per Konvention heisst die Pool-Variable genauso wie ihre Klasse,
+nur
+<BR>wird sie klein geschrieben (Klasse Tycoon, Variable tycoon).
+<H4>
+Das System "vergisst" einige Elemente meines Arrays! Wo bleiben die?</H4>
+Wenn der Array "nil" enthaelt, und man einen Reader fuer die Elemente
+<BR>des Arrays anfordert, kann der Reader nicht zwischen nil als "end of
+<BR>stream" und nil als Element des Objektstroms unterscheiden.&nbsp; Der
+<BR>Klient des Readers sieht daher nur die Elemente bis zum Auftauchen
+des
+<BR>ersten nil und hoert auf, weil er glaubt, er sei am Ende angelangt.
+<H4>
+Werden pre- und postconditions ueberhaupt zur Laufzeit getestet?</H4>
+Nein.&nbsp; Genausowenig wie invarianten.&nbsp; Es ist aber sinnvoll, sie
+trotzdem
+<BR>hinzuschreiben und so zu tun, als wuerden sie ueberprueft; das ist
+eine
+<BR>Art von sehr exakten Kommentaren.
+<BR>&nbsp;
+<CENTER><TABLE WIDTH="90%" >
+<TR>
+<TD ALIGN=LEFT></TD>
+
+<TD ALIGN=RIGHT><A HREF="/~f.matthes">f.matthes</A>, nov-1997&nbsp;</TD>
+</TR>
+</TABLE></CENTER>
+&nbsp;
+</BODY>
+</HTML>

@@ -1,0 +1,48 @@
+bootstrap/bin/**
+bootstrap/lib/**
+tycoon2/bin/**
+# keep lib/sgml
+tycoon2/lib/*_*/**
+contrib/Jam-2.2/bin.solaris/**
+contrib/Jam-2.2/bin.linuxx86/**
+contrib/Jam-2.2/bin.macosx/**
+
+*~
+.DS_Store
+*.log
+.p4config
+
+# general C stuff:
+
+# Object files
+*.o
+*.ko
+*.obj
+*.elf
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Libraries
+*.lib
+*.a
+*.la
+*.lo
+
+# Shared objects (inc. Windows DLLs)
+*.dll
+*.so
+*.so.*
+*.dylib
+
+# Executables
+*.exe
+*.out
+*.app
+*.i*86
+*.x86_64
+*.hex
+
+# Debug files
+*.dSYM/

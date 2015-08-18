@@ -1,0 +1,47 @@
+class CustomerRule(S<:Void)
+super AgentRule
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ CustomerRule.tc
+
+   Tycoon Business Conversations (TBC) for Tycoon 2
+   ------------------------------------------------
+   Abstract superclass for customer-rules.  In its subclasses the customer-side 
+   of rules to execute a TBC is to be implemented.  For each dialog a rule has 
+   to be registered at the related CustomerRole.  Therfore, a method "handle" 
+   exists, which must be overridden to implement the handling of the dialog.  
+   "handle" is called with the Dialog received by the performer.  Its contents 
+   can be inspected and altered.  'handle' must return a valid request which
+   is passed together with the altered dialog back to the performer.
+   Furthermore, to keep track of the session, "handle" is passed the current 
+   Conversation.
+   
+   20.08.97 hw : created
+   10.11.97 hw : introduced :S
+
+*)
+meta AbstractClass
+{
+
+handle(conv: Conversation(S), dialog :Dialog) :String
+  (* *)
+deferred
+
+}

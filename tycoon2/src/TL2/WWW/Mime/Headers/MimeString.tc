@@ -1,0 +1,20 @@
+class MimeString
+super MimeHeaderValueImpl(String)
+(**)
+meta MimeHeaderValueImplClass(String)
+{
+private
+
+parseValue(s: String): String
+  (* *)
+{
+  s
+}
+
+unparseValue(s: String): String
+  (* *)
+{
+  s
+}
+
+}

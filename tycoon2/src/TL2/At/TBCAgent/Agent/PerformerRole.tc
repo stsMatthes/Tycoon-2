@@ -1,0 +1,178 @@
+class PerformerRole(S<:Void)
+super Role(PerformerRule(S))
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ PerformerRole.tc
+
+   Tycoon Business Conversations (TBC) for Tycoon 2
+   ------------------------------------------------
+   Implementation of the performer. 
+   
+   20.08.97 hw : created
+   05.10.97 hw : parametrized Role, threads
+   29.10.97 hw : own address for threads port
+   10.11.97 hw : introduced :S
+   
+*)
+meta RoleClass(PerformerRule(S), PerformerRole(S))
+{
+
+addRule(dName :String, rName :String, rule @:PerformerRule(S)) :Void
+  (* ======= direct interface for initialization ============================ 
+
+   * Add a rule to this role. ### just a hack? better ideas??
+   *)
+{
+  key:String := dName + "/" + rName
+
+  if( (key = ("/"+_convSpec.initialRequestName) ||  ; rule for initial request?? 
+  key = (_convSpec.breakdownDialogName+"/"+_convSpec.breakdownRequestName)) ; or breakdown 
+  then: {
+    _rules[key]:= rule@
+    trace("set rule "+key)
+  } else: {
+    _convSpec.lookup(dName,                    ; does dialog exist? 
+      fun(dialogSpec :DialogSpec) {
+	if( dialogSpec.replies.includesKey(rName) then: {
+	  _rules[key]:= rule@ 
+	  trace("set rule "+key)
+	} else: {
+	  _error("set rule for unknown request: "+rName)
+	})
+      }, {
+        _error("set rule for unknown dialog: "+dName)
+      })
+  })
+  nil
+}
+
+requestConversation(m :MessageRequestConversation) @:Message
+  (* ======== Message handlers ============================================== 
+ 
+   * Receive a request for conversation from a customer.
+   * -------------------------------------------------------------------------
+   * The decision if the request is accepted is carried out by checking
+   * conformance between the submitted and the own conversation-specification
+   * by a kind of subtype-test.
+   * If accepted, a new thread doing the actual conversation is launched.
+   * Further communication will be done by passing messages directly to a
+   * port the thread creates. Therfore, the MessageAcceptConversation contains
+   * a field 'performer' which the peer has to use.  Note that a specialized
+   * performer instead could implement here broker services by passing the
+   * origial request to other performers and returning one of its replies,
+   * fulfilling some criteria.
+   *)
+{
+  trace("got request for conversation "+m.convSpec.name+" from "+m.from.name)
+
+  reply @::= MessageAcceptConversation.newReply(m)@
+  reply.accepted := m.convSpec.matches(_convSpec)
+  if( reply.accepted then: {
+    peer ::= m.from.name ; shortcut 
+
+    ; port etc. must be ready for use before launching the thread to ensure
+;         it can be accessed by the peer! 
+    ; create port address for this cv, consisting of roles name + unique part 
+    address ::= 
+      ITCAddress.new(_address.name+"/"+Global.instance.uniqueNumber.printString)
+    ; !!! This address will be used by the peer for the remaining conv. 
+    reply.performer := address
+    ; get a port object from the itc-system. so ITC::send can be used 
+    port :MessagePort := AgentITCSystem.instance.newPort(address)
+    _addPort(port) ; register within role 
+
+    Thread.new(fun():Void{
+      ; ==== thread code: uses variables above heavily 
+      ; create own trace object having different name than role. 
+      t ::= Trace.new
+      t.traceInit(address.nameTail)
+      t.trace("performer thread launched for peer "+peer)
+      ; create context 
+      cv:Conversation(S) := Conversation(:S).new(_convSpec)
+      stop ::= false
+      repeat({
+        ;; ### drop the message here.  Is this good?
+	m :MessageCustomerDialogRequest := ref(port.get@).asMessageCustomerDialogRequest
+	if( m.isNotNil then: {
+	  t.trace("got request " + m.requestName +
+		" of dialog " + if( m.dialog.isNil then: {"nil"} else: {m.dialog.name}) +
+		" from " + m.from.name)    
+	  reply @::= MessagePerformerDialog.newReply(m)@
+	  if( cv.isValidRequest(m.requestName) then: {
+	    key ::= if( m.dialog.isNil then:{""}else:{m.dialog.name}) + "/" + m.requestName
+	    _rules.lookup(key, :Void, 
+	      fun(rule :PerformerRule(S)) {
+		if( m.dialog.isNotNil then:
+		  {cv.saveDialog(m.dialog)})
+		t.trace("executing rule "+key)
+		reply.dialog := 
+		  try(:Dialog, {
+		    rule.transition(cv, m.dialog, m.requestName)@
+		  } else: fun(e:Exception){
+		    s ::= "*** rule <"+key+"> failed: "+e.printString
+		    trace(s)
+		    cv.breakdownDialog(s)@
+		  })@
+		t.trace("transition returned dialog "+reply.dialog.name)
+	      }, {
+		; Found no rule for this dialog. So break down. 
+		t.trace("*** undefined rule "+key)
+		reply.dialog := cv.breakdownDialog("performer knows no rule")@
+	      })
+	  } else: {
+	    t.trace("*** got invalid request "+m.requestName)
+	    reply.dialog := cv.breakdownDialog("performer got invalid request")@
+	  })
+	  ; End session if final dialog replied. This applies to breakdown, too. 
+	  if( cv.isFinalDialog(reply.dialog) then: {
+	    t.trace("end session with final dialog "+reply.dialog.name)
+	    stop := true
+	  })
+	  ; Send reply directly to peer (to is obtained by newReply) 
+	  AgentITCSystem.instance.send(reply@)
+	} else: {
+	  ;; m isNil 
+	  stop:=true
+	})
+      }until:{stop})
+      ; end service. 
+      AgentITCSystem.instance.unregisterPort(port)
+      _remPort(port)
+      t.trace("performer thread ended for peer "+peer)
+      ; ==== end thread code. 
+    })
+
+    trace("accepted.")
+  } else: {
+    trace("* not accepted.")
+  })
+  reply@
+}
+
+customerDialogRequest(m :MessageCustomerDialogRequest) @:Message
+  (* 
+   * Shouldnt arrive here, but at the threads port!
+   *)
+{
+  trace("*** ERROR, got "+m.clazz.name)
+  nil@
+}
+
+}

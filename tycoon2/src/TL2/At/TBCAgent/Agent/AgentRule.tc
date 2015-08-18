@@ -1,0 +1,55 @@
+class AgentRule
+super Object
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ AgentRule.tc
+
+   Tycoon Business Conversations (TBC) for Tycoon 2
+   ------------------------------------------------
+   Abstract superclass for customer- and performer-rules.
+
+   In subclasses of rules the application-logic of an agent is to be 
+   implemented, decoupled from the processing of the conversation: the 
+   necessary communication and other housekeeping like creating instances
+   of contents, accounting etc. 
+
+   A (more esoteric) view:
+   Executing a Tycoon Business Conversation by an agent means running a 
+   (distributed) NFA, where the dialogs are equivalent to states and the 
+   requests are to transitions.  The decision which request is sent from 
+   the customer to the performer can be seen as the input of the automat 
+   and is accomplished by the 'customer rule'.  The decision of the request 
+   may be dependent of the contents.  Because of the nondeterminism, a 
+   second rule, the 'performer rule', which selects the next dialog (or 
+   state) is necessary.  This rule decides, based on the received request 
+   and constrained by the possible replies (a set of dialogs) which dialog 
+   (with which contents) to send back to the customer.  Of course, the 
+   decision is influenced by the contents the customer entered or altered 
+   in the last dialog.
+  
+   
+   20.08.97 hw : created
+   
+*)
+meta AbstractClass
+{
+private
+
+}

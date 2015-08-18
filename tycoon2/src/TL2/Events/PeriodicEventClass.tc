@@ -1,0 +1,149 @@
+class PeriodicEventClass
+super ConcreteClass(PeriodicEvent), Events
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ 
+A periodic timed event like a UNIX cron job is defined in terms auf minutes,
+hours, day of month, month and weekday. The same action will be done repeatedly.
+
+Author:  Gerd Bremer
+Date:    09-Oct-1997
+Updates: (Date)	  (Name)	(Description)
+*)
+meta MetaClass
+{
+new(minutes :List(Int), hours :List(Int), dayOfMonth :List(Int),
+    month :List(Int), weekday :List(Int), action :Fun():Void) :PeriodicEvent
+  (* create new periodic event, if a list parameter is nil or empty then
+   the maximum list is assumed; list values must be correct:
+     minutes: 0-59, hours: 0-23, dayOfMonth: 1-29 (or 30 resp. 31
+     depending on selected month) month: 1-12, weekday: 0-6 (0=Sunday),
+   event time matches dayOfMonth and (not or) weekday. So if you want
+   an event to take place every sunday choose 'everyDayOfMonth' as
+   'dayOfMonth' list.
+
+ ------------------------------------------------------------ *)
+{
+    if( action.isNotNil then:
+      {
+	instance ::= _new
+	instance._action := action
+	if( minutes.isNil ||  minutes.isEmpty  then:
+	  { instance._minutes := everyMinute } else:
+	  { instance._minutes := _checkListValues(0, 59, "minutes", minutes) })
+	if( hours.isNil ||  hours.isEmpty  then:
+	  { instance._hours := everyHour } else:
+	  { instance._hours := _checkListValues(0, 23, "hours", hours) })
+	if( dayOfMonth.isNil ||  dayOfMonth.isEmpty  then:
+	  { instance._dayOfMonth := everyDayOfMonth } else:
+	  { instance._dayOfMonth := _checkListValues(1, 31, "days of month", dayOfMonth) })
+	if( month.isNil ||  month.isEmpty  then:
+	  { instance._month := everyMonth } else:
+	  { instance._month := _checkListValues(1, 12, "months", month) })
+	if( weekday.isNil ||  weekday.isEmpty  then:
+	  { instance._weekday := everyWeekday } else:
+	  { instance._weekday := _checkListValues(0, 6, "weekdays", weekday) })
+	instance._init
+	instance
+      } else:
+      { PeriodicEventError.new("PeriodicEventClass::new: Action is nil").raise })
+  }
+
+fromString(s :String, action :Fun():Void) :PeriodicEvent
+  (* return periodic event from cron entry 
+ ------------------------------------------------------------ *)
+require s.isNotNil &
+    action.isNotNil
+
+
+  { PeriodicEventParser.new.read(s, action) }
+
+rangeList(left :Int, right :Int) :List(Int)
+  (* ------------------------------------------------------------ *)
+require left.isNotNil &
+    right.isNotNil
+    
+  { _fillList(left, right) }
+
+everyMinute :List(Int)
+  (* *)
+{ _fillList(0, 59) }
+
+everyHour :List(Int)
+  (* *)
+{ _fillList(0, 23) }
+
+everyDayOfMonth :List(Int)
+  (* *)
+{ _fillList(1, 31) }
+
+everyMonth :List(Int)
+  (* *)
+{ _fillList(1, 12) }
+
+everyWeekday :List(Int)
+  (* *)
+{ _fillList(0, 6) }
+
+private
+
+_checkListValues(min :Int, max :Int, listName :String,
+                 list :List(Int)) :List(Int)
+  (* return sorted list and check if elements in 'list' are in valid
+   range between 'min' and 'max'
+
+ ------------------------------------------------------------ *)
+require min.isNotNil &
+    max.isNotNil &
+      listName.isNotNil &
+        list.isNotNil
+
+	
+  {
+    arr ::= GapArray.fromReader(list.reader)
+    arr.quicksort(fun(i :Int, j :Int){ i.order(j) })
+    if( arr[0] >= min &&  arr[arr.size-1] <= max  then:
+      { List.fromReader(arr.reader) } else:
+      {
+        msg ::= "PeriodicEventClass::_checkListValues: Valid " + listName +
+	          " range (" + min.printString + "-" + max.printString +
+		  ") exceeded " + list.printString
+        PeriodicEventError.new(msg).raise
+      })
+  }
+
+_fillList(start :Int, max :Int) :List(Int)
+  (* ------------------------------------------------------------ *)
+require start.isNotNil &
+    max.isNotNil &
+      start <= max
+  
+  {
+    result ::= List.new 
+    i :Int := start
+    while({ i <= max } do:
+      {
+        result := List.append(:Int, :Int, result, List.with1(i))
+	i := i + 1
+      })
+    result
+  }
+
+}

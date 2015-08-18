@@ -1,0 +1,196 @@
+class X_TL2FunMethodVisitor(T <: Void)
+super X_TL2MethodVisitor(T)
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+*)
+meta SimpleConcreteClass(X_TL2FunMethodVisitor(T))
+{
+visitExternal(m :X_TL2ExternalMethod) :T
+  (* *)
+{ if( _ifExternal.isNil then: { super.visitExternal(m) } else: { _ifExternal[m] }) }
+
+visitDeferred(m :X_TL2DeferredMethod) :T
+  (* *)
+{ if( _ifDeferred.isNil then: { super.visitDeferred(m) } else: { _ifDeferred[m] }) }
+
+visitBuiltin(m :X_TL2BuiltinMethod) :T
+  (* *)
+{ if( _ifBuiltin.isNil then: { super.visitBuiltin(m) } else: { _ifBuiltin[m] }) }
+
+visitCompiled(m :X_TL2CompiledMethod) :T
+  (* *)
+{ if( _ifCompiled.isNil then: { super.visitCompiled(m) } else: { _ifCompiled[m] }) }
+
+visitUnimplemented(m :X_TL2UnimplementedMethod) :T
+  (* *)
+{ if( _ifUnimplemented.isNil then: { super.visitUnimplemented(m) } else: { _ifUnimplemented[m] }) }
+
+visitSlot(m :X_TL2SlotMethod) :T
+  (* *)
+{ if( _ifSlot.isNil then: { super.visitSlot(m) } else: { _ifSlot[m] }) }
+
+visitSlotAccess(m :X_TL2SlotAccessMethod) :T
+  (* *)
+{ if( _ifSlotAccess.isNil then: { super.visitSlotAccess(m) } else: { _ifSlotAccess[m] }) }
+
+visitSlotUpdate(m :X_TL2SlotUpdateMethod) :T
+  (* *)
+{ if( _ifSlotUpdate.isNil then: { super.visitSlotUpdate(m) } else: { _ifSlotUpdate[m] }) }
+
+visitCSlotAccess(m :X_TL2CSlotAccessMethod) :T
+  (* *)
+{ if( _ifCSlotAccess.isNil then: { super.visitCSlotAccess(m) } else: { _ifCSlotAccess[m] }) }
+
+visitCSlotUpdate(m :X_TL2CSlotUpdateMethod) :T
+  (* *)
+{ if( _ifCSlotUpdate.isNil then: { super.visitCSlotUpdate(m) } else: { _ifCSlotUpdate[m] }) }
+
+visitPool(m :X_TL2PoolMethod) :T
+  (* *)
+{ if( _ifPool.isNil then: { super.visitPool(m) } else: { _ifPool[m] }) }
+
+visitPoolAccess(m :X_TL2PoolAccessMethod) :T
+  (* *)
+{ if( _ifPoolAccess.isNil then: { super.visitPoolAccess(m) } else: { _ifPoolAccess[m] }) }
+
+visitPoolUpdate(m :X_TL2PoolUpdateMethod) :T
+  (* *)
+{ if( _ifPoolUpdate.isNil then: { super.visitPoolUpdate(m) } else: { _ifPoolUpdate[m] }) }
+
+visitDefault(m :X_TL2Method) :T
+  (* *)
+{ if( _otherwise.isNil then: { super.visitDefault(m) } else: { _otherwise[m] }) }
+
+ifExternal(action :Fun(:X_TL2ExternalMethod):T) :Self
+  (* *)
+{ _ifExternal := action
+  self
+}
+
+ifDeferred(action :Fun(:X_TL2DeferredMethod):T) :Self
+  (* *)
+{ _ifDeferred := action
+  self
+}
+
+ifBuiltin(action :Fun(:X_TL2BuiltinMethod):T) :Self
+  (* *)
+{ _ifBuiltin := action
+  self
+}
+
+ifCompiled(action :Fun(:X_TL2CompiledMethod):T) :Self
+  (* *)
+{ _ifCompiled := action
+  self
+}
+
+ifUnimplemented(action :Fun(:X_TL2UnimplementedMethod):T) :Self
+  (* *)
+{ _ifUnimplemented := action
+  self
+}
+
+ifSlot(action :Fun(:X_TL2SlotMethod):T) :Self
+  (* *)
+{ _ifSlot := action
+  self
+}
+
+ifSlotAccess(action :Fun(:X_TL2SlotAccessMethod):T) :Self
+  (* warning: the following methods are not yet called back by their resp. hosts
+ *)
+{ _ifSlotAccess := action
+  self
+}
+
+ifSlotUpdate(action :Fun(:X_TL2SlotUpdateMethod):T) :Self
+  (* *)
+{ _ifSlotUpdate := action
+  self
+}
+
+ifCSlotAccess(action :Fun(:X_TL2CSlotAccessMethod):T) :Self
+  (* *)
+{ _ifCSlotAccess := action
+  self
+}
+
+ifCSlotUpdate(action :Fun(:X_TL2CSlotUpdateMethod):T) :Self
+  (* *)
+{ _ifCSlotUpdate := action
+  self
+}
+
+ifPool(action :Fun(:X_TL2PoolMethod):T) :Self
+  (* *)
+{ _ifPool := action
+  self
+}
+
+ifPoolAccess(action :Fun(:X_TL2PoolAccessMethod):T) :Self
+  (* *)
+{ _ifPoolAccess := action
+  self
+}
+
+ifPoolUpdate(action :Fun(:X_TL2PoolUpdateMethod):T) :Self
+  (* *)
+{ _ifPoolUpdate := action
+  self
+}
+
+otherwise(action :Fun(:X_TL2Method):T) :Self
+  (* *)
+{ _otherwise := action
+  self
+}
+
+private
+
+_ifExternal :Fun(:X_TL2ExternalMethod):T
+
+_ifDeferred :Fun(:X_TL2DeferredMethod):T
+
+_ifBuiltin :Fun(:X_TL2BuiltinMethod):T
+
+_ifCompiled :Fun(:X_TL2CompiledMethod):T
+
+_ifUnimplemented :Fun(:X_TL2UnimplementedMethod):T
+
+_ifSlot :Fun(:X_TL2SlotMethod):T
+
+_ifSlotAccess :Fun(:X_TL2SlotAccessMethod):T
+
+_ifSlotUpdate :Fun(:X_TL2SlotUpdateMethod):T
+
+_ifCSlotAccess :Fun(:X_TL2CSlotAccessMethod):T
+
+_ifCSlotUpdate :Fun(:X_TL2CSlotUpdateMethod):T
+
+_ifPool :Fun(:X_TL2PoolMethod):T
+
+_ifPoolAccess :Fun(:X_TL2PoolAccessMethod):T
+
+_ifPoolUpdate :Fun(:X_TL2PoolUpdateMethod):T
+
+_otherwise :Fun(:X_TL2Method):T
+
+}

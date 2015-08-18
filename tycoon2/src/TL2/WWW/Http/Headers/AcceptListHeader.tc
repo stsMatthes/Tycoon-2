@@ -1,0 +1,12 @@
+class AcceptListHeader
+super ListHeader(HttpAccept)
+(**)
+meta MimeHeaderValueImplClass(List(HttpAccept))
+{
+private
+
+elementClass :MimeHeaderValueImplClass(HttpAccept)
+  (* *)
+{ AcceptHeader }
+
+}

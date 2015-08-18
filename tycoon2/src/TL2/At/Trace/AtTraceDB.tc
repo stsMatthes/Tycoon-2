@@ -1,0 +1,202 @@
+class AtTraceDB
+super AtTrace, MutexHolder
+meta SingletonClass(AtTraceDB)
+{
+
+tracedSend(me :Object, receiver :Object, selector :TL2Selector, args :Array(Object)) :Nil
+  require inside
+  ensure inside
+{
+  if(debug then: {
+    lock({
+      tycoon.stdout << debugPrefix << "send a "<<me."class".name<<" -> a "<<receiver."class".name<<"."<<selector<<'\n'
+    })
+  })
+
+  myComponent ::= me
+  while({ myComponent.isNotNil && !isTraced(myComponent) } do: {
+    myComponent := myComponent.superComponent
+  })
+result ::=
+  if( myComponent.isNotNil then: fun():Nil{
+
+    lastOutgoingCell ::= getOutgoingCell
+    if( lastOutgoingCell.value.isNotNil then: {
+      lock({
+        tycoon.stdout << debugPrefix << "### send a "<<receiver."class".name<<"."<<selector<<" from "<<me."class".name<<" with pending outgoing event "<<lastOutgoingCell.value << "\n"
+      })
+    })
+    ;; assert({ lastOutgoingCell.value.isNil })  ; inside
+    lastOutgoingCell.value :=
+       AtTraceSend.new(myComponent, me, receiver, selector, args)  ; set !inside
+
+    result :Nil := receiver.perform(selector, args)
+
+    assert({ lastOutgoingCell.value.isNotNil })  ; !inside
+    if( lastOutgoingCell.value.sendingComponent !== myComponent then: {
+      ;; ### myComponent may be out of date???
+      incoming ::= AtTraceReceive.new(myComponent, me, result)
+      logEntry ::= AtTraceLogEntry.new(Thread.this, lastOutgoingCell.value, incoming)
+      lock({ log.add( logEntry ) })
+    })
+    lastOutgoingCell.value := nil  ;; set inside
+
+    result
+  } else: {
+    receiver.perform(selector, args)
+  })
+if(debug then: {
+  lock({
+    tycoon.stdout << debugPrefix << "recv a "<<me."class".name<<" <- a "<<receiver."class".name<<"."<<selector<<'\n'
+  })
+})
+result
+}
+
+tracedMethod(me :Object,
+	     staticClass :Symbol,
+	     selector :TL2Selector,
+	     args :Array(Object),
+	     T <: Object,
+	     body :Fun()@:T) @:T
+{
+  ;;; not beautiful, but avoids code duplication
+  fetch(tracedMethod(me, staticClass, selector, args, { ref(body[]@) }))@
+}
+
+tracedMethod(me :Object,
+	     staticClass :Symbol,
+	     selector :TL2Selector,
+	     args :Array(Object),
+	     T <: Void,
+	     body :Fun():T) :T
+  (*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ on entry to body, we are inside traced code.
+     on return, we are where we were before. *)
+  ensure inside = old inside
+{
+  if(debug then: {
+    lock({
+      tycoon.stdout << debugPrefix << "entr a "<<me."class".name<<" "<<staticClass<<"::"<<selector<<'\n'
+    })
+  })
+  myComponent ::= me
+  while({ myComponent.isNotNil && !isTraced(myComponent) } do: {
+    myComponent := myComponent.superComponent
+  })
+result::=
+  if( myComponent.isNotNil then: {
+
+    lastOutgoingCell ::= getOutgoingCell
+    if( lastOutgoingCell.value.isNotNil then: {
+
+      if( lastOutgoingCell.value.sendingComponent !== myComponent then: {
+	incoming ::= AtTraceEnter.new(myComponent, me, staticClass, selector, args)
+	logEntry ::= AtTraceLogEntry.new(Thread.this, lastOutgoingCell.value, incoming)
+	lock({ log.add( logEntry ) })
+      })
+      lastOutgoingCell.value := nil  ;; only for assertions
+
+      result :T := body[]
+
+      ;; ### myComponent may be out of date
+      if( lastOutgoingCell.value.isNotNil then: {
+	lock({
+          tycoon.stdout << debugPrefix << "### returning from  "<<staticClass<<"::"<<selector<<" with pending outgoing event "<<lastOutgoingCell.value << "\n"
+	})
+      })
+      ;; assert({ lastOutgoingCell.value.isNil })
+      lastOutgoingCell.value := AtTraceReturn.new(myComponent, me, result)
+      result
+    } else: {
+      ;; lastOutgoing not set
+      ;; => the send originated from traced code, and was not traced
+      ;; => the caller will not expect a return event
+      result ::= body[]
+      assert({ lastOutgoingCell.value.isNil })
+      result
+    })
+  } else: {
+    body[]
+  })
+if(debug then: {
+  lock({
+    tycoon.stdout << debugPrefix << "rtrn a "<<me."class".name<<" "<<staticClass<<"::"<<selector<<'\n'
+  })
+})
+result
+}
+
+isTraced(o :Object) :Bool
+{
+  tracedObjects.includesKey(o)
+}
+
+setTraced(o :Object, name :String) :Void
+{
+  tracedObjects[o] := name
+}
+
+tracedObjects :IdDictionary(Object, String)
+
+log :Queue(AtTraceLogEntry)
+
+inside :Bool
+{
+  getOutgoingCell.value.isNil
+}
+
+private
+
+debug :Bool
+{ false }
+
+debugPrefix :String
+{
+  n ::= Thread.this.name
+  if( n = "Unknown" then: {
+    n := Global.instance.uniqueNumber.printString
+    Thread.this.name := n
+  })
+  n + ": "
+}
+
+getOutgoingCell :Cell(AtTraceOutgoingEvent)
+{
+  _lastOutgoingMutex.withLock({
+    _lastOutgoing.memoize(Thread.this, { Cell.new(AtTraceStart.new) })
+  })
+}
+
+_lastOutgoing :Dictionary(Thread(Void), Cell(AtTraceOutgoingEvent))
+
+_lastOutgoingMutex :Mutex
+
+_init :Void
+{
+  super._init
+  tracedObjects := IdDictionary.new
+  log := Queue.new
+  _lastOutgoing := Dictionary.new
+  _lastOutgoingMutex := Mutex.new
+}
+ 
+}

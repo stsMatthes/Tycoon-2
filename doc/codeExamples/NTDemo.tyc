@@ -1,0 +1,145 @@
+;;
+;; This file is part of the Tycoon-2 system.
+;;
+;; The Tycoon-2 system is free software; you can redistribute it and/or
+;; modify it under the terms of the GNU General Public License
+;; as published by the Free Software Foundation (Version 2).
+;;
+;; The Tycoon-2 system is distributed in the hope that it will be
+;; useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+;; of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+;; See the GNU General Public License for more details.
+;; 
+;; You should have received a copy of the GNU General Public
+;; License along with the Tycoon-2 system; see the file LICENSE.
+;; If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+;; D-21071 Hamburg, Germany. http://www.sts.tu-harburg.de
+;; 
+;; Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+;;
+
+tycoon.tl.loader.registerDirectory("Net")?
+tycoon.tl.loader.update?
+
+;; Process Viewer starten
+
+;; trivial part
+;; ------------
+
+1?
+-1?
+
+'A'?
+'A'.clazz?
+"A".clazz?
+"Otto"?
+
+3 + 4 * 5?
+12 / 3?
+1 / 0?
+
+Char.prettyPrint?
+
+
+;; some calls to the operating system
+;; ----------------------------------
+
+tycoon.os.exec("dir")?
+tycoon.os.exec("notepad.exe")?
+tycoon.os.exec("ls")?
+
+tycoon.os.pid?
+
+tycoon.stdout << "0x"
+              << Char.digit( tycoon.os.pid /16).asLowerCase
+              << Char.digit( tycoon.os.pid %16).asLowerCase
+              << '\n'
+ nil ?
+
+tycoon.os.ppid?
+
+
+tycoon.os.fs.pathSeparator?
+tycoon.os.fs.pathArcSeparator?
+tycoon.os.fs.maxPathLen?
+
+tycoon.os.fs.realPath(".")?
+
+tycoon.os.fs.canonicalizePath("\\\\LANG\\tl2\\.\\\\\\tycoon2")?
+tycoon.os.fs.canonicalizePath("D:\\\\LANG\\tl2\\.\\\\\\tycoon2")?
+tycoon.os.fs.canonicalizePath("D:LANG\\tl2\\.\\\\\\tycoon2")?
+
+tycoon.os.fs.realPath("D:hallo")?
+tycoon.os.fs.realPath("D:\\hallo")?
+
+tycoon.os.fs.isAbsolutePath("D:\\hallo")?
+tycoon.os.fs.isAbsolutePath("D:/hallo")?
+tycoon.os.fs.isAbsolutePath("D:hallo")?
+tycoon.os.fs.isAbsolutePath("/hallo")?
+tycoon.os.fs.isAbsolutePath("\\hallo")?
+
+TestFS.new.do_tests_Win32?
+TestFS.new.do_tests?
+
+;; some calls to the Network system
+;; --------------------------------
+
+IPAddress.byName("")?
+IPAddress.byName("localhost")?
+IPAddress.byName("Camelot")?
+IPAddress.byName("sun01.sts.tu-harburg.de")?
+
+IPAddress.localHostName?
+IPAddress.localHost?
+
+IPAddress.fromString("0.0.0.0")?
+IPAddress.fromString("127.0.0.1")?
+IPAddress.fromString("255.255.255.255")?
+IPAddress.fromString("256.0.0.1")?
+
+
+
+;; Demonstrate error-state of external subsystem objects
+;; -----------------------------------------------------
+;; 1.) 'tl1' and 'tl2' are different instances of the same external subsystem
+;; 2.) 'tl1' produces an error
+;; 3.) error-state is only visible in 'tl1', not in 'tl2'
+;;
+;; ==> We have mapped 'errno' to an instance variable
+
+ tl1 ::= TycoonOS.new.open
+ tl2 ::= TycoonOS.new.open
+ tl1.tos_init
+ tl2.tos_init
+
+ ;; see: we are clean
+ tycoon.stdout << "tl1.errorCode=" << tl1.errorCode
+ tycoon.stdout.nl
+ tycoon.stdout << "tl2.errorCode=" << tl2.errorCode
+ tycoon.stdout.nl
+
+ ;; this call produces an error on Windows NT
+ tl1.process_getppid
+
+ ;; Now tl1 has error state and tl2 not
+ tycoon.stdout << "tl1.errorCode=" << tl1.errorCode
+ tycoon.stdout.nl
+ tycoon.stdout << "tl2.errorCode=" << tl2.errorCode
+ tycoon.stdout.nl
+
+?
+
+
+
+;; some security examples
+;; ----------------------
+
+tycoon.os.user2uid("Hugo")?
+tycoon.os.user2uid("Administrator")?
+
+tycoon.os.uid?
+tycoon.os.gid?
+
+
+DO exit?
+

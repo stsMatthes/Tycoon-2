@@ -1,0 +1,49 @@
+class TestTreiber
+super Buero
+meta SingletonClass(TestTreiber)
+{
+
+setup :Void
+{
+  hauspost := Hauspost.new@
+  hauspost.isTracedComponent := true
+
+  sekretariat := Arbeitsplatz.new@
+  sekretariat.isTracedComponent := true
+  hauspost.registriereArbeitsplatz(sekretariat)
+
+  gerald := Arbeitsplatz.new@
+  gerald.isTracedComponent := true
+  hauspost.registriereArbeitsplatz(gerald)
+
+
+  v1 @::= Vorgang.new(#(gerald, sekretariat, gerald))@
+  vorgang1 := v1
+  sekretariat.postAusgang.ablegen(v1@)
+
+;;  v2 @::= Vorgang.new(#(sekretariat, gerald))@
+;;  vorgang2 := v2
+;;  gerald.postAusgang.ablegen(v2@)
+
+;;  v3 @::= Vorgang.new(#(hugo, franz))@
+;;  vorgang3 := v3
+;;  sekretariat.postAusgang.ablegen(v3@)
+
+}
+
+stop :Void
+{
+  sekretariat.stop
+  gerald.stop
+}
+
+sekretariat @:Arbeitsplatz
+gerald @:Arbeitsplatz
+
+hauspost @: Hauspost
+
+vorgang1 :Vorgang
+vorgang2 :Vorgang
+;; vorgang3 :Vorgang
+
+}

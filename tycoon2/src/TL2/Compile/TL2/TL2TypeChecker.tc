@@ -1,0 +1,497 @@
+class TL2TypeChecker
+super TL2TypeCheckMixin, TL2ClassManagerObserver, TL2PoolObserver, TL2
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ database of proven/being proved subtype relations *)
+meta TL2TypeCheckerClass
+{
+logTypeChecks   :Bool
+
+  (* dump checkType *)
+
+logValueChecks  :Bool
+
+  (* dump checkValue *)
+
+logSubTypeTests :Bool
+
+  (* dump checkSubType *)
+
+abortCheck      :Bool
+
+  (* abort now ! *)
+
+maxDepth        :Int
+  (* recursion limitation *)
+
+checkClass(c :TL2ClassPublic) :Void
+  (* public interface to typechecking *)
+{
+    protect({
+      trace(c.pos, "While checking class "+c.name, {
+	_currentClass := c
+	_depth := 0
+	unificationDB.reset
+
+	tycoon.stdout.writeln("Checking class "+c.name)
+
+	c.domain.do(fun(i :TL2Ide) {
+	  trace(i.pos, "While checking formal type parameter "+i.name, {
+	    i.type.checkType(TL2EmptySubst.instance)
+	  })
+	})
+
+	checkMeta(c)
+	checkSelf(c)
+	checkCPL(c)
+
+	c.methodDictionary.do(fun(m :TL2Method) { checkMethod(m) })
+      })
+      agenda.removeKey(c.name)
+    }, {
+      unificationDB.reset
+      _currentClass := nil
+    })
+  }
+
+check :Void
+  (* *)
+{
+  tycoon.stdout << "Computing checking order for "<<agenda.size<<" classes...\n"
+  plan ::= agenda.as(MutableArray)
+  rating ::= fun(c :TL2ClassPublic) :Int {
+    dependencies.lookup(c.name, fun(dep :Set(String)) { dep.size }, { 0 })
+  }
+  plan.quicksort(fun(a :TL2ClassPublic, b :TL2ClassPublic) {
+    ;; higher rating comes earlier
+    rating[b] - rating[a]
+  })
+
+  c :TL2ClassPublic := nil
+  try({
+    plan.do(fun(cl :TL2ClassPublic) {
+      c := cl  ;; for exception handler
+      checkClass(cl)
+    })
+  } else: fun(e :Exception) {
+    unificationDB.reset
+    tycoon.stdout << e << "\n"
+    tycoon.stdout << c.name << " has not been successfully typechecked.\n"
+    nil
+  })
+}
+
+checkValue(value :TL2Value) :TL2Type
+  (* *)
+{
+    _currentClass := nil
+    unificationDB.reset
+    _depth := 0
+
+    protect({
+      value.check(fun(t :TL2Type, s :TL2Subst) { t.reduce(s, fun(t :TL2Type, :TL2Subst) { t }) })
+    }, {
+      unificationDB.reset
+    })
+  }
+
+ignore(c :TL2ClassPublic) :Void
+  (* *)
+{
+    agenda.removeKey(c.name)
+  }
+
+currentClass :TL2ClassPublic
+  (* *)
+{ _currentClass }
+
+classChanged(:TL2ClassManager, c :TL2ClassPublic) :Void
+  (* observing TL2ClassManager::set *)
+{
+    ; give a type to c''s typeIde 
+    c.typeIde.type := if( c.domain.isEmpty then: fun() :TL2Type {
+      t :TL2Type := TL2ClassInstanceType.new(c)
+    } else: {
+      TL2OperType.new(c.domain, TL2ClassInstanceType.new(c))
+    })
+
+    agenda[c.name] := c
+
+    varianceDB.removeKey(c.typeIde)
+
+    ; ## too slow ? 
+    dependencies.do(fun(s :Set(String)) {
+      s.remove(c.name)
+    })
+
+    ; globalIdeChanged is called when this class is inserted into the pool 
+  }
+
+globalIdeChanged(i :String) :Void
+  (* observing the pool *)
+{
+    if( dependencies.includesKey(i) then: {
+      dependencies[i].do(fun(c :String) {
+        dependingClass ::= classManager.get(c)
+        agenda[c] := dependingClass
+      })
+    })
+
+    if( classManager.classTable.includesKey(i) then: {
+      ; is i a class ??? 
+      classManager.subclasses(classManager.get(i)).do(fun(c :TL2ClassPublic) {
+	; classes inheriting from the changed class
+;	   will have to adjust their cplSubst since it
+;	   contains the superclasses'' formal type params
+;	   which change if the class is recompiled
+;	
+
+	t ::= c.asType
+	if( t.isNotNil then: {
+	  t.visitor.
+	    ifClassInstanceType(fun(cit :TL2ClassInstanceType) { cit.resetCPL }).
+	    ifOperType(fun(ot :TL2OperType) {
+	      ot.visitor.ifClassInstanceType(fun(cit :TL2ClassInstanceType) { cit.resetCPL }).visitType(ot.range)
+	    }).
+	  visitType(t)
+	})
+      })
+    })
+  }
+
+globalIdeReferenced(i :String) :Void
+  (* called in method-lookup / typeIde resolution *)
+{
+    if( currentClass.isNotNil then: {
+      dependencies.lookup(i, fun(dependants :Set(String)) {
+	dependants.add(currentClass.name)
+      }, {
+	dependencies[i] := Set.with1(currentClass.name)
+      })
+    })
+  }
+
+typeChecked(type :TL2Type, subst :TL2Subst, check :Fun():Void) :Void
+  (* called by types *)
+{
+    abort
+  
+    if( logTypeChecks then: {
+      tycoon.stdout << "Checking type :" << type << subst << "\n"
+    })
+    
+    check[]
+  }
+
+valueChecked(T <: Void, v :TL2Value, check :Fun():T) :T
+  (* *)
+{
+    abort
+  
+    if( logValueChecks then: {
+      tycoon.stdout << "Checking value :" << v << "\n"
+    })
+    
+    check[]
+  }
+
+checkSubType(small :TL2Type, big :TL2Type, sSubst :TL2Subst, bSubst :TL2Subst, check :Fun():Void) :Void
+  (* *)
+{
+    abort
+  
+    if( logSubTypeTests then: {
+      tycoon.stdout <<
+        "{ Checking subtype :" <<
+	small <<
+	sSubst <<
+	" <: " <<
+	big <<
+	bSubst <<
+	"\n"
+    })
+    
+    subTypeDB.consult(small, big, sSubst, bSubst, {
+      unistate ::= unificationState
+      try({
+        check[]
+      } else: fun(e :Exception) {
+        retractTo(unistate)
+	if( logSubTypeTests then: { tycoon.stdout << "FAILED }\n" })  
+	e.raise
+      })
+    })
+
+    if( logSubTypeTests then: { tycoon.stdout << "DONE }\n" })
+  }
+
+saveUnivar(u :TL2UnifyType) :Void
+  (* *)
+{
+    unificationDB.saveUnivar(u)
+  }
+
+unificationState :Int
+  (* *)
+{
+    unificationDB.unificationState
+  }
+
+retractTo(unificationState :Int) :Void
+  (* *)
+{
+    unificationDB.retractTo(unificationState)
+  }
+
+finalize :Void
+  (* regain some MB *)
+{
+  subTypeDB := TL2SubTypeDB.new
+  varianceDB := Dictionary.new
+  unificationDB.reset
+  nil
+}
+
+classManager :TL2ClassManager
+  (* *)
+{ _classManager }
+
+pool :TL2Pool
+  (* *)
+{ _pool }
+
+getVariance(operIde :TL2TypeIde) :List(Int)
+{
+  found ::=
+    varianceDB.lookup(operIde, fun(variance:List(Int)) {
+      variance
+    }, {
+      ;; set marker for "in progress" (recursion)
+      varianceDB[operIde] := List.with0
+      try({
+	oper :TL2OperType :=
+	  operIde.type.accept(
+	    TL2FunTypeVisitor.new
+	    .ifOperType(fun(t:TL2OperType){ t })
+	    .otherwise(fun(:TL2Type){ nil }))
+	assert({ oper.isNotNil })
+
+	isSimpleVisitor ::= TL2FunTypeVisitor.new
+	  .ifIdeType(fun(t:TL2IdeType){ t.ide.isGlobal })
+	  .ifVoidType(fun(:TL2VoidType){ true })
+	  .otherwise(fun(:TL2Type){ false })
+	domain ::= oper.domain
+	if( domain.all(fun(param :TL2TypeIde) {
+	      param.case( fun(:TL2ValueIde){ false },
+			  fun(:TL2TypeIde){ false },
+			  fun(st:TL2SubTypeIde){ st.type.accept(isSimpleVisitor) })
+	    }) then: {
+	  emptySubst ::= TL2EmptySubst.instance
+	  unistate ::= typeChecker.unificationState
+	  tycoon.stdout << "{computing variance of operator "<<operIde.name<<"\n"
+	  myApply ::= 
+	    TL2ApplyType.new(TL2IdeType.new(operIde),
+	      domain.map(fun(ide:TL2TypeIde){ TL2IdeType.new(ide) }).as(List))
+	  variance ::=
+	    domain.map(fun(param :TL2TypeIde) {
+	      subIde ::= TL2SubTypeIde.new(param.pos, "sub_"+param.name, TL2IdeType.new(param))
+	      subIdeSubst ::= TL2ConsSubst.new(param, TL2IdeType.new(subIde), emptySubst)
+	      subApply ::= 
+		TL2ApplyType.new(TL2IdeType.new(operIde),
+		  domain.map(fun(ide:TL2TypeIde){ 
+		    TL2IdeType.new(if(ide == param then:{ subIde } else:{ ide })) })
+		  .as(List))
+	      vari ::= 0 
+	      try({
+		subTypeDB.consult(subApply, myApply, emptySubst, emptySubst, {
+		  oper.range.checkSubType(oper.range,subIdeSubst,emptySubst)
+		})
+		vari := 1  ;; co
+	      } else: fun(e :Exception) {
+		if( e."class" != TL2TypeCheckTypeError then: {
+	          retractTo(unistate)
+		  e.raise
+		})
+	      })
+	      retractTo(unistate)
+	      try({
+		subTypeDB.consult(myApply, subApply, emptySubst, emptySubst, {
+		  oper.range.checkSubType(oper.range,emptySubst,subIdeSubst)
+		})
+		vari := vari + 2 ;; contra
+	      } else: fun(e :Exception) {
+		if( e."class" != TL2TypeCheckTypeError then: {
+	          retractTo(unistate)
+		  e.raise
+		})
+	      })
+	      retractTo(unistate)
+	      tycoon.stdout << "{variance of operator "<<operIde.name<<" in "<<param.name<<": "<<#("In","Co","Contra","Ign")[vari]<<"}\n"
+	      vari
+	    }).as(List)
+	  tycoon.stdout << "}\n"
+	  varianceDB[operIde] := variance
+	  variance
+	} else: {
+	  tycoon.stdout << "{operator signature too complicated for variance check: "<<operIde.name<<"}\n"
+	  List.with0
+	})
+      } else: fun(e:Exception) {
+	varianceDB.removeKey(operIde)
+	e.raise
+      })
+    })
+  ;; empty list is marker for "too touchy" or "in progress"
+  if( !found.isEmpty then: { found } else: { nil })
+}
+
+private
+
+subTypeDB     :TL2SubTypeDB
+
+varianceDB    :Dictionary(TL2TypeIde, List(Int))
+
+unificationDB :TL2UnificationDB
+  (* database of currently instantiated unification variables *)
+
+_currentClass    :TL2ClassPublic
+  (* class being currently checked *)
+
+_depth           :Int
+  (* # of entries into the typechecker to avoid infinite recursion *)
+
+dependencies    :Dictionary(String, Set(String))
+  (* maps from global ides to class names *)
+
+agenda :Dictionary(String, TL2ClassPublic)
+  (* classes to be typeChecked *)
+
+_classManager :TL2ClassManager
+
+_pool :TL2Pool
+
+checkMethod(m :TL2Method) :Void
+  (* *)
+{
+    m.methodType.positionalDomain.do(fun(i :TL2Ide) {
+      i.type.checkType(TL2EmptySubst.instance)
+    })
+
+    m.methodType.keywordDomain.do(fun(kwi :TL2KeywordIde) {
+      kwi.ide.type.checkType(TL2EmptySubst.instance)
+      kwi.defaultValue.check(fun(t :TL2Type, s :TL2Subst) {
+	setError(m.pos, "default value does not conform to declared parameter type", {
+	  t.checkSubType(kwi.ide.type, s, TL2EmptySubst.instance)
+	})
+      })
+    })
+
+    m.methodType.range.checkType(TL2EmptySubst.instance)
+
+    ;; ### check pre- and postcondition
+
+    if( m."class" == TL2CompiledMethod then: {
+      m ::= _typeCast(m, :TL2CompiledMethod)
+      unificationDB.reset
+      _depth := 0
+      if( m.body.isNotNil then: {
+	m.body.check(fun(t :TL2Type, s :TL2Subst) {
+	  setError(m.pos, "Method body does not conform to declared return type", {
+	    t.checkSubType(m.methodType.range, s, TL2EmptySubst.instance)
+	  })
+	})
+      })
+    })
+  }
+
+_init :Void
+  (* *)
+{
+    subTypeDB := TL2SubTypeDB.new
+    varianceDB := Dictionary.new
+    unificationDB := TL2UnificationDB.new
+    
+    logTypeChecks   := false
+    logValueChecks  := false
+    logSubTypeTests := false
+    abortCheck      := false
+    maxDepth        := 10000
+
+    _currentClass    := nil
+    dependencies     := Dictionary.new
+    agenda           := Dictionary.new
+
+    classManager.observers.add(self)
+    pool.observers.add(self)
+
+      ; insert all pre-bootstrap classes into the agenda 
+    if( classManager.root.active then: {
+      classManager.classTable.do(fun(c :TL2ClassPublic) {
+        classChanged(classManager, c)
+      })
+    })
+    
+    self
+  }
+
+abort :Void
+  (* *)
+{
+    _depth := _depth + 1
+    if( _depth > maxDepth ||  abortCheck  then:
+      { TL2TypeCheckAbort.new.raise })
+  }
+
+checkMeta(c :TL2ClassPublic) :Void
+  (* *)
+{
+    ; check c''s Metaclass-Declaration
+;       adds dependency to MetaClass
+;    
+    c.metaClassDeclaration.checkType(TL2EmptySubst.instance)
+
+    ; ## check the Instance parameter of ConcreteClass 
+  }
+
+checkSelf(c :TL2ClassPublic) :Void
+  (* *)
+{
+    c.selfTypeSig.type.checkType(TL2EmptySubst.instance)
+  }
+
+checkCPL(c :TL2ClassPublic) :Void
+  (* *)
+{
+    ; depend on superclasses 
+    classManager.superclasses(c).do(fun(c :TL2ClassPublic) { globalIdeReferenced(c.name) })
+    
+    cit ::= c.typeIde.type.visitor.
+      ifClassInstanceType(fun(c :TL2ClassInstanceType) { c }).
+      ifOperType(fun(o :TL2OperType) {
+        o.range.visitor.
+	  ifClassInstanceType(fun(c :TL2ClassInstanceType) { c }).
+	visitType(o.range)
+      }).
+    visitType(c.typeIde.type)
+
+    cit.checkCPL
+  }
+
+}

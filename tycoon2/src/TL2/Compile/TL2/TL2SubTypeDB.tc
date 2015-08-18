@@ -1,0 +1,82 @@
+class TL2SubTypeDB
+super TL2
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+   the typechecker maintains a database of proven or assumed subtype relations.
+   These are necessary 
+   a) for subtyping recursive (e.g. class-)types:
+      A = Object( m_i :S_i )
+      B = Object( n_i :T_i )
+
+      \Gamma, A <: B |- Object ( m_i :S_i ) <: Object( n_i :T_i )    (S_i and T_i may include As and Bs)
+     --------********----------------------------------------------
+               \Gamma |- A <: B
+
+	(modulo Self)
+
+     The marked [***] extension of the enviroment is implemented by storing A <: B into the subtype DB
+
+   b) last but not least for performance reasons
+
+   It seems/is sufficient to only store simple types, i.e. such that can be easily compared for equality,
+   in the DB. These are (currently):
+   - IdeTypes ( t1 = t2 gdw. t1.ide == t2.ide )
+   - ApplyTypes with IdeTypes as oper and args
+
+   As types come with substitutions, these must be incorporated, too, although
+   they''ll be omitted if the tuple (t1, [], t2, []) is already in the cache.
+*)
+meta SimpleConcreteClass(TL2SubTypeDB)
+{
+consult(small :TL2Type, big :TL2Type, smallSubst :TL2Subst, bigSubst :TL2Subst, test :Fun():Void) :Void
+  (* *)
+{
+  relation ::= TL2SubTypeRelation.new(small, big, smallSubst, bigSubst)
+
+  if( relation.shouldBeStored then: {
+    if( !_relations.includes(relation) then: {
+      ; perform test under positive assumption 
+      ;; tycoon.stdout.writeln("DB: Adding "+r.small.printString+r.smallSubst.printString+" <: "+r.big.printString+r.bigSubst.printString)
+      _relations.add(relation)
+      try({
+	test[]
+      } else: fun(e :Exception) {
+	; the subtype test failed, so retract again 
+	_relations.remove(relation)
+	e.raise
+      })
+    })
+  } else: {
+    test[]
+  })
+}
+
+private
+
+_relations :Set(TL2SubTypeRelation)
+
+_init :Void
+{
+  super._init
+  _relations := Set.new
+}
+
+}

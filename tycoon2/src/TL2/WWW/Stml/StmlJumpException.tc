@@ -1,0 +1,6 @@
+class StmlJumpException
+super Stml, Exception
+meta StmlJumpExceptionClass
+{
+  request :HttpRequest
+}

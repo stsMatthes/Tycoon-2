@@ -1,0 +1,82 @@
+class X_TL2ModRecValueVisitor
+super X_TL2ValueVisitor(X_TL2Value)
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ modifying recursive value visitor *)
+meta AbstractClass
+{
+
+visitSend(v :X_TL2SendValue) :X_TL2Value
+  (* *)
+{ v.receiver := v.receiver.accept(self)
+  v.args :=
+    v.args.map(fun(a :X_TL2Argument) {
+      a.argumentCase(
+	fun(v1 :X_TL2Value) :X_TL2Argument { v1.accept(self) },
+	fun(t :X_TL2Type) { t })
+    }).as(List)
+  v
+}
+
+visitAssign(v :X_TL2AssignValue) :X_TL2Value
+  (* *)
+{ v.rhs := v.rhs.accept(self)
+  v }
+
+visitIde(iv :X_TL2IdeValue) :X_TL2Value
+  (* *)
+{ iv }
+
+visitFun(v :X_TL2CompiledFun) :X_TL2Value
+  (* *)
+{ v.body := v.body.accept(self)
+  v }
+
+visitLet(v :X_TL2LetValue) :X_TL2Value
+  (* *)
+{ v.value := v.value.accept(self)
+  v.body := v.body.accept(self)
+  v
+}
+
+visitBlock(v :X_TL2BlockValue) :X_TL2Value
+  (* *)
+{ v.values :=
+    v.values.map(fun(v :X_TL2Value) {
+      v.accept(self)
+    }).as(List)
+  v
+}
+
+visitArray(v :X_TL2ArrayValue) :X_TL2Value
+  (* *)
+{ v.values :=
+    v.values.map(fun(v :X_TL2Value) {
+      v.accept(self)
+    }).as(List)
+  v
+}
+
+visitDefault(v :X_TL2Value) :X_TL2Value
+  (* *)
+{ v
+}
+
+}

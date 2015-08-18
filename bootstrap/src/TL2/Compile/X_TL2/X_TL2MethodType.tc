@@ -1,0 +1,179 @@
+class X_TL2MethodType
+super X_TL2TypeImpl, X_TL2ApplyMixin
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+*)
+meta X_TL2MethodTypeClass
+{
+selector :Symbol
+
+positionalDomain :List(X_TL2Ide)
+
+keywordDomain :List(X_TL2KeywordIde)
+
+range :X_TL2Type
+
+hasKeywords :Bool
+  (* *)
+{ !keywordDomain.isEmpty }
+
+selectorSansAt :Symbol
+{
+  if( isComponent then: {
+    ;; cut off trailing @
+    Symbol.fromSubSequence(selector, 0, selector.size-1)
+  } else: {
+    selector
+  })
+}
+
+isComponent :Bool
+{ selector.size > 0 && selector[selector.size-1] = '@' }
+
+prettyPrint(out:Printer) :Void
+  (* *)
+{
+  ;; out.writeAll("Method ")
+  out.writeString(selectorSansAt)
+  if( !(positionalDomain.isEmpty && keywordDomain.isEmpty) then: {
+    simplePsnlDomain ::= positionalDomain.all(fun(i:X_TL2Ide) {
+			     i.type.isNil || i.type.isLeaf})
+    out.write('(')
+    out.withAbsIndent(out.column, {
+      positionalDomain.doBetween(fun(i :X_TL2Ide) {
+	i.prettyPrint(out)
+      }, {
+	out.write(',')
+	if( simplePsnlDomain then: { out.space } else: { out.nl })
+      })
+      if( !keywordDomain.isEmpty then: {
+	if( !positionalDomain.isEmpty then: { out.nl })
+	keywordDomain.doBetween(fun(kwi :X_TL2KeywordIde) {
+	  kwi.prettyPrint(out)
+	}, {
+	  out.nl
+	})
+      })
+    })
+    out.write(')')
+  })
+  if( isComponent then: {
+    out.writeAll(" @:")
+  } else: {
+    out.writeAll(" :")
+  })
+  if( range.isNil then: {
+    out.writeAll("??")
+  } else: {
+    range.prettyPrint(out)
+  })
+}
+
+children :Reader(X_TL2ProgramObject)
+  (* *)
+{
+    r :Reader(X_TL2ProgramObject) := positionalDomain.map(fun(i:X_TL2Ide):X_TL2ProgramObject{i.type})
+    if( !keywordDomain.isEmpty then: {
+      r := Reader.append(r, keywordDomain.reader)
+    })
+    if( range.isNil
+     then: { r }
+     else: { Reader.cons(range, r) })
+  }
+
+scope(env :X_TL2Scoper) :X_TL2MethodType
+  (* *)
+{
+  env.withScopedSignatures(positionalDomain, {
+    env.withScopedKWSignatures(keywordDomain, {
+      if( range.isNotNil then: { range := range.scope(env) })
+    })
+  })
+  self
+}
+
+accept(T <: Void, visitor :X_TL2TypeVisitor(T)) :T
+  (* visitor support
+     calls the appropriate method in visitor
+  *)
+{
+    visitor.visitMethodType(self)
+  }
+
+checkSubMethodType(big :X_TL2MethodType, subst :X_TL2Subst, bigSubst :X_TL2Subst) :Void
+  (* *)
+{
+    ; Sub X_TL2Method:
+;
+;       |- T <:: S   |- V[T/S] <: W
+;      -----------------------------
+;       |-   (S)->V  <:  (T)->W
+;
+;       Principally, the same algorithm as for Sub Oper. A nice and hopefully sound implication:
+;
+;       (T <: Void, :T) -> T    <:    (:String) -> String
+;    
+
+; fake a send value with the signature of "big" against this method
+
+    domain ::= List(:X_TL2Ide).new
+    bigArgs ::= List(:X_TL2Argument).new
+
+    if( big.hasKeywords then: {
+      big.keywordDomain.reverseDo(fun(bigKwIde :X_TL2KeywordIde) {
+	k ::= bigKwIde.keyword
+	kwIde ::= keywordDomain.detect(fun(kwIde:X_TL2KeywordIde){ kwIde.keyword == k })
+	ide ::=
+	  if( kwIde.isNotNil then: {
+	    kwIde.ide
+	  } else: {
+	    setError2(bigKwIde.pos, pos, "missing keyword parameter: "+k, { raiseError })
+	    X_TL2ValueIde.new(bigKwIde.pos,nil,bigKwIde.ide.component,X_TL2VoidType.instance)
+	  })
+	bigIde ::= bigKwIde.ide
+	bigArg :X_TL2Argument
+	  := if(bigIde.component then: { X_TL2TakeFromValue.new(bigIde) }
+				 else: { X_TL2IdeValue.new(bigIde) })
+	domain := List.cons(ide, domain)
+	bigArgs := List.cons(bigArg, bigArgs)
+      })
+      domain := List.append(positionalDomain, domain)
+    } else: {
+      domain := positionalDomain
+    })
+
+    big.positionalDomain.reverseDo(fun(i :X_TL2Ide) {
+      bigArg :X_TL2Argument :=
+	if( i.isTypeIde
+	then: { a :X_TL2Argument := X_TL2IdeType.new(i.asTypeIde) }
+	else: { vi :X_TL2ValueIde := i.asValueIde
+		a :X_TL2Argument :=
+		  if(vi.component
+		  then: { X_TL2TakeFromValue.new(vi) }
+		  else: { X_TL2IdeValue.new(vi) }) })
+      bigArgs := List.cons(bigArg, bigArgs)
+    })
+
+    applyArgs(pos, domain, bigArgs, subst, bigSubst, range, true, false, true, fun(range :X_TL2Type, subst :X_TL2Subst) {
+      range.checkSubType(big.range, subst, bigSubst)
+    })
+  }
+
+}

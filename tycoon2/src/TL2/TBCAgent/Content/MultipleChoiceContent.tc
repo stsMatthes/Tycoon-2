@@ -1,0 +1,91 @@
+class MultipleChoiceContent
+super ChoiceContent(MultipleChoiceContentSpec)
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ MultipleChoiceContent.tc
+
+   Tycoon Business Conversation (TBC) for Tycoon 2
+   -----------------------------------------------
+   Unlike SingleChoice, here more than one choice can be selected.
+   The selected choices are held in a set which is
+   initialized by new.
+
+   12.08.97 hw : created
+   22.09.97 hw : choices are now held by itself, use Set for selected choices
+   
+*)
+meta MultipleChoiceContentClass
+{
+
+mch()  :MultipleChoiceContent
+  (* Typesafe access. *)
+{
+  self
+}
+
+visit(v :ContentVisitor) :Void
+  (* Visitor hook *)
+{
+  v.multipleChoiceContent(self)
+}
+
+chosen():Array(String)
+  (* Return an array of the selected indices, maybe empty. *)
+{
+   _choices.as(Array)
+}
+
+chosenChoices() :Array(Content)
+  (* Return an array of the selected choices, maybe empty. *)
+{
+  Array.fromContainerWithMap(_choices, self)
+}
+
+choose(newIndex :String) :Void
+  (* add choice with index newIndex to currently selected choices *)
+{
+  if( self.includesKey(newIndex) then: {
+    _choices.add(newIndex)
+  })
+}
+
+dechoose(index :String) :Void
+  (* deselect choice by index, even if its not selected *)
+{
+  _choices.remove(index)
+}
+
+dechooseAll:Void
+  (* Deselect ALL choices. *)
+{
+  _choices.clear
+}
+
+isChosen(index :String) :Bool
+  (* answers wether a choice is selected or not *)
+{
+  _choices.includes(index)
+}
+
+private
+
+_choices :Set(String)
+
+}

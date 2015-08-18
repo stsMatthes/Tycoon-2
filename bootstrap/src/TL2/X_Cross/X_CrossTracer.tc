@@ -1,0 +1,531 @@
+class X_CrossTracer
+super X_Cross
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+  write an X_TL-2-System from a TL-2-system into a dump file
+*)
+meta SimpleConcreteClass(X_CrossTracer)
+{
+formatAction :Dictionary(Char, Fun(:Object):Void)
+
+oids :IdDictionary(Object, Int)
+
+agenda :Queue(X_CroMemBlock)
+
+allocOid :Int
+
+writePtr :Int
+
+  (* for consistency checking *)
+
+out :Output
+
+translateClass :Dictionary(X_TL2Class, Pair(TL2Class, X_CroTspDescriptor))
+
+verbose :Bool
+
+root :TL2Root
+
+currentHistory :List(Object)
+
+trace(root :TL2Root, on :Output) :Void
+  (* *)
+{ ; collectSymbols(root), 
+  ; root.symbolTable := tycoon.tl.root.symbolTable.as(Set), 
+  trace1(root, root, on)
+}
+
+collectSymbols(root :TL2Root) :Void
+  (* *)
+{
+  progress ::=
+    ProgressIndicator.new("Collecting symbols (this will take about 2 minutes)", tycoon.tl.root.symbolTable.size)
+  root.symbolTable := nil
+  visited ::= X_CroIdSet(:Object).new
+  symbols ::= Set(:Symbol).new
+  agenda ::= Queue(:Object).new
+  class2iterateOIDs ::= Dictionary(:Class, :Fun(:Object, :Fun(:Object):Void):Void).new
+  nop ::= fun(:Object, :Fun(:Object):Void) :Void { }
+  iterateArray ::=
+    fun(o :Object, visit :Fun(:Object):Void) :Void {
+      for(0 to:o.__basicSize-1 do:fun(i:Int) {
+        visit[o.__basicAt(i)]
+      }) }
+  addIfNew ::=
+    fun(o :Object) :Void {
+      ; makes collectSymbols factor 1.5 faster than with includes + add 
+      nVisited ::= visited.size
+      visited.add(o)
+      if( visited.size > nVisited
+      then: { agenda.addLast(o) })
+    }
+  symbolClass ::= Symbol
+
+  agenda.add(root)
+  ;
+;   let var i = 1,
+;   let var mark = 2,
+;   
+  while({ !agenda.isEmpty } do: {
+    o ::= agenda.removeFirst
+    c ::= o."class"
+    if( c == symbolClass
+    then: { progress.click
+        symbols.add(_typeCast(o,:Symbol)) }
+    else: { iterateOIDs ::=
+	  class2iterateOIDs.memoize(c, {
+	    name ::=
+	      if( c == TL2Class
+	      then: { "Class" }
+	      else: { if( c == TL2Root
+		  then: { "Root" }
+		  else: { c.name }) })
+	    desc ::=
+	      root.storeDescriptors.lookup(name,
+		fun(d :TL2TspDescriptor){ d },
+		{ TL2ArrayDescriptor.instance })
+	    iterateOIDs ::= nop
+	    layout ::= desc.layout
+	    if( layout = desc.layoutArray
+	    then: { iterateOIDs := iterateArray }
+	    else: { if( layout = desc.layoutStruct
+		then: { format ::= desc.format
+		    oidIndices ::=
+		      format.keys.select(fun(i:Int){format[i]='o'}).as(Array)
+		    if( !oidIndices.isEmpty
+		    then: { iterateOIDs :=
+			  fun(o :Object, visit :Fun(:Object):Void) {
+			    oidIndices.do(fun(i:Int) {
+			      visit[o.__basicAt(i)]
+			    })
+			  } }) }) })
+	    iterateOIDs })
+	iterateOIDs[o, addIfNew] })
+    ; ,
+;    i := i + 1,
+;    i = mark ? {
+;      tycoon.stdout << i << '\t' << agenda.size << '\t' << symbols.size << '\n',
+;      mark := i + agenda.size
+;    } 
+  })
+  root.symbolTable := symbols
+  progress.finish
+  tycoon.stdout << "Found "<<symbols.size<<" symbols.\n"
+  nil
+}
+
+trace1(root :TL2Root, o :Object, on :Output) :Void
+  (* *)
+{
+  oids := IdDictionary.new
+  out := on
+  agenda := Queue.new
+  self.root := root
+  allocOid := 1
+  currentHistory := EmptyList.new
+  rootOID ::= getOID(o)
+  assert({ rootOID = 1*4 })
+  dots ::= 0
+  while({!agenda.isEmpty
+	  ; && { agenda[0].oid < 10000 }
+	} do:{
+    if( (dots % 10) = 0 then: { tycoon.stdout.write('.') })
+    dots := dots + 1
+    if( dots = 100 then: {
+        dots := 0
+	std ::= tycoon.stdout
+        std.tab
+	oid ::= agenda[0].oid
+	oid.print
+	std.tab
+	allocOid.print
+	std.tab
+	(allocOid - oid).print
+        std.nl
+    })
+    handleAgenda
+  })
+  writeUInt(root.nextClassId)
+  writeUInt(allocOid-1)
+}
+
+traceToFile(root :TL2Root, path :String) :Void
+  (* *)
+{
+  f ::= BufferedOutput.new(File.openWrite(path), 8192)
+  try({
+    trace(root, f)
+    "ok!".print
+  } else: fun(e:Exception){
+    f.close e.raise
+  })
+  f.close
+  true
+}
+
+handleAgenda :Void
+  (* *)
+{
+  block ::= agenda.removeFirst
+  currentHistory := block.history
+
+  out ::= tycoon.stdout
+  if( verbose then: {
+    block.oid.printOn(out)   out.tab
+    block.size.printOn(out)   out.tab
+    block.immu.printOn(out)   out.tab
+    block.hasch.printOn(out)   out.tab
+    out.writeString(root.classTable[block.classId].name) out.tab
+  })
+  
+  writePtr := 0
+  writeUInt(block.size)
+  writeUInt(if(block.immu then:{0x40000000}else:{0})+block.hasch."<<"(12) + block.classId)
+
+  try({
+    block.contents[]
+  } else: fun(e:Exception) {
+    tycoon.stdout << "Exception, history: "
+    showHistory
+    tycoon.stdout.nl
+    e.raise
+  })
+
+  assert({ writePtr = 8 + block.size })
+  wrAlign(4)
+  if( verbose then: { out.nl })
+}
+
+showHistory :Void
+  (* *)
+{
+  currentHistory.do(fun(o:Object) {
+    o."class".name.print tycoon.stdout.nl
+  })
+}
+
+dumpOID(o :Object) :Void
+  (* *)
+{ writeUInt(getOID(o))
+}
+
+dumpC(o :Object, format :Char) :Void
+  (* *)
+{ ;wrAlign(_alignment[format]),
+  formatAction[format][o]
+}
+
+dumpAllC_C(str :String) :Void
+  (* short for multiple calls to dumpC with format C *)
+{ writePtr := writePtr + str.size
+  out.writeString(str)
+}
+
+alignment(format :Char) :Int
+  (* *)
+{ _alignment[format] }
+
+sizeof(format :Char) :Int
+  (* *)
+{ _sizeof[format] }
+
+getOID(o :Object) :Int
+  (* *)
+{ if( o.isNil
+  then: { 0 }
+  else: { oids.memoize(o, {
+        if( o."class" = Int
+	 then: { i ::= _typeCast(o, :Int)
+	     i * 4 + 1 }
+	 else: { allocateOid(o) })
+      }) })
+}
+
+allocateOid(o :Object) :Int
+  (* *)
+{
+  classDescr ::=
+    translateClass.memoize(o."class", {
+      ; In the OLD system, Class::name is an uninterned symbol with wrong hash value,
+;         so we have to convert it to String 
+      clazz ::= o."class"
+      name ::=
+        if( clazz == TL2Class
+	then: { "Class" }
+	else: { if( clazz == TL2Root
+	    then: { "Root" }
+	    else: { String.fromSequence(clazz.name) }) })
+      tl2Class ::= root.classes.detect(fun(c:TL2Class){ c.name = name })
+      if( tl2Class.isNil
+      then: { tycoon.stdout.writeln("Unknown class "+name)
+          assert({ false }) })
+      tycoon.stdout.writeString(name+": ") showHistory
+      desc ::=
+        if(clazz == TL2Class then: {
+	  classDescriptor
+	} else: {
+	  currentDesc ::=  ; tl2Class.storeDescriptor  --- no reference to classManager during bootstrap! 
+	    root.storeDescriptors.lookup(name,
+	      fun(d :TL2TspDescriptor){ d },
+	      { TL2ArrayDescriptor.instance })
+	  if(currentDesc.layout == currentDesc.layoutStruct then: {
+	    desc :X_CroTspDescriptor :=
+	      X_CroStructDescriptor.new(currentDesc.format, self)
+	  } else: {
+	    singletonDescriptors[currentDesc.layout]
+	  })
+	})
+      Pair.new(tl2Class, desc)
+    })
+  tl2Class ::= classDescr.first
+  descr ::= classDescr.second
+  descr.allocate(o, tl2Class) 
+}
+
+allocate(o :Object, bytes :Int, classId :Int, immutable :Bool, hash :Int, contents :Fun():Void) :Int
+  (* return an OID for <bytes> bytes of memory with classId <classId>.
+   <contents> will be called later and calls back to dumpOID / dumpC
+   to produce the desired contents. *)
+{
+  block ::= X_CroMemBlock.new
+  block.oid := allocOid
+  block.size := bytes
+  block.immu := immutable
+  block.hasch := hash & 16383
+  block.classId := classId
+  block.contents := contents
+  block.history := List.cons(o, currentHistory)
+
+  allocOid := allocOid + 1
+  agenda.addLast(block)
+  if( verbose then: { block.oid.print tycoon.stdout.write(' ') })
+  block.oid * 4
+}
+
+align(i :Int, n :Int) :Int
+  (* *)
+{ ; round up 
+  (i + n - 1) / n * n
+}
+
+private
+
+_alignment :Dictionary(Char, Int)
+
+_sizeof :Dictionary(Char, Int)
+
+_buffer :MutableString
+
+singletonDescriptors :MutableArray(X_CroTspDescriptor)
+
+classDescriptor :X_CroClassDescriptor
+
+addSingletonDescriptor(d :X_CroTspDescriptor) :Void
+{
+  assert({ singletonDescriptors[d.layout].isNil })
+  singletonDescriptors[d.layout] := d
+}
+
+fmtChar(c :Char, align :Int, sizeof :Int, action :Fun(:Object):Void) :Void
+  (* *)
+{
+  formatAction[c] := action
+  _alignment[c] := align
+  _sizeof[c] := sizeof
+}
+
+_init :Void
+  (* *)
+{ super._init
+
+  verbose := false
+  formatAction := Dictionary.new
+  _alignment := Dictionary.new
+  _sizeof := Dictionary.new
+  _buffer := MutableString.new(8)
+
+  fmtChar('o', 4, 4, fun(o :Object){ dumpOID(o) })
+  fmtChar('c', 1, 1, fun(o :Object){ writeChar(toInt(o)) })
+  fmtChar('C', 1, 1, fun(o :Object){ writeUChar(toInt(o)) })
+  fmtChar('s', 2, 2, fun(o :Object){ writeShort(toInt(o)) })
+  fmtChar('S', 2, 2, fun(o :Object){ writeUShort(toInt(o)) })
+  fmtChar('i', 4, 4, fun(o :Object){ writeInt(toInt(o)) })
+  fmtChar('I', 4, 4, fun(o :Object){ writeUInt(toInt(o)) })
+  fmtChar('d', 8, 8, fun(o :Object){ writeDouble(toDouble(o)) })
+  fmtChar('w', 8, 8, fun(o :Object){ writeLong(toLong(o)) })   ; LongLong ? 
+  ; ### missing: l = Long, L = ULong, f = Float 
+  ; ### alignment for Double and Long is 4 on i386 
+
+  singletonDescriptors := MutableArray.new(9)
+  addSingletonDescriptor(X_CroWeakRefDescriptor.new(self))
+  addSingletonDescriptor(X_CroArrayDescriptor.new(self))
+  addSingletonDescriptor(X_CroByteArrayDescriptor.new(self))
+  addSingletonDescriptor(X_CroShortArrayDescriptor.new(self))
+  addSingletonDescriptor(X_CroIntArrayDescriptor.new(self))
+  addSingletonDescriptor(X_CroLongArrayDescriptor.new(self))
+  addSingletonDescriptor(X_CroThreadDescriptor.new(self))
+  addSingletonDescriptor(X_CroStackDescriptor.new(self))
+
+  classDescriptor := X_CroClassDescriptor.new(self)
+
+  translateClass := Dictionary.new
+  
+  self
+}
+
+toInt(o :Object) :Int
+  (* *)
+{
+  clazz ::= o."class"
+  if( clazz == Int
+  then: { _typeCast(o, :Int) }
+  else: { if( clazz == True ||  clazz == False 
+      then: { b ::= _typeCast(o, :Bool)
+	  if( b then: { 1 } else: { 0 }) }
+      else: { if( clazz == Char
+	  then: { c ::= _typeCast(o, :Char)
+	      c.asInt }
+	  else: { if( clazz == self."Nil"
+	    then: { 0 }
+	    else: { tycoon.stdout.writeString("can\'t convert to binary: ")
+	        o.print
+	        assert({ false })
+	        nil })})})})
+}
+
+toDouble(o :Object) :Real
+  (* *)
+{ if( o."class" == Real
+  then: { _typeCast(o, :Real) }
+  else: { tycoon.stdout.writeString("not a double: ")
+      o.print
+      assert({ false })
+      nil })
+}
+
+toLong(o :Object) :Long
+  (* *)
+{ if( o."class" == Long
+  then: { _typeCast(o, :Long) }
+  else: { tycoon.stdout.writeString("not a Long: ")
+      o.print
+      assert({ false })
+      nil })
+}
+
+wrB(i :Int) :Void
+  (* *)
+{ ;assert 0 <= i & i <= 255,
+  out.write(i.asChar)
+  writePtr := writePtr + 1
+}
+
+wrAlign(n :Int) :Void
+  (* *)
+{ if( n != 1 then: {
+    aligned ::= align(writePtr, n)
+    while({writePtr < aligned} do:{
+      wrB(0)
+    })
+  })
+}
+
+writeChar(i :Int) :Void
+  (* *)
+{
+  assert({ (-128 )<= i & i <= 127 })
+  ; wrAlign(1), 
+  wrB(i & 255)
+}
+
+writeUChar(i :Int) :Void
+  (* *)
+{
+  assert({ 0 <= i & i <= 255 })
+  ; wrAlign(1), 
+  wrB(i)
+}
+
+writeShort(i :Int) :Void
+  (* *)
+{
+  assert({ (-32768 )<= i & i <= 32767 })
+  tycoon.tycoonOS.memory_pokeBufferShort(_buffer, 0, i)
+  wrAlign(2)
+  out.writeBuffer(_buffer, 0, 2)
+  writePtr := writePtr + 2
+}
+
+writeUShort(i :Int) :Void
+  (* *)
+{
+  assert({ 0 <= i & i <= 65535 })
+  tycoon.tycoonOS.memory_pokeBufferShort(_buffer, 0, i)
+  wrAlign(2)
+  out.writeBuffer(_buffer, 0, 2)
+  writePtr := writePtr + 2
+}
+
+writeInt(i :Int) :Void
+  (* *)
+{
+  ; assert ??? 
+  tycoon.tycoonOS.memory_pokeBufferInt(_buffer, 0, i)
+  wrAlign(4)
+  out.writeBuffer(_buffer, 0, 4)
+  writePtr := writePtr + 4
+}
+
+writeUInt(i :Int) :Void
+  (* *)
+{
+  ; assert 0 <= i,  ; & ? 
+;
+; need to allow negative OIDs for negative numbers 
+  ;tycoon.stdout.writeString("["+writePtr.printString+":"+i.printString+"]"),
+
+  if( (writePtr & 3) != 0 then: {   ; ### speed hack 
+    wrAlign(4)
+  })
+  tycoon.tycoonOS.memory_pokeBufferInt(_buffer, 0, i)
+  out.writeBuffer(_buffer, 0, 4)
+  writePtr := writePtr + 4
+}
+
+writeLong(l :Long) :Void
+  (* *)
+{
+  tycoon.tycoonOS.memory_pokeBufferLong(_buffer, 0, l)
+  wrAlign(4)   ; ### 8 on Sparc 
+  out.writeBuffer(_buffer, 0, 8)
+  writePtr := writePtr + 8
+}
+
+writeDouble(d :Real) :Void
+  (* *)
+{ ;tycoon.stdout.writeln("\nA double! "+d.printString),
+  tycoon.tycoonOS.memory_pokeBufferReal(_buffer, 0, d)
+  wrAlign(4)  ; ### 8 on Sparc 
+  out.writeBuffer(_buffer, 0, 8)
+  writePtr := writePtr + 8
+}
+
+}

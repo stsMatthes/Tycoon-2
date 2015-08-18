@@ -1,0 +1,113 @@
+class AbstractContainerGenerator(E <: Object, Instance <: Object)
+super Containers
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ 
+  standard creation protocol for containers
+
+  ## bounding Instance <: Container(E) is not possible,
+  ## otherwise Container::as would not typecheck
+  ##  (subtle point)
+
+  Author: Axel Wienberg
+  Date: 9-5-96
+*)
+meta AbstractClass
+{
+fromReader(reader :Reader(E)) :Instance
+  (* result will contain exactly the elements delivered by reader. *)
+deferred
+
+fromContainer(container :Container(E)) :Instance
+  (* result will contain exactly the elements contained in container
+     at the time of creation. *)
+deferred
+
+fromContainerWithMap(F <:Object, container :Container(F), map :Fun(:F):E) :Instance
+  (* result will contain the elements obtained by applying map to
+     each element of container at the time of creation. *)
+deferred
+
+fromSequence(sequence :Sequence(E)) :Instance
+  (* result will contain exactly the elements contained in sequence
+     at the time of creation. *)
+deferred
+
+fromSubSequence(sequence :Sequence(E), start :Int, n :Int) :Instance
+  (* result will contain the n elements contained in sequence
+     starting at position start at creation time. *) 
+deferred
+
+with0: Instance
+  (* *)
+  ensure size=0
+deferred
+
+with1(e1 :E): Instance
+  (* *)
+  require e1.isNotNil
+  ensure result.size=1 && result.includes(e1)
+deferred
+
+with2(e1 :E, e2 :E): Instance
+  (* *)
+  require e1.isNotNil && e2.isNotNil
+  ensure result.size<=2 && result.includes(e1) && result.includes(e2)
+deferred
+
+with3(e1 :E, e2 :E, e3 :E): Instance
+  (* *)
+  require e1.isNotNil && e2.isNotNil && e3.isNotNil
+  ensure result.size<=3 && result.includes(e1) && result.includes(e2) && result.includes(e3)
+deferred
+
+with4(e1 :E, e2 :E, e3 :E, e4 :E): Instance
+  (* pre- and postconditions similar to with3 *)
+deferred
+
+with5(e1 :E, e2 :E, e3 :E, e4 :E, e5 :E): Instance
+  (* pre- and postconditions similar to with3 *)
+deferred
+
+with6(e1 :E, e2 :E, e3 :E, e4 :E, e5 :E, e6 :E): Instance
+  (* pre- and postconditions similar to with3 *)
+deferred
+
+with7(e1 :E, e2 :E, e3 :E, e4 :E, e5 :E, e6 :E, e7 :E): Instance
+  (* pre- and postconditions similar to with3 *)
+deferred
+
+with8(e1 :E, e2 :E, e3 :E, e4 :E, e5 :E, e6 :E, e7 :E, e8 :E): Instance
+  (* pre- and postconditions similar to with3 *)
+deferred
+
+with9(e1 :E, e2 :E, e3 :E, e4 :E, e5 :E, e6 :E, e7 :E, e8 :E, e9 :E): Instance
+  (* pre- and postconditions similar to with3 *)
+deferred
+
+with10(e1 :E, e2 :E, e3 :E, e4 :E, e5 :E, e6 :E, e7 :E, e8 :E, e9 :E, e10 :E): Instance
+  (* pre- and postconditions similar to with3 *)
+deferred
+
+with11(e1 :E, e2 :E, e3 :E, e4 :E, e5 :E, e6 :E, e7 :E, e8 :E, e9 :E, e10 :E, e11 :E): Instance
+  (* pre- and postconditions similar to with3 *)
+deferred
+
+}

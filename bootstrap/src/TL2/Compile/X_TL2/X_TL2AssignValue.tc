@@ -1,0 +1,118 @@
+class X_TL2AssignValue
+super X_TL2Value
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+*)
+meta X_TL2AssignValueClass
+{
+lhs :X_TL2ValueIde
+
+rhs :X_TL2Value
+
+accept(T <: Void, v :X_TL2ValueVisitor(T)) :T
+  (* *)
+{ v.visitAssign(self) }
+
+prettyPrint(out :Printer) :Void
+  (* *)
+{
+  printIdeOn(lhs, out)
+  out.writeAll(" := ")
+  if( rhs.isSimple then: {
+    rhs.prettyPrint(out)
+  } else: {
+    out.withRelIndent(2, {
+      out.nl
+      rhs.prettyPrint(out)
+    })
+  })
+}
+
+children :Reader(X_TL2ProgramObject)
+  (* *)
+{
+  Reader.with1(rhs) 
+}
+
+scope(env :X_TL2Scoper) :X_TL2Value
+  (* *)
+{
+  rhs := rhs.scope(env)
+  scopedLhs ::= lhs.scope(env)
+  if( scopedLhs.isNil then: {
+    ; lhs ide is not in local scope => implicit self message 
+    selfSig ::= env.selfSig
+    if( selfSig.isNotNil then: fun() :X_TL2Value {
+      X_TL2SendValue.new( pos,
+		      X_TL2IdeValue.new(selfSig),
+		      Symbol.new(lhs.name + ":="),
+		      List.with1(rhs))
+    } else: {
+      env.errorLog.error(pos, "unbound identifier: self (while scoping "+lhs.name+")")
+      rhs
+    })
+  } else: {
+    lhs := scopedLhs
+    if( lhs.component != rhs.isComponent then: {
+      if( lhs.component then: {
+	env.errorLog.error(pos, "assignment of reference to component variable: "+lhs.name)
+      } else: {
+	env.errorLog.error(pos, "assignment of component to reference variable: "+lhs.name)
+      })
+    })
+    if( !lhs.mutable
+    then: { env.errorLog.error(pos, "assignment to immutable variable")
+        env.errorLog.error(lhs.pos, "(definition of "+lhs.name+")")
+	rhs }
+    else: { lhs.setAssigned
+        self })
+  })
+}
+
+genCode(backEnd :X_BEMethodManager) :Void
+  (* *)
+{ rhs.genCode(backEnd)
+  if( rhs.isComponent then: {
+    backEnd.moveTo(lhs)
+  } else: {
+    backEnd.store(lhs)
+  })
+}
+
+private
+
+doCheck(T <: Void, cont :Fun(:X_TL2Type, :X_TL2Subst):T) :T
+  (* *)
+{
+    if( lhs.mutable then: {
+      rhs.check(fun(rhsType :X_TL2Type, rhsSubst :X_TL2Subst) {
+        setError(pos, "Attempt to assign value of wrong type", {
+	  rhsType.checkSubType(lhs.type, rhsSubst, X_TL2EmptySubst.instance)
+	})
+	cont[rhsType, rhsSubst]
+      })
+    } else: {
+      setError(pos, "Attempt to assign to immutable var", {
+        raiseError
+      })
+    })
+  }
+
+}

@@ -1,0 +1,286 @@
+class HttpdLauncherProcessor
+super HtmlFormProcessor(HttpdLauncherApplication)
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+*)
+meta StmlProcessorClass(HttpdLauncherApplication, HttpdLauncherProcessor)
+{
+home :String
+
+pidPath :String
+
+pidFile :File
+
+storePath :String
+
+backupStorePath :String
+
+errorLogPath :String
+
+accessLogPath :String
+
+stdoutLogPath :String
+
+properties :HttpdProperties
+
+errorMsg :String
+
+process :Void
+  (* *)
+{
+  super.process
+}
+
+fs :FS
+  (* *)
+{
+   tycoon.os.fs
+}
+
+serversBase :String
+  (* *)
+{
+   fs.composePath(List.with2(tycoon.hoxHome, "tyhttpd"))
+}
+
+server :String
+  (* *)
+{
+  _server
+}
+
+"server:="(name :String) :String
+  (* *)
+{
+  _server := name
+  home := fs.composePath(List.with2(serversBase, server))
+  pidPath := fs.composePath(List.with4(serversBase, server, "log", "tyhttpd.pid"))
+  pidFile := File.new(pidPath)
+  storePath := fs.extendPath(fs.composePath(List.with3(home, "bin", server)), "ts")
+  backupStorePath := fs.extendPath(storePath, "sav")
+  errorLogPath :=
+    fs.extendPath(fs.composePath(List.with3(home, "log", "error")), "log")
+  accessLogPath :=
+    fs.extendPath(fs.composePath(List.with3(home, "log", "access")), "log")
+  stdoutLogPath :=
+    fs.extendPath(fs.composePath(List.with3(home, "log", "output")), "log")
+  properties := HttpdProperties.new
+  properties.home := home
+  properties.load
+  name
+}
+
+serversDo(statement :Fun():Void) :Void
+  (* *)
+{
+  base ::= Directory.new(serversBase)
+
+  files ::= base.keys
+  files.do(fun(file :String) {
+    if( file.startsWith("tyhttpd-") &&  file != "tyhttpd-launcher" then: {
+      server := file
+      statement[]
+    })
+  })
+  files.close
+}
+
+pid :Int
+  (* *)
+{
+  if( pidFile.exists
+    then: { pidFile.openRead
+        pid ::= Int.fromReader(pidFile)
+	pidFile.close
+	pid }
+    else: { nil })
+}
+
+isRunning :Bool
+  (* *)
+{
+  pid ::= pid
+  pid.isNotNil && 
+    try({ tycoon.os.signal(pid, tycoon.os.SIGTESTPID) true } else: 
+      fun(e :Exception) {
+         false
+    })    
+      
+}
+
+start :Bool
+  (* start the server. answer true on success.
+     on failure, answer false and set errorMsg.
+  *)
+{
+  if( isRunning then: { errorMsg := server + " is already running." false } else: {
+    command ::=
+      "nohup " + storePath + " " + home + " >" + stdoutLogPath + " 2>&1 &"
+    if( !File.new(storePath).exists
+      then: { errorMsg := "Tycoon Object Store \"" + storePath + "\" does not exist."
+	  false }
+      else: { _try({
+	      code ::= tycoon.os.exec(command)
+	      if( code = 0
+		then: { up ::= false
+		    trials ::= 0
+		    while({!up &&  trials < 30 } do: {
+		      sleep(1)
+		      trials := trials+1
+		      up := isRunning
+		    })
+		    if( !up then: { errorMsg := server + " is not coming up." })
+		    up
+		  }
+		else: { errorMsg := _exitCodeMessages.lookup(code,
+		    fun(msg :String) { msg },
+		    fun() { "Return code: " + code.printString })
+		    false
+	      })
+	  })
+	})
+  })
+}
+
+stop :Bool
+  (* gently shutdown the server. answer true on success.
+     on failure, answer false and set errorMsg.
+  *)
+{
+  if( isRunning
+    then: { kill ;##
+}
+    else: { errorMsg := server + " is not running."
+        false})
+}
+
+kill :Bool
+  (* kill the server process. answer true on success.
+     on failure, answer false and set errorMsg.
+  *)
+{
+  if( isRunning
+    then: { _try({
+          tycoon.os.signal(pid, tycoon.os.SIGKILL)
+	  up ::= isRunning
+	  trials ::= 0
+	  while({up &&  trials < 10 } do: {
+	    sleep(1)
+	    trials := trials+1
+	    up := isRunning
+	  })
+	  if( up then: { errorMsg := server + " is not going down." })
+	  !up
+	})
+      }
+    else: { errorMsg := server + " is not running."
+        false})
+}
+
+restart :Bool
+  (* *)
+{
+  stop &&  start 
+}
+
+reinstall :Bool
+  (* (stop running store,) install original store saved as '.bak' and start
+   reinstalled store if store had been running; answer true on success;
+   on failure answer false and set errorMsg;
+*)
+{
+  backup ::= File.new(backupStorePath)
+  if( !backup.exists then: {
+    errorMsg := "Backup for Tycoon Object Store \"" + server + "\" does not exist."
+    false
+  } else: {
+    _try({
+      running ::= isRunning
+      if( running then: { stop } else: { true }) && (
+	backupPath1 ::= tycoon.os.fs.extendPath(storePath, "sav1")
+	File.new(storePath).copyContents(backupPath1)
+	backup.copyContents(storePath)
+	if( running then: {
+	  ; try to start reinstalled store 
+	  if( start then: {
+	    File.new(backupPath1).remove
+	    true
+	  } else: {
+	    File.new(storePath).remove
+	    tycoon.ansiC.rename(backupPath1, storePath)
+	    if( !start then: {
+	      errorMsg :=
+		"Neither backup store nor original store coming up."
+	    } else: {
+	      errorMsg :=
+		"Backup store is not coming up. Restarted original store."
+	    })
+	    false
+	  })
+	} else: {
+	  File.new(backupPath1).remove
+	  true
+	})
+      )
+    })
+  })
+}
+
+private
+
+_exitCodeMessages :Dictionary(Int, String)
+
+_server :String
+
+_init :Self
+  (* *)
+{
+  super._init
+  _exitCodeMessages := Dictionary.new
+  _exitCodeMessages[Httpd.EXIT_USAGE] := "Usage: store serverHome"
+  _exitCodeMessages[Httpd.EXIT_BAD_CONFIGURATION] := "Bad Server Configuration"
+  self
+}
+
+_try(statement :Fun():Bool) :Bool
+  (* execute statement and return its result.
+     if an exception occurs, set errorMsg and answer false.
+   *)
+{
+  try({ statement[] } else:
+    fun(e :Exception) {
+      errorMsg := e.printString
+      false
+  })
+}
+
+sleep(seconds :Int) :Int
+  (* *)
+{
+  tycoon.os.exec("sleep " + seconds.printString)
+}
+
+unparse(str :String) :String
+  (* *)
+{
+  if( str.isNil then: { "" } else: { str })
+}
+
+}

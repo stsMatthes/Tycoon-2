@@ -1,0 +1,89 @@
+class CroStructDescriptor
+super CroTspDescriptor
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+*)
+meta CroStructDescriptorClass
+{
+
+format :String
+  (* descriptor string. -> tsp_Field in tsp.h *)
+
+offsets :Array(Int)
+  (* offset table for fast access *)
+
+packedSize :Int
+
+printOn(out :Output) :Void
+  (* *)
+{  out << "StructDescriptor{"<<format<<"}"
+}
+
+layout :Int
+  (* *)
+{ layoutStruct }
+
+isStruct :Bool
+  (* Should the class manager generate CStruct access methods? *)
+{ true }
+
+objectSize(o :Object) :Int
+  (* size of an instance when output to <tracer> *)
+{
+  if( format.size != o.__basicSize then: {
+    tycoon.stdout << "struct size mismatch: "
+		  << o."class".name << ": found "
+		  << o.__basicSize << " slots, expected "
+		  << format.size << '\n'
+  })
+  assert({ format.size = o.__basicSize })
+
+  packedSize
+}
+
+dumpInstance(o :Object) :Void
+  (* *)
+{
+  try({
+    _tracer ::= _tracer
+    for(0 to:o.__basicSize-1 do:fun(i:Int){
+      _tracer.dumpC(o.__basicAt(i), format[i])
+    })
+  } else: fun(e:Exception){
+    tycoon.stdout.writeln("while dumping "+o.printString)
+    e.raise
+  })
+}
+
+_init :Void
+  (* *)
+{
+  offsets ::= MutableArray.new(format.size)
+  offset ::= 0
+  _tracer ::= _tracer
+  format.keysAndElementsDo(fun(i:Int, format :Char) {
+    offsets[i] := offset := _tracer.align(offset, _tracer.alignment(format))
+    offset := offset + _tracer.sizeof(format)
+  })
+  self.offsets := offsets
+  packedSize := offset
+}
+
+}

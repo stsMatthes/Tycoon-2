@@ -1,0 +1,84 @@
+
+o  Singleton(!)-Factory(?) fuer AtomicContentSpecs bauen.
+
+o  RecordContent, VariantContent: [k]:=e verhindern, wenn k kein gueltiger Name 
+   des zugehoerigen ..Spec ist!  -> []:= ueberschreiben, dazu z.B. ein
+   ContentDictionaryMixin?  Oder gleich noch eine weitere Klasse zwischen 
+   Dictionary und ..Content schieben?
+   Oder reichen die ->FinalizeableDictionaries dafuer?
+  
+o  elegantere Konstruktoren fuer Specs moeglich?
+   - z.B. den #(x, y, z, ... ) Array-Konstruktor lt. RFC?
+   - z.B. Mixin zum Ueberschreiben von "<<" ? Typisierung dabei?
+   - Oder ganz was anderes: TBCSpecs textuell als Files aufschreiben lt. 
+     Grammatik und Parser schreiben, der daraus Specs erzeugt. Vorteile:
+     - Saubere, gut lesbare & verstaendliche Spezifikation
+     - Unabhaengigkeit von den sich evtl. noch aendernden Schnittstelle n
+
+o  Fragen vom 20.05.97
+   - ELLIPSES ?
+   - Delegation
+   - Subkonversationen?
+   - Sichtbarkeit Konversations-Spezifikationen?
+   - Konformitaetstest?
+   - Evolution?
+
+o  Idee: Erweiterte Attribute fuer ContentSpecs, die festlegen, ob Customer 
+   oder Performer die Inhalte schreiben duerfen.
+   zB.  READ, WRITE, READWRITE (nur Performer, nur Customer, beide=default)
+   -> Semantik fuer CompoundSpecs komplizierter
+   -> interessant fuer Visualisierung -> enterable vs. static text
+
+o  Implizite Anfragen 'init', 'cancel', 'breakdown' ???
+
+o  DIALOG "Blubb" STAGE 3 WITH ...
+   Was tun die Stages? Z.B. Abb. 3.9 (p. 37) in Nicos Diplomarbeit.
+   Kommt in der Grammatik nicht vor.  Bei Ingo auch nicht.
+   
+o  Nette Idee fuer den Typechecker: bei Konstrukten wie
+   (o.clazz == Peng) ? {...} : {...}
+   Koennte er ja wirklich wissen, dass im iftrue-Zweig 'o:Peng' gilt.
+   Das wuerde etliche '_typeCasts' ueberfluessig machen.
+   -> Und wann gibts den dynamischen Subtyptest?
+      
+o  SequenceContent[Spec] fuer Massendaten?
+   
+o  Problem: Die Objekte (z.B. alle ContentSpecs, Dialoge) wissen ihren 
+   Namen nicht, nur das sie enthaltende Dictionary kennt ihn.
+   Besonders bei Visitoren unpraktisch.
+   -> zusaetzlich den Namen als slot. doof wg. Redundanz.
+   -> Mixin, das Rueckbezug auf Dictionary haelt + Methode name():K.
+      Rueckbezug muesste Dictionary setzen => spezialisieren. doof wg. 
+      Umstaendlich.
+   -> Neue Dictionary-Klasse, die Key nicht selbst haelt, sondern nur 
+      Subklassen von z.B. 'NamedMixin' speichert; 'NamedMixin' enthaelt
+      Namen & dient zur Key-Ermittelung. Interface wie Dictionary.
+      Nachteil: Dictionary neu schreiben.
+   ### Stellt sich immer oefter raus, dass es doof ist, dass kein Objekt seinen 
+   ### eigenen Namen kennt !!! Unbedingt eine Loesung finden.
+
+o  Konformitaetstests zwischen ContentSpecs via 'matches': 
+   Erweitern auf vollst. Subtyptest ala Tupelsubsignaturen in TL1?
+   x.matches(y) => True. Wer aber ist subtyp von wem? matches impliziert 
+   Symmetrie. Anderer Name?
+   
+o  Konformitaetspruefung zwischen ConversationSpecs?
+   Wie 'matches' auf Dialog- und RequestSpecs anwenden?
+   ConvSpecs -> auf Dialoge delegieren
+   DialogSpecs -> auf ContentSpecs und Requests delegieren.
+   ausserdem: subtyptest
+   -> Patrick Hupe?
+
+o  copy-methoden muessen implementiert werden(?)
+   Wichtig fuer die History?
+   
+o  Idee fuer Subtyptest:
+   SingleChoice(T) <: T
+   MultipleChoice(T) <: Sequence(T)
+
+o  *initial*request* koennte einen Dialog mit Authentisierungsdaten, customer-
+   name etc. mitschicken (statt keines Dialoges).
+   DialogSpec dafuer festverdrahten in ConversationSpec analog zu breakdown.
+   dafŸr darin reflektive Nutzung von ConvSpecContentSpec
+   
+o  Naming ala OMG MAF?

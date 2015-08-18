@@ -1,0 +1,154 @@
+# Copyright (c) 1996 Higher-Order GmbH, Hamburg. All rights reserved.
+# def_hox_csh 1.12 98/05/18 Andreas Gawecki
+#
+# This script is used to set up a C shell user's environment for
+# running TL2 (Tycoon Language 2) programs.
+#
+# Usage:   cd <HOX_HOME>; source def_hox_csh
+#
+
+
+#
+# Get platform variable HOX_HOST
+#
+set MYOS=`uname -s`
+set PLATFORM=unknown
+
+switch (${MYOS})
+  case SunOS* : 
+       set PROCESSOR=`uname -p`
+       set VERSION=`uname -r`
+       switch (${PROCESSOR})
+         case sparc* : 
+              switch (${VERSION})
+                case 4.* :
+                     set PLATFORM=unsupported
+		     breaksw
+                case 5.* :
+                     set PLATFORM=Solaris2_SPARC
+	             breaksw
+               endsw
+               breaksw
+       endsw
+       breaksw
+  case NEXTSTEP* :
+       set PROCESSOR=`uname -m`
+       set VERSION=`uname -v`
+       switch (${PROCESSOR})
+         case 586* :
+              set PLATFORM=Nextstep_i386
+	      breaksw
+       endsw
+       breaksw
+  case HP-UX*   : 
+       set PROCESSOR=`uname -m`
+       set VERSION=`uname -v`
+       set PLATFORM=HPUX_PARISC
+       breaksw
+  case Windows* : 
+       set PROCESSOR=`uname -m`
+       set VERSION=`uname -v`
+       set PLATFORM=Win32_i386
+       breaksw
+  case CYGWIN*  :
+       set PROCESSOR=`uname -m`
+       set VERSION=`uname -v`
+       set PLATFORM=Win32_i386
+       breaksw
+  case Linux* :
+       set PROCESSOR=`uname -m`
+       set VERSION=`uname -v`
+       set PLATFORM=Linux_i386
+       breaksw
+  default :
+       breaksw
+endsw
+
+switch (${PLATFORM})
+  case unsupported* :
+       echo "unsupported system: ${MYOS} ${VERSION} ${PROCESSOR}"
+       breaksw
+  case unknown* :
+       echo "unknown system: ${MYOS} ${VERSION} ${PROCESSOR}"
+       breaksw
+  default :
+       setenv HOX_HOST $PLATFORM
+       breaksw
+endsw
+
+echo $PLATFORM
+
+unset MYOS
+unset PLATFORM
+unset PROCESSOR
+unset VERSION
+
+
+#
+# Set variables
+#
+
+if ($?HOX_HOME == 0) then
+    set OLD_HOME=$PATH	    # do not match anything in the switch below...
+else
+    set OLD_HOME=${HOX_HOME}
+endif
+
+setenv HOX_HOME `pwd`
+setenv TL2_PATH $HOX_HOME/src/TL2:.
+
+switch ($PATH)
+case *${OLD_HOME}/bin/${HOX_HOST}* :
+    setenv PATH `echo $PATH | sed "s;${OLD_HOME}/bin/${HOX_HOST};${HOX_HOME}/bin/${HOX_HOST};g"`
+    breaksw
+case *${HOX_HOME}/bin/${HOX_HOST}* :
+    breaksw
+case *[:] :
+    setenv PATH ${PATH}${HOX_HOME}/bin/${HOX_HOST}:
+    breaksw
+case "" :
+    setenv PATH ${HOX_HOME}/bin/${HOX_HOST}
+    breaksw
+default :
+    setenv PATH ${PATH}:${HOX_HOME}/bin/${HOX_HOST}
+    breaksw
+endsw
+
+if ($?LD_LIBRARY_PATH == 0) then
+    setenv LD_LIBRARY_PATH ${HOX_HOME}/lib/${HOX_HOST}
+else
+    switch (${LD_LIBRARY_PATH})
+    case *${OLD_HOME}/lib/${HOX_HOST}* :
+        setenv LD_LIBRARY_PATH `echo ${LD_LIBRARY_PATH} | sed "s;${OLD_HOME}/lib/${HOX_HOST};${HOX_HOME}/lib/${HOX_HOST};g"`
+        breaksw
+    case *${HOX_HOME}/lib/${HOX_HOST}* :
+        breaksw
+    case "" :
+        setenv LD_LIBRARY_PATH ${HOX_HOME}/lib/${HOX_HOST}
+        breaksw
+    default :
+        setenv LD_LIBRARY_PATH ${HOX_HOME}/lib/${HOX_HOST}:${LD_LIBRARY_PATH}
+        breaksw
+    endsw
+endif
+
+unset OLD_HOME
+
+# sgmls (will soon be obsolete):
+setenv SGML_DIR ${HOX_HOME}/lib/sgml
+setenv SGML_PATH ${SGML_DIR}/%N.%Y
+
+# nsgmls (a replacement for sgmls):
+if ($?SGML_CATALOG_FILES == 0) then
+  setenv SGML_CATALOG_FILES ${HOX_HOME}/lib/sgml/CATALOG
+else
+  setenv SGML_CATALOG_FILES ${HOX_HOME}/lib/sgml/CATALOG:${SGML_CATALOG_FILES}
+endif
+if ($?SGML_SEARCH_PATH == 0) then
+  setenv SGML_SEARCH_PATH ${HOX_HOME}/lib/sgml
+else
+  setenv SGML_SEARCH_PATH ${HOX_HOME}/lib/sgml:${SGML_SEARCH_PATH}
+endif
+
+#env|grep $HOX_HOME
+

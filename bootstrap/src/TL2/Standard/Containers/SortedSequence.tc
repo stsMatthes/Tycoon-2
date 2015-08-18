@@ -1,0 +1,77 @@
+class SortedSequence(E <: Ordered(E))
+super AddMixin(E), RemoveKeyMixin(Int, E), Sequence(E)
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+  A sequence that always remains sorted
+
+  Unfortunately we cannot exploit the sorting for locate, because
+  locate may be passed arbitrary objects.
+
+Author: Axel Wienberg
+Date:   02-Oct-1998
+*)
+meta SortedSequenceClass(E)
+{
+
+"[]"(i :Int) :E
+ (* Return the element with key 'k' .
+     Raise KeyNotFoundError if no such key exists. *)
+  require i.isNotNil
+{ _elements[i] }
+
+size :Int
+{ _elements.size }
+
+add(e :E) :Void
+(* sorted insert of <e>. All elements less than e will have positions smaller
+   than that of e, all elements greater than e will have higher positions.
+   The order of elements already in the sequence is not changed. *)
+   ensure includes(e)
+{ 
+  ;; binary insert of 'e' into '_elements'
+  ;; N.Wirth, Algorithmen und Datenstrukturen, 2. Auflage, Seite 95
+  ;; ### crashes if e is nil
+  l ::= 0
+  r ::= _elements.size-1
+  while({ l <= r } do: {
+	;; all _elements with index < l are less than e,
+	;; all _elements with index > r are greater or equal e
+	m ::= (l + r) / 2
+	if( e < _elements[m] then: { r := m - 1 } else: { l := m + 1 })
+  })
+  _elements.insert(e, l)
+}
+
+removeKey(i :Int) :E
+  (* remove the element with key 'k' *)
+  require validKey(k)
+  ensure size = old size - 1
+      && occurrencesOf(old self[k]) = old occurrencesOf(self[k]) - 1
+{ _elements.removeKey(i) }
+
+private
+
+removePosition :Int
+{ 0 }
+
+_elements: Queue(E)
+
+}

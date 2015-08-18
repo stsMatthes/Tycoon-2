@@ -1,0 +1,332 @@
+class HttpDirectoryResource
+super HttpContainerResource
+(**)
+meta HttpDirectoryResourceClass()
+
+{
+contents :DirectoryContents
+  (* *)
+{
+  dir
+}
+
+reindex :Void
+  (*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ forget any automatically indexed child resources
+     re-index at subsequent requests.
+     But keep directory resources, propagate reindex down
+     the directory tree.
+  *)
+{
+  olde ::= _children
+  _children := _virtuals.copy
+  olde.keysAndElementsDo(fun(name :String, resource :HttpResource) {
+    if( resource.asDirectoryResource.isNotNil then: {
+      _children[name] := resource
+    })
+    resource.reindex
+  })
+  _modified
+}
+
+replace(olde :HttpResource, new :HttpResource) :Void
+  (* *)
+{
+  key ::= _children.locate(olde)
+  _children[key] := new
+  
+  key ::= _virtuals.locate(olde)
+  if( key.isNotNil then: {
+    _virtuals[key] := new
+  })
+
+  new.parent := self
+  olde.parent := nil	       
+}
+
+asDirectoryResource :HttpDirectoryResource
+  (* *)
+{
+  self
+}
+
+"[]"(name :String) :HttpResource
+  (* *)
+{
+  validate
+  _children[name]
+}
+
+"[]:="(name :String, resource :HttpResource) :HttpResource
+  (* *)
+{
+  _modified
+  resource.parent := self
+   _virtuals[name] := _children[name] := resource
+}
+
+removeKey(name :String) :Void
+  (* *)
+{
+  _virtuals.removeKey(name)
+  _children.removeKey(name)
+  _modified
+}
+
+reader :Reader(HttpResource)
+  (* *)
+{
+  validate
+  _children.reader
+}
+
+keys :Reader(String)
+  (* *)
+{
+  validate
+  _children.keys
+}
+
+resourceFactory :HttpResourceFactory
+  (* answer the resource factory defined for this directory.
+     an resource factory may be configured explicitely by storing an resource factory
+     object within the receiver, or implicitely by the next parent directory. *)
+{
+   _resourceFactory
+}
+
+"resourceFactory:="(resourceFactory :HttpResourceFactory) :HttpResourceFactory
+  (* configure the receiver with the given resource factory *)
+{
+  _resourceFactory := resourceFactory
+  reindex
+  resourceFactory
+}
+
+validate :Void
+  (* validate any cached information. default: do nothing *)
+{
+  if( _stamp < _dir.lastModified then: {
+    _stamp := _dir.lastModified
+    _sync
+  })
+}
+
+urlPath(request :HttpRequest) :String
+  (* *)
+{
+  uri ::= request.uri
+  i ::= uri.locateChar(':')
+  if( i.isNil then: { i := (-1 )})
+  path ::= uri.subString(i+1,uri.size-(i+1))
+  if( path.size = 0 || path[path.size-1] != '/'
+    then: { path + "/" }
+    else: { path })
+  }
+
+get(request :HttpRequest) :HttpResponse
+  (* *)
+{
+  found ::= fun(indexPage:HttpResource){
+    indexPage.process(request)
+  }
+  lookup("index.stml", found,
+   { lookup("index.html", found,
+     { lookup("index.htm", found,
+       { listChildren(request) }) }) })
+}
+
+listChildren(request :HttpRequest) :HttpResponse
+  (* *)
+{
+  dirPath ::= urlPath(request)
+  title ::= "Index of " + dirPath 
+  response ::= newResponse(HttpResponse.OK)
+  response.withHtmlGenerator(fun(out :HtmlGenerator) {
+    out.title({ out.writeString(title) }) 
+    out.body({
+        out.h1({ out.writeString(title) }) 
+        out.table(false, {
+        ; out.th("CENTER", 4, 1, { out.writeString(title) }), 
+	out.tr({
+  	  out.td("LEFT", 1, 1, { }) 
+  	  out.td("LEFT", 1, 1, { out.b({out.writeln("Name") })})
+  	  out.td("LEFT", 1, 1, { out.b({out.writeln("Last modified") })})
+  	  out.td("LEFT", 1, 1, { out.b({out.writeln("Size") })})
+	})
+	
+	parentUrl ::= parentUrl(dirPath)
+	if( parentUrl.isNotNil then: {
+	  out.tr({
+	    icon ::= "/hox-icons/back.gif"
+	    out.td("LEFT", 1, 1, {
+	      out.a(parentUrl, nil, {
+	        out.img(icon,"LEFT", "\" \"", 0, false, false) 
+	      })
+	    })
+	    out.td("LEFT", 1, 1, {
+	      out.a(parentUrl, nil, {
+	        out.writeString("Parent Directory")
+	      })
+	    out.nl
+	    })
+	  })
+	})
+	keys ::= MutableArray.fromReader(keys)
+	keys.quicksort(fun(s1 :String, s2 :String) { s1.order(s2) })
+	keys.do(fun(name :String) {
+	  resource ::= self[name]
+	  out.tr({
+	    icon ::= resource.icon
+	    cl ::= resource.contentLength
+	    cls ::= if( cl.isNotNil then: { cl.printString } else: { "" })
+	    lm ::= resource.lastModified
+	    fmt ::= "%d-%b-%y %H:%M"
+	    lms ::= if( cl.isNotNil then: {  Date.fromTime(lm).format(fmt) } else: { "" })
+	    url ::= dirPath + name
+	    
+	    out.td("LEFT", 1, 1, {
+	      out.a(url, nil, {
+	        out.img(icon,"LEFT", "\" \"", 0, false, false) 
+	      })
+	    })
+	    out.td("LEFT", 1, 1, {
+	      out.a(url, nil, {
+	        out.writeString(name)
+	      })
+	    })
+	    out.td("LEFT", 1, 1, { out.writeln(lms) })
+	    out.td("LEFT", 1, 1, { out.writeln(cls) })
+	    out.nl
+	  })    
+	})
+      })
+    })
+  })
+  response
+}
+
+newResource(dir :Directory, name :String) :HttpResource
+  (* *)
+{
+  if( resourceFactory.isNotNil
+    then: { resource ::= resourceFactory.newResource(dir, name)
+        if( resource.isNil
+	   then: { super.newResource(dir, name) }
+	   else: { resource.parent := self
+	       resource
+	     })
+      }
+    else: { super.newResource(dir, name)})
+  }
+
+printOn(out :Output) :Void
+  (* *)
+{
+  out.writeln("HttpDirectoryResource{")
+  keys ::= keys
+  keys.do(fun(name :String){ out.writeln(name) })
+  out.writeln("}")
+  }
+
+dir :Directory
+  (* *)
+{
+  _dir
+}
+
+"dir:="(dir :Directory) :Directory
+  (* *)
+{
+  _stamp := Long.MIN_VALUE
+  _dir := dir
+}
+
+private
+
+_dir :Directory
+
+_resourceFactory :HttpResourceFactory
+
+_stamp :Long
+
+_children :Dictionary(String, HttpResource)
+
+  (* all accessible child resources *)
+
+_virtuals :Dictionary(String, HttpResource)
+  (* explicitely added 'virtual' resources (no File equivalent) *)
+
+_init :Void
+  (* *)
+{
+  super._init
+  _virtuals := Dictionary.new
+  _children := Dictionary.new
+  icon := "/hox-icons/folder.gif"
+  _stamp := Long.MIN_VALUE
+  self
+}
+
+_sync :Void
+  (* we got out of sync. re-load child resources. *)
+{
+  olde ::= _children
+  _children := _virtuals.copy
+  keys ::= _dir.keys
+  keys.do(fun(name :String) {
+    try(fun() :Void{
+      resource ::= olde.lookup(name,
+        fun(resource :HttpResource) {
+	  if( resource.asDirectoryContentsResource.isNotNil then: {
+	    if( resource.asDirectoryContentsResource.contents.exists
+	      then: { resource } else: { nil })
+	  } else: { resource })	  
+	},
+        fun() {
+	  new ::= newResource(_dir, name)
+	  new.parent := self
+	  new})
+      if( resource.isNotNil then: {
+	_children[name] := resource
+      })
+    } else: fun( :Exception) {}
+    )
+  })      
+  keys.close
+}
+
+_modified :Void
+  (* *)
+{
+  _stamp := Long.MIN_VALUE
+}
+
+parentUrl(path :String) :String
+  (* *)
+{
+  i ::= path.locateLastChar1('/', 0.max(path.size-1))
+  if( i.isNotNil
+    then: { path.subString(0,i+1) }
+    else: { nil })
+}
+
+}

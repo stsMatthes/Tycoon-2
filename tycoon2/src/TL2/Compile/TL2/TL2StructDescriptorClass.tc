@@ -1,0 +1,13 @@
+class TL2StructDescriptorClass
+super ConcreteClass(TL2StructDescriptor)
+meta MetaClass
+{
+new(format :String) :TL2StructDescriptor
+{
+  instance ::= _new
+  instance.format := format
+  instance._init
+  instance
+}
+}
+

@@ -1,0 +1,89 @@
+class Commitment
+super Object
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+Information about a transaction  
+
+Author:  Andreas Gawecki
+Date:    05-Feb-1997
+Updates: (Date)	  (Name)	(Description)
+*)
+meta CommitmentClass()
+
+{
+via :Int
+
+  (* if non-nil, the persistent store has been committed after the receiver has been created,
+     and this slot contains the code of the path via control has reached the current point
+     (one of Tycoon.VIA_COMMIT, Tycoon.VIA_RESTART, Tycoon.VIA_ROLLBACK). *)
+
+errors :List(Exception)
+
+  (* a list of exceptions that have been raised during a rollback or restart,
+     e.g. some IOError that occured when trying to reopen a File object.
+  *)
+
+maliciousResources :List(Resource)
+  (* a list of resources that behave badly, e.g. that could not be reopened
+     during a rollback or restart.
+     in general, they should be closed after restart.
+  *)
+
+case(T <:Void,
+  ifCommitted :Fun():T,
+  ifRolledBack :Fun():T,
+  ifRestarted :Fun():T) :T
+  (* execute the corresponding statement depending on 'via' *)
+{
+    if( via == Commitment.VIA_COMMIT
+    then: {ifCommitted[]}
+    else: {  if( via == Commitment.VIA_ROLLBACK
+	then: {ifRolledBack[]}
+	else: { assert({ via == Commitment.VIA_RESTART })
+	    ifRestarted[]})})
+}
+
+catchAllWithResource(resource :Resource,
+  ifCommitted :Fun():Void,
+  ifRolledBack :Fun():Void,
+  ifRestarted :Fun():Void) :Void
+  (* execute the corresponding statement depending on 'via',
+     catch any exceptions and add them to 'errors' *)
+{
+  try({ case(:Void, ifCommitted, ifRolledBack, ifRestarted) } else:
+    fun(e :Exception) {
+      maliciousResources := List.cons(resource, maliciousResources)
+      errors := List.cons(e, errors)
+    })      
+}
+
+private
+
+_init :Void
+  (* *)
+{
+  super._init
+  errors := EmptyList.instance
+  maliciousResources := EmptyList.instance
+  self
+}
+
+}

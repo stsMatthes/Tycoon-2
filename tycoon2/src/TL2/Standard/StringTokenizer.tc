@@ -1,0 +1,48 @@
+class StringTokenizer
+super Reader(String)
+(*
+   A StringTokenizer is capable of cutting a string into
+   a stream of 'tokens', i.e. character strings separated
+   by some specified separators.
+
+   Author:  Axel Wienberg
+   Date:    28-Mar-1999
+*)
+meta StringTokenizerClass
+{
+separators :String
+
+read :String
+  (* read the next token, i.e. skip all characters included in
+     'separators', gather the following sequence of characters not
+     included in 'separators', and return the sequence as a String
+  *)
+{
+  startIdx ::= idx
+  while({ startIdx < _str.size
+	  && separators.locateChar(_str[startIdx]).isNotNil } do: {
+    startIdx := startIdx + 1
+  })
+  if( startIdx < _str.size then: {
+      endIdx ::= _str.locateSomeChar(separators, startIdx+1)
+      if(endIdx.isNil then: { endIdx := _str.size })
+      idx := endIdx
+      _str.subString(startIdx, endIdx-startIdx)
+  } else: {
+    idx := startIdx
+    nil
+  })
+}
+
+private
+
+_str :String
+idx :Int
+
+_init :Void
+{
+  super._init
+  idx := 0
+}
+
+}

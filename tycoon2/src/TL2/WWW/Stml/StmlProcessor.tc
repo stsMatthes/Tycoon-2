@@ -1,0 +1,105 @@
+class StmlProcessor(Application <:StmlApplication(Application)  )
+super Stml
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+, OutputT <: SgmlGenerator *)
+meta StmlProcessorClass(Application, StmlProcessor(Application))
+{
+request :HttpRequest
+
+out :HtmlGenerator
+
+  (* OutputT *)
+
+response :HttpResponse
+
+process :Void
+  (* *)
+require request.isNotNil
+	& out.isNotNil
+	& response.isNotNil
+{
+  setCacheHeaders
+  _emit[]
+}
+
+jumpUri(uri :String) :Void
+{
+  jumpRequest(
+    HttpRequest.new6(request.method,
+		     uri,
+		     request.major,
+		     request.minor,
+		     request.headers,
+		     request.body))
+}
+
+jumpRequest(request :HttpRequest) :Void
+{
+  StmlJumpException.new(request).raise
+}
+
+setCacheHeaders :Void
+  (* add cache pragmas to the response headers.
+     default is to disallow caching of STML documents.
+     subclasses may override this appropriately.
+   *)
+{
+  response.noCache
+}
+
+application :Application
+  (* *)
+{ _resource.application }
+
+decorateOutput(out :Output) :HtmlGenerator
+  (* should be:
+decorateOutput(out :Output): OutputT
+  deferred
+
+contentType :MediaType
+  deferred
+
+ called before assigning a new output.
+   May wrap content type specific decorators around <out>. *)
+{ HtmlGenerator.new(out) }
+
+contentType :MediaType
+  (* The content type produced by the Stml code *)
+{ MediaType.new("text", "html") }
+
+private
+
+_resource :StmlResource(Application)
+
+_emit :Fun():Void
+
+__stml_toString(thunk :Fun():Void) :String
+  (* *)
+{
+  buffer ::= StringBuilderOutput.new
+  oldOut ::= out
+  out := decorateOutput(buffer)
+  thunk[]
+  out := oldOut
+  buffer.contents
+}
+
+}

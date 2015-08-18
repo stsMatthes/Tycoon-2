@@ -1,0 +1,68 @@
+# first steps to a running tycoon-2 system under Linux or Darwin (sh)
+
+# compile our customized Jam
+
+cd contrib/Jam-2.2
+# see README for available OS values
+OS=LINUX make
+# copy to some location in your path
+cp bin.linuxx86/jam ~/bin/jam
+cd ../..
+
+# make sure that nsgmls (version 1.3.4) is in your path.
+# Should print something like:  
+# nsgmls:I: OpenSP version "1.3.4"
+# If unavailable as a pre-built package, sources can be obtained from
+#   http://www.jclark.com/sp/howtoget.htm
+# with necessary macosx patches under contrib/sp-1.3.4-macosx
+
+nsgmls -v </dev/null
+
+# set environment variables
+
+cd tycoon2
+. tools/Unix/def_tl2_sh
+
+# (optionally edit Jamrules to enable ASSERTIONS)
+
+# compile the tycoon virtual machine
+
+jam
+
+# get a working copy of the tycoon-2 store image
+
+cp Clean.ts TL2.ts
+
+# start tycoon-2
+
+# if you are an xemacs user, edit your .emacs as proposed in
+# contrib/xemacs/tl2.el
+# then start xemacs (with tycoon environment variables set)
+# and do:
+#   M-x run-tl2
+# otherwise, if you are a command line user:
+
+tycoon2 TL2.ts
+
+# load, compile and typecheck the big example application:
+#   web server with web toplevel
+# this will take some time...
+
+DO load "WWW/HttpdAdmin/HttpdAdmin2.tyc"?
+
+# save a stable system state
+
+tycoon.saveSystem?
+
+# if port 8001 is already used on your machine, edit 
+#    tyhttpd/tyhttpd-launcher/conf/tyhttpd.conf
+
+# configure and start the web server
+
+DO load "WWW/HttpdAdmin/launch-launcher.tyc"?
+tyhttpd.serve?
+
+# now access 
+#  http://localhost:8001/
+
+

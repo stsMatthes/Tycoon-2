@@ -1,0 +1,68 @@
+<!doctype stml system>
+
+<stml processor=HttpdAdminProcessor language='tycoon-1.0'>
+
+<title>Evaluate TL Expressions (Syntax 1.0)</title>
+
+<body>
+
+<script language=tycoon>
+  eout ::= SgmlEntityOutput.new(out)
+  expr ::=
+    if( formFields.includesKey("eval") then: {
+      formFields.lookup("tl",
+        fun(tl :String) { tl },
+	fun() { "" })
+    } else: {
+      if( formFields.includesKey("update") then: {
+        "tycoon.tl.loader.update"
+      } else: {
+        if( formFields.includesKey("savepoint") then: {
+	  "tyhttpd.commit"
+	} else: {
+	  if( formFields.includesKey("typecheck") then: {
+	    "tycoon.tl.typeChecker.check"
+	  } else: { "" })
+	})
+      })
+    })
+</script>
+
+
+<form action="eval10.stml">
+<h2>Enter expression(s) to evaluate: (Syntax 1.0)</h2>
+
+<textarea name=tl rows=10 cols=60></textarea>
+<p>
+<input type=submit name=eval value="Evaluate">
+<input type=submit name=update value="Update Classes">
+<input type=submit name=typecheck value="Typecheck">
+<input type=submit name=savepoint value="Server Savepoint">
+<send selector="generateHiddenFields"></send>
+</form>
+
+<hr>
+
+<pre><b><script language=tycoon>
+  eout << expr
+</script></b></pre>
+
+<pre><script language=tycoon>
+  stdout ::= tycoon.stdout
+  
+  tycoon.stdout := TeeOutput.new(SgmlEntityOutput.new(out), stdout)
+  tycoon.tl.topLevel.errorLog.errout := tycoon.stdout
+  tycoon.tl.loader.errorLog.errout := tycoon.stdout
+
+  protect({ 
+    tycoon.tl.topLevel.string(expr)
+  }, {
+    tycoon.stdout := stdout
+    tycoon.tl.topLevel.errorLog.errout := stdout
+    tycoon.tl.loader.errorLog.errout := stdout
+  })
+</script></pre>
+  
+
+
+

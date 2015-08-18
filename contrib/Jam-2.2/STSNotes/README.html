@@ -1,0 +1,110 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<meta name="Author" content="Andre Willomat">
+<meta name="GENERATOR" content="Microsoft FrontPage 3.0">
+<title>README</title>
+</head>
+
+<body>
+
+<h3><u>Installation von Jam/MR auf MS Windows NT/95/98</u></h3>
+
+<h3><u>Vorarbeiten:</u></h3>
+
+<p>- Beschaffung aktuellen Version von Jam/MR, z.B. bei <a
+href="http://www.perforce.com/jam/jam.html">Perforce Software</a>.<br>
+- Entpacken des Tar-Archives in ein Verzeichnis.<br>
+- <a href="Jam.patch">Jam.patch</a> in das Verzeichnis kopieren.<br>
+- Patch anwenden: patch -u -b &lt;Jam.patch</p>
+
+<p>Durch diesen Patch werden folgende Änderungen an den Quelltexten erzeugt:</p>
+
+<p>- Generierung der nötigen Makefiles: Makefile.nt, Makefile.w95, Makefile.w98<br>
+- Windows NT: Die Definition von MAXLINE (Jam.h) wird auf 10K (10240) gesetzt<br>
+- Windows 95/98: Zusätzliche #ifdefs für die bedingte Compilierung<br>
+- Windows 95/98: Andere Semantik von spawnvp (in execdos.c)</p>
+
+<hr>
+
+<p>Umgebungs-Variable auf Pfad des verwendeten C-Compilers setzten (siehe Jam-Readme),
+z.B.:</p>
+
+<p>SET MSVCNT=F:\Lang\DevStudio\VC</p>
+
+<p>für Microsoft Visual C++ 5.0. Vorsicht ist geboten, wenn der Pfad-Name Leerzeichen
+enthält, z.B.:</p>
+
+<p><a href="C:\Program%20Files\DevStudio">&quot;C:\Program Files\DevStudio&quot;</a>,</p>
+
+<p>dies verträgt Jam nicht. Eine Lösung ist dann:</p>
+
+<p>SUBST Y: &quot;C:\Program Files\DevStudio&quot;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; und<br>
+SET MSVCNT=Y:\VC</p>
+
+<hr>
+
+<h3><u>Übersetzen:</u></h3>
+
+<p>Vor dem Übersetzen gegebenenfalls erst einmal VCVARS32.BAT ausführen (auf
+DevStudio\VC\Bin), um die Umgebungsvariablen für MS Visual C++ zu setzen. Erstmalige
+Übersetzung der Jam-Sourcen mit nmake, später kann Jam selbst benutzt werden. Je nach
+Plattform das entsprechende Makefile benutzen:</p>
+
+<table border="3" cellpadding="3" cellspacing="4" width="60%">
+  <tr>
+    <td><font size="2"><strong>System</strong></font></td>
+    <td><font size="2"><strong>Make-Prozeß</strong></font></td>
+    <td><font size="2"><strong>Bin-Verzeichnis</strong></font></td>
+  </tr>
+  <tr>
+    <td><font size="2">Windows NT</font></td>
+    <td><font size="2">nmake -f makefile.nt</font></td>
+    <td><font size="2">bin.winntx86</font></td>
+  </tr>
+  <tr>
+    <td><font size="2">Windows 95</font></td>
+    <td><font size="2">nmake -f makefile.w95</font></td>
+    <td><font size="2">bin.win95x86</font></td>
+  </tr>
+  <tr>
+    <td><font size="2">Windows 98</font></td>
+    <td><font size="2">nmake -f makefile.w98</font></td>
+    <td><font size="2">bin.win98x86</font></td>
+  </tr>
+</table>
+
+<p><strong>jam.exe</strong> kann aus dem erzeugten Bin-Verzeichnis in ein Verzeichnis
+kopiert werden, daß sich im PATH befindet. Es sind keine weiteren Dateien außer jam.exe
+nötig.</p>
+
+<p>Je nach dem, auf welcher Plattform man ist, und welche Dinge man schon installiert hat,
+benötigt man noch einige Tools (<strong>rm</strong>, <strong>touch</strong>), die ich
+hier mit auf dem <a href="Tools">Tools</a>-Verzeichnis gelegt habe. Hier befindet sich
+auch <strong>diff</strong> und <strong>patch</strong>, falls man weitere Modifikationen an
+den Quelltexten vornimmt. Alle Tools stammen aus der Cygnus GNU-Tools package (beta 19): <a
+href="http://www.cygnus.com/misc/gnu-win32/">http://www.cygnus.com/misc/gnu-win32/</a></p>
+
+<hr>
+
+<h3><u>Beipiele:</u></h3>
+
+<p>Zwei einfache Jam-Beispiele findet man in <a href="Sample01">Sample01</a> (einfaches
+Hauptprogramm) und <a href="Sample02">Sample02</a> (Hauptprogramm mit Bibliothek). Ein
+weiteres anwendungsnahes Beispiel wird bald mit den Jamfiles zu der Tycoon-2 virtuellen
+Maschine zur Verfügung stehen (Hauptprogramm und dynamische Bibliotheken). Weitere
+Informationen: 
+
+<ul>
+  <li>Infos, Mailingarchivm etc. bei&nbsp; <a href="http://www.perforce.com/jam/jam.html">Perforce
+    Software</a>.</li>
+  <li>Dokumentation in der Jam-Distribution: <a href="Jam.html">Jam.html</a></li>
+</ul>
+
+<hr>
+
+<p><font size="2"><a href="http://www.sts.tu-harburg.de/~an.willomat"><i>Andre Willomat</i></a>
+(OKT/01/98). Your <a href="mailto:AWillomat@compuserve.com">feedback</a> is welcome!</font></p>
+</body>
+</html>

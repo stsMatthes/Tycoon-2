@@ -1,0 +1,246 @@
+class OCI
+super DLL
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+TWL-Class for the Oracle-Call-Interface
+
+Author:  Michael Skusa
+
+Date:    03-Sep-1996
+
+Updates: (Date)		(Name)	(Description)
+	 14-Mar-1997	MS	added some constants to increase readability
+				of classes which are using this interface
+
+*)
+meta SimpleConcreteClass(OCI)
+{
+fTypeCode:Dictionary(Class,Int)
+
+errorDictionary:Dictionary(Int,String)
+  (* For error-messages which occur
+                                          before a server-connection has
+					  been established
+					*)
+
+visitOS(os:OS) :String
+  (* *)
+{
+ "libocic.so"
+}
+
+NULL_DATA:Int
+  (* Some OCI-constants *)
+{ (-1 )}
+
+NTS:Int
+  (* *)
+{ (-1 )}
+
+VARCHAR:Int
+  (* *)
+{  1 }
+
+NUMBER:Int
+  (* *)
+{  2 }
+
+DATE:Int
+  (* *)
+{ 12 }
+
+LONGRAW:Int
+  (* *)
+{ 24 }
+
+FETCH_OUT_OF_SEQUENCE:Int
+  (* *)
+{ 1002 }
+
+COLUMN_NOT_FOUND:Int
+  (* *)
+{ 1007 }
+
+NO_MORE_ROWS:Int
+  (* *)
+{ 1403 }
+
+RETURNED_NULL:Int
+  (* *)
+{ 1405 }
+
+maxRawBuffer():Int
+  (* *)
+{65535}
+
+olog (lda:Int32, hda:Int32,
+      uid:String, uidl:Int, pswd:String, pswdl:Int, conn:String, connl:Int):Int
+  (* Maximum length of C-Buffer for Raw-Data,
+                              only used for cursors. Input parameters have
+			      to be stored in buffers of the size of
+			      the current parameter-value
+			      (rebind parameter, where necessary)
+			    
+ OCI-Standard-Functions, see OCI-Reference for detailed parameter-
+   description. 
+ Connecting to a Data Source *)
+{
+  ;extern
+  orlon(lda, hda,
+         uid+"@"+conn, uidl,
+         pswd, pswdl,
+         (-1))
+  
+  }
+
+orlon (lda:Int32, hda:Int32,
+       uid:String, uidl:Int,
+       pswd:String, pswdl:Int,
+       audit :Int):Int
+  (* *)
+extern "orlon"
+
+ologof (lda:Int32):Int
+  (* Terminating a Connection *)
+extern "ologof"
+
+oopen(cda:Int32, lda:Int32, dbn:String, dbnl:Int, arsize:Int, uid:String, uidl:Int):Int
+  (* Setting Driver Options 
+ Preparing Requests *)
+extern "oopen"
+
+oparse(cda:Int32, sqlstm:String, sqllen:Int, defflg:Int, lngflg:Int):Int
+  (* *)
+extern "oparse"
+
+oexec(cda:Int32):Int
+  (* Submitting Requests *)
+extern "oexec"
+
+odescr(cda:Int32, pos:Int, dbsize:Int32, dbtype:Int32,
+       cbuf:Int32, cbufl:Int32, dsize:Int32, prec:Int32,
+       scale:Int32, nullok:Int32):Int
+  (* Retrieving Results and Information about Results *)
+extern "odescr"
+
+odefin(cda:Int32, pos:Int, buf:Int32, bufl:Int, ftype:Int,
+       scale:Int, indp:Int32, fmt:String, fmtl:Int, fmtt:Int,
+       rlen:Int32, rcode:Int32):Int
+  (* *)
+extern "odefin"
+
+oexfet(cda:Int32, nrows:Int, cancel:Int, exact:Int):Int
+  (* *)
+extern "oexfet"
+
+ofen(cda:Int32, nrows:Int):Int
+  (* *)
+extern "ofen"
+
+oflng(cda:Int32, pos:Int, buf:Int32, bufl:Int, dtype:Int, retl:Int32,
+      offset:Int):Int
+  (* *)
+extern "oflng"
+
+oerhms(lda:Int32, rcode:Int, buf:Int32, bufsiz:Int):Int
+  (* *)
+extern "oerhms"
+
+obndra(cda:Int32, sqlvar:String, sqlvl:Int, progv:Int32, progvl:Int,
+       ftype:Int, scale:Int, indp:Int32, alen:Int32, arcode:Int32,
+       maxsiz:Int, currsiz:Int32, fmt:String, fmtl:Int, fmtt:Int):Int
+  (* Handling parameters *)
+extern "obndra"
+
+obndrv(cda :Int32, sqlvar:String, sqlvl:Int, progv:Int32, progvl:Int,
+       ftype:Int, scale:Int, indp:Int32,
+       fmt:String, fmtl:Int, fmtt:Int):Int
+  (* *)
+extern "obndrv"
+
+ocan(cda:Int32):Int
+  (* Terminating a Statement *)
+extern "ocan"
+
+oclose(cda:Int32):Int
+  (* *)
+extern "oclose"
+
+ocom(lda:Int32):Int
+  (* Transaction handling *)
+extern "ocom"
+
+orol(lda:Int32):Int
+  (* *)
+extern "orol"
+
+ocon(lda:Int32):Int
+  (* *)
+extern "ocon"
+
+ocof(lda:Int32):Int
+  (* *)
+extern "ocof"
+
+private
+
+_initTypeCode:Void
+  (* *)
+{
+  fTypeCode := Dictionary.new
+  fTypeCode[Int] := 3
+  fTypeCode[Real] := 4
+  fTypeCode[String] := 5
+  fTypeCode[Date] := 5
+  fTypeCode[File] := 24
+}
+
+_initErrorDictionary :Void
+  (* *)
+{
+  errorDictionary := Dictionary.new
+  errorDictionary[1017] := "invalid username/password; logon denied"
+  errorDictionary[12154] := "TNS:could not resolve service name\n" +
+    "- Verify that a TNSNAMES.ORA file exists and\n" +
+    "  is in the proper place and accessible.\n" +
+    "- Check to see that the service name exists in the TNSNAMES.ORA file\n" +
+    "  and add it if necessary."
+  errorDictionary[12203] := "TNS:unable to connect to destination\n" +
+    "Invalid TNS address supplied or destination is not listening.\n" +
+    "This error can also occur because of underlying " +
+    "NETWORK TRANSPORT PROBLEMS.\n"
+  errorDictionary[12545] := "TNS:name lookup failure\n" +
+    "- A protocol specific ADDRESS parameter cannot be resolved.\n" +
+    "  Ensure the ADDRESS parameters have been entered correctly.\n" +
+    "- Ensure your client can create a network-connection to the host\n" +
+    "  on which the Oracle server is running."
+}
+
+_init:Self
+  (* *)
+{
+  super._init
+  _initTypeCode
+  _initErrorDictionary
+  self
+}
+
+}

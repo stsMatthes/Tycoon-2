@@ -1,0 +1,80 @@
+class AtGiveByKeyMixin(K <: Object, E <: Object)
+super KeyedContainer(K,E), AtGiveMixin(E)
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+Keyed Container of Components that can give away its elements
+
+Slightly similar to RemoveKeyMixin
+
+Author:  Axel Wienberg
+Date:    12-Oct-1998
+*)
+meta AbstractClass
+{
+
+giveByKey(k :K) @:E
+  (* Give the component element stored at key <k>. The key/value association
+     is removed. The keys of other elements remaining in the receiver may
+     change (eg. in DynSequence), and may re-occupy <k>.
+     If there is no element at key <k>, the receiver remains unchanged and
+     nil@ is returned. *)
+  require validKey(k)
+  ensure result == old lookup(k,fun(e:E){e},{nil})
+	 && (!includesKey(k) || self[k] !== result)
+deferred
+
+giveAny @:E
+  (* Take out an arbitrary component
+     normative implementation *)
+  require !isEmpty
+{ giveByKey(givePosition)@ }
+
+give(e :Object) @:E
+  (* Give an element equal to <e> to the caller.
+     If there is no such element, the receiver remains unchanged,
+     and nil@ is returned. *)
+  ensure _elementEqual(result, old find(e))
+	 && (!old includes(e)
+	     || size = old size - 1
+		&& occurrencesOf(e) = old occurrencesOf(e) - 1)
+{
+  k ::= locate(e)
+  if( k.isNotNil then: {
+    giveByKey(k)@
+  } else: {
+    nil@
+  })@
+}
+
+private
+
+givePosition :K
+  (* where to take out elements with unspecified position *)
+  require !isEmpty
+  ensure validKey(k)
+{
+  kr ::= keys
+  k ::= kr.read
+  kr.close
+  k
+}
+
+}

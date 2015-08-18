@@ -1,0 +1,90 @@
+class X_TL2LiteralValue
+super X_TL2Value, X_TL2LeafMixin
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+*)
+meta X_TL2LiteralValueClass
+{
+value :Object
+
+type :X_TL2Type
+
+accept(T <: Void, v :X_TL2ValueVisitor(T)) :T
+  (* *)
+{ v.visitLiteral(self) }
+
+isLiteral :Bool
+{ true }
+
+getLiteralValue :Object
+{ value }
+
+prettyPrint(out :Printer) :Void
+  (* *)
+{
+  value.printOn(out)
+}
+
+scope(env :X_TL2Scoper) :X_TL2LiteralValue
+  (* *)
+{
+  if( value.isNil then: {
+    type := X_TL2NilType.instance
+  } else: {
+    className ::= String.fromSequence(value."class".name)  ; hack for Tycoon-1 VM
+    if(className = "MutableString" then: { className := "String" })
+    type := X_TL2IdeType.new(env.typeManager.signature(className))
+  })
+  self
+}
+
+genCode(backEnd :X_BEMethodManager) :Void
+  (* *)
+{ backEnd.loadLiteral(value)
+}
+
+genCodeIgnore(backEnd :X_BEMethodManager) :Void
+  (* *)
+{ backEnd.errorLog.warning(pos, "unused constant "+value.printString) }
+
+genCodeBranch(backEnd :X_BEMethodManager, dest :X_BEMMLabel, branchIf :Bool) :Void
+  (* *)
+{
+  ; ### this is the only reason for dead code. 
+  if( (value."class" == True || value."class" == False)
+   then: { b ::= _typeCast(value, :Bool)
+       if( b == branchIf
+        then: { backEnd.jump(dest) }
+	else: { ; nop, ignore dest 
+}) }
+   else: { backEnd.errorLog.error(pos, "conditional constant is not a boolean")
+       super.genCodeBranch(backEnd, dest, branchIf) })
+}
+
+private
+
+doCheck(T <: Void, cont :Fun(:X_TL2Type, :X_TL2Subst):T) :T
+  (* *)
+{
+  ; ### type must be a closed type - check! 
+  cont[type, X_TL2EmptySubst.instance]
+}
+
+}

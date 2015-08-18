@@ -1,0 +1,47 @@
+class Arbeitsplatz
+super Buero
+{
+postEingang @:Briefkorb
+postAusgang @:Briefkorb
+dokumente @:AtSet(Dokument)
+vorgaenge @:AtSet(Vorgang)
+
+thread :Thread(Void)
+
+stop :Void
+{
+  postEingang.ablegen(nil@)
+}
+
+private
+
+arbeiten :Void
+{
+  weiter ::=
+   (v @:Vorgang := postEingang.abholen@
+    if( v.isNotNil then: {
+      v.angekommen(self)
+      if( v.naechstesZiel.isNotNil then: {
+	postAusgang.ablegen(v@)
+      })
+      true
+    } else: {
+      tycoon.stdout << "stopped\n"
+      false
+    }) )
+  if(weiter then: { arbeiten })
+}
+
+_init :Void
+{ super._init
+  postEingang := Briefkorb.new@
+  postAusgang := Briefkorb.new@
+  dokumente := AtSet.new@
+  vorgaenge := AtSet.new@
+  thread := Thread.new({
+    Thread.this.name := "Arbeitsplatz "+identityHash.printString
+    arbeiten
+  })
+}
+
+}

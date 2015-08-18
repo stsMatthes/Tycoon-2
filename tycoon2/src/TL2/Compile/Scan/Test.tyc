@@ -1,0 +1,104 @@
+?? ;; tests
+
+define sb :ScannerBuilder(Int, Cell(Int)) ?
+sb := LazyScannerBuilder.new ?
+sb.addToken("+", fun(s :UserScanner(Int, Cell(Int))) {
+  s.userState.value := s.userState.value + 1
+}) ?
+sb.addToken("-", fun(s :UserScanner(Int, Cell(Int))) {
+  s.userState.value := s.userState.value - 1
+}) ?
+define st :UserScannerTables(Int, Cell(Int)) ?
+st := sb.generate ?
+define sc :Scanner1(Int) ?
+sc := UserScanner.new(st, StringInput.new("++----+++"), Cell.new(0)) ?
+List.fromReader(sc) ?
+sc := UserScanner.new(st, StringInput.new("+-!"), Cell.new(0)) ?
+List.fromReader(sc) ?
+
+sb := EagerScannerBuilder.new ?
+sb.addToken("+", fun(s :UserScanner(Int, Cell(Int))) {
+  s.userState.value := s.userState.value + 1
+}) ?
+sb.addToken("-", fun(s :UserScanner(Int, Cell(Int))) {
+  s.userState.value := s.userState.value - 1
+}) ?
+define st :UserScannerTables(Int, Cell(Int)) ?
+st := sb.generate ?
+define sc :Scanner(Int) ?
+sc := UserScanner.new(st, StringInput.new("++----+++"), Cell.new(0)) ?
+List.fromReader(sc) ?
+
+
+define ts :ReentrantTWLScanner1 ?
+ts := ReentrantTWLScanner1.new(tycoon.tl.twlTerminals) ?
+define sc :TWLScanner1 ?
+sc := ts.scan("<string>", StringInput.new("mops.foo(1+2)"), ErrorLog.new) ?
+List.fromReader(sc) ?
+
+define f :File ?
+path ::= "/local/tw3/awienber/twl/hox/src/TL2/Standard/Object.tc"
+f := File.openRead(path)
+try({
+  sc := ts.scan("w", f, ErrorLog.new)
+} else: fun(e:Exception) {
+  e.print
+}) ?
+Date.now.print l ::= List.fromReader(sc)  Date.now.print  l ?
+Date.now.print o ::= tycoon.stdout  sc.do(fun(:Object){o.write('.')})  Date.now.print ?
+f.position := Long.fromInt(0) ?
+f.isOpen ?
+f.close ?
+
+f := File.openRead("/local/tw3/awienber/twl/hox/src/TL2/Standard/Object.tc") ?
+f := File.openRead("/local/tw3/awienber/twl/hox/src/TL2/Compile/TWL/TWLGram.tc") ?
+f := File.openRead("/local/tw3/awienber/twl/hox/src/TL2/Standard/Queue.tc") ?
+f := File.openRead("/local/tw3/awienber/twl/hox/src/TL2/Standard/LinearProbingMixin.tc") ?
+f := File.openRead("/local/tw3/awienber/twl/hox/src/TL2/Standard/Directory.tc") ?
+f := File.openRead("/local/tw3/awienber/twl/hox/src/TL2/Standard/BufferInput.tc") ?
+f := File.openRead("/local/tw3/awienber/twl/hox/src/TL2/Standard/AbstractSequenceClass.tc") ?
+f := File.openRead("/local/tw3/awienber/twl/hox/src/TL2/Standard/Char.tc") ?
+f.position := Long.fromInt(0) ?
+
+sc := ts.scan("", f, ErrorLog.new)
+Date.now.print  o ::= tycoon.stdout  sc.do(fun(:Object){o.write('.')})  Date.now.print
+f.close ?
+
+;; zum Vergleich:
+sc ::= tycoon.tl.scanner.scan("w", f, ErrorLog.new)
+Date.now.print  o ::= tycoon.stdout  sc.do(fun(:Object){o.write('.')})  Date.now.print ?
+
+;; checken, ob tatsächlich alle states gebraucht wurden
+sc.dfas[0].maxAge ?
+sc.dfas[0].ages.size ?
+sc.dfas[0].maxCollapsars ?
+sc.dfas[0].collapsars.size ?
+
+sc.dfas[1].maxAge ?
+sc.dfas[1].ages.size ?
+sc.dfas[1].maxCollapsars ?
+sc.dfas[1].collapsars.size ?
+
+;; Speicherbedarf
+f ::= File.openWrite("/tmp/kram")
+Tracer.new.trace1(Root.instance, { x }, f)
+f.close
+Tracer.new.trace1(Root.instance, tycoon.tl.scanner, tycoon.stdout)
+
+
+;; change the ScannerBuilder used by ReentrantTWLScanner, and try:
+
+define st :ReentrantTWLScanner ?
+t ::= Timer.new(tycoon.cpuClock)
+t.start
+st := ReentrantTWLScanner.new(tycoon.tl.twlTerminals)
+t.stop
+t ?
+
+t ::= Timer.new(tycoon.cpuClock)
+t.start
+f ::= File.openRead("../TWL/Standard/Standard.tyc")
+st.scan("xxx", f, ErrorLog.new).do(fun(:Object){ })
+f.close
+t.stop
+t ?

@@ -1,0 +1,202 @@
+class TL2IdeType
+super TL2TypeImpl, TL2LeafMixin
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+*)
+meta TL2IdeTypeClass
+{
+ide :TL2TypeIde
+
+accept(T <: Void, visitor :TL2TypeVisitor(T)) :T
+  (* *)
+{ visitor.visitIdeType(self) }
+
+reduce(T <: Void, s :TL2Subst, cont: Fun(:TL2Type, :TL2Subst):T) :T
+  (* *)
+{
+    s.subst(ide,
+      { cont[self, TL2EmptySubst.instance] },
+      fun(t :TL2Type, s :TL2Subst) { t.reduce(s, cont) }
+    )
+  }
+
+defaultCheckSubType(big :TL2Type, subst :TL2Subst, bigSubst :TL2Subst) :Void
+  (* default: maybe substitute self
+		      or
+	      strip self and check result <: big
+	      subtype trans: T <:X, X <:Y => T <:Y
+  *)
+{
+    subst.subst(ide, {
+		; ## is it ok to drop subst ???
+;		   ## my brain''s mangled about that
+;		
+		ide.type.checkSubType(big, TL2EmptySubst.instance, bigSubst)
+		},
+		fun(small :TL2Type, smallSubst :TL2Subst) {
+		  small.checkSubType(big, smallSubst, bigSubst)
+		})
+  }
+
+checkSubNilType   (big :TL2NilType,    subst :TL2Subst, bigSubst :TL2Subst) :Void
+  (* *)
+{ defaultCheckSubType(big, subst, bigSubst) }
+
+checkSubObjectType(big :TL2ObjectType, subst :TL2Subst, bigSubst :TL2Subst) :Void
+  (* *)
+{ defaultCheckSubType(big, subst, bigSubst) }
+
+checkSubApplyType (big :TL2ApplyType,  subst :TL2Subst, bigSubst :TL2Subst) :Void
+  (* *)
+{ defaultCheckSubType(big, subst, bigSubst) }
+
+checkSubOperType  (big :TL2OperType,   subst :TL2Subst, bigSubst :TL2Subst) :Void
+  (* *)
+{ defaultCheckSubType(big, subst, bigSubst) }
+
+checkSubSubstType (big :TL2SubstType,  subst :TL2Subst, bigSubst :TL2Subst) :Void
+  (* *)
+{
+    checkSubType(big.type, subst, TL2CompositeSubst.new(big.substi, bigSubst))
+  }
+
+checkSubIdeType   (big :TL2IdeType,    subst :TL2Subst, bigSubst :TL2Subst) :Void
+  (* *)
+{
+    if( (ide == big.ide) &&  (subst == bigSubst)  then: {
+      ; Subtype refl 
+    } else: {
+    if( subst == TL2EmptySubst.instance &&  bigSubst == TL2EmptySubst.instance  then: {
+      ; The real Sub TL2Ide 
+      if( !big.ide.isSubTypeIde then: {
+        ; BIG = SomeOther 
+	checkSubType(big.ide.type, subst, bigSubst)
+      } else: {
+        ide.type.checkSubType(big, subst, bigSubst)
+      })
+    } else: {
+      ;
+;			  1. substitute self
+;	 if not possible: 2. substitute big
+;	 if not possible: 3. strip small
+;      
+      
+      subst.subst(ide, {
+		  subst ::= TL2EmptySubst.instance
+		  bigSubst.subst(big.ide, {
+				 bigSubst ::= TL2EmptySubst.instance
+				 checkSubType(big, subst, bigSubst)
+				 },
+				 fun(big :TL2Type, bigSubst :TL2Subst) {
+				   checkSubType(big, subst, bigSubst)
+				 })
+		  },
+		  fun(small :TL2Type, smallSubst :TL2Subst) {
+		    small.checkSubType(big, smallSubst, bigSubst)
+		  })
+
+    })})
+  }
+
+checkSubUnifyType (big :TL2UnifyType,  subst :TL2Subst, bigSubst :TL2Subst) :Void
+  (* *)
+{
+    subst.subst(ide,
+		{
+		  subst ::= TL2EmptySubst.instance
+		  big.instantiateSuper(self, subst)
+		},
+		fun(t :TL2Type, subst :TL2Subst) {
+		  t.checkSubType(big, subst, bigSubst)
+		}
+	       )
+  }
+
+prettyPrint(out :Printer) :Void
+  (* *)
+{
+    printIdeOn(ide, out)
+;    out.writeAll("["+ide.identityHash.printString+"]") 
+  }
+
+scope(env :TL2Scoper) :TL2IdeType
+  (* *)
+{
+    ide := ide.scope(env)
+    self
+  }
+
+subst(subst :TL2Subst) :TL2Type
+  (* *)
+{
+    subst.subst(ide, fun() :TL2Type { self }, fun(t :TL2Type, s :TL2Subst) {
+      t.subst(s)
+    })
+  }
+
+charCode :Char
+  (* *)
+{ genericCharCode(
+      Array.with6( "Bool", "Char", "Int", "Int32", "Long",
+		   "Real"))
+  }
+
+resultCharCode :Char
+  (* *)
+{ genericCharCode(
+      Array.with8( "Bool", "Char", "Int", "Int32", "Long",
+		   "Real", "String", "MutableString"))
+  }
+
+private
+
+genericCharCode(codes :Array(String)) :Char
+  (* *)
+{
+    if( codes.includes(ide.name)
+    then: { ide.name[0] }
+    else: { 'O' })
+; ; ### check for locally bound identifiers disabled (which typeManager to use?) 
+;    let ide = ide,
+;    let typeManager = tycoon.tl.typeManager,
+;    typeManager.isDefined(ide.name) && { typeManager.signature(ide.name) == ide }
+;    ? { codes.includes(ide.name)
+;	? { ide.name[0] }
+;	: { 'O' }}
+;    : { ; ide is locally bound 
+;	nil }
+; 
+  }
+
+doExpose(T <: Void, subst :TL2Subst, exact :Bool, cont :Fun(:TL2Type, :TL2Subst):T) :T
+  (* *)
+{
+    subst.subst(self.ide, {
+      if( exact &&  ide.isSubTypeIde  then: fun() :T {
+        raiseError
+      } else: {
+        cont[ide.type, TL2EmptySubst.instance]
+      })
+    }, fun(substituted :TL2Type, subst :TL2Subst) {
+      substituted.expose(subst, exact, cont)
+    })
+  }
+
+}

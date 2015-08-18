@@ -1,0 +1,182 @@
+class KoltarApplication
+super StmlApplication(KoltarApplication)
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ wer fuettert das Vieh wann? *)
+meta SimpleConcreteClass(SimpleStmlApplication)
+{
+db :Dictionary(Date, KoltarRow)
+
+sklaven :GapArray(KoltarSklave)
+
+dienste :GapArray(KoltarDienst)
+
+rowsDo(f :Fun(:KoltarRow):Void):Void
+{
+  sortedKeys ::= db.keys.as(MutableArray)
+  sortedKeys.quicksort(fun(d1:Date,d2:Date){d1.order(d2)})
+  sortedKeys.map(db).do(f)
+}
+
+printOn(out :Output) :Void
+{
+  rowsDo(fun(row :KoltarRow) {
+    row.printOn(out)
+    out.nl
+  })
+}
+
+dienstFromName(name :String) :KoltarDienst
+{
+  dienste.detect(fun(dienst :KoltarDienst) {
+    dienst.name = name
+  })
+}
+
+sklaveFromName(name :String) :KoltarSklave
+{
+  sklaven.detect(fun(sklave :KoltarSklave) {
+    sklave.name = name
+  })
+}
+
+saveit :Void
+{
+  f ::= File.openWrite(tycoon.hoxHome + "/koltar.new")
+  save(f)
+  f.close
+  f.rename(tycoon.hoxHome + "/koltar.dat")
+}  
+
+loadit :Void
+{
+  f ::= File.openRead(tycoon.hoxHome + "/koltar.dat")
+  load(f)
+  f.close
+}
+
+save(out :Output) :Void
+{
+  p ::= Properties.new
+  stringo ::= StringBuilderOutput.new
+  n ::= 0
+  dienste.do(fun(d :KoltarDienst) {
+    d.save(stringo)
+    n := n + 1
+    p["dienst"+n.printString] := stringo.contents
+    stringo.clear
+  })
+  p["nbDienste"] := n.printString
+  n := 0
+  sklaven.do(fun(s :KoltarSklave) {
+    s.save(stringo)
+    n := n + 1
+    p["sklave"+n.printString] := stringo.contents
+    stringo.clear
+  })
+  p["nbSklaven"] := n.printString
+  n := 0
+  rowsDo(fun(r :KoltarRow) {
+    r.save(stringo)
+    n := n + 1
+    p["row"+n.printString] := stringo.contents
+    stringo.clear
+  })
+  p["nbRows"] := n.printString
+  p.save(out)
+}
+
+load(in :Input) :Void
+{
+  p ::= Properties.new
+  p.load(in)
+
+  nbDienste ::= p["nbDienste"].asInt
+  dienste := GapArray.new(nbDienste)
+  for(1 to: nbDienste do: fun(i:Int) {
+    d ::= KoltarDienst.load(StringInput.new(p["dienst"+i.printString]))
+    dienste.add(d)
+  })
+
+  nbSklaven ::= p["nbSklaven"].asInt
+  sklaven := GapArray.new(nbSklaven)
+  for(1 to: nbSklaven do: fun(i:Int) {
+    s ::= KoltarSklave.load(StringInput.new(p["sklave"+i.printString]))
+    sklaven.add(s)
+  })
+
+  nbRows ::= p["nbRows"].asInt
+  db := Dictionary.new1(nbRows)
+  for(1 to: nbRows do: fun(i:Int) {
+    r ::= KoltarRow.load(StringInput.new(p["row"+i.printString]), self)
+    addRow(r)
+  })
+}
+
+private
+
+addRow(row :KoltarRow) :Void
+{
+  db[row.date] := row
+}
+
+_init :Void
+  (* *)
+{ super._init
+
+  compiler.registerClass(KoltarProcessor)
+  compiler.typeCheckStmlCode := true
+
+  sklaven := GapArray.fromContainerWithMap(
+    #("Axel", "Betti", "Christoph", "Frank"),
+    fun(name :String) {
+      KoltarSklave.new(name)
+    })
+
+  dienste := GapArray.fromContainerWithMap(
+    #(#("?", "weiss noch nicht"),
+      #("ja", "macht\'s"),
+      #("evtl", "h"+String.with1(Char.ae)+"tte Zeit"),
+      #("nein", "hat keine Zeit")),
+    fun(p :Array(String)) {
+      KoltarDienst.new(p[0], p[1])
+    })
+  weissNicht ::= dienste[0]
+
+  anfang ::= Date.fromString("14.6.98", "%d.%m.%y")
+  anfangTime ::= anfang.asTime
+  dayLapse ::= tycoon.clock.clockRate * 60L * 60L * 24L
+  db := Dictionary.new1(21)
+  for(0 to: 20 do: fun(i :Int) {
+    l ::= anfangTime + Long.fromInt(i) * dayLapse
+    rowDate ::= Date.fromTime(l)
+    rowWerWas ::= Dictionary.new1(sklaven.size)
+    sklaven.do(fun(sklave :KoltarSklave) {
+      rowWerWas[sklave] := weissNicht
+    })
+    row ::= KoltarRow.new(rowDate, rowWerWas)
+    addRow(row)
+  })
+
+
+  self
+}
+
+}

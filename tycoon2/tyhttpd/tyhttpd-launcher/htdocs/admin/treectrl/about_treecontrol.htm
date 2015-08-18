@@ -1,0 +1,90 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<title>About TreeControl</title>
+<meta name="GENERATOR" content="Microsoft FrontPage 3.0">
+</head>
+
+<body>
+<font FACE="Arial" SIZE="2">
+
+<h1></font><a target href="treeControl.html"><small><font face="Arial"><img
+src="../images/back-sbox.jpg" alt="back-sbox.jpg (2425 bytes)" align="right"
+start="fileopen"></font></small></a><font FACE="Arial" size="4"><b>About TreeControl</b></font><font
+FACE="Arial" SIZE="2"></h1>
+
+<p><b>Presentation</b></p>
+
+<p>In developing the applet some effort was made to give the Tree Control an MS Windows
+look and feel. Each item needed to have its own icon and title text and I looked into some
+sort of pop up tool tips information but that gave way to a status bar information
+instead. The Tree Control doesn't have a flow effect as items are added and removed but I
+feel that it does have the important qualities that make the windows tree control and
+effective way to present information. </p>
+<b>
+
+<p>Purpose</p>
+</b>
+
+<p>The Tree Control was developed to index a series on html pages in another project and
+soon found its way to indexing my web site. I knew what I wanted and had looked around the
+web for a tree control like applet to index the information. But all the controls I found
+although some where were excellent as far as functionality was concerned they where mostly
+for Java 1.1 which wasn't as backward compatible as I needed. So I decided to write one
+myself.</p>
+<b>
+
+<p>Content</b><br>
+I have written some documentation to aid people who wish to use the applet. Though rather
+brief at present I will endeavor to update it in the near future. The applet on the whole
+was designed to be easy to use with a small selection of prama tags and a concise set of
+item arguments. Also the complete source is online if you wish to ferret out other
+possibilities. If you have any problems I would be happy to help.</p>
+<b>
+
+<p>Source code </p>
+</b>
+
+<p>The Tree Control applet was developed in Java 1.0 so I was limited in the components I
+could call upon. At the core of the design I had to hold menu items and their child parent
+relationships. What I decided on was to have each item control and contain its self and
+its children. A parent item has control of laying out its children and handing on input.
+This recursive behavior greatly simplified the top-level interface as it need only
+allocate a single root level directory item and pass all input through that.</p>
+
+<p>The issue of refreshing the screen and handling the scrolling mechanisms was handed to
+a scrolling panel interface. This allowed the control to be drawn to a off screen bitmap
+which made the control more responsive. Another issue was making the adding and deleting
+of items as simple as possible. This involved parsing a complex set of item string
+arguments and options but this broke down easily with StringTokenizer.</p>
+<b>
+
+<p>Performance </p>
+</b>
+
+<p>My main aim in developing the Tree Control was to add it to web pages so the greater
+part of the tuning was done to reduce code size and to eliminate some class files. If its
+too big it will take so long to come up that nobody will use it. My aim was 20k and I got
+it under that but the new version has blown out to 25k. </p>
+<b>
+
+<p>Future Plans</b> <br>
+Originally I had designed each item to have an activation sound and a background image for
+the applet but this was dropped in order to keep the applet size and complexity down.
+Issues involving a great number of items have to be looked at as the applet gets slow at
+about 150 items and above. I will leave it in Java 1.0 for the present as there seems to
+be more interest for is backward compatibility. If anyone has some ideas I would be
+interested also the code is online for those that feel more ambitious.</p>
+</font>
+
+<p><font face="Arial" size="2">Things that have been suggested and are being looked at are
+an external file defined items, better highlighting of items with mouse over, tileing and
+positioning of the background image, dotted lines between items, being able to use the /
+and \ slashes in item names and support for foreign language fonts. </font></p>
+
+<p><font FACE="Arial" SIZE="2">&nbsp;</font></p>
+
+<p><font FACE="Arial" SIZE="2">&nbsp;</font></p>
+</body>
+</html>

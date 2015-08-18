@@ -1,0 +1,26 @@
+class HttpDirectoryContentsResource
+super HttpContainerResource
+(**)
+meta AbstractClass
+{
+contents :DirectoryContents
+  (* *)
+deferred
+
+contentLength :Int
+  (* *)
+{ contents.contentSize.asInt }
+
+lastModified :Long
+  (* *)
+{ contents.lastModified }
+
+asDirectoryContentsResource :HttpDirectoryContentsResource
+  (* *)
+{
+  self
+}
+
+private
+
+}

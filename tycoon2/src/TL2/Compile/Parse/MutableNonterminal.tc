@@ -1,0 +1,158 @@
+class MutableNonterminal(D <: Object)
+super Nonterminal(D)
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ This class allows adding rules during construction, but it isn't
+   covariant in its type parameter, i.e.
+     MutableNonterminal(Student) NOT<: MutableNonterminal(Person)
+ *)
+meta MutableNonterminalClass(D)
+{
+name :String
+  (* *)
+{ _name }
+
+rules: Array(Rule(D))
+  (* *)
+{ _rules }
+
+addRule (r: Rule(D)) :Void
+  (* *)
+require r.lhs == self
+{
+  _rules.add(r)
+}
+
+addRule0(action :Fun():D) :Void
+  (* *)
+{
+  addRule(Rule.new0(self, action))
+}
+
+addRule1(D1 <:Object, rhs1 :GrammarSymbol(D1), 
+	 action :Fun(:D1):D) :Void
+  (* *)
+{
+  addRule(Rule.new1(self, rhs1, action))
+}
+
+addRule2(D1 <:Object, rhs1 :GrammarSymbol(D1), 
+	 D2 <:Object, rhs2 :GrammarSymbol(D2), 
+	 action :Fun(:D1, :D2):D) :Void
+  (* *)
+{
+  addRule(Rule.new2(self, rhs1, rhs2, action))
+}
+
+addRule3(D1 <:Object, rhs1 :GrammarSymbol(D1), 
+	 D2 <:Object, rhs2 :GrammarSymbol(D2), 
+	 D3 <:Object, rhs3 :GrammarSymbol(D3), 
+	 action :Fun(:D1, :D2, :D3):D) :Void
+  (* *)
+{
+  addRule(Rule.new3(self, rhs1, rhs2, rhs3, action))
+}
+
+addRule4(D1 <:Object, rhs1 :GrammarSymbol(D1), 
+	 D2 <:Object, rhs2 :GrammarSymbol(D2), 
+	 D3 <:Object, rhs3 :GrammarSymbol(D3), 
+	 D4 <:Object, rhs4 :GrammarSymbol(D4), 
+	 action :Fun(:D1, :D2, :D3, :D4):D) :Void
+  (* *)
+{
+  addRule(Rule.new4(self, rhs1, rhs2, rhs3, rhs4, action))
+}
+
+addRule5(D1 <:Object, rhs1 :GrammarSymbol(D1), 
+	 D2 <:Object, rhs2 :GrammarSymbol(D2), 
+	 D3 <:Object, rhs3 :GrammarSymbol(D3), 
+	 D4 <:Object, rhs4 :GrammarSymbol(D4), 
+	 D5 <:Object, rhs5 :GrammarSymbol(D5), 
+	 action :Fun(:D1, :D2, :D3, :D4, :D5):D) :Void
+  (* *)
+{
+  addRule(Rule.new5(self, rhs1, rhs2, rhs3, rhs4, rhs5, action))
+}
+
+addRule6(D1 <:Object, rhs1 :GrammarSymbol(D1), 
+	 D2 <:Object, rhs2 :GrammarSymbol(D2), 
+	 D3 <:Object, rhs3 :GrammarSymbol(D3), 
+	 D4 <:Object, rhs4 :GrammarSymbol(D4), 
+	 D5 <:Object, rhs5 :GrammarSymbol(D5), 
+	 D6 <:Object, rhs6 :GrammarSymbol(D6), 
+	 action :Fun(:D1, :D2, :D3, :D4, :D5, :D6):D) :Void
+  (* *)
+{
+  addRule(Rule.new6(self, rhs1, rhs2, rhs3, rhs4, rhs5, rhs6, action))
+}
+
+addRule7(D1 <:Object, rhs1 :GrammarSymbol(D1), 
+	 D2 <:Object, rhs2 :GrammarSymbol(D2), 
+	 D3 <:Object, rhs3 :GrammarSymbol(D3), 
+	 D4 <:Object, rhs4 :GrammarSymbol(D4), 
+	 D5 <:Object, rhs5 :GrammarSymbol(D5), 
+	 D6 <:Object, rhs6 :GrammarSymbol(D6), 
+	 D7 <:Object, rhs7 :GrammarSymbol(D7), 
+	 action :Fun(:D1, :D2, :D3, :D4, :D5, :D6, :D7):D) :Void
+  (* *)
+{
+  addRule(Rule.new7(self, rhs1, rhs2, rhs3, rhs4, rhs5, rhs6, rhs7, action))
+}
+
+addRule8(D1 <:Object, rhs1 :GrammarSymbol(D1), 
+	 D2 <:Object, rhs2 :GrammarSymbol(D2), 
+	 D3 <:Object, rhs3 :GrammarSymbol(D3), 
+	 D4 <:Object, rhs4 :GrammarSymbol(D4), 
+	 D5 <:Object, rhs5 :GrammarSymbol(D5), 
+	 D6 <:Object, rhs6 :GrammarSymbol(D6), 
+	 D7 <:Object, rhs7 :GrammarSymbol(D7), 
+	 D8 <:Object, rhs8 :GrammarSymbol(D8), 
+	 action :Fun(:D1, :D2, :D3, :D4, :D5, :D6, :D7, :D8):D) :Void
+  (* *)
+{
+  addRule(Rule.new8(self,
+		    rhs1, rhs2, rhs3, rhs4, rhs5, rhs6, rhs7, rhs8,
+		    action))
+}
+
+addRule9(D1 <:Object, rhs1 :GrammarSymbol(D1), 
+	 D2 <:Object, rhs2 :GrammarSymbol(D2), 
+	 D3 <:Object, rhs3 :GrammarSymbol(D3), 
+	 D4 <:Object, rhs4 :GrammarSymbol(D4), 
+	 D5 <:Object, rhs5 :GrammarSymbol(D5), 
+	 D6 <:Object, rhs6 :GrammarSymbol(D6), 
+	 D7 <:Object, rhs7 :GrammarSymbol(D7), 
+	 D8 <:Object, rhs8 :GrammarSymbol(D8), 
+	 D9 <:Object, rhs9 :GrammarSymbol(D9), 
+	 action :Fun(:D1, :D2, :D3, :D4, :D5, :D6, :D7, :D8, :D9):D) :Void
+  (* *)
+{
+  addRule(Rule.new9(self,
+		    rhs1, rhs2, rhs3, rhs4, rhs5, rhs6, rhs7, rhs8, rhs9,
+		    action))
+}
+
+private
+
+_name :String
+
+_rules :GapArray(Rule(D))
+
+}

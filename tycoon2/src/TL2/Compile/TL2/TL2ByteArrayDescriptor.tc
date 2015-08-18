@@ -1,0 +1,7 @@
+class TL2ByteArrayDescriptor
+super TL2ArrayDescriptor
+meta SingletonClass(TL2ByteArrayDescriptor)
+{
+layout :Int
+{ layoutByteArray }
+}

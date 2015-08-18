@@ -1,0 +1,326 @@
+class ParserGen(ConcreteParser <: AbstractParser)
+super Parse
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ A factory for Parsers *)
+meta ParserGenClass(ConcreteParser)
+{
+verbose :Bool
+
+  (* DEBUG! These are all private *)
+
+gram :Grammar(Object)
+
+lalr :LALRItemFA
+
+  (* actions for terminal symbols *)
+
+actionsT :Dictionary(LR1State, Dictionary(TerminalO, Set(LALRAction)))
+
+actionsT1 :Dictionary(LR1State, Dictionary(TerminalO, LALRAction))
+
+  (* actions for nonterminal symbols (only shift actions = LR1State) *)
+
+goto :Dictionary(NonterminalO, Dictionary(LR1State, LR1State))
+
+builder: AbstractParserBuilder(ConcreteParser)
+
+log :Output
+
+generate(D <: Object, g :Grammar(D)) :ConcreteParser(D)
+  (* *)
+{
+  gram := g
+  log.writeln( g.nonterminals.size.printString + " nonterminals\n" +
+	       g.rules.size.printString + " rules")
+  lalr := LALRItemFA.new(g)
+  log.writeln( ">> " + lalr.states.size.printString + " lalr states")
+  log.writeln( ">> " + 
+    lalr.states.inject(0, fun(i :Int, st :LR1State) :Int {
+      i + st.items.size
+    }).printString
+    + " lalr items")
+  collectActions
+  ; debugDump, 
+  selectActions
+  ; debugDump1, 
+  builder.generate(g, lalr.start, actionsT1, goto)
+}
+
+debugDump :Void
+  (* *)
+{
+  sortedStates ::= MutableArray.fromContainer(lalr.states)
+  sortedStates.quicksort(
+    fun(s1:LR1State, s2:LR1State) {
+      s1.n - s2.n
+    })
+
+  sortedStates.do(fun(s:LR1State){
+    s.printNiceItemsOn(log)
+    actionsT[s].keysAndElementsDo(fun(s :TerminalO, sa :Set(LALRAction)) {
+      s.printOn(log) log.writeAll("=") sa.printOn(log) log.writeAll(" ")
+    })
+    debugDumpGotos(s)
+    log.nl
+  })       
+}
+
+debugDump1 :Void
+  (* *)
+{
+  sortedStates ::= MutableArray.fromContainer(lalr.states)
+  sortedStates.quicksort(
+    fun(s1:LR1State, s2:LR1State) {
+      s1.n - s2.n
+    })
+
+  sortedStates.do(fun(s:LR1State){
+    s.printNiceItemsOn(log)
+    actionsT1[s].keysAndElementsDo(fun(s :TerminalO, a :LALRAction) {
+      s.printOn(log) log.writeAll("=") a.printOn(log) log.writeAll(" ")
+    })
+    debugDumpGotos(s)
+    log.nl
+  })       
+}
+
+debugDumpGotos(s :LR1State) :Void
+  (* *)
+{
+  gram.nonterminals.do(fun(nt :NonterminalO) {
+    goto[nt].lookup(s,
+      fun(s1 :LR1State) {
+	nt.printOn(log) log.writeAll("=") 
+	s1.n.printOn(log) log.writeAll(" ")
+      },
+      { }
+    )
+  })
+}
+
+private
+
+addAction(state :LR1State, sym :TerminalO, action :LALRAction) :Void
+  (* *)
+{
+  ;state.n.printOn(log), log.writeAll("/"), sym.printOn(log),
+;  log.writeAll("="), action.printOn(log), log.nl,
+  actions ::= actionsT[state].memoize(sym, { Set.new })
+  actions.add(action)
+}
+
+addGoto(nt :NonterminalO, from :LR1State, to :LR1State) :Void
+  (* *)
+{
+  assert({ !goto[nt].includesKey(from) })
+  goto[nt][from] := to
+}
+
+collectActions :Void
+  (* *)
+{
+  progress ::= 
+    ProgressIndicator.new("Collecting actions", lalr.states.size)
+  actionsT := Dictionary.new
+  goto := Dictionary.new
+  gram.nonterminals.do(fun(nt :NonterminalO) {
+    goto[nt] := Dictionary.new
+  })
+  lalr.states.do(fun(state :LR1State) {
+    progress.click
+    actionsT[state] := Dictionary.new
+    state.items.do(fun(item :LR1Item) {
+      if( item.atEnd then: {
+        ; reduce 
+	item.lookahead.do(fun(sym: TerminalO) {
+	  addAction(state, sym, ReduceAction.new(item.rule))
+	})
+      })
+    })
+    state.transitions.keysAndElementsDo(fun(sym :SymbolO, dest :LR1State) {
+      sym.case(
+        fun(term :TerminalO) {
+	  addAction(state, term,
+	    if( term == gram.eofTerminal then: {
+	      AcceptAction.new
+	    } else: {
+	      ShiftAction.new(dest)
+	    })
+	  )
+	},
+	fun(nt :NonterminalO) {
+	  addGoto(nt, state, dest)
+	}
+      )
+    })
+  })
+  progress.finish
+}
+
+conflict(msg :String, 
+	 state :LR1State, a1 :LALRAction, a2 :LALRAction, sym :SymbolO)
+	   :LALRAction
+  (* *)
+{
+  log.writeAll("Conflict: ")
+  log.writeAll(msg)
+  log.writeAll(" state ")
+  state.n.printOn(log)
+  log.writeAll(", ")
+  a1.printOn(log)
+  log.write(' ')
+  a2.printOn(log)
+  log.write(' ')
+  sym.printOn(log)
+  log.nl
+  ; arbitrarily, choose first argument
+;     (AG doesn't want ErrorAction) 
+  a1   ; ErrorAction.new 
+}
+
+resolveShiftReduce(state :LR1State, 
+		  sh :ShiftAction, red :ReduceAction, 
+		  sym :TerminalO) :LALRAction
+  (* returns the preferred action from sh and red or an ErrorAction in case of conflicts *)
+{
+  pRed ::= red.rule.precedence
+  pSh ::= sym.precedence
+
+result ::=
+  if( pRed.isNil | pSh.isNil then: {
+    conflict("missing precedence information", state, sh, red, sym)
+  } else: {
+    if( pRed.priority > pSh.priority
+    ||  pRed.priority == pSh.priority
+         &&  pSh.isLeftAssoc 
+	 &&  pRed.isLeftAssoc  
+    then: fun () :LALRAction {     ; stupid type inferencer 
+      red
+    } else: {
+      if( pRed.priority < pSh.priority
+      ||  pRed.priority == pSh.priority
+	   &&  pSh.isRightAssoc 
+	   &&  pRed.isRightAssoc  
+      then: fun () :LALRAction {   ; stupid type inferencer 
+        sh
+      } else: {
+        conflict("equal pri, mixed assoc", state, sh, red, sym)
+      })
+    })
+  })
+
+  if( verbose.isNotNil &&  verbose  then: {
+    log.writeAll("Resolve shift/reduce: ")
+    state.n.printOn(log)
+    log.write(' ')
+    sh.printOn(log)
+    log.write(' ')
+    red.printOn(log)
+    log.write(' ')
+    sym.printOn(log)
+    log.writeAll(": ")
+    result.printOn(log)
+    log.nl
+  })
+
+  result
+}
+
+resolvePrecedence(state :LR1State, 
+		  a1 :LALRAction, a2 :LALRAction, 
+		  sym :TerminalO) :LALRAction
+  (* *)
+{
+  a1.case(
+    fun(a1 :ShiftAction) {
+      a2.case(
+	fun(;a2
+:ShiftAction) :LALRAction {
+	  ; two shift actions on the same symbol ?! 
+	  assert({ false }) nil
+	},
+	fun(a2 :ReduceAction) {
+	  resolveShiftReduce(state, a1, a2, sym)
+	},
+	; accept 
+nil, ; error 
+nil
+      )
+    },
+    fun(a1 :ReduceAction) {
+      a2.case(
+	fun(a2 :ShiftAction) {
+	  resolveShiftReduce(state, a2, a1, sym)
+	},
+	fun(a2 :ReduceAction) {
+	  conflict("r/r", state, a1, a2, sym)  ; reduce/reduce 
+	},
+	; accept 
+nil, ; error 
+nil
+      )
+    },
+    ; accept 
+nil, ; error 
+nil
+  )
+}
+
+selectAction(actions :Set(LALRAction),
+	     state :LR1State,
+	     sym :TerminalO) :LALRAction
+  (* *)
+{
+  assert({ actions.size >= 1 })
+  r ::= actions.reader
+  first ::= r.read
+  r.inject(first, fun(a1 :LALRAction, a2 :LALRAction) {
+    resolvePrecedence(state, a1, a2, sym)
+  })
+}
+
+selectActions :Void
+  (* *)
+{
+  progress ::=
+    ProgressIndicator.new("Selecting actions", actionsT.size)
+  actionsT1 := Dictionary.new
+  actionsT.keysAndElementsDo(
+    fun(state :LR1State, d :Dictionary(TerminalO, Set(LALRAction))) {
+      progress.click
+      d1 ::= Dictionary.new
+      d.keysAndElementsDo(fun(sym :TerminalO, actions :Set(LALRAction)) {
+        d1[sym] := selectAction(actions, state, sym)
+      })
+      actionsT1[state] := d1
+    }
+  )
+  progress.finish
+}
+
+_init :Void
+  (* *)
+{ super._init
+  if( log.isNil then: { log := tycoon.stdout })
+  self
+}
+
+}

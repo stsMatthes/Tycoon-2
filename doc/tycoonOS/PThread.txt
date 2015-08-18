@@ -1,0 +1,1895 @@
+=================================================================
+condition(3T)            Threads Library            condition(3T)
+=================================================================
+
+NAME
+     condition,       pthread_cond_init,       pthread_cond_wait,
+     pthread_cond_timedwait,                 pthread_cond_signal,
+     pthread_cond_broadcast,   pthread_cond_destroy,   cond_init,
+     cond_wait,   cond_timedwait,   cond_signal,  cond_broadcast,
+     cond_destroy - condition variables
+
+SYNOPSIS
+  POSIX
+     cc [ flag ... ] file ...  -lpthread [ library ... ]
+
+     #include <pthread.h>
+     int pthread_cond_init(pthread_cond_t *cond,
+          const pthread_condattr_t *attr);
+     int pthread_cond_wait(pthread_cond_t *cond,
+          pthread_mutex_t *mutex);
+     int pthread_cond_timedwait(pthread_cond_t *cond,
+          pthread_mutex_t *mutex,
+          const struct timespec *abstime);
+     int pthread_cond_signal(pthread_cond_t *cond);
+     int pthread_cond_broadcast(pthread_cond_t *cond);
+     int pthread_cond_destroy(pthread_cond_t *cond);
+
+  Solaris
+     cc [ flag ... ] file ...  -lthread [ library ... ]
+
+     #include <thread.h>
+     #include <synch.h>
+     int cond_init(cond_t *cvp, int type, void *arg);
+     int cond_wait(cond_t *cvp, mutex_t *mp);
+     int cond_timedwait(cond_t *cvp, mutex_t *mp,
+          timestruc_t *abstime);
+     int cond_signal(cond_t *cvp);
+     int cond_broadcast(cond_t *cvp);
+     int cond_destroy(cond_t *cvp);
+
+MT-LEVEL
+     MT-Safe
+
+DESCRIPTION
+     Occasionally, a thread running within a mutex needs to  wait
+     for  an  event,  in  which case it blocks or sleeps.  When a
+     thread is waiting for  another  thread  to  communicate  its
+     disposition,  it  uses  a  condition variable in conjunction
+     with a mutex.  Although a mutex is exclusive and the code it
+     protects  is shareable (at certain moments), condition vari-
+     ables enable the synchronization of  differing  events  that
+     share  a mutex, but not necessarily data.  Several condition
+     variables may be used by threads to signal each other when a
+     task  is complete, which then allows the next waiting thread
+     to take ownership of the mutex.
+
+     A condition variable enables threads to atomically block and
+     test  the  condition under the protection of a mutual exclu-
+     sion lock (mutex) until the condition is satisfied.  If  the
+     condition  is false, a thread blocks on a condition variable
+     and atomically releases the mutex that is  waiting  for  the
+     condition  to  change.  If another thread changes the condi-
+     tion, it may wake up waiting threads by signaling the  asso-
+     ciated  condition variable.  The waiting threads, upon awak-
+     ening, reacquire the mutex and re-evaluate the condition.
+
+  Initialize
+     Condition variables and mutexes should be global.  Condition
+     variables  that  are  allocated  in writable memory can syn-
+     chronize threads among processes if they are shared  by  the
+     cooperating  processes (see mmap(2)) and are initialized for
+     this purpose.
+
+     The scope of a condition variable is either intra-process or
+     inter-process.   This is dependent upon whether the argument
+     is passed implicitly or explicitly to the initialization  of
+     that condition variable.  A condition variable does not need
+     to be explicitly initialized.  A condition variable is  ini-
+     tialized with all zeros, by default, and its scope is set to
+     within the calling process.  For inter-process  synchroniza-
+     tion,  a  condition  variable  must be initialized once, and
+     only once, before use.
+
+     A condition variable must not be simultaneously  initialized
+     by  multiple threads or re-initialized while in use by other
+     threads.
+
+     Condition variables attributes may be set to the default  or
+     customized  at  initialization. POSIX threads even allow the
+     default values to be customized.  Establishing these  attri-
+     butes varies depending upon whether POSIX or Solaris threads
+     are used.  Similar to the  distinctions  between  POSIX  and
+     Solaris thread creation, POSIX condition variables implement
+     the default, intra-process, unless an  attribute  object  is
+     modified  for  inter-process  prior to the initialization of
+     the condition variable.  Solaris  condition  variables  also
+     implement  as  the default, intra-process; however, they set
+     this attribute according to the argument,  type,  passed  to
+     their initialization function.
+
+  POSIX Initialize
+     POSIX condition variables mutexes, and  threads  use  attri-
+     butes  objects in the same manner; they are initialized with
+     the   configuration   of   an   attributes    object    (see
+     pthread_condattr_init(3T)).   The  pthread_cond_init() func-
+     tion initializes the condition variable referenced  by  cond
+     with  attributes  referenced  by attr.  If attr is NULL, the
+     default condition variable attributes are used, which is the
+     same  as passing the address of a default condition variable
+     attributes object.  When the initialization is complete, the
+     state  of  the condition variable is then initialized.  If a
+     default  condition  variable  is  used,  then  only  threads
+     created  within the same process can operate on the initial-
+     ized condition variable.
+
+     A condition variable can  possess  two  different  types  of
+     shared-scope  behavior,  which  is  determined by the second
+     argument to pthread_condattr_setpshared(3T).  This  argument
+     can be set to either of the following:
+
+     PTHREAD_PROCESS_PRIVATE       The  condition  variable   can
+                                   synchronize  threads  only  in
+                                   this       process.        The
+                                   PTHREAD_PROCESS_PRIVATE  POSIX
+                                   setting for process  scope  is
+                                   equivalent to the USYNC_THREAD
+                                   flag  to  cond_init()  in  the
+                                   Solaris   API.   This  is  the
+                                   default.
+
+     PTHREAD_PROCESS_SHARED        The  condition  variable   can
+                                   synchronize  threads  in  this
+                                   process and  other  processes.
+                                   Only  one  process should ini-
+                                   tialize  the  condition  vari-
+                                   able.                      The
+                                   PTHREAD_PROCESS_SHARED   POSIX
+                                   setting  for system-wide scope
+                                   is    equivalent    to     the
+                                   USYNC_PROCESS      flag     to
+                                   cond_init()  in  the   Solaris
+                                   API.  The  object  initialized
+                                   with this  attribute  must  be
+                                   allocated   in  memory  shared
+                                   between processes,  either  in
+                                   System  V  shared  memory (see
+                                   shmop(2)) or in memory  mapped
+                                   to  a  file (see mmap(2)).  It
+                                   is illegal to  initialize  the
+                                   object  this  way  and  to not
+                                   allocate  it  in  such  shared
+                                   memory.
+
+     Initializing condition variables can also be accomplished by
+     allocating-in   zeroed  memory  (default),  in  which  case,
+     PTHREAD_PROCESS_PRIVATE  is  assumed.   The  same  condition
+     variable  must not be simultaneously initialized by multiple
+     threads nor re-initialized while in use by other threads.
+
+     If default condition variable attributes  are  used,  stati-
+     cally  allocated  condition  variables can be initialized by
+     the macro PTHREAD_COND_INITIALIZER. The effect is  the  same
+     as a dynamic initialization by a call to pthread_cond_init()
+     with parameter attr specified as NULL, except  error  checks
+     are not performed.
+
+     Default condition variable initialization (intra-process):
+
+     pthread_cond_t        cvp;
+     pthread_condattr_t    cv_attr;
+
+     pthread_cond_init(&cvp, NULL);       /* initialize cv with defaults */
+         OR
+     pthread_condattr_init(&cv_attr);     /* initialize cv_attr with defaults */
+     pthread_cond_init(&cvp, &cv_attr);   /* initialize cv with default cv_attr*/
+         OR
+     pthread_condattr_setpshared(&cv_attr, PTHREAD_PROCESS_PRIVATE);
+     pthread_cond_init(&cvp, &cv_attr);   /* initialize cv with defaults */
+         OR
+     pthread_cond_t  cond  = PTHREAD_COND_INITIALIZER;
+         OR
+     pthread_cond_t cond;
+     cond = calloc(1, sizeof (pthread_cond_t));
+     Customized condition variable initialization (inter-process):
+     pthread_condattr_init(&cv_attr);     /* initialize cv_attr with defaults */
+     pthread_condattr_setpshared(&cv_attr, PTHREAD_PROCESS_SHARED);
+     pthread_cond_init(&cvp, &cv_attr);   /* initialize cv with inter-process scope */
+
+  Solaris Initialize
+     cond_init() initializes the condition variable pointed to by
+     cvp.   A condition variable can have several different types
+     of behavior, specified by type.  No current  type  uses  arg
+     although  a  future  type  may  specify  additional behavior
+     parameters via arg.  type may be one of the following:
+
+     USYNC_THREAD        The condition variable  can  synchronize
+                         threads   only  in  this  process.   The
+                         USYNC_THREAD Solaris condition  variable
+                         type  for process scope is equivalent to
+                         the POSIX condition  variable  attribute
+                         setting  PTHREAD_PROCESS_PRIVATE. arg is
+                         ignored.
+
+     USYNC_PROCESS       The condition variable  can  synchronize
+                         threads   in   this  process  and  other
+                         processes.  Only one process should ini-
+                         tialize  the  condition  variable.   The
+                         USYNC_PROCESS Solaris condition variable
+                         type for system-wide scope is equivalent
+                         to the POSIX condition  variable  attri-
+                         bute setting PTHREAD_PROCESS_SHARED. arg
+                         is ignored.  The object initialized with
+                         this  attribute  must  be  allocated  in
+                         memory shared between processes,  either
+                         in System V shared memory (see shmop(2))
+                         or in  memory  mapped  to  a  file  (see
+                         mmap(2)).   It  is illegal to initialize
+                         the object this way and to not  allocate
+                         it in such shared memory.
+
+     Initializing condition variables can also be accomplished by
+     allocating  in  zeroed  memory,  in  which  case,  a type of
+     USYNC_THREAD is assumed.
+
+     If default condition variable attributes  are  used,  stati-
+     cally  allocated  condition  variables can be initialized by
+     the macro DEFAULTCV.
+     Default condition variable initialization (intra-process):
+        cond_t cvp;
+
+        cond_init(&cvp, NULL, NULL); /* initialize condition variable with default */
+         OR
+        cond_init(&cvp, USYNC_THREAD, NULL);
+         OR
+        cond_t  cond  = DEFAULTCV;
+     Customized condition variable initialization (inter-process):
+        cond_init(&cvp, USYNC_PROCESS, NULL); /* initialize cv with inter-process scope */
+
+  Condition Wait
+     The condition wait interface allows a thread to wait  for  a
+     condition  and  atomically release the associated mutex that
+     it needs to hold to check the condition.  The  thread  waits
+     for  another  thread  to  make  the  condition true and that
+     thread's resulting call to signal  and  wakeup  the  waiting
+     thread.
+
+  POSIX Wait
+     pthread_cond_wait() and pthread_cond_timedwait() block on  a
+     condition  variable,  which  atomically  release  the  mutex
+     pointed to by mp and cause the calling thread  to  block  on
+     the  condition  variable  pointed  to  by cond.  The blocked
+     thread   may   be   awakened    by    pthread_cond_signal(),
+     pthread_cond_broadcast(), or interrupted by a UNIX signal.
+
+     These functions atomically release the  mutex,  causing  the
+     calling thread to block on the condition variable cond.
+
+     Upon successful completion, the mutex is locked and owned by
+     the calling thread.
+
+     pthread_cond_timedwait() is the same as pthread_cond_wait(),
+     except  an  error  is  returned if the system time equals or
+     exceeds the time specified by abstime before  the  condition
+     cond  is  signaled  or  broadcasted, or if the absolute time
+     specified by abstime has already passed at the time  of  the
+     call.    When   timeouts   occur,   pthread_cond_timedwait()
+     releases and reacquires the mutex referenced by mutex.
+
+     When using condition variables, there is  always  a  boolean
+     predicate  involving shared variables related to each condi-
+     tion wait that is true, if the thread should proceed.  Since
+     the       return       from      pthread_cond_wait()      or
+     pthread_cond_timedwait() does not  indicate  anything  about
+     the  value  of  this  predicate,  the  predicate  should  be
+     reevaluated    on    return.     Unwanted    wakeups    from
+     pthread_cond_wait() or pthread_cond_timedwait() may occur.
+
+     The        functions         pthread_cond_wait()         and
+     pthread_cond_timedwait() are cancellation points.  If a can-
+     cellation request is acted upon while in  a  condition  wait
+     when  the  cancellation  enable  state of a thread is set to
+     PTHREAD_CANCEL_DEFERRED, the mutex will be reacquired before
+     calling  the  first  cancellation cleanup handler.  In other
+     words, the thread is unblocked, allowed to execute up to the
+     point  of  returning from the call to pthread_cond_wait() or
+     pthread_cond_timedwait(), but then notices the  cancellation
+     request   and,   instead  of  returning  to  the  caller  of
+     pthread_cond_wait() or pthread_cond_timedwait(),  it  starts
+     the  thread  cancellation  activities including cancellation
+     cleanup handlers.
+
+     A thread that is unblocked because  it  was  canceled  while
+     blocked    in    a    call    to    pthread_cond_wait()   or
+     pthread_cond_timedwait() does not awaken anyone else  asleep
+     on the condition.
+
+  Solaris Wait
+     cond_wait() atomically releases the mutex pointed to  by  mp
+     and  causes  the  calling  thread  to block on the condition
+     variable pointed to by cvp.  The blocked thread may be awak-
+     ened by cond_signal(), cond_broadcast(), or when interrupted
+     by delivery of a UNIX signal or a fork().
+
+     cond_wait() and  cond_timedwait()  always  return  with  the
+     mutex  locked  and  owned  by  the  calling thread even when
+     returning an error.
+
+  Condition Signaling
+     A condition signal allows  a  thread  to  unblock  the  next
+     thread  waiting on the condition variable, whereas, a condi-
+     tion broadcast allows a thread to unblock all threads  wait-
+     ing on the condition variable.
+
+  POSIX Signal and Broadcast
+     pthread_cond_signal() and  pthread_cond_broadcast()  unblock
+     threads blocked on a condition variable.
+
+     pthread_cond_signal() unblocks at least one  thread  blocked
+     on the specified condition variable cond, if any threads are
+     blocked on cond.
+
+     pthread_cond_broadcast() unblocks all threads blocked on the
+     condition variable cond.
+
+     pthread_cond_signal() and pthread_cond_broadcast()  have  no
+     effect if there are no threads blocked on cond.
+
+     pthread_cond_signal()  or  pthread_cond_broadcast()  may  be
+     called  by  a thread regardless of whether it owns the mutex
+     which     threads     calling     pthread_cond_wait()     or
+     pthread_cond_timedwait()  have associated with the condition
+     variable  during  their  waits.   However,  if   predictable
+     scheduling  behavior  is required, then that mutex should be
+     locked  by  the  thread  calling  pthread_cond_signal()   or
+     pthread_cond_broadcast().
+
+  Solaris Signal and Broadcast
+     cond_signal() unblocks one thread that  is  blocked  on  the
+     condition variable pointed to by cvp.
+
+     cond_broadcast() unblocks all threads that  are  blocked  on
+     the condition variable pointed to by cvp.
+
+     If no threads are blocked on the  condition  variable,  then
+     cond_signal() and cond_broadcast() have no effect.
+
+     Both functions should be called under the protection of  the
+     same  mutex  that  is used with the condition variable being
+     signaled.  Otherwise, the condition variable may be signaled
+     between the test of the associated condition and blocking in
+     cond_wait().  This can cause an infinite wait.
+
+  Destroy
+     The condition destroy functions destroy any state,  but  not
+     the space, associated with the condition variable.
+
+  POSIX Destroy
+     pthread_cond_destroy()  destroys  the   condition   variable
+     specified  by  cond.  The space for destroying the condition
+     variable is not freed.
+
+  Solaris Destroy
+     cond_destroy() destroys any state associated with the condi-
+     tion  variable pointed to by cvp.  The space for storing the
+     condition variable is not freed.
+
+RETURN VALUES
+     0 is returned when any of these functions are successful.  A
+     non-zero     value     indicates     an     error,    except
+     pthread_timedwait(), which returns ETIME.
+
+ERRORS
+     These functions fail and return the corresponding  value  if
+     any of the following conditions are detected:
+
+     EFAULT      cond, attr, cvp, arg, abstime, or mutex point to
+                 an illegal address.
+
+     EINVAL      Invalid argument.
+                 For pthread_cond_init(), the value specified for
+                 attr is invalid.
+
+                 For cond_init(), type is not a recognized type.
+
+                 For         pthread_cond_timedwait()          or
+                 cond_timedwait(),   the   specified   number  of
+                 seconds, abstime, is greater than pgm_start_time
+                 +  50,000,000, where pgm_start_time is the start
+                 time  of  the  application,  or  the  number  of
+                 nanoseconds   is   greater   than  or  equal  to
+                 1,000,000,000.
+
+     cond_wait()  or  cond_timedwait()  fails  and  returns   the
+     corresponding  value  if any of the following conditions are
+     detected:
+
+     EINTR       The wait was interrupted by a signal or fork().
+
+     pthread_cond_timedwait()  or  cond_timedwait()   fails   and
+     returns the corresponding value if any of the following con-
+     ditions are detected:
+
+     ETIME       The time specified by abstime has passed.
+
+SEE ALSO
+     fork(2),        mmap(2),        shmop(2),         mutex(3T),
+     pthread_condattr_init(3T), signal(3C)
+
+NOTES
+     The only policy  currently  supported  is  SCHED_OTHER.   In
+     Solaris,  under  the  SCHED_OTHER  policy, there is no esta-
+     blished order in which threads are unblocked.
+
+     If more than one thread is blocked on a condition  variable,
+     the  order  in  which threads are unblocked is determined by
+     the scheduling policy.  When each  thread,  unblocked  as  a
+     result       of       a       pthread_cond_signal()       or
+     pthread_cond_broadcast(),   returns   from   its   call   to
+     pthread_cond_wait()  or pthread_cond_timedwait(), the thread
+     owns the mutex with which it called  pthread_cond_wait()  or
+     pthread_cond_timedwait().   The thread(s) that are unblocked
+     compete for the mutex according to  the  scheduling  policy,
+     and as if each had called pthread_mutex_lock(3T).
+
+     When cond_wait() returns  the  value  of  the  condition  is
+     indeterminate and must be reevaluated.
+
+     cond_timedwait() is similar to cond_wait(), except that  the
+     calling  thread  will  not  wait for the condition to become
+     true past the absolute time specified by abstime.  Note that
+     cond_timedwait()  may  continue to block as it trys to reac-
+     quire the mutex pointed to by mp, which  may  be  locked  by
+     another  thread.  If  abstime  then cond_timedwait() returns
+     because of a timeout, it returns the error code ETIME .
+
+
+
+=================================================================
+mutex(3T)                Threads Library                mutex(3T)
+=================================================================
+
+NAME
+     mutex,        pthread_mutex_init,        pthread_mutex_lock,
+     pthread_mutex_trylock,                 pthread_mutex_unlock,
+     pthread_mutex_destroy,        mutex_init,        mutex_lock,
+     mutex_trylock,  mutex_unlock,  mutex_destroy - mutual exclu-
+     sion locks
+
+SYNOPSIS
+  POSIX
+     cc [ flag ... ] file ...  -lpthread [ library ... ]
+
+     #include <pthread.h>
+     int pthread_mutex_init(pthread_mutex_t *mp,
+          const pthread_mutexattr_t *attr);
+     pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+     int pthread_mutex_lock(pthread_mutex_t *mp);
+     int pthread_mutex_trylock(pthread_mutex_t *mp);
+     int pthread_mutex_unlock(pthread_mutex_t *mp);
+     int pthread_mutex_destroy(pthread_mutex_t *mp);
+
+  Solaris
+     cc [ flag ... ] file ...  -lthread [ library ... ]
+
+     #include <thread.h>
+     #include <synch.h>
+     int mutex_init(mutex_t *mp, int type, void * arg);
+     int mutex_lock(mutex_t *mp);
+     int mutex_trylock(mutex_t *mp);
+     int mutex_unlock(mutex_t *mp);
+     int mutex_destroy(mutex_t *mp);
+
+MT-LEVEL
+     MT-Safe
+
+DESCRIPTION
+     Mutual exclusion locks (mutexes)  prevent  multiple  threads
+     from  simultaneously  executing  critical  sections  of code
+     which access shared data (that is, mutexes are used to seri-
+     alize  the  execution of threads).  All mutexes must be glo-
+     bal.    A   successful   call   for   a   mutex   lock   via
+     pthread_mutex_lock()  or  mutex_lock()  will  cause  another
+     thread that is also trying to lock the same mutex  to  block
+     until the owner thread unlocks it via pthread_mutex_unlock()
+     or mutex_unlock().   Threads  within  the  same  process  or
+     within other processes can share mutexes.
+
+     Mutexes can synchronize threads within the same  process  or
+     in  other  processes.  Mutexes  can  be  used to synchronize
+     threads between processes if the mutexes  are  allocated  in
+     writable  memory  and shared among the cooperating processes
+     (see mmap(2)), and have been initialized for this task.
+
+  Initialize
+     Mutexes are either intra-process or inter-process, depending
+     upon  the  argument  passed  implicitly or explicitly to the
+     initialization of that mutex.  A statically allocated  mutex
+     does  not  need  to be explicitly initialized; by default, a
+     statically allocated mutex is initialized with all zeros and
+     its  scope  is  set  to  be within the calling process.  For
+     POSIX portability of statically allocated mutexes,  use  the
+     pthread_mutex_initializer macro (see below).
+
+     For inter-process synchronization, a mutex needs to be allo-
+     cated  in  memory shared between these processes.  Since the
+     memory for such a mutex must be allocated  dynamically,  the
+     mutex  needs to be explicitly initialized using mutex_init()
+     or pthread_mutex_init() with the appropriate attribute  that
+     indicates inter-process use.
+
+  POSIX Initialize
+     POSIX mutexes, threads, and condition variables  use  attri-
+     butes  objects in the same manner; they are initialized with
+     the   configuration   of   an   attributes    object    (see
+     pthread_mutexattr_init(3T)).  The pthread_mutex_init() func-
+     tion initializes the mutex referenced by mp with  attributes
+     specified  by  attr.   If  attr  is  NULL, the default mutex
+     attributes are used,  which  is  the  same  as  passing  the
+     address of a default mutex attributes object.  Upon initial-
+     ization, the state of the mutex is initialized and unlocked.
+     If  default  mutex  attributes  are  used, then only threads
+     created within the same process can operate on the  initial-
+     ized mutex variable.
+
+     In POSIX, the attributes of a mutex may be specified via the
+     attribute  object  created  via pthread_mutexattr_init() and
+     modified  using  the  pthread_mutexattr_*()  functions.   To
+     explicitly  specify  whether  a  mutex  is  or is not shared
+     between processes, it can be initialized with  an  attribute
+     object  modified  via pthread_mutexattr_setpshared(3T).  The
+     second argument to this function can be either of  the  fol-
+     lowing:
+
+     PTHREAD_PROCESS_PRIVATE       The  mutex   can   synchronize
+                                   threads  within  this process.
+                                   The    PTHREAD_PROCESS_PRIVATE
+                                   POSIX  mutex  type for process
+                                   scope  is  equivalent  to  the
+                                   USYNC_THREAD      flag      to
+                                   mutex_init()  in  the  Solaris
+                                   API (see below).
+
+     PTHREAD_PROCESS_SHARED        The  mutex   can   synchronize
+                                   threads  in  this  process and
+                                   other  processes.   Only   one
+                                   process  should initialize the
+                                   mutex.                     The
+                                   PTHREAD_PROCESS_SHARED   POSIX
+                                   mutex  type  for   system-wide
+                                   scope  is  equivalent  to  the
+                                   USYNC_PROCESS     flag      to
+                                   mutex_init()  in  the  Solaris
+                                   API (see below).   The  object
+                                   initialized  with  this attri-
+                                   bute  must  be  allocated   in
+                                   memory      shared     between
+                                   processes, either in System  V
+                                   shared  memory (see shmop(2)).
+                                   or in memory mapped to a  file
+                                   (see  mmap(2)).  It is illegal
+                                   to initialize the object  this
+                                   way  and to not allocate it in
+                                   such shared memory.
+
+     Initializing mutexes can also be accomplished by  allocating
+     in    zeroed    memory    (default),    in    which    case,
+     PTHREAD_PROCESS_PRIVATE is assumed.  The same mutex must not
+     be  simultaneously  initialized  by  multiple  threads,  nor
+     should a mutex lock be re-initialized while in use by  other
+     threads.
+
+     If default mutex attributes are used,  statically  allocated
+     mutexes     can     be     initialized    by    the    macro
+     PTHREAD_MUTEX_INITIALIZER. The  effect  is  the  same  as  a
+     dynamic  initialization  by  a  call to pthread_mutex_init()
+     with parameter attr specified as NULL, except  error  checks
+     are not performed.
+
+     Default mutex initialization (intra-process):
+
+        pthread_mutex_t mp;
+        pthread_mutexattr_t mattr;
+
+        pthread_mutex_init(&mp, NULL);
+         OR
+        pthread_mutexattr_init(&mattr);
+        pthread_mutex_init(&mp, &mattr);
+         OR
+        pthread_mutexattr_setpshared(&mattr, PTHREAD_PROCESS_PRIVATE);
+        pthread_mutex_init(&mp, &mattr);
+         OR
+        pthread_mutex_t  mp  =  PTHREAD_MUTEX_INITIALIZER;
+         OR
+        pthread_mutex_t mp;
+        mp = calloc (1, sizeof (pthread_mutex_t));
+
+     Customized mutex initialization (inter-process):
+
+        pthread_mutexattr_init(&mattr);
+        pthread_mutexattr_setpshared(&mattr, PTHREAD_PROCESS_SHARED);
+        pthread_mutex_init(&mp, &mattr);
+
+  Solaris Initialize
+     The equivalent Solaris API used to  initialize  a  mutex  so
+     that  it has several different types of behavior is the type
+     argument passed to mutex_init().  No current type  uses  arg
+     although  a  future  type  may  specify  additional behavior
+     parameters via arg.  type may be one of the following:
+
+     USYNC_THREAD        The mutex can synchronize  threads  only
+                         in  this  process.  arg is ignored.  The
+                         USYNC_THREAD Solaris mutex type for pro-
+                         cess  scope  is  equivalent to the POSIX
+                         mutex         attribute          setting
+                         PTHREAD_PROCESS_PRIVATE.
+
+     USYNC_PROCESS       The mutex  can  synchronize  threads  in
+                         this  process and other processes.  Only
+                         one process should initialize the mutex.
+                         arg   is   ignored.   The  USYNC_PROCESS
+                         Solaris mutex type for process scope  is
+                         equivalent  to the POSIX mutex attribute
+                         setting   PTHREAD_PROCESS_SHARED.    The
+                         object  initialized  with this attribute
+                         must  be  allocated  in  memory   shared
+                         between  processes,  either  in System V
+                         shared memory  (see  shmop(2)).   or  in
+                         memory  mapped  to a file (see mmap(2)).
+                         It is illegal to initialize  the  object
+                         this  way and to not allocate it in such
+                         shared memory.
+
+     Initializing mutexes can also be accomplished by  allocating
+     in  zeroed  memory  (default),  in  which  case,  a  type of
+     USYNC_THREAD is assumed.  The same mutex must not be  simul-
+     taneously  initialized  by  multiple  threads.  A mutex lock
+     must not be re-initialized while in use by other threads.
+
+     If default mutex attributes are used, the macro DEFAULTMUTEX
+     can  be used to initialize mutexes that are statically allo-
+     cated.
+
+     Default mutex initialization (intra-process):
+
+        mutex_t mp;
+
+        mutex_init(&mp, NULL, NULL);
+         OR
+        mutex_init(&mp, USYNC_THREAD, NULL);
+         OR
+        mutex_t  mp  =  DEFAULTMUTEX;
+         OR
+        mutex_t mp;
+
+        mp = calloc(1, sizeof (mutex_t));
+         OR
+        mutex_t mp;
+
+        mp = malloc(sizeof (mutex_t));
+
+        memset(mp, 0, sizeof (mutex_t));
+
+     Customized mutex initialization (inter-process):
+
+        mutex_init(&mp, USYNC_PROCESS, NULL);
+
+  Lock and Unlock
+     A critical section of code is enclosed by a the call to lock
+     the  mutex  and  the  call to unlock the mutex to protect it
+     from simultaneous access  by  multiple  threads.   Only  one
+     thread  at  a  time may possess mutually exclusive access to
+     the critical section of code that is enclosed by the  mutex-
+     locking  call  and  the  mutex-unlocking  call,  whether the
+     mutex's scope is intra-process or inter-process.   A  thread
+     calling  to  lock  the mutex either gets exclusive access to
+     the code starting from the successful locking until its call
+     to unlock the mutex, or it waits until the mutex is unlocked
+     by the thread that locked it.
+
+     Mutexes have ownership,  unlike  semaphores.   Although  any
+     thread,  within  the  scope  of a mutex, can get an unlocked
+     mutex and lock access to the same critical section of  code,
+     only the thread that locked a mutex can unlock it.
+
+     If a thread waiting for a  mutex  receives  a  signal,  upon
+     return  from  the signal handler, the thread resumes waiting
+     for the mutex as if there was no interrupt.   A  mutex  pro-
+     tects  code, not data; therefore, strongly bind a mutex with
+     the data by putting both within the same  structure,  or  at
+     least within the same procedure.
+
+  POSIX/Solaris Locking
+     A call to pthread_mutex_lock()  or  mutex_lock()  locks  the
+     mutex  object  referenced  by  mp.   If the mutex is already
+     locked, the calling thread blocks until the mutex is  freed;
+     this  will  return with the mutex object referenced by mp in
+     the locked state with the calling thread as its  owner.   If
+     the  current  owner of a mutex tries to relock the mutex, it
+     will result in deadlock.
+
+     pthread_mutex_trylock() and mutex_trylock() is the  same  as
+     pthread_mutex_lock()  and mutex_lock(), respectively, except
+     that if the mutex object referenced by mp is locked (by  any
+     thread,  including  the  current  thread),  the call returns
+     immediately with an error.
+
+     pthread_mutex_unlock() or mutex_unlock() are called  by  the
+     owner  of  the  mutex object referenced by mp to release it.
+     The mutex must be locked and the calling thread must be  the
+     one  that  last  locked the mutex (the owner).  If there are
+     threads blocked on the mutex object referenced  by  mp  when
+     pthread_mutex_unlock()  is  called, the mp is freed, and the
+     scheduling policy  will  determine  which  thread  gets  the
+     mutex.   If the calling thread is not the owner of the lock,
+     no error status is returned, and the behavior of the program
+     is undefined.
+
+  Destroy
+     Either pthread_mutex_destroy() or  mutex_destroy()  destroys
+     the  mutex object referenced by mp; the mutex object becomes
+     uninitialized.  The space used by the destroyed mutex  vari-
+     able is not freed.  It needs to be explicitly reclaimed.
+
+RETURN VALUES
+     If successful, all of these functions return  0;  otherwise,
+     an error number is returned.
+
+     pthread_mutex_trylock() or mutex_trylock() returns  0  if  a
+     lock  on the mutex object referenced by mp is obtained; oth-
+     erwise, an error number is returned.
+
+ERRORS
+     These functions fail and return the corresponding  value  if
+     any of the following conditions are detected:
+
+     EFAULT         mp or attr points to an illegal address.
+
+     pthread_mutex_init() or mutex_init() fails and  returns  the
+     corresponding  value  if any of the following conditions are
+     detected:
+
+     EINVAL         The value specified by mp or attr is invalid.
+
+     pthread_mutex_trylock() or mutex_trylock() fails and returns
+     the  corresponding  value if any of the following conditions
+     occur:
+
+     EBUSY          The  mutex  pointed  to  by  mp  was  already
+                    locked.
+
+EXAMPLES
+
+  Single Gate
+     The following example uses one global mutex as a gate-keeper
+     to  permit  each  thread  exclusive sequential access to the
+     code within the user-defined function  "change_global_data."
+     This  type  of  synchronization  will  protect  the state of
+     shared data, but it also prohibits parallelism.
+
+          /* cc thisfile.c -lthread */
+
+          #define _REENTRANT
+          #include <stdio.h>
+          #include <thread.h>
+          #define NUM_THREADS 12
+          void *change_global_data(void *);     /*  for thr_create()   */
+          main(int argc,char * argv[])  {
+               int i=0;
+               for (i=0; i< NUM_THREADS; i++)     {
+                    thr_create(NULL, 0, change_global_data, NULL, 0, NULL);
+               }
+               while ((thr_join(NULL, NULL, NULL) == 0));
+          }
+
+          void * change_global_data(void *null)   {
+               static mutex_t Global_mutex;
+               static int     Global_data = 0;
+               mutex_lock(&Global_mutex);
+               Global_data++;
+               sleep(1);
+               printf("%d is global data\n",Global_data);
+               mutex_unlock(&Global_mutex);
+                return NULL;
+          }
+
+  Multiple Instruction Single Data
+     The previous example, the mutex, the code it owns,  and  the
+     data  it  protects  was  enclosed  in one function. The next
+     example uses C++ features to accommodate many functions that
+     use just one mutex to protect one data:
+
+          /* CC thisfile.c -lthread   use C++ to compile*/
+          #define _REENTRANT
+          #include <stdlib.h>
+          #include <stdio.h>
+          #include <thread.h>
+          #include <errno.h>
+          #include <iostream.h>
+          #define NUM_THREADS 16
+          void *change_global_data(void *);     /*  for thr_create()   */
+
+          class Mutected {
+               private:
+                    static mutex_t Global_mutex;
+                    static int     Global_data;
+               public:
+                    static int     add_to_global_data(void);
+                    static int     subtract_from_global_data(void);
+          };
+
+          int Mutected::Global_data = 0;
+          mutex_t Mutected::Global_mutex;
+
+          int Mutected::add_to_global_data() {
+               mutex_lock(&Global_mutex);
+               Global_data++;
+               mutex_unlock(&Global_mutex);
+               return Global_data;
+          }
+
+          int Mutected::subtract_from_global_data()    {
+               mutex_lock(&Global_mutex);
+               Global_data--;
+               mutex_unlock(&Global_mutex);
+               return Global_data;
+          }
+
+          void
+          main(int argc,char * argv[])  {
+               int i=0;
+               for (i=0;i< NUM_THREADS;i++)  {
+                    thr_create(NULL,0,change_global_data,NULL,0,NULL);
+               }
+               while ((thr_join(NULL,NULL,NULL) == 0));
+          }
+
+          void * change_global_data(void *)  {
+               static int switcher = 0;
+               if ((switcher++ % 3) == 0)   /* one-in-three threads subtracts */
+                    cout << Mutected::subtract_from_global_data() << endl;
+               else
+                    cout << Mutected::add_to_global_data() << endl;
+               return NULL;
+          }
+
+  Interprocess Locking
+     A mutex can protect data that is shared among processes. The
+     mutex    would    need   to   be   initialized   as   either
+     PTHREAD_PROCESS_SHARED        for         POSIX         (see
+     pthread_mutexattr_init(3T)),  or  USYNC_PROCESS  for Solaris
+     threads.  One process initializes the  process-shared  mutex
+     and  writes  it  to  a  file to be mapped into memory by all
+     cooperating  processes  (see  mmap(2)).   Afterwards,  other
+     independent processes can run the same program (whether con-
+     currently or not) and share mutex-protected data.
+
+          /* cc thisfile.c -lthread */
+          /* To execute, run the command line "a.out 0 & a.out 1" */
+
+          #define _REENTRANT
+          #include <sys/types.h>
+          #include <sys/mman.h>
+          #include <sys/stat.h>
+          #include <fcntl.h>
+          #include <stdio.h>
+          #include <thread.h>
+          #define INTERPROCESS_FILE "ipc-sharedfile"
+          #define NUM_ADDTHREADS 12
+          #define NUM_SUBTRACTTHREADS 10
+          #define INCREMENT '0'
+          #define DECREMENT '1'
+          typedef struct {
+                    mutex_t   Interprocess_mutex;
+                    int       Interprocess_data;
+          } buffer_t;
+          buffer_t *buffer;
+
+          void *add_interprocess_data(), *subtract_interprocess_data();
+          void create_shared_memory(), test_argv();
+          int zeroed[sizeof(buffer_t)];
+          int ipc_fd, i=0;
+
+          void
+          main(int argc,char * argv[])  {
+               test_argv(argv[1]);
+
+               switch (*argv[1])  {
+                 case INCREMENT:
+                    create_shared_memory();
+                    ipc_fd = open(INTERPROCESS_FILE, O_RDWR);
+                    buffer = (buffer_t *)mmap(NULL, sizeof(buffer_t),
+                              PROT_READ|PROT_WRITE, MAP_SHARED, ipc_fd, 0);
+                    buffer->Interprocess_data = 0;
+                    mutex_init(&buffer->Interprocess_mutex, USYNC_PROCESS,0);
+                    for (i=0; i< NUM_ADDTHREADS; i++)
+                    thr_create(NULL, 0, add_interprocess_data, argv[1],
+                               0, NULL);
+                    break;
+
+                 case DECREMENT:
+                    while((ipc_fd = open(INTERPROCESS_FILE, O_RDWR)) == -1)
+                         sleep(1);
+                    buffer = (buffer_t *)mmap(NULL, sizeof(buffer_t),
+                              PROT_READ|PROT_WRITE, MAP_SHARED, ipc_fd, 0);
+                    for (i=0; i< NUM_SUBTRACTTHREADS; i++)
+                     thr_create(NULL, 0, subtract_interprocess_data, argv[1],
+                                  0, NULL);
+                    break;
+               } /* end switch */
+
+               while ((thr_join(NULL,NULL,NULL) == 0));
+          } /* end main */
+
+          void *add_interprocess_data(char argv_1[])   {
+               mutex_lock(&buffer->Interprocess_mutex);
+               buffer->Interprocess_data++;
+               sleep(2);
+               printf("%d is add-interprocess data, and %c is argv1\n",
+                         buffer->Interprocess_data, argv_1[0]);
+               mutex_unlock(&buffer->Interprocess_mutex);
+               return NULL;
+          }
+
+          void *subtract_interprocess_data(char argv_1[])   {
+               mutex_lock(&buffer->Interprocess_mutex);
+               buffer->Interprocess_data--;
+               sleep(2);
+               printf("%d is subtract-interprocess data, and %c is argv1\n",
+                         buffer->Interprocess_data, argv_1[0]);
+               mutex_unlock(&buffer->Interprocess_mutex);
+               return NULL;
+          }
+
+          void create_shared_memory()   {
+               int i;
+               ipc_fd = creat(INTERPROCESS_FILE, O_CREAT|O_RDWR );
+               for (i=0; i<sizeof(buffer_t); i++) {
+                    zeroed[i] = 0;
+                    write(ipc_fd, &zeroed[i],2);
+               }
+               close(ipc_fd);
+               chmod(INTERPROCESS_FILE, S_IRWXU|S_IRWXG|S_IRWXO);
+          }
+
+          void test_argv(char argv1[])     {
+            if (argv1 == NULL)  {
+              printf("use 0 as arg1 for initial process\n \
+              or use 1 as arg1 for the second process\n");
+              exit(NULL);
+            }
+          }
+
+     In this example, run the command line
+
+          a.out 0 & a.out 1
+
+  Dynamically Allocated Mutexes
+     The following example allocates and frees memory in which  a
+     mutex is embedded.
+
+          struct record {
+                      int field1;
+                      int field2;
+                      mutex_t m;
+          } *r;
+          r = malloc(sizeof(struct record));
+          mutex_init(&r->m, USYNC_THREAD, NULL);
+          /*
+            * The fields in this record are accessed concurrently
+            * by acquiring the embedded lock.
+            */
+
+     The thread execution in this example is as follows:
+
+          Thread 1 executes:     Thread 2 executes:
+          ...                    ...
+          mutex_lock(&r->m);     mutex_lock(&r->m);
+          r->field1++;           localvar = r->field1;
+          r->field2 += 2;        r->field2 += 3;
+          mutex_unlock(&r->m);   mutex_unlock(&r->m);
+          ...                    ...
+
+     Later, when a thread decides to free the memory  pointed  to
+     by  r, the thread should call mutex_destroy() on the mutexes
+     in this memory.
+
+     In  the  following  example,  the  main  thread  can  do   a
+     thr_join()  on  both  of  the above threads. If there are no
+     other threads using the memory in r, the main thread can now
+     safely free r:
+
+          for (i = 0; i < 2; i++)
+                 thr_join(0, 0, 0);
+          mutex_destroy(&r->m);                       /* first destroy mutex */
+          free(r);                                    /* Then free memory */
+
+     If the mutex is not destroyed, the program could have memory
+     leaks.
+
+SEE ALSO
+     mmap(2),            shmop(2),            pthread_create(3T),
+     pthread_mutexattr_init(3T)
+
+NOTES
+     Currently, the only  supported  policy  is  SCHED_OTHER.  In
+     Solaris,  under  the  SCHED_OTHER  policy, there is no esta-
+     blished order in which threads are unblocked.
+
+     In    the     current     implementation     of     threads,
+     pthread_mutex_lock(),  pthread_mutex_unlock(), mutex_lock(),
+     mutex_unlock(), pthread_mutex_trylock(), and mutex_trylock()
+     do  not validate the mutex type. Therefore, an uninitialized
+     mutex or a mutex with an invalid type does not  return  EIN-
+     VAL.  Interfaces  for  mutexes  with  an  invalid  type have
+     unspecified behavior.
+
+     Uninitialized mutexes which are allocated locally  may  con-
+     tain  junk  data.  Such mutexes need to be initialized using
+     pthread_mutex_init() or mutex_init().
+
+     By default, if multiple threads are waiting for a mutex, the
+     order of acquisition is undefined.
+
+
+=================================================================
+pthread_create(3T)       Threads Library       pthread_create(3T)
+=================================================================
+
+NAME
+     pthread_create, thr_create - thread creation
+
+SYNOPSIS
+  POSIX
+     cc [ flag ... ] file ...  -lpthread [ library ... ]
+
+     #include <pthread.h>
+     int pthread_create(pthread_t *new_thread_ID,
+          const pthread_attr_t *attr,
+          void * (*start_func)(void *), void *arg);
+
+  Solaris
+     cc [ flag ... ] file ...  -lthread [ library ... ]
+
+     #include <thread.h>
+     int thr_create(void *stack_base, size_t stack_size,
+          void *(*start_func)(void *), void *arg, long flags,
+          thread_t *new_thread_ID);
+
+MT-LEVEL
+     MT-Safe
+
+DESCRIPTION
+     Thread creation adds a new thread of control to the  current
+     process.   The  procedure main(), itself, is a single thread
+     of control.  Each thread executes  simultaneously  with  all
+     the other threads within the calling process, and with other
+     threads from other active processes.
+
+     A newly created thread shares all of  the  calling  process'
+     global data with the other threads in this process; however,
+     it has its own  set  of  attributes  and  private  execution
+     stack.  The  new thread inherits the calling thread's signal
+     mask, possibly, and scheduling  priority.   Pending  signals
+     for a new thread are not inherited and will be empty.
+
+     The call to create a thread takes the  address  of  a  user-
+     defined  function,  specified  by  start_func, as one of its
+     arguments, which is the complete execution routine  for  the
+     new thread.
+
+     The lifetime of a thread begins with the  successful  return
+     from   pthread_create()   or   thr_create(),   which   calls
+     start_func() and ends with either:
+
+          o the normal completion of start_func(),
+
+          o the return from an explicit call to  pthread_exit(3T)
+          or thr_exit(3T),
+
+          o a thread cancellation (see pthread_cancel(3T)).  or
+
+          o the conclusion of the calling process (see exit(2)).
+
+     The new thread performs by calling the function  defined  by
+     start_func  with  one argument, arg.  If more than one argu-
+     ment needs to be passed to start_func, the arguments can  be
+     packed  into  a structure, and the address of that structure
+     can be passed to arg.
+
+     If start_func returns, the thread will  terminate  with  the
+     exit   status  set  to  the  start_func  return  value  (see
+     pthread_exit(3T) or thr_exit(3T)).
+
+     Note that when the thread returns in which main() originated
+     from,  the  effect  is the same as if there were an implicit
+     call to exit() using the return value of main() as the  exit
+     status.  This differs from a start_func return.  However, if
+     main() itself calls either pthread_exit(3T) or thr_exit(3T),
+     only the main thread exits, not the entire process.
+
+     If the thread creation itself fails, a  new  thread  is  not
+     created  and  the contents of the location referenced by the
+     pointer to the new thread are undefined.
+
+  Attributes
+     The  configuration  of  a  set  of  attributes  defines  the
+     behavior  of a thread.  At creation, each attribute of a new
+     thread may be user-defined  or  set  to  the  default.   All
+     attributes  are  defined upon thread creation, however, some
+     may be dynamically  modified  after  creation.  Establishing
+     these  attributes  varies  depending  upon  whether POSIX or
+     Solaris threads are used. Both implementations offer  a  few
+     attributes the other does not.
+
+     The available attributes are:
+
+        Attribute                         Description                        API
+     contentionscope   Scheduled by threads library (local
+                       scope) or scheduled by the OS (global scope)        both
+     detachstate       Allows other threads to wait for
+                       a particular thread to terminate                    both
+     stackaddr         Sets a pointer to the thread's stack                both
+     stacksize         Sets the size of the thread's stack                 both
+     concurrency       Elevates concurrency, if possible                   Solaris
+     priority          Sets ranking within the policy (scheduling class)   both
+     policy            Sets scheduling class; SCHED_OTHER                  POSIX
+     inheritsched      Determines whether scheduling parameters are
+                       inherited or explicitly defined                     POSIX
+     suspended         Sets thread to runnable vs. suspended               Solaris
+     daemon            Defines a thread's behavior to be like a daemon     Solaris
+
+  POSIX
+     pthread_create() creates a new thread within a process  with
+     attributes  defined by attr.  Default attributes are used if
+     attr is NULL.  If  any  attributes  specified  by  attr  are
+     changed  in  the  attribute  object  prior  to  the  call to
+     pthread_create(), the new thread will acquire those changes.
+     However,  if  any  attributes  specified by attr are changed
+     after the call to pthread_create(), the attributes of exist-
+     ing  threads  will  not be affected.  Since pthread_create()
+     can use an attribute object  in  its  call,  a  user-defined
+     thread creation must be preceded by a user-defined attribute
+     object (see pthread_attr_init(3T)).  Upon successful comple-
+     tion,  and if the return value is not NULL, pthread_create()
+     will store the ID of the  created  thread  in  the  location
+     referenced by new_thread_ID.
+
+     It is recommended that for POSIX thread creation, all attri-
+     bute  objects,  attrs, which will be used later during crea-
+     tion calls, be initialized and modified in the early  stages
+     of program execution.
+
+     The default creation attributes for pthread_create() are:
+
+        Attribute           Default Value              Meaning of Default Value
+     contentionscope   PTHREAD_SCOPE_PROCESS     Resource competition within process
+     detachstate       PTHREAD_CREATE_JOINABLE   Joinable by other threads
+     stackaddr         NULL                      Allocated by system
+     stacksize         NULL                      1 megabyte
+     priority          NULL                      Parent (calling) thread's priority
+     policy            SCHED_OTHER               Determined by system
+     inheritsched      PTHREAD_EXPLICIT_SCHED    Scheduling attributes explicitly set,
+                                                 e.g., policy is SCHED_OTHER.
+
+     Default thread creation:
+
+        pthread_t tid;
+        void *start_func(void *), *arg;
+
+        pthread_create(&tid, NULL, start_func, arg);
+
+     This would have the same effect as:
+
+        pthread_attr_t attr;
+
+        pthread_attr_init(&attr); /* initialize attr with default attributes */
+        pthread_create(&tid, &attr, start_func, arg);
+
+     User-defined thread creation:
+
+     To create a thread that is scheduled on a system-wide basis (i.e., a bound
+     thread, as per the Solaris API), use:
+
+        pthread_attr_init(&attr); /* initialize attr with default attributes */
+        pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM);  /* system-wide contention */
+        pthread_create(&tid, &attr, start_func, arg);
+
+     To  customize  the  attributes  for   POSIX   threads,   see
+     pthread_attr_init(3T).
+
+     A new thread created with pthread_create()  uses  the  stack
+     specified  by the stackaddr attribute, and the stack contin-
+     ues for the number  of  bytes  specified  by  the  stacksize
+     attribute.   By  default,  the stack size is 1 megabyte (see
+     pthread_attr_setstacksize(3T)).  If the default is used  for
+     both     the    stackaddr    and    stacksize    attributes,
+     pthread_create() creates a stack for the new thread with  at
+     least 1 megabyte.  (For customizing stack sizes, see NOTES).
+
+  Solaris
+     In the Solaris API, thr_create() either results in the crea-
+     tion  of  a  default thread or a thread whose attributes are
+     defined by the flags passed to thr_create().   There  is  no
+     attribute  object  to  configure, as there is in POSIX.  The
+     attributes are either the separate arguments,  stackaddr  or
+     stacksize,  or  the  result  of bitwise inclusive OR-ing the
+     possible values for flags.
+
+     The creation attributes for thr_create() are:
+
+        Attribute      Default Value        Meaning of Default Value           Specified Via
+     contentionscope   NULL            Resource competition within process   flags
+     detachstate       NULL            Joinable by other threads             flags
+     stackaddr         NULL            Allocated by system                   separate argument
+     stacksize         NULL            1 megabyte                            separate argument
+     priority          NULL            Parent (calling) thread's priority
+     concurrency       NULL            Determined by system                  flags
+     suspended         NULL            Runnable, not suspended               flags
+     daemon            NULL            Not a daemon                          flags
+
+     flags specifies which  attributes  are  modifiable  for  the
+     created  thread.   The  value  in flags is determined by the
+     bitwise inclusive OR of the following:
+
+     THR_BOUND         This  flag  affects  the   contentionscope
+                       attribute  of  the thread.  The new thread
+                       is created permanently  bound  to  an  LWP
+                       (i.e.  it is a bound thread).  This thread
+                       will   now   contend   among   system-wide
+                       resources.  The bind flag is equivalent to
+                       setting   the   contentionscope   to   the
+                       PTHREAD_SCOPE_SYSTEM in POSIX.
+
+     THR_DETACHED      This flag affects the  detachstate  attri-
+                       bute  of  the  thread.   The new thread is
+                       created detached.  The exit  status  of  a
+                       detached thread is not accessible to other
+                       threads.   Its   thread   ID   and   other
+                       resources  may  be  re-used as soon as the
+                       thread  terminates.    thr_join(3T)   (nor
+                       pthread_join(3T))  will  not  wait  for  a
+                       detached thread.
+
+     THR_NEW_LWP       This flag affects the  concurrency  attri-
+                       bute  of  the  thread.   The  desired con-
+                       currency  level  for  unbound  threads  is
+                       increased  by  one.   This  is  similar to
+                       incrementing  concurrency   by   one   via
+                       thr_setconcurrency(3T).   Typically,  this
+                       adds a new LWP to the pool of LWPs running
+                       unbound threads.
+
+     THR_SUSPENDED     This flag affects the suspended  attribute
+                       of  the thread.  The new thread is created
+                       suspended and will not execute  start_func
+                       until it is started by thr_continue().
+
+     THR_DAEMON        This flag affects the daemon attribute  of
+                       the  thread.   The  thread  is marked as a
+                       daemon.  The process will  exit  when  all
+                       non-daemon   threads  exit.   thr_join(3T)
+                       will not wait for a daemon thread.  Daemon
+                       threads  do  not  interfere  with the exit
+                       conditions for a process.  A process  will
+                       terminate when all regular threads exit or
+                       the process calls exit().  Daemon  threads
+                       are  most useful in libraries that want to
+                       use threads.
+
+     Default thread creation:
+
+        thread_t tid;
+        void *start_func(void *), *arg;
+        thr_create(NULL, NULL, start_func, arg, NULL, &tid);
+
+     User-defined thread creation:
+
+     To create a thread scheduled on a system-wide basis (i.e., a bound
+     thread), use:
+             thr_create(NULL, NULL, start_func, arg, THR_BOUND, &tid);
+
+     Another example of customization is, if both  THR_BOUND  and
+     THR_NEW_LWP  are  specified  then,  typically,  two LWPs are
+     created, one for the bound thread and another for  the  pool
+     of LWPs running unbound threads.
+
+        thr_create(NULL, NULL, start_func, arg, THR_BOUND | THR_NEW_LWP, &tid);
+
+     With thr_create(), the new thread will use the stack  start-
+     ing  at  the  address specified by stack_base and continuing
+     for stack_size bytes.  stack_size must be greater  than  the
+     value  returned by thr_min_stack(3T).  If stack_base is NULL
+     then thr_create() allocates a stack for the new thread  with
+     at  least  stack_size  bytes.   If stack_size is zero then a
+     default size is used.  If stack_size is  not  zero  then  it
+     must be greater than the value returned by thr_min_stack(3T)
+     (see NOTES).
+
+     When new_thread_ID is not NULL then it points to a  location
+     where  the ID of the new thread is stored if thr_create() is
+     successful.  The ID is only valid within  the  calling  pro-
+     cess.
+
+RETURN VALUES
+     Zero indicates a successful  return  and  a  non-zero  value
+     indicates an error.
+
+ERRORS
+     If any of the following conditions  occur,  these  functions
+     fail and return the corresponding value:
+
+     EAGAIN         The system-imposed limit on the total  number
+                    of  threads in a process has been exceeded or
+                    some system resource has been exceeded (e.g.,
+                    too many LWPs were created).
+
+     EINVAL         The value specified by attr is invalid.
+
+     If  any  of   the   following   conditions   are   detected,
+     pthread_create() fails and returns the corresponding value:
+
+     ENOMEM         Not enough memory was available to create the
+                    new thread.
+
+     If  any  of   the   following   conditions   are   detected,
+     thr_create() fails and returns the corresponding value:
+
+     EINVAL         o stack_base is not NULL  and  stack_size  is
+                    less    than    the    value    returned   by
+                    thr_min_stack(3T).
+
+                    o stack_base is NULL and  stack_size  is  not
+                    zero  and  is less than the value returned by
+                    thr_min_stack(3T).
+
+EXAMPLES
+     This is an  example  of  concurrency  with  multi-threading.
+     Since POSIX threads and Solaris threads are fully compatible
+     even  within   the   same   process,   this   example   uses
+     pthread_create()  if you execute a.out 0, or thr_create() if
+     you execute a.out 1.
+
+     Five threads  are  created  that  simultaneously  perform  a
+     time-consuming  function,  sleep(10).   If  the execution of
+     this process is timed, the results will show that  all  five
+     individual calls to sleep for ten-seconds completed in about
+     ten seconds, even on a uniprocessor.  If  a  single-threaded
+     process  calls sleep(10) five times, the execution time will
+     be about 50-seconds.
+
+     The command-line to time this process is:
+
+     /usr/bin/time a.out 0 (for POSIX threading)
+
+     or
+
+     /usr/bin/time a.out 1 (for Solaris threading)
+
+          /* cc thisfile.c -lthread -lpthread */
+          #define _REENTRANT    /* basic 3-lines for threads */
+          #include <pthread.h>
+          #include <thread.h>
+
+          #define NUM_THREADS 5
+          #define SLEEP_TIME 10
+
+          void *sleeping(void *);   /* thread routine */
+          void test_argv();         /* optional */
+          int i;
+          thread_t tid[NUM_THREADS];      /* array of thread IDs */
+
+          main( int argc, char *argv[] ) {
+            test_argv(argv[1]);
+
+            switch (*argv[1])  {
+              case '0':  /* POSIX */
+                for ( i = 0; i < NUM_THREADS; i++)
+                  pthread_create(&tid[i], NULL, sleeping, SLEEP_TIME);
+                for ( i = 0; i < NUM_THREADS; i++)
+                  pthread_join(tid[i], NULL);
+                break;
+
+              case '1':  /* Solaris */
+                for ( i = 0; i < NUM_THREADS; i++)
+                  thr_create(NULL,0,sleeping,NULL,0,&tid[i]);
+                while (thr_join(NULL, NULL, NULL) == 0);
+                break;
+            }  /* switch */
+            printf("main() reporting that all %d threads have terminated\n", i);
+          }  /* main */
+
+          void *sleeping(int sleep_time *)     {
+                  printf("thread %d sleeping %d seconds ...\n", thr_self(), SLEEP_TIME);
+                  sleep(sleep_time);
+                  printf("\nthread %d awakening\n", thr_self());
+          }
+
+          void test_argv(char argv1[])   {    /* optional */
+            if (argv1 == NULL)  {
+              printf("use 0 as arg1 to use thr_create();\n \
+              or use 1 as arg1 for use pthread_create()\n");
+              exit(NULL);
+            }
+          }
+
+     If main() had not waited for the  completion  of  the  other
+     threads  (using  pthread_join(3T) or thr_join(3T)), it would
+     have continued to process concurrently until it reached  the
+     end  of its routine and the entire process would have exited
+     prematurely (see exit(2)).
+
+     The following example shows how to create a  default  thread
+     with  a  new signal mask. new_mask is assumed to have a dif-
+     ferent value than the  creator's  signal  mask  (orig_mask).
+     new_mask  is set to block all signals except for SIGINT. The
+     creator's signal mask is changed  so  that  the  new  thread
+     inherits  a  different mask, and is restored to its original
+     value after thr_create() returns.
+
+     This example assumes that SIGINT is  also  unmasked  in  the
+     creator.  If it is masked by the creator, then unmasking the
+     signal opens the creator  up  to   this  signal.  The  other
+     alternative  is  to  have  the new thread set its own signal
+     mask in its start routine.
+
+          thread_t tid;
+          sigset_t new_mask, orig_mask;
+          int error;
+
+          (void)sigfillset(&new_mask);
+          (void)sigdelset(&new_mask, SIGINT);
+          (void)thr_sigsetmask(SIG_SETMASK, &new_mask, &orig_mask):
+          error = thr_create(NULL, 0, do_func, NULL, 0, &tid);
+          (void)thr_sigsetmask(SIG_SETMASK, &orig_mask, NULL);
+
+SEE ALSO
+     _lwp_create(2),  exit(2),  exit(3C),  pthread_attr_init(3T),
+     pthread_cancel(3T),    pthread_exit(3T),   pthread_join(3T),
+     sleep(3C),    thr_min_stack(3T),     thr_setconcurrency(3T),
+     thr_suspend(3T), threads(3T)
+
+NOTES
+     MT application threads execute independently of each  other,
+     thus  their  relative behavior is unpredictable.  Therefore,
+     it is possible for the thread  executing  main()  to  finish
+     before all other user application threads.
+
+     Using thr_join(3T) in the following syntax,
+
+                    while (thr_join(NULL, NULL, NULL) == 0);
+
+     will cause the invoking thread (which may be main()) to wait
+     for  the  termination of all other undetached and non-daemon
+     threads;  however,  the  second  and  third   arguments   to
+     thr_join(3T) need not necessarily be NULL.
+
+     pthread_join(3T), on the other hand, must specify  the  ter-
+     minating thread (IDs) for which it will wait.
+
+     A thread has not terminated until thr_exit()  has  finished.
+     The  only  way  to  determine  this  is by thr_join().  When
+     thr_join() returns a departed thread,  it  means  that  this
+     thread  has  terminated  and  its resources are reclaimable.
+     For instance, if a user specified a stack  to  thr_create(),
+     this  stack  can  only  be  reclaimed  after  thr_join() has
+     reported this thread as a departed thread. It is not  possi-
+     ble  to  determine  when a detached thread has terminated. A
+     detached thread disappears without leaving a trace.
+
+     Typically, thread stacks allocated by thr_create() begin  on
+     page  boundaries  and  any  specified  (a  red-zone) size is
+     rounded up to the next page boundary.  A page with no access
+     permission  is appended to the top of the stack so that most
+     stack overflows will result in a SIGSEGV signal  being  sent
+     to  the  offending  thread.   Thread stacks allocated by the
+     caller are used as is.
+
+     Using a default stack size for the new  thread,  instead  of
+     passing  a user-specified stack size, results in much better
+     thr_create() performance.  The  default  stack  size  for  a
+     user-thread is 1 megabyte, in this implementation.
+
+     A user-specified stack size must be greater than  the  value
+     THR_MIN_STACK or PTHREAD_STACK_MIN. A minimum stack size may
+     not accommodate the stack frame for the user thread function
+     start_func.   If a stack size is specified, it must accommo-
+     date start_func requirements and the functions that  it  may
+     call in turn, in addition to the minimum requirement.
+
+     It is usually very difficult to determine the runtime  stack
+     requirements     for    a    thread.     THR_MIN_STACK    or
+     PTHREAD_STACK_MIN  specifies  how  much  stack  storage   is
+     required  to  execute  a NULL start_func.  The total runtime
+     requirements for stack storage are dependent on the  storage
+     required  to  do  runtime  linking,  the  amount  of storage
+     required by  library  runtimes  (like  printf())  that  your
+     thread  calls.  Since these storage parameters are not known
+     before the program runs, it is best to use  default  stacks.
+     If  you  know  your  runtime  requirements  or decide to use
+     stacks that are larger than the default, then it makes sense
+     to specify your own stacks.
+
+
+=================================================================
+pthread_detach(3T)       Threads Library       pthread_detach(3T)
+=================================================================
+
+NAME
+     pthread_detach - dynamically detaching a thread
+
+SYNOPSIS
+  POSIX
+     cc [ flag ... ] file ...  -lpthread [ library ... ]
+
+     #include <pthread.h>
+     int pthread_detach(pthread_t threadID);
+
+MT-LEVEL
+     MT-Safe
+
+DESCRIPTION
+     pthread_detach()  can  dynamically  reset  the   detachstate
+     attribute  of a thread to PTHREAD_CREATE_DETACHED. For exam-
+     ple, a thread could detach itself as follows:
+
+          pthread_detach(pthread_self());
+
+RETURN VALUES
+     Upon successful completion,  0  is  returned;  otherwise,  a
+     non-zero value indicates an error.
+
+ERRORS
+     These functions fail and return the corresponding value,  if
+     any of the following conditions are detected:
+
+     EINVAL         The value specified  by  threadID  is  not  a
+                    joinable thread.
+
+     ESRCH          The value specified by  threadID  is  not  an
+                    existing thread ID.
+
+SEE ALSO
+     pthread_create(3T), pthread_join(3T)
+
+
+=================================================================
+pthread_exit(3T)         Threads Library         pthread_exit(3T)
+=================================================================
+
+NAME
+     pthread_exit, thr_exit - thread termination
+
+SYNOPSIS
+  POSIX
+     cc [ flag ... ] file ...  -lpthread [ library ... ]
+
+     #include <pthread.h>
+     void pthread_exit(void *status);
+
+  Solaris
+     cc [ flag ... ] file ...  -lthread [ library ... ]
+
+     #include <thread.h>
+     void thr_exit(void *status);
+
+MT-LEVEL
+     MT-Safe
+
+DESCRIPTION
+     pthread_exit()  and  thr_exit()   terminates   the   calling
+     threads,   similar   to   how  exit(3C)  terminates  calling
+     processes.  If the calling thread is not detached, then  the
+     thread's  ID  and  the  exit  status specified by status are
+     retained.  The value status is then made  available  to  any
+     successful   join   with   the   terminating   thread   (see
+     pthread_join(3T)); otherwise, status is disregarded allowing
+     the thread's ID to be reclaimed immediately.
+
+     Upon thread termination, all thread-specific  data  bindings
+     are released (see pthread_key_create(3T)), and its cancella-
+     tion routines are called, but  application  visible  process
+     resources,  including,  but not limited to, mutexes and file
+     descriptors are not released.
+
+     The cleanup handlers are called before  the  thread-specific
+     data  bindings  are  released (see pthread_cancel(3T)).  Any
+     cancellation cleanup handlers that have been pushed and  not
+     yet popped will be popped in reverse order of when they were
+     pushed and then executed.   If  the  thread  still  has  any
+     thread-specific data after all cancellation cleanup handlers
+     have been executed, appropriate destructor functions will be
+     called  in  an  unspecified order.  If any thread, including
+     the main()thread, calls  pthread_exit(),  only  that  thread
+     will exit.
+
+     If main() returns or  exits  (either  implicitly  or  expli-
+     citly),  or  any  thread explicitly calls exit(), the entire
+     process will exit.
+
+     If any thread  (except  the  main()  thread)  implicitly  or
+     explicitly  returns, the result is the same as if the thread
+     called pthread_exit() and it will return the value of status
+     as the exit code.
+
+     The process will terminate with an exit status  of  0  after
+     the   last  thread  has  terminated  (including  the  main()
+     thread).  This action is the same as if the application  had
+     called exit() with a zero argument at any time.
+
+RETURN VALUES
+     pthread_exit() or thr_exit() does not return to its caller.
+
+SEE ALSO
+     exit(3C),      pthread_cancel(3T),       pthread_create(3T),
+     pthread_join(3T), pthread_key_create(3T).
+
+NOTES
+     Although only POSIX  implements  cancellation,  cancellation
+     can  be  used with Solaris threads, due to their interopera-
+     bility.
+
+     Do not  call  pthread_exit()  from  a  cancellation  cleanup
+     handler  or  destructor  function  that will be invoked as a
+     result  of  either  an  implicit   or   explicit   call   to
+     pthread_exit().
+
+     status should not reference any variables local to the  cal-
+     ling thread.
+
+
+=================================================================
+pthread_key_create(3T)   Threads Library   pthread_key_create(3T)
+=================================================================
+
+NAME
+     pthread_key_create,                     pthread_setspecific,
+     pthread_getspecific,    pthread_key_delete,   thr_keycreate,
+     thr_setspecific,  thr_getspecific   -   thread-specific-data
+     functions
+
+SYNOPSIS
+  POSIX
+     cc [ flag ... ] file ...  -lpthread [ library ... ]
+
+     #include <pthread.h>
+     int pthread_key_create(pthread_key_t *keyp,
+          void (*destructor)(void *value));
+     int pthread_setspecific(pthread_key_t key,
+          const void *value);
+     void *pthread_getspecific(pthread_key_t key);
+     int pthread_key_delete(pthread_key_t key);
+
+  Solaris
+     cc [ flag ... ] file ...  -lthread [ library ... ]
+
+     #include <thread.h>
+     int thr_keycreate(thread_key_t *keyp,
+          void (*destructor)(void *value));
+     int thr_setspecific(thread_key_t key, void *value);
+     int thr_getspecific(thread_key_t key, void **valuep);
+
+MT-LEVEL
+     MT-Safe
+
+DESCRIPTION
+  Create Key
+     In general, thread key creation allocates a key that locates
+     data  specific  to  each  thread in the process.  The key is
+     global to all threads in  the  process,  which  allows  each
+     thread  to  bind  a  value  to the key once the key has been
+     created.  The key independently  maintains  specific  values
+     for    each   binding   thread.    pthread_key_create()   or
+     thr_keycreate() allocates a global key namespace, pointed to
+     by  keyp,  that  is  visible  to all threads in the process.
+     Each thread is initially bound to a private element of  this
+     key, which allows access to its thread-specific data.
+
+     Upon key creation, a new key is assigned the value NULL  for
+     all active threads.  Additionally, upon thread creation, all
+     previously created keys in the new thread are  assigned  the
+     value NULL.
+
+     Optionally, a destructor function, destructor, may be  asso-
+     ciated  with  each  key.   Upon  thread exit, if a key has a
+     non-NULL destructor function and the thread has  a  non-NULL
+     value  associated  with that key, the destructor function is
+     called with the current associated value.  If more than  one
+     destructor  exists  for a thread when it exits, the order of
+     destructor calls is unspecified.
+
+  Set Value
+     Once a key has been created, each  thread  may  bind  a  new
+     value    to   the   key   using   pthread_setspecific()   or
+     thr_setspecific().  The values are  unique  to  the  binding
+     thread  and  are  individually maintained. These values con-
+     tinue for the life of the calling thread.
+
+     Proper synchronization of key storage  and  access  must  be
+     ensured  by  the  caller.   The  value  argument  to  either
+     pthread_setspecific() or thr_setspecific()  is  generally  a
+     pointer  to a block of dynamically allocated memory reserved
+     by the calling thread for its own use.  (see "Examples" sec-
+     tion below).
+
+     At thread exit, the destructor function, which is associated
+     at  time of creation, is called and it uses the specific key
+     value as its sole argument.
+
+  POSIX Get Value
+     pthread_getspecific() returns the current value bound to the
+     designated  key specified by the calling thread.  If the key
+     has no value bound to it, the value NULL is returned.   (see
+     "Warnings" section below).
+
+  Solaris Get Value
+     thr_getspecific() stores the current value bound to key  for
+     the calling thread into the location pointed to by valuep.
+
+  POSIX Delete Key
+     pthread_key_delete()  deletes  a  thread-specific  data  key
+     formerly created by pthread_key_create() or thr_keycreate().
+     At the time  pthread_key_delete()  is  called,  the  thread-
+     specific  data  values associated with key do not have to be
+     NULL. It is  the  application's  responsibility  to  perform
+     cleanup  actions  related  to  the deleted key or associated
+     thread-specific data in any threads.  Cleanup  can  be  done
+     either   before   or   after  calling  pthread_key_delete().
+     pthread_key_delete() does not invoke a destructor function.
+
+     Although pthread_key_create()'s  or  thr_keycreate()'s  des-
+     tructor  function should clean-up the key's thread-specific-
+     data storage, pthread_key_delete() needs to be used to  free
+     the storage associated with the key.
+
+     Solaris threads do not have a similar delete function.
+
+  POSIX/Solaris
+     If successful, pthread_key_create(),  pthread_setspecific(),
+     pthread_key_delete(), thr_keycreate(), thr_setspecific(), or
+     thr_getspecific() returns 0; otherwise, an error  number  is
+     returned  to indicate the error.  pthread_getspecific() does
+     not return any errors.
+
+ERRORS
+     If the following conditions occur,  pthread_key_create()  or
+     thr_keycreate() return the corresponding error number:
+
+     EAGAIN         The system lacked the necessary resources  to
+                    create  another  thread-specific data key, or
+                    the number of keys  exceeds  the  pre-process
+                    limit of PTHREAD_KEYS_MAX.
+
+     ENOMEM         Insufficient memory exists to create the key.
+
+     If the  following  conditions  occur,  pthread_key_create(),
+     pthread_setspecific(), thr_keycreate(), or thr_setspecific()
+     return the corresponding error number:
+
+     ENOMEM         Insufficient memory exists to  associate  the
+                    value with the key.
+
+     For each of the following conditions, if  the  condition  is
+     detected,   pthread_setspecific(),   thr_setspecific(),   or
+     pthread_key_delete() return the corresponding error number:
+
+     EINVAL         The key value is invalid.
+
+EXAMPLES
+     In this example, the thread-specific data in  this  function
+     can be called from more than one thread without special ini-
+     tialization.  POSIX threads are  used  exclusively  in  this
+     example.
+
+     For each argument you pass to the executable of  this  exam-
+     ple,  a thread is created and privately bound to the string-
+     value of that argument.
+
+        /* cc thisfile.c -lpthread */
+
+        #define _REENTRANT
+        #include <pthread.h>
+        void *thread_specific_data(), free();
+        #define MAX_ARGC 20
+        pthread_t tid[MAX_ARGC];
+        int num_threads;
+
+        main( int argc, char *argv[] ) {
+             int i;
+             num_threads = argc - 1;
+             for( i = 0; i < num_threads; i++)
+                  pthread_create(&tid[i], NULL, thread_specific_data, argv[i+1]);
+             for( i = 0; i < num_threads; i++)
+                  pthread_join(tid[i], NULL);
+        }  /* end main */
+
+        void *thread_specific_data(char private_data[])
+        {
+          static pthread_mutex_t    keylock;  /* static ensures only one copy of keylock */
+          static pthread_key_t  key;
+          static int            once_per_keyname = 0;
+          void *                tsd = NULL;
+
+         if (!once_per_keyname) {     /* see pthread_once(3T) */
+             pthread_mutex_lock(&keylock);
+             if (!once_per_keyname++)     /* retest with lock */
+                 pthread_key_create(&key, free);
+             pthread_mutex_unlock(&keylock);
+         }
+         tsd = pthread_getspecific(key);
+         if (tsd == NULL) {
+             tsd = (void *)malloc(strlen(private_data) + 1);
+             strcpy(tsd, private_data);
+             pthread_setspecific(key, tsd);
+             printf("tsd for %d = %s\n",thr_self(),(char *)pthread_getspecific(key));
+             sleep(2);
+             printf("tsd for %d remains %s\n",thr_self(),(char *)pthread_getspecific(key));
+         }
+        }  /* end thread_specific_data */
+
+        void
+        free(void *v)   {
+         /* application-specific clean-up function */
+        }
+
+SEE ALSO
+     pthread_exit(3T)
+
+WARNINGS
+     pthread_setspecific(),                pthread_getspecific(),
+     thr_setspecific(),  and  thr_getspecific(),  may  be  called
+     either explicitly, or implicitly from a thread-specific data
+     destructor function.  However, calling pthread_setspecific()
+     or thr_setspecific() from a destructor may  result  in  lost
+     storage or infinite loops.
+
+
+=================================================================
+pthread_kill(3T)         Threads Library         pthread_kill(3T)
+=================================================================
+
+NAME
+     pthread_kill, thr_kill - send a signal to a thread
+
+SYNOPSIS
+  POSIX
+     cc [ flag ... ] file ...  -lpthread [ library ... ]
+
+     #include <signal.h>
+     #include <pthread.h>
+     int pthread_kill(pthread_t thread, int sig);
+
+  Solaris
+     cc [ flag ... ] file ...  -lthread [ library ... ]
+
+     #include <signal.h>
+     #include <thread.h>
+     int thr_kill(thread_t thread, int sig);
+
+MT-LEVEL
+     MT-Safe
+
+     Async-Signal-Safe
+
+DESCRIPTION
+     pthread_kill() sends the sig signal to the thread designated
+     by  thread.   thread must be a member of the same process as
+     the calling thread.  sig must be one of the  signals  listed
+     in  signal(5);  with the exception of SIGLWP, SIGCANCEL, and
+     SIGWAITING being reserved and off limits  to  thr_kill()  or
+     pthread_kill().   If  sig is 0, a validity check is done for
+     the existence of the target thread; no signal is sent.
+
+     thr_kill() performs the same function as pthread_kill().
+
+RETURN VALUES
+     Upon successful completion,  pthread_kill()  and  thr_kill()
+     return  0;  otherwise,  they return an error number.  In the
+     event of failure, no signal is sent.
+
+ERRORS
+     ESRCH          No thread was found that corresponded to  the
+                    thread designated by thread ID.
+
+     EINVAL         The sig argument value is not zero and is  an
+                    invalid or an unsupported signal number.
+
+SEE ALSO
+     kill(2),           sigaction(2),           pthread_self(3T),
+     pthread_sigmask(3T), raise(3C), signal(5)
+
+NOTES
+     Although pthread_kill() is Async-Signal-Safe with respect to
+     the  Solaris environment, this safeness is not guaranteed to
+     be portable to other POSIX domains.
+

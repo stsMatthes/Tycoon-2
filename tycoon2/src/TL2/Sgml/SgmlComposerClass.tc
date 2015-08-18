@@ -1,0 +1,19 @@
+class SgmlComposerClass(T <: Object)
+super ConcreteClass(SgmlComposer(T))
+(**)
+meta MetaClass
+{
+new( element :AbstractSgmlElement(T),
+     position :SgmlPos,
+     attributes :Dictionary(String, String)) :SgmlComposer(T)
+  (* *)
+{
+  instance ::= _new
+  instance.element := element
+  instance.position := position
+  instance.attributes := attributes
+  instance._init
+  instance
+}
+
+}

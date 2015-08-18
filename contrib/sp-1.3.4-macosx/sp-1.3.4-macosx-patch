@@ -1,0 +1,113 @@
+This patch was obtained from http://csusap.csu.edu.au/~nclapham/patch.html
+
+* Version: sp-1.3.4 (from http://www.jclark.com/sp/)
+* Platform: MACOSX Server 10.3.3 (7.3.1 Darwin Kernel Version 7.3.1)
+* Compiler: gcc (version 3.3 20030304 (Apple Computer, Inc. build 1640))
+* To Patch: patch -p1 -s < ./sp-1.3.4-macosx.patch
+
+diff -u --recursive sp-1.3.4/Makefile sp-1.3.4.macosx/Makefile
+--- sp-1.3.4/Makefile	1998-10-10 06:15:02.000000000 +0200
++++ sp-1.3.4.macosx/Makefile	2015-08-12 22:43:27.000000000 +0200
+@@ -1,19 +1,20 @@
+ # Copyright (c) 1994, 1995 James Clark
+ # See the file COPYING for copying permission.
+ 
+-prefix=/opt/local
++prefix=/usr/local
+ exec_prefix=$(prefix)
+ # Where to install the binaries
+ bindir=$(exec_prefix)/bin
+ INSTALL=cp
+ # You might want to uncomment this on BSD systems
+-#INSTALL=install
++INSTALL=install
+ 
+ # If you use gcc, then you must have at least version 2.6.1 and
+ # you must use -fno-implicit-templates
+ # and -O (or any optimization level >= 1).
+ # c++ is a front-end for gcc which takes care of linking with -lstdc++
+-CXX=c++ -fno-implicit-templates -O2
++# CXX=c++ -fno-implicit-templates -O2
++CXX=c++ -O2
+ WARN=#-Wall -Wno-reorder -Wwrite-strings -Wpointer-arith -Wnested-externs -Woverloaded-virtual -Wbad-function-cast
+ # Executables will be *very* large if you use -g.
+ DEBUG=
+@@ -33,8 +34,8 @@
+ # Add -Dsig_atomic_t=int on SunOS 4.1.x with g++ (or any other platform
+ #  which doesn't appropriately define sig_atomic_t).
+ # Add -DJADE_MIF to include the Jade MIF backend
+-XDEFINES=
+-DEFINES=-DSP_HAVE_BOOL -DSP_ANSI_CLASS_INST -DSP_MULTI_BYTE $(XDEFINES)
++XDEFINES=-DSP_HAVE_TYPENAME
++DEFINES=-DSP_HAVE_BOOL -DSP_MUTEX_PTHREADS -DSP_ANSI_CLASS_INST -DSP_MULTI_BYTE $(XDEFINES)
+ CXXFLAGS=-ansi $(DEBUG) $(WARN)
+ # Flag to pass to CXX to make it output list of dependencies as a Makefile.
+ CXXDEPGENFLAGS=-MM
+@@ -58,7 +59,7 @@
+ RANLIB=:
+ # Uncomment this for SunOS 4.1.3 or FreeBSD
+ # (and probably other BSD flavor systems as well)
+-#RANLIB=ranlib
++RANLIB=ranlib
+ M4=m4
+ # perl is needed if you change or add messages
+ PERL=perl
+Only in sp-1.3.4.macosx: Makefile.rej
+diff -u --recursive sp-1.3.4/include/Text.h sp-1.3.4.macosx/include/Text.h
+--- sp-1.3.4/include/Text.h	1998-10-02 11:11:02.000000000 +0200
++++ sp-1.3.4.macosx/include/Text.h	2004-12-06 21:42:41.000000000 +0100
+@@ -52,6 +52,7 @@
+ class SP_API Text {
+ public:
+   Text();
++  ~Text() {};
+   void clear();
+   void swap(Text &to);
+   void addChar(Char c, const Location &);
+diff -u --recursive sp-1.3.4/include/config.h sp-1.3.4.macosx/include/config.h
+--- sp-1.3.4/include/config.h	1999-10-13 07:02:46.000000000 +0200
++++ sp-1.3.4.macosx/include/config.h	2004-12-06 21:42:41.000000000 +0100
+@@ -26,7 +26,8 @@
+ #endif
+ #if __GNUC__ > 2 || (__GNUC__ == 2 && __GNUC_MINOR__ >= 8)
+ #define SP_ANSI_LIB
+-#define SP_NO_STD_NAMESPACE
++// #define SP_NO_STD_NAMESPACE
++#define SP_DEFINE_TEMPLATES
+ #undef SP_NEW_H_MISSING
+ #endif
+ 
+Only in sp-1.3.4.macosx/lib: Makefile.dep
+Only in sp-1.3.4.macosx/nsgmls: Makefile.dep
+diff -u --recursive sp-1.3.4/nsgmls/nsgmls.cxx sp-1.3.4.macosx/nsgmls/nsgmls.cxx
+--- sp-1.3.4/nsgmls/nsgmls.cxx	1997-04-11 14:27:05.000000000 +0200
++++ sp-1.3.4.macosx/nsgmls/nsgmls.cxx	2015-08-12 22:47:14.000000000 +0200
+@@ -55,13 +55,13 @@
+ 		    const StringC &filenameStr,
+ 		    const OutputCodingSystem *,
+ 		    CmdLineApp *,
+-		    Messenger *messenger);
++		    ::Messenger *messenger);
+   ~XRastEventHandler();
+   void message(MessageEvent *);
+   void truncateOutput();
+   void allLinkTypesActivated();
+ private:
+-  Messenger *messenger_;
++  ::Messenger *messenger_;
+   // file_ must come before os_ so it gets inited first
+   FileOutputByteStream file_;
+   EncodeOutputCharStream os_;
+@@ -216,7 +216,7 @@
+ 				     const StringC &filenameStr,
+ 				     const OutputCodingSystem *codingSystem,
+ 				     CmdLineApp *app,
+-				     Messenger *messenger)
++				     ::Messenger *messenger)
+ : RastEventHandler(parser, messenger),
+   messenger_(messenger),
+   filename_(filename),
+Only in sp-1.3.4.macosx/sgmlnorm: Makefile.dep
+Only in sp-1.3.4.macosx/spam: Makefile.dep
+Only in sp-1.3.4.macosx/spent: Makefile.dep
+Only in sp-1.3.4.macosx/sx: Makefile.dep

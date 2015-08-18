@@ -1,0 +1,11 @@
+;; File   : ODBC2.tyc
+;; Author : Michael Skusa
+;; Date   : 11-Mar-1997
+;; Purpose: Declarations of TWL ODBC-classes for Tycoon-2
+
+tycoon.tl.loader.registerDirectory("SQL/ODBC") ?
+tycoon.tl.loader.update ?
+define odbc:ODBC ?
+tycoon.tl.typeChecker.check ?
+
+DO load "SQL/ODBC/Init.tyc" ?

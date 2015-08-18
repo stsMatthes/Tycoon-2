@@ -1,0 +1,6 @@
+class Http
+super WWW
+(**)
+meta AbstractClass
+{
+}

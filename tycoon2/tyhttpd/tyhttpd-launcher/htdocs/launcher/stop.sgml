@@ -1,0 +1,16 @@
+<assign name=title>Tycoon Web Server Shutdown</assign>
+
+<tycoon> success := stop </tycoon>
+
+<if true=success>
+  <assign name=msg>
+    <p><b><ref name=server>tyhttpd-X</ref></b> stopped  
+  </assign>
+<else>
+  <assign name=msg>
+    <p><tycoon/ SgmlEntityOutput.new(out) << errorMsg /
+
+    <p><a href='`"file:" + errorLogPath`'>View Error Log</a>
+  </assign>
+</if>
+

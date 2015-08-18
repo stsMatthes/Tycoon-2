@@ -1,0 +1,843 @@
+class TycoonOS
+super DLL
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+Tycoon operating system interface
+
+Rather than beeing copied into this file (and becoming inconsistent),
+extensive API Documentation should be present in the corresponding C
+source files.
+
+Author:  Andre Willomat
+Date:    07-DEC-1998
+Updates: (Date)	  (Name)	(Description)
+*)
+meta SimpleConcreteClass(TycoonOS)
+{
+
+tos_init :Void extern "tos_init"
+
+
+; ============================================================================
+; Date and Time routines.
+; ============================================================================
+
+date_time() :Long
+  (* *)
+extern "tosDate_time"
+
+date_clock() :Long
+  (* *)
+extern "tosDate_clock"
+
+date_clocksPerSecond() :Int
+  (* *)
+extern "tosDate_clocksPerSecond"
+
+date_normalize(handle :Int32) :Void
+  (* *)
+extern "tosDate_normalize"
+
+date_fromTime(handle :Int32, time :Long) :Void
+  (* *)
+extern "tosDate_fromTime"
+
+date_fromString(handle :Int32, s :String, fmt :String) :Int
+  (* *)
+extern "tosDate_fromString"
+
+date_asTime(handle :Int32) :Long
+  (* *)
+extern "tosDate_asTime"
+
+date_sizeOfHandle() :Int
+  (* *)
+extern "tosDate_sizeOfHandle"
+
+date_setHandle(handle :Int32,
+               year :Int, month :Int, day :Int,
+               hour :Int, minute :Int, second :Int,
+	       offset :Int,
+	       isDST :Int) :Void
+  (* *)
+extern "tosDate_setHandle"
+
+date_format(handle :Int32, fmt :String, buffer :MutableString, max :Int) :Int
+  (* *)
+extern "tosDate_format"
+
+date_year(handle :Int32) :Int
+  (* *)
+extern "tosDate_year"
+
+date_month(handle :Int32) :Int
+  (* *)
+extern "tosDate_month"
+
+date_day(handle :Int32) :Int
+  (* *)
+extern "tosDate_day"
+
+date_hour(handle :Int32) :Int
+  (* *)
+extern "tosDate_hour"
+
+date_minute(handle :Int32) :Int
+  (* *)
+extern "tosDate_minute"
+
+date_second(handle :Int32) :Int
+  (* *)
+extern "tosDate_second"
+
+date_weekDay(handle :Int32) :Int
+  (* *)
+extern "tosDate_weekDay"
+
+date_yearDay(handle :Int32) :Int
+  (* *)
+extern "tosDate_yearDay"
+
+date_offset(handle :Int32) :Int
+  (* *)
+extern "tosDate_offset"
+
+date_zone(handle :Int32) :String
+  (* *)
+extern "tosDate_zone"
+
+date_isDST(handle :Int32) :Int
+  (* *)
+extern "tosDate_isDST"
+
+
+; ============================================================================
+; Directory routines.
+; ============================================================================
+
+directory_realpath(path :String, resolvedPath :MutableString, n :Int) :Int
+  (* *)
+extern "tosDirectory_realpath"
+
+directory_chroot(root :String) :Int
+  (* *)
+extern "tosDirectory_chroot"
+
+directory_create(path :String) :Int
+  (* return 0 on success *)
+extern "tosDirectory_create"
+
+directory_remove(path :String) :Int
+  (* return 0 on success *)
+extern "tosDirectory_remove"
+
+directory_sizeOfDirStream :Int
+  (* directory stream *)
+extern "tosDirectory_sizeOfT"
+
+directory_open(dirStream :Int32, path :String) :Int
+  (* *)
+extern "tosDirectory_open"
+
+directory_read(dirStream :Int32) :String
+  (* *)
+extern "tosDirectory_read"
+
+directory_close(dirStream :Int32) :Int
+  (* *)
+extern "tosDirectory_close"
+
+
+; ============================================================================
+; Basic file routines.
+; ============================================================================
+
+file_stdin :Int
+  (* *)
+extern "tosFile_stdin"
+
+file_stdout :Int
+  (* *)
+extern "tosFile_stdout"
+
+file_stderr :Int
+  (* *)
+extern "tosFile_stdout"
+
+file_open(path :String, flags :Int) :Int
+  (* *)
+extern "tosFile_open"
+
+file_sync(fd :Int) :Int
+  (* *)
+extern "tosFile_sync"
+
+file_close(fd :Int) :Int
+  (* *)
+extern "tosFile_close"
+
+file_read1(fd :Int, buffer :MutableString, start :Int, n :Int) :Int
+  (* *)
+extern "tosFile_read1"
+
+file_write1(fd :Int, buffer :String, start :Int, n :Int) :Int
+  (* *)
+extern "tosFile_write1"
+
+file_readChar(fd :Int) :Int
+  (* *)
+extern "tosFile_readChar"
+
+file_writeChar(fd :Int, char :Char) :Int
+  (* *)
+extern "tosFile_writeChar"
+
+file_exists(path :String) :Bool
+  (* *)
+extern "tosFile_exists"
+
+file_isCharacterDevice(fd :Int) :Bool
+  (* *)
+extern "tosFile_isCharacterDevice"
+
+file_copy(from :String, to :String) :Int
+  (* *)
+extern "tosFile_copy"
+
+file_rename(from :String, to :String) :Int
+  (* *)
+extern "tosFile_rename"
+
+file_remove(path :String) :Int
+  (* *)
+extern "tosFile_remove"
+
+file_mkSymLink(name1 :String, name2 :String) :Int
+  (* *)
+extern "tosFile_mkSymLink"
+
+
+; ============================================================================
+; File informations.
+; ============================================================================
+
+fileinfo_bufferSize :Int
+  (* *)
+extern "tosFileinfo_bufferSize"
+
+fileinfo_getBuffer(path :String, buffer :MutableString) :Int
+  (* *)
+extern "tosFileinfo_getBuffer"
+
+fileinfo_isFile(buffer :String) :Bool
+  (* *)
+extern "tosFileinfo_isFile"
+
+fileinfo_isDirectory(buffer :String) :Bool
+  (* *)
+extern "tosFileinfo_isDirectory"
+
+fileinfo_isSymbolicLink(buffer :String) :Bool
+  (* *)
+extern "tosFileinfo_isSymbolicLink"
+
+fileinfo_lastModified(buffer :String) :Long
+  (* *)
+extern "tosFileinfo_lastModified"
+
+fileinfo_lastAccessed(buffer :String) :Long
+  (* *)
+extern "tosFileinfo_lastAccessed"
+
+fileinfo_lastStatusChange(buffer :String) :Long
+  (* *)
+extern "tosFileinfo_lastStatusChange"
+
+fileinfo_size(buffer :String) :Long
+  (* *)
+extern "tosFileinfo_size"
+
+
+; ============================================================================
+; Filenames.
+; ============================================================================
+
+filename_normalize(filename       :String,
+                   systemFilename :MutableString,
+                   size           :Int) :Void
+  (* *)
+extern "tosFilename_normalize"
+
+filename_tempName(dir         :String,
+                  prefix      :String,
+                  tmpName     :MutableString,
+                  tmpNameSize :Int) :Int
+  (* *)
+extern "tosFilename_tempName"
+
+filename_tempNameSize :Int
+  (* *)
+extern "tosFilename_tempNameSize"
+
+
+; ============================================================================
+; File positions.
+; ============================================================================
+
+filepos_seek(fd :Int, pos :Long) :Long
+  (* *)
+extern "tosFilepos_seek"
+
+filepos_seekEnd(fd :Int, pos :Long) :Long
+  (* *)
+extern "tosFilepos_seekEnd"
+
+filepos_seekCur(fd :Int, pos :Long) :Long
+  (* *)
+extern "tosFilepos_seekCur"
+
+
+; ============================================================================
+; Full 32 bit integers (obsolete ?).
+; ============================================================================
+
+int32_fromInt(x :Int) :Int32
+  (* *)
+extern "tosInt32_fromInt"
+
+int32_asInt(x :Int32) :Int
+  (* *)
+extern "tosInt32_asInt"
+
+int32_fromString(x :String) :Int32
+  (* *)
+extern "tosInt32_fromString"
+
+int32_order(x :Int32, y :Int32) :Int
+  (* *)
+extern "tosInt32_order"
+
+int32_add(x :Int32, y :Int32) :Int32
+  (* *)
+extern "tosInt32_add"
+
+int32_sub(x :Int32, y :Int32) :Int32
+  (* *)
+extern "tosInt32_sub"
+
+int32_mul(x :Int32, y :Int32) :Int32
+  (* *)
+extern "tosInt32_mul"
+
+int32_div(x :Int32, y :Int32) :Int32
+  (* *)
+extern "tosInt32_div"
+
+int32_mod(x :Int32, y :Int32) :Int32
+  (* *)
+extern "tosInt32_mod"
+
+
+; ============================================================================
+; 64 bit integers.
+; ============================================================================
+
+long_fromInt(x :Int) :Long
+  (* *)
+extern "tosLong_fromInt"
+
+long_asInt(x :Long) :Int
+  (* *)
+extern "tosLong_asInt"
+
+long_order(x :Long, y :Long) :Int
+  (* *)
+extern "tosLong_order"
+
+long_add(x :Long, y :Long) :Long
+  (* *)
+extern "tosLong_add"
+
+long_sub(x :Long, y :Long) :Long
+  (* *)
+extern "tosLong_sub"
+
+long_mul(x :Long, y :Long) :Long
+  (* *)
+extern "tosLong_mul"
+
+long_and(x :Long, y :Long) :Long
+  (* *)
+extern "tosLong_and"
+
+long_div(x :Long, y :Long) :Long
+  (* *)
+extern "tosLong_div"
+
+long_mod(x :Long, y :Long) :Long
+  (* *)
+extern "tosLong_mod"
+
+
+; ============================================================================
+; MD5 fingerprint.
+; ============================================================================
+
+md5_contextSize :Int
+  (* *)
+extern "tosMd5_contextSize"
+
+md5_init(context :Int32) :Int
+  (* *)
+extern "tosMd5_init"
+
+md5_update(context :Int32, s :String, start :Int, n :Int) :Void
+  (* *)
+extern "tosMd5_update"
+
+md5_final(context :Int32, a :ByteArray) :Void
+  (* *)
+extern "tosMd5_final"
+
+
+; ============================================================================
+; Direct memory access and modification methods, USE WITH EXTREME CAUTION !!!!
+; ============================================================================
+
+memory_formatString(buffer :MutableString, fmt :String, value :Int32) :Void
+  (* *)
+extern "tosMemory_formatString"
+
+memory_isNull(base :Int32) :Bool
+  (* *)
+extern "tosMemory_isNull"
+
+memory_IntToInt32(value:Int):Int32
+  (* *)
+extern "tosMemory_IntToInt32"
+
+memory_Int32ToInt(value:Int32):Int
+  (* *)
+extern  "tosMemory_IntToInt32"
+
+;
+; Peek's
+;
+
+memory_peekInt(base :Int32, offs :Int) :Int
+  (* *)
+extern "tosMemory_peekInt"
+
+memory_peekInt32(base :Int32, offs :Int) :Int32
+  (* *)
+extern  "tosMemory_peekInt"
+
+memory_peekString(base :Int32, offs :Int) :String
+  (* *)
+extern "tosMemory_peekString"
+
+memory_peekChar(base :Int32, offs :Int) :Char
+  (* *)
+extern "tosMemory_peekChar"
+
+memory_peekUnsignedChar(base :Int32, offs :Int) :Char
+  (* *)
+extern "tosMemory_peekUnsignedChar"
+
+memory_peekShort(base :Int32, offs :Int) :Int
+  (* *)
+extern "tosMemory_peekShort"
+
+memory_peekReal(base :Int32, offs :Int) :Real
+  (* *)
+extern "tosMemory_peekReal"
+
+memory_peekLong(base :Int32, offs :Int) :Long
+  (* *)
+extern "tosMemory_peekLong"
+
+;
+; Poke's
+;
+
+memory_pokeInt(base :Int32, offs :Int, value :Int) :Void
+  (* *)
+extern "tosMemory_pokeInt"
+
+memory_pokeInt32(base :Int32, offs :Int, value :Int32) :Void
+  (* *)
+extern  "tosMemory_pokeInt"
+
+memory_pokeString(base :Int32, offs :Int, value :String) :Void
+  (* *)
+extern "tosMemory_pokeString"
+
+memory_pokeChar(base :Int32, offs :Int, value :Char) :Void
+  (* *)
+extern "tosMemory_pokeChar"
+
+memory_pokeUnsignedChar(base :Int32, offs :Int, value :Char) :Void
+  (* *)
+extern "tosMemory_pokeUnsignedChar"
+
+memory_pokeShort(base :Int32, offs :Int, value :Int) :Void
+  (* *)
+extern "tosMemory_pokeShort"
+
+memory_pokeReal(base :Int32, offs :Int, value :Real) :Void
+  (* *)
+extern "tosMemory_pokeReal"
+
+memory_pokeLong(base :Int32, offs :Int, value :Long) :Void
+  (* *)
+extern "tosMemory_pokeLong"
+
+;
+; Poke's for system tracer
+;
+
+memory_pokeBufferShort(buffer :MutableString, offs :Int, value :Int) :Void
+  (* for system tracer - use with caution *)
+extern "tosMemory_pokeShort"
+
+memory_pokeBufferInt(buffer :MutableString, offs :Int, value :Int) :Void
+  (* for system tracer - use with caution *)
+extern "tosMemory_pokeInt"
+
+memory_pokeBufferLong(buffer :MutableString, offs :Int, value :Long) :Void
+  (* for system tracer - use with caution *)
+extern "tosMemory_pokeLong"
+
+memory_pokeBufferReal(buffer :MutableString, offs :Int, value :Real) :Void
+  (* for system tracer - use with caution *)
+extern "tosMemory_pokeReal"
+
+
+; ============================================================================
+; Network management.
+; ============================================================================
+
+net_getIPAddrLen :Int
+  (* *)
+extern "tosNet_getIPAddrLen"
+
+net_getMaxHostNameLen :Int
+  (* *)
+extern "tosNet_getMaxHostNameLen"
+
+net_getHostName(name :MutableString, len :Int) :Int
+  (* *)
+extern "tosNet_getHostName"
+
+net_getHostByName(name :String, bytes :ByteArray, len :Int) :Int
+  (* *)
+extern "tosNet_getHostByName"
+
+
+; ============================================================================
+; Process execution routines.
+; ============================================================================
+
+process_getpid :Int
+  (* *)
+extern "tosProcess_getpid"
+
+process_getppid :Int
+  (* *)
+extern "tosProcess_getppid"
+
+process_getUserCPUtime :Long
+  (* *)
+extern "tosProcess_getUserCPUtime"
+
+process_getKernelCPUtime :Long
+  (* *)
+extern "tosProcess_getKernelCPUtime"
+
+process_kill(pid :Int, value :Int) :Int
+  (* *)
+extern "tosProcess_kill"
+
+process_signal(pid :Int, value :Int) :Int
+  (* *)
+extern "tosProcess_signal"
+
+tosProcess_execute(cmdname :String, argv :Int32) :Int
+  (* *)
+extern "tosProcess_execute"
+
+tosProcess_system(cmdname :String) :Int
+  (* *)
+extern "tosProcess_system"
+
+
+; ============================================================================
+; real arithmetic.
+; ============================================================================
+
+real_fromInt(x :Int) :Real
+  (* *)
+extern "tosReal_fromInt"
+
+real_fromLong(x :Long) :Real
+  (* *)
+extern "tosReal_fromLong"
+
+real_asInt(x :Real) :Int
+  (* *)
+extern "tosReal_asInt"
+
+real_asLong(x :Real) :Long
+  (* *)
+extern "tosReal_asLong"
+
+real_order(x :Real, y :Real) :Int
+  (* *)
+extern "tosReal_order"
+
+real_add(x :Real, y :Real) :Real
+  (* *)
+extern "tosReal_add"
+
+real_sub(x :Real, y :Real) :Real
+  (* *)
+extern "tosReal_sub"
+
+real_mul(x :Real, y :Real) :Real
+  (* *)
+extern "tosReal_mul"
+
+real_div(x :Real, y :Real) :Real
+  (* *)
+extern "tosReal_div"
+
+real_sqrt(x :Real) :Real
+  (* *)
+extern "tosReal_sqrt"
+
+real_ln(x :Real) :Real
+  (* *)
+extern "tosReal_ln"
+
+real_sin(x :Real) :Real
+  (* *)
+extern "tosReal_sin"
+
+real_cos(x :Real) :Real
+  (* *)
+extern "tosReal_cos"
+
+real_tan(x :Real) :Real
+  (* *)
+extern "tosReal_tan"
+
+real_asin(x :Real) :Real
+  (* *)
+extern "tosReal_asin"
+
+real_acos(x :Real) :Real
+  (* *)
+extern "tosReal_acos"
+
+real_atan(x :Real) :Real
+  (* *)
+extern "tosReal_atan"
+
+real_pow(x :Real, y :Real) :Real
+  (* *)
+extern "tosReal_pow"
+
+real_expE(x :Real) :Real
+  (* *)
+extern "tosReal_expE"
+
+
+; ============================================================================
+; Basic security support.
+; - Conversion from Unix-ID´s to portable security handles
+; - String / Handle conversion
+; - Basic get/set of user/group id´s
+; - Change owner of files
+; - Warning: Not persistent save (use C-Heap).
+;   We need a class-level above this functions...
+; ============================================================================
+
+security_fromUnixID(id :Int) :Int32
+  (* hack until better security modules *)
+{
+  res ::= tycoon.ansiC.malloc(4)
+  memory_pokeInt(res, 0, id)
+  res
+}
+
+security_toUnixID(idHandle :Int32) :Int
+  (* hack until better security modules *)
+{
+  memory_peekInt(idHandle, 0)
+}
+
+security_uidToString(uid :Int32, res :MutableString, resSize :Int) :Int
+  (* *)
+extern "tosSecurity_uidToString"
+
+security_gidToString(gid :Int32, res :MutableString, resSize :Int) :Int
+  (* *)
+extern "tosSecurity_gidToString"
+
+security_uidFromString(strUid :String, pResUid :Int32, pResSize :Int32) :Int
+  (* warning: very low level... *)
+extern "tosSecurity_uidFromString"
+
+security_gidFromString(strGid :String, pResGid :Int32, pResSize :Int32) :Int
+  (* warning: very low level... *)
+extern "tosSecurity_gidFromString"
+
+security_getCurrentUID(pResUid :Int32, pResSize :Int32) :Int
+  (* warning: very low level... *)
+extern "tosSecurity_getCurrentUID"
+
+security_getCurrentGID(pResGid :Int32, pResSize :Int32) :Int
+  (* warning: very low level... *)
+extern "tosSecurity_getCurrentGID"
+
+security_setCurrentUID(uid :Int32) :Int
+  (* *)
+extern "tosSecurity_setCurrentUID"
+
+security_setCurrentGID(gid :Int32) :Int
+  (* *)
+extern "tosSecurity_setCurrentGID"
+
+security_chown(path :String, owner :Int32, group :Int32) :Int
+  (* *)
+extern "tosSecurity_chown"
+
+
+; ============================================================================
+; BSD sockets.
+; ============================================================================
+
+socket_nil :Int
+  (* *)
+extern "tosSocket_nil"
+
+socket_newStreamSocket :Int
+  (* *)
+extern "tosSocket_newStreamSocket"
+
+socket_newDatagramSocket :Int
+  (* *)
+extern "tosSocket_newDatagramSocket"
+
+socket_newServerSocket :Int
+  (* *)
+extern "tosSocket_newServerSocket"
+
+socket_close(fd :Int) :Int
+  (* *)
+extern "tosSocket_close"
+
+socket_connect(fd :Int, ipAddress :ByteArray, ipAddressLength :Int, port :Int) :Int
+  (* *)
+extern "tosSocket_connect"
+
+socket_listen(fd :Int, queueLength :Int) :Int
+  (* *)
+extern "tosSocket_listen"
+
+socket_bind(fd :Int, ipAddress :ByteArray, ipAddressLength :Int, port :Int) :Int
+  (* *)
+extern "tosSocket_bind"
+
+socket_accept(fd :Int) :Int
+  (* *)
+extern "tosSocket_accept"
+
+socket_read(fd :Int, buffer :MutableString, start :Int, n :Int) :Int
+  (* *)
+extern "tosSocket_read"
+
+socket_write(fd :Int, buffer :String, start :Int, n :Int) :Int
+  (* *)
+extern "tosSocket_write"
+
+socket_readChar(fd :Int) :Int
+  (* *)
+extern "tosSocket_readChar"
+
+socket_writeChar(fd :Int, char :Char) :Int
+  (* *)
+extern "tosSocket_writeChar"
+
+socket_address(fd :Int, bytes :ByteArray, len :Int) :Int
+  (* *)
+extern "tosSocket_address"
+
+socket_remoteAddress(fd :Int, bytes :ByteArray, len :Int) :Int
+  (* *)
+extern "tosSocket_remoteAddress"
+
+socket_port(fd :Int) :Int
+  (* *)
+extern "tosSocket_port"
+
+socket_remotePort(fd :Int) :Int
+  (* *)
+extern "tosSocket_remotePort"
+
+
+; ============================================================================
+; Some string utilities.
+; ============================================================================
+
+string_locateSubString(s :String, sub :String, startingAt :Int) :Int
+  (* *)
+extern "tosString_locateSubString"
+
+string_locateLastSubString(s :String, sub :String, before :Int) :Int
+  (* *)
+extern "tosString_locateLastSubString"
+
+string_locateSomeChar(s :String, chars :String, startingAt :Int) :Int
+  (* *)
+extern "tosString_locateSomeChar"
+
+string_locateSomeCharBefore(s :String, chars :String, before :Int) :Int
+  (* *)
+extern "tosString_locateSomeCharBefore"
+
+
+visitOS( :OS) :String 
+  (* no DLL resolution: Tycoon lib & symbols are already defined in static.h *)
+{
+  "libtos.so"
+}
+
+private
+
+_resolve :Void
+  (* no DLL resolution: Tycoon lib & symbols are already defined in static.h *) 
+{
+  _path := "libtos.so"
+}
+
+}
+

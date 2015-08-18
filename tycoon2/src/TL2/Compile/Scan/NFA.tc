@@ -1,0 +1,122 @@
+class NFA
+super FA(NFAState)
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+*)
+meta NFAClass()
+
+{
+final :NFAState
+
+epsilon :Char
+  (* *)
+{
+  nil
+  }
+
+newState :NFAState
+  (* *)
+{
+  s ::= super.newState
+  s.epsilonMoves := Set.new
+  s
+  }
+
+concat(nfa :NFA) :Self
+  (* modify the receiver to accept L(self) L(nfa) *)
+{
+  addAll(nfa.states)
+  final.addTransition(epsilon, nfa.start)
+  final := nfa.final
+  self
+  }
+
+closure1 :Self
+  (* modify the receiver to accept L(self)+ *)
+{
+  newStart ::= newState
+  newFinal ::= newState
+
+  newStart.addTransition(epsilon, start)
+  final.addTransition(epsilon, newFinal)
+  final.addTransition(epsilon, start)
+  
+  start := newStart
+  final := newFinal
+  self
+  }
+
+closure0 :Self
+  (* modify the receiver to accept L(self)* *)
+{
+  closure1
+  start.addTransition(epsilon, final)
+  self
+  }
+
+union(nfa :NFA) :Void
+  (* modify the receiver to accept L(self) + L(NFa2) *)
+{
+  newStart ::= newState
+  newFinal ::= newState
+  addAll(nfa.states)
+
+  newStart.addTransition(epsilon, start)
+  newStart.addTransition(epsilon, nfa.start)
+  final.addTransition(epsilon, newFinal)
+  nfa.final.addTransition(epsilon, newFinal)
+  
+  start := newStart
+  final := newFinal
+  self
+  }
+
+combine(nfa :NFA) :Self
+  (* modify the receiver to accept L(self) + L(NFa2),
+     where no additional final state is generated *)
+{
+  addAll(nfa.states)
+  start.addTransition(epsilon, nfa.start)
+  self
+  }
+
+printOn(out :Output) :Void
+  (* *)
+{
+  super.printOn(out)
+  out.writeln("\nFinal: " + final.n.printString)  
+  }
+
+private
+
+_newState :NFAState
+  (* *)
+{NFAState.new}
+
+addAll(newStates :Collection(NFAState)) :Void
+  (* *)
+{
+  newStates.do(fun(s :NFAState) {
+    s.n := states.size
+    states.add(s)
+    })
+  }
+
+}

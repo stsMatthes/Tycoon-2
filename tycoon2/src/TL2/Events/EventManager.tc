@@ -1,0 +1,141 @@
+class EventManager
+super Monitor, Events
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+An event manager is a monitor with a priority queue of events running as a
+separate thread. The first event in this queue will be started at event
+time. The event manager only consumes processor activity, when the event queue
+is changed or an event has to be activated. Most of the time it waits in a
+non-consuming endless loop.
+
+Author:  Axel Wienberg, Gerd Bremer
+Date:    09-Oct-1997
+Updates: (Date)	  (Name)	(Description)
+*)
+meta SingletonClass(EventManager)
+{
+start :Void
+  (* start event manager 
+ ------------------------------------------------------------ *)
+{
+    if( _eventLoopThread.isNil ||
+       _eventLoopThread.state = Thread.STATE_TERMINATED 
+      then: { _eventLoopThread := Thread.new(fun()
+	   {
+	     tycoon.stdout.writeln("Starting event manager")
+	     _abortEventLoop := false
+	     synchronize({ _eventLoop })
+	   })}
+      else: { tycoon.stdout.writeln("Event manager already running") })
+  }
+
+abort :Void
+  (* abort event manager 
+ ------------------------------------------------------------ *)
+{ _abortEventLoop := true
+      tycoon.stdout.writeln("Event manager stopped")
+    _eventQueueChanged.signal
+  }
+
+add(e :Event) :Void
+  (* add an event into event queue 
+ ------------------------------------------------------------ *)
+require e.isNotNil
+
+  
+  {
+    synchronize({
+      _eventQueue.add(e)
+      _eventQueueChanged.signal
+    })
+  }
+
+remove(e :Event) :Void
+  (* remove an event from event queue 
+ ------------------------------------------------------------ *)
+require e.isNotNil
+
+  
+  {
+    synchronize({
+      _eventQueue.remove(e)
+      _eventQueueChanged.signal
+    })
+  }
+
+registeredEvents :List(Event)
+  (* *)
+{
+    List.fromReader(_eventQueue.reader)
+  }
+
+private
+
+_eventQueue :PriorityQueue(Event)
+
+_eventQueueChanged :Condition
+
+_eventLoopThread :Thread(Void)
+
+_abortEventLoop :Bool
+
+_eventLoop :Void
+  (* ------------------------------------------------------------ *)
+{
+    if( !_abortEventLoop then:
+      {
+	if( _eventQueue.isEmpty then:
+	  { wait(_eventQueueChanged) } else:  ; wait until event queue changed 
+	  {
+	    e ::= _eventQueue[0]  ; take first event from event queue 
+	    timedWait(_eventQueueChanged, e.time)  ; wait until e.time or 
+	  })                                       ; event queue changed 
+	if( !_eventQueue.isEmpty then:  
+	  {
+	    e ::= _eventQueue[0]
+	    if( Date.now.asTime >= e.time then:
+	      {
+		e.remove(_eventQueue)  ; remove event from queue 
+		e.thread := Thread.new(e.action)  ; take action 
+	      } else:
+	      {
+		; spurious wakeups 
+		nil
+	      })
+	  } else:
+	  {
+	    ; event queue changed 
+	    nil
+	  })
+	_eventLoop
+      })
+  }
+
+_init :Void
+  (* ------------------------------------------------------------ *)
+{
+    super._init
+    _eventQueue := PriorityQueue.new
+    _eventQueueChanged := Condition.new
+    _abortEventLoop := false
+  }
+
+}

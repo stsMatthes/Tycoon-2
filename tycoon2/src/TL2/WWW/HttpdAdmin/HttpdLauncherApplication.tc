@@ -1,0 +1,15 @@
+class HttpdLauncherApplication
+super StmlApplication(HttpdLauncherApplication)
+{
+
+httpd :Httpd
+
+private
+
+_init :Void
+{
+  super._init
+  compiler.registerClass(HttpdLauncherProcessor)
+}
+}
+

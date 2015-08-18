@@ -1,0 +1,71 @@
+class Dialog
+super Object
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ Dialog.tc
+
+   Tycoon Business Conversation (TBC) for Tycoon 2
+   -----------------------------------------------
+   This class defines concrete dialogs according to a DialogSpec. They are 
+   instanciated in turn of conversation and stored for example in the 
+   history of a conversation. Each Dialog knows ist specification and has 
+   concrete Contents.
+   Creation of a dialog via new() requires the DialogSpec as argument to new.
+   Moreover, new() sets up the dialogs spec-slot and creates the contents 
+   according to the ContentSpec embedded in the DialogSpec.
+
+   13.08.97 hw : created
+   
+*)
+meta DialogClass
+{
+
+dialogSpec :DialogSpec
+  (* Because each dialog knows its specification, here it is. *)
+
+content :RecordContent
+  (* The contents of this dialog.  Note that they are a RecordContent, 
+     analogous to DialogSpecs, which have RecordContentSpecs to store the 
+     named entries.  The elements of the content can easily be accesed by the 
+     dictionary- methods "[]" and "[]:=", eg.  
+     aDialog.content["Vorname"].str:="Karin"
+   *)
+
+name():String
+  (* Shortcut *)
+{
+  dialogSpec.name
+}
+
+"[]"(name :String) :Content
+  (* Using this method the above example could be abbreviated as
+     aDialog["Vorname"].str := "Karin" 
+   *)
+{
+  content[name]
+}
+
+"[]:="(name :String, c: Content) :Content
+  (* Similar set method. Checks are done in RecordContent.tc *)
+{
+  content[name]:= c
+}
+
+}

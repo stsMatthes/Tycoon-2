@@ -1,0 +1,72 @@
+<!DOCTYPE STML SYSTEM>
+<html>
+  <head>
+    <title>template-test</title>
+  </head>
+
+  <body>
+      <h1>template-test</h1>
+
+<define name=daten>
+  <fun param="consumer :Fun(subject :String,
+			    predicate :String,
+			    object :String) :String">
+    <apply name=consumer>
+      <arg name=subject/John/
+      <arg name=predicate/cook/
+      <arg name=object/a meal/
+    </apply>
+
+    <apply name=consumer>
+      <arg name=subject/Jane/
+      <arg name=predicate/eat/
+      <arg name=object/the meal/
+    </apply>
+
+    <apply name=consumer>
+      <arg name=subject/Waldo/
+      <arg name=predicate/get/
+      <arg name=object/the rest/
+    </apply>
+  </fun>
+</define>
+
+<define name=statement>
+<fun param="subject :String, predicate :String, object :String">
+<ref name=subject// <ref name=predicate//s <ref name=object//.<br>
+</define>
+
+<define name=question>
+<fun param="subject :String, predicate :String, object :String">
+Why does <ref name=subject// <ref name=predicate// <ref name=object//?<br>
+</define>
+
+<apply name=question>
+      <arg name=subject/Axel/
+      <arg name=predicate/write/
+      <arg name=object/this/
+</apply>
+
+<apply name=statement>
+      <arg name=subject/Axel/
+      <arg name=predicate/explain/
+      <arg name=object/Stml types/
+</apply>
+<p>
+
+<apply name=daten>
+<arg name=consumer><ref name=statement//
+</apply>
+<p>
+<apply name=daten>
+<arg name=consumer><ref name=question//
+</apply>
+
+      <hr>
+      <address><a href="mailto:">Axel Wienberg</a></address>
+<!-- Created: Thu Jul 10 13:32:51 MET DST 1997 -->
+<!-- hhmts start -->
+Last modified: Thu Jul 10 14:22:59 MET DST 1997
+<!-- hhmts end -->
+  </body>
+</html>

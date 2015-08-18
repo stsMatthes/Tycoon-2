@@ -1,0 +1,169 @@
+class Content
+super Object
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ Content.tc
+
+   Tycoon Business Conversation (TBC) for Tycoon 2
+   -----------------------------------------------
+   Content is the abstract rootclass for all content-classes. Each Content 
+   has to know ist specification. This is accomplished by the new-method, 
+   which gets the ..Spec-instance as argument. This means that every 
+   Content-Class has to have its own metaclass.
+
+   09.08.97 hw : created
+   27.08.97 hw : introduced variant-like accessor methods
+   17.10.97 vr : print
+   23.10.97 hw : printOn
+   01.11.97 hw : added support for Currency
+   
+*)
+meta AbstractClass
+{
+
+spec :ContentSpec
+  (* Each content knows its spec;
+     defined as a slot in ConcreteContent. *)
+  deferred
+
+visit(v :ContentVisitor) :Void
+  (* *)
+deferred
+
+printOn(o :Output) :Void
+  (* for visitor pattern. Each visitor must be subclass of ContentVisitor. 
+
+   * Override :Objects method.
+   *)
+{
+  visit(ContentPrettyPrinter.new(o))
+}
+
+"bool:="(b :Bool) :Void
+  (* Accessor methods for typsafe access to contents.
+     If you have e.g. "aContent :Content", from which _you_ know it is
+     a record containing some strings, you cannot access it by
+       aContent["Name"]._value:= "Karin" in a typesafe manner, because the
+     typechecker doesnt know it is a record nor the returned element is
+     atomic and of type string.
+     By introducing the following accessor methods, the above can be
+     rewritten as
+       aContent.rec["Name"].str := "Karin"
+     This way the access is typesafe, but may even fail at runtime (if,
+     for example, you pass the wrong argument).  Note that this is almost
+     similar to access to variant records with the !-notation in TL1 e.g.
+       aContent!record["name"]!string := "Karin"
+     The accessors are defined as deferred.  They must be implemented in the
+     corresponding subclasses. The atomic-type-accessors must set and return 
+     the value-slot, the other accessors have just to return self.
+     Accessing a method not defined (e.g. "aContent.seq" in the above example)
+     will lead to a method not found exception. ### or meth.not impl?
+   *)
+deferred
+
+bool() :Bool
+  (* *)
+deferred
+
+"date:="(d :Date) :Void
+  (* *)
+deferred
+
+date() :Date
+  (* *)
+deferred
+
+"int:="(i :Int) :Void
+  (* *)
+deferred
+
+int() :Int
+  (* *)
+deferred
+
+"real:="(r :Real) :Void
+  (* *)
+deferred
+
+real() :Real
+  (* *)
+deferred
+
+"str:="(s :String) :Void
+  (* *)
+deferred
+
+str() :String
+  (* *)
+deferred
+
+"cur:="(c :Currency) :Void
+  (* *)
+deferred
+
+cur() :Currency
+  (* *)
+deferred
+
+"cvspec:="(c @:ConversationSpec) :Void
+  (* *)
+deferred
+
+cvspec() :ConversationSpec
+  (* *)
+deferred
+
+"dlgspec:="(c @:DialogSpec) :Void
+  (* *)
+deferred
+
+dlgspec() :DialogSpec
+  (* *)
+deferred
+
+"contspec:="(c @:ContentSpec) :Void
+  (* *)
+deferred
+
+contspec() :ContentSpec
+  (* *)
+deferred
+
+rec() :RecordContent
+  (* *)
+deferred
+
+variant() :VariantContent
+  (* *)
+deferred
+
+seq() :SequenceContent
+  (* *)
+deferred
+
+sch() :SingleChoiceContent
+  (* *)
+deferred
+
+mch()  :MultipleChoiceContent
+  (* *)
+deferred
+
+}

@@ -1,0 +1,38 @@
+tycoon.tl.loader.registerDirectory("WWW/Httpd") ?
+DO load "../TWL/WWW/Httpd/HttpResources/HttpResources.tyc" ?
+tycoon.tl.loader.update ?
+tycoon.tl.typeChecker.check ?
+
+??  ;; end of automated script
+
+tycoon.debug := true ?
+
+define tyhttpd :Httpd ?
+tyhttpd := Httpd.new ?
+tyhttpd.home := tycoon.hoxHome + "/tyhttpd/tyhttpd-test" ?
+tyhttpd.configure ?
+tyhttpd.saveConfiguration ?
+tyhttpd.port ?
+tyhttpd.host ?
+tyhttpd.bind ?
+
+tyhttpd.root.lookupDirectory(EmptyList.new)["stop"] := HttpShutdownResource.new(tyhttpd) ?
+tyhttpd.serve ?
+
+
+authRoot ::= HttpAuthenticatedResource.new
+authRoot.resource := root
+
+realm ::= BasicProtectionRealm.new("HoxIntern")
+realm.acl["mernst"] := "hackenklacken"
+authRoot.realm := realm
+tyhttpd.root := HttpDebugResource.new(authRoot) ?
+
+
+
+tycoon.allOpenResources.as(Array).do(fun(r :Resource) {
+  if( r.clazz == StreamSocket || r.clazz == ServerSocket then: {
+    r.close
+  })
+}) ?
+

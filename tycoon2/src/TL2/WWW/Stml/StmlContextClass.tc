@@ -1,0 +1,12 @@
+class StmlContextClass
+super ConcreteClass(StmlContext)
+meta MetaClass
+{
+new(errorLog :ErrorLog) :StmlContext
+{
+  instance ::= _new
+  instance.errorLog := errorLog
+  instance._init
+  instance
+}
+}

@@ -1,0 +1,198 @@
+class FileClass
+super ConcreteClass(File)
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+Metaclass of File.
+
+Author:  Andreas Gawecki
+Date:    27-Feb-1996
+Updates: (Date)	   (Name)	     (Description)
+         03-Mar-99 Andre Willomat    new tycoonOS
+
+_stdin :File,
+_stdout :File
+*)
+meta MetaClass
+{
+stdin :File
+  (* *)
+{ _stdin }
+
+stdout :File
+  (* *)
+{ _stdout }
+
+new(path :String) :File
+  (* *)
+{
+  f ::= _new
+  f._path := path
+  f._init
+  f
+}
+
+;
+; flags for File::open:
+; must be the same as in tosFile.h
+; don't use O_SYNC on Win32 plattforms
+;
+O_RDONLY :Int
+  (* Open for reading only *)
+{ 0 }
+
+O_WRONLY :Int
+  (* Open for writing only *)
+{ 1 }
+
+O_RDWR   :Int
+  (* Open for reading and writing *)
+{ 2 }
+
+O_APPEND :Int
+  (* If set, the file pointer will be  set  to  the
+     end of the file prior to each write *)
+{ 4 }
+
+O_SYNC   :Int
+  (* When opening a regular file, this flag affects
+     subsequent writes.  If set, each write(2) will
+     wait for both the file data and file status to
+     be physically updated *)
+{ 8 }
+
+O_CREAT  :Int
+  (* If the file exists, this flag has  no  effect,
+     except  as  noted  under O_EXCL below.  Other-
+     wise, the file is created *)
+{ 16 }
+
+O_EXCL   :Int
+  (* If O_EXCL and O_CREAT  are  set,  open()  will
+     fail  if  the  file exists.  The check for the
+     existence of the file and the creation of  the
+     file  if  it  does  not  exist  is atomic with
+     respect to other  processes  executing  open()
+     naming the same filename in the same directory
+     with O_EXCL and O_CREAT set *)
+{ 32 }
+
+O_TRUNC  :Int
+  (* If the file exists, its length is truncated to
+     0 length and  the  mode  and  owner are  unchanged 
+     Open the named file with the specified flags and mode, which
+     describe the allowed operations on the file, and the behaviour
+     of the file system on opening the file.
+  *)
+{ 64 }
+
+open(path :String, flags :Int, mode :Int) :File
+{
+  f ::= _new
+  f._init
+  f._path := path
+  f._flags := flags
+  f._mode := mode
+  f.open
+}
+
+newTemporary(dirPath :String, prefix :String, flags :Int, mode :Int) :File
+  (* create and open a new temporary file in directory dirPath with the
+     given flags and mode.
+     If dirPath is nil, a system-dependent default directory is chosen.
+     If prefix is non-nil, the name of the new file will start with prefix.
+
+     Note: 
+     Note: flag O_RDONLY will not work since the file does not exist by definition.
+     ##should be synchronized
+  *)
+{
+  path ::= MutableString.new(tycoon.tycoonOS.filename_tempNameSize)
+  tycoon.tycoonOS.filename_tempName(dirPath, prefix, path, tycoon.tycoonOS.filename_tempNameSize)
+  File.open(path, flags, mode)
+}
+
+openRead(path :String) :File
+  (* Open text file for reading. The stream is positioned
+     at the beginning of the file. *)
+{
+  new(path).openRead
+}
+
+openReadWrite(path :String) :File
+  (* Open for reading and writing. The stream is positioned
+     at the beginning of the file, which is created if it
+     does not exist.*)
+{
+  new(path).openReadWrite
+}
+
+openWrite(path :String) :File
+  (* Truncate file to zero length or create file for writing.
+     The stream is positioned at the beginning of the file. *)
+{
+  new(path).openWrite
+}
+
+init :Void
+  (* *)
+{
+  _pair := MutablePair(:File,:File).new(nil, nil)
+  
+  f ::= _new
+  f._path := ""
+  f._handle := tycoon.tycoonOS.file_stdout
+  f._flags := O_WRONLY
+  f._mode := 0
+  f._init
+  f.open
+  _stdout := f
+  
+  f ::= _new
+  f._path := ""
+  f._handle := tycoon.tycoonOS.file_stdin
+  f._flags := O_RDONLY
+  f._mode := 0
+  f._init
+  f.open
+  _stdin := f  
+}
+
+private
+
+_pair :MutablePair(File, File)
+
+_stdin :File
+  (* *)
+{ _pair.first }
+
+_stdout :File
+  (* *)
+{ _pair.second }
+
+"_stdin:="(f :File) :File
+  (* *)
+{ _pair.first := f }
+
+"_stdout:="(f :File) :File
+  (* *)
+{ _pair.second := f }
+
+}

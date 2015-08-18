@@ -1,0 +1,18 @@
+class WorkerTCBClass(Instance <: WorkerTCB)
+super TaskControlBlockClass(Instance)
+(**)
+meta MetaClass
+{
+createTCB(id :Int,
+       prio :Int,
+       workQueue :Queue(Packet),
+       initialState :TaskState,
+       privateData :WorkerTaskRec) :Instance
+  (* *)
+{
+  obj ::= create(id,prio,workQueue,initialState)
+  obj.handle := privateData
+  obj
+}
+
+}

@@ -1,0 +1,83 @@
+class Sieve
+super Object
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+    Sieve.new.test(200000);
+*)
+meta SimpleConcreteClass(Sieve)
+{
+sieb :IntSet
+
+max :Int
+
+test(max:Int) :Void
+  (* *)
+{
+  t ::=
+    Timer.new(tycoon.cpuClock).time({
+      calculate(max)
+    })
+  tycoon.stdout
+   << "Time:  " << t     << "\n"
+  nil
+}
+
+calculate(max :Int) :Void
+  (* compute all primes <= max *)
+{
+  self.max := max
+  max ::= (max-1)/2
+  sieb ::= IntSet.new(max)
+  self.sieb := sieb
+  for(1 to: max.sqrt.asInt do: fun(i :Int){
+    ; sieb.includes(i) => 2*i+1 is no prime 
+    if( !sieb.includes(i)
+    then: { p ::= i+i+1
+        j ::= i+p
+        while({ j <= max } do: {
+	  sieb.add(j)
+	  j := j + p
+	}) })
+  })
+}
+
+isPrime(i :Int) :Void
+  (* *)
+{ if( i > max
+  then: { result:Bool := nil }
+  else: { i%2 = 1 &&  !sieb.includes(i/2) 
+      ||  i = 2  })
+}
+
+printOn(out :Output) :Void
+  (* *)
+{
+  out.writeString("Sieve{")
+  if( max.isNil
+  then: { out.writeString("not computed") }
+  else: { out << "2 "
+      for(1 to:(max-1)/2 do:fun(i:Int){
+	if( !sieb.includes(i) then: { out << i+i+1 << " " })
+      }) })
+  out.write('}')
+}
+
+}

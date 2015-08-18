@@ -1,0 +1,83 @@
+<!doctype stml system [
+
+  <!entity configure system "configure.sgml" >
+  <!entity configure-action system "configure-action.sgml" >
+]> 
+  
+<stml processor=HttpdLauncherProcessor language='tycoon-1.0'>
+
+<tycoon>
+  action :String :=
+    if( formFields.includesKey("configure-action") then: {
+      "configure-action"
+    } else: {
+      field ::= formFields.keys.detect(
+	    fun(field :String) {field.startsWith("tyhttpd-") })
+      assert({ field.isNotNil })
+      server := field
+      formFields[field]
+    })
+</tycoon> 
+  
+<title><tycoon/ out << action << " " << server/
+</title>
+
+<body bgcolor="#FFFFFF">
+
+<if true='action = "Configure"'>
+&configure
+<else>
+
+  <tycoon>success :Bool := false </tycoon>
+  <define name=title></define>
+  <define name=msg></define>
+
+  <if true='action = "configure-action"'>&configure-action
+  <else><tycoon/assert({ false })/
+  </if>
+
+<!--  <head>
+  <title><ref name=title>Title</ref></title>
+  </head><body> -->
+  <h2> <ref name=title>Title</ref> </h2>
+  <hr>
+    <if true=success>
+      <table><tr><td><img src="/hox-icons/success.gif" alt="Success:">
+	<td><strong>Operation successful</strong></table>
+    <else>
+      <table><tr><td><img src="/hox-icons/error.gif" alt="Error:">
+	<td><strong>Operation failed</strong></table>
+    </if>
+    <p><ref name=msg>Message</ref>
+  <hr>
+    <table cellspacing="2">
+    <tr>
+      <td>
+        <table>
+	<tr>
+	  <td>
+	    <a href="index.stml">
+	      <img src="/hox-icons/form.gif" align=left alt="back" border=0>
+	    </a>
+	  <td>
+	    <a href="index.stml">
+	     Back to Configuration
+	    </a>
+	</table>
+      <td>
+        <table>
+	<tr>
+	  <td>
+	    <a href="../index.stml">
+	      <img src="/hox-icons/home.gif" align=left alt="back" border=0>
+	    </a>
+	  <td>
+	    <a href="/index.html">
+	      Back to Control Pad
+	    </a>
+	  </td>
+        </table>
+    </table>
+     
+</if>
+

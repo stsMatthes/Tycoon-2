@@ -1,0 +1,23 @@
+class SugarFunValueClass
+super ConcreteClass(SugarFunValue)
+(**)
+meta MetaClass
+{
+new( srcFun :String, srcParenOpen :String,
+		     domain :String, srcParenClose :String, range :String,
+     body :SugarList(SugarSequenceElement))
+  :SugarFunValue
+  (* *)
+{
+  instance ::= _new
+  instance.srcFun := srcFun
+  instance.srcParenOpen := srcParenOpen
+  instance.domain := domain
+  instance.srcParenClose := srcParenClose
+  instance.range := range
+  instance.body := body
+  instance._init
+  instance
+}
+
+}

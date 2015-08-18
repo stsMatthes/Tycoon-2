@@ -1,0 +1,418 @@
+class URL
+super WWW
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+## add user/password? (no, sais ME)
+
+Uniform Resource Locators conforming to scheme:[//host[:port]][/path/path][;params][?query][#fragment]
+
+Components are automatically decoded  ( URL.fromString("http://%8Bww/").host => "www" )
+               resp.         encoded  ( URL.Http("www", 80, "/strange@/").asString
+	                                       => "http://www:80/strange%40/"
+				      )
+
+  EXCEPT THE QUERY STRING THAT IS NOT DECODED !
+
+  ag,aw: removed: "The path will contain "" as its first segment if it is absolute"
+	 added isAbsolute, isRelative
+
+  Missing components are reported as nil.
+
+  Segments vs Arcs: According to RFC 1630 segments are separated by single slashes
+		    so that two consecutive slashes and a trailing slash indicate a
+		    void segment.
+		    For convenience the URL class provides both methods 'segments' and 'arcs'
+		    where the latter is nearer to a FS like interpretation: 'arcs' is the list
+		    of all non-void segments, i.e.:
+
+		    URL.fromString("http://www/a/b//c/").segments => { "a", "b", "", "c", "" }
+		                                        .arcs     => { "a", "b", "c" } 
+  
+*)
+meta URLClass()
+
+{
+scheme :String
+  (* answer the protocol scheme of the receiver *)
+{
+    _scheme
+  }
+
+host :String
+  (* answer the protocol scheme of the receiver *)
+{
+    _host
+  }
+
+port :Int
+  (* answer the port of the receiver, or nil if absent *)
+{
+    _port
+  }
+
+isAbsolute :Bool
+  (* *)
+{
+    _isAbsolute
+  }
+
+isRelative :Bool
+  (* *)
+{
+    !_isAbsolute
+  }
+
+segments :List(String)
+  (* answer the path segments of the receiver *)
+{
+    _segments
+  }
+
+arcs :List(String)
+  (* *)
+{
+    List.fromReader(segments.select(fun(s :String) { s != "" }))
+  }
+
+path :String
+  (* answer the path of the receiver *)
+{
+    if( isAbsolute then: { "/" } else: { "" }) +
+    if( segments.size > 0 then: {
+	segments.fold(fun(segment :String) { segment }, fun(path :String, segment :String) { path + "/" + segment })
+      } else: { "" }) 
+  }
+
+parameters :Dictionary(String, List(String))
+  (* *)
+{
+    _parameters
+  }
+
+query :String
+  (* *)
+{
+    _query
+  }
+
+queryDecoded :String
+  (* *)
+{
+    if( query.isNil then: { nil } else: {
+      URL.decodeQuery(query)
+    })
+  }
+
+formFields :Dictionary(String, String)
+  (* *)
+{
+    if( query.isNil then: { nil } else: {
+      URL.decodeFormFields(query)
+    })
+  }
+
+multiFormFields :Dictionary(String, List(String))
+  (* *)
+{
+    if( query.isNil then: { nil } else: {
+      URL.decodeMultiFormFields(query)
+    })
+  }
+
+fragment :String
+  (* may be nil 
+ answer the protocol scheme of the receiver *)
+{
+    _fragment
+  }
+
+asString :String
+  (* *)
+{
+    _schemeEncoded + _hostPortEncoded + _pathEncoded + _parametersEncoded + _queryEncoded + _fragmentEncoded
+  }
+
+"="(o :Object) :Bool
+  (* *)
+{
+    o."class" == self."class" && 
+      _typeCast(o, :URL).asString = asString
+    
+  }
+
+private
+
+_scheme :String
+
+_host :String
+
+_port :Int
+
+_isAbsolute :Bool
+
+_segments :List(String)
+
+_parameters :Dictionary(String, List(String))
+
+_query :String
+
+_fragment :String
+
+_schemeEncoded :String
+  (* *)
+{
+    if( scheme = nil then: { "" } else: { scheme + ":" })
+  }
+
+_hostPortEncoded :String
+  (* *)
+{
+    if( host = nil then: {
+      ""
+    } else: {
+      "//" + URL.encode(host) +
+      if( (port = nil) then: { "" } else: { ":"+port.printString })
+    })
+  }
+
+_pathEncoded :String
+  (* *)
+{
+    netPath  ::= host != nil
+    absolute ::= isAbsolute | netPath
+
+    if( absolute then: { "/" } else: { "" }) 
+      +
+    if( segments.size > 0 then: {
+      segments.fold(fun(segment :String) { segment },
+	      fun(path :String, segment :String) {
+		    path + "/" + URL.encode(segment)
+		  }
+	     )
+    } else: { "" }) 
+  }
+
+_parametersEncoded :String
+  (* *)
+{
+    if( parameters.isNil then: { "" } else: { URL.encodeMultiParameters(parameters) })
+  }
+
+_queryEncoded :String
+  (* *)
+{
+    ; the query is already encoded 
+    if( query = nil then: { "" } else: { "?"+query })
+  }
+
+_fragmentEncoded :String
+  (* *)
+{
+    if( fragment = nil then: { "" } else: { "#"+URL.encode(fragment) })
+  }
+
+_fromString(s :String) :Void
+  (* Parsing/Initialization 
+ s is an encoded URL-String *)
+{
+    frag   ::= 0
+    scheme ::= 0
+    netloc ::= 0
+    query  ::= 0
+    param  ::= 0
+    path   ::= 0
+
+    ; Using the algorithm from RFC 1808 section 2.4 
+
+    ; locate the fragment 
+    frag := _locateFragment(s)
+
+    if( frag != nil then: fun() :Void {
+      _fragment := URL.decode(s.subString(frag+1, s.size-frag-1))
+    } else: {
+      frag := s.size
+    })
+
+
+    ; then the scheme 
+    scheme := _locateScheme(s)
+
+    if( scheme != nil then: fun() :Void {
+      _scheme := s.subString(0, scheme)
+    } else: {
+      scheme := (-1
+    )})
+
+    ; then the netloc 
+    netloc := _locateNetloc(s, scheme+1)
+
+    if( netloc != nil then: fun() :Void {
+      port ::= _locatePort(s, scheme+3, netloc)
+      if( port != nil then: fun() :Void {
+	_host := URL.decode(s.subString(scheme+3, port - scheme - 3))
+	_port := URL.decode(s.subString(port+1, netloc - port-1)).asInt
+      } else: {
+	_host := URL.decode(s.subString(scheme+3, netloc - scheme - 3))
+      })
+    } else: {
+      netloc := scheme+1
+    })
+
+    ; then the query string 
+    query := _locateQuery(s, netloc, frag)
+
+    if( query != nil then: fun() :Void {
+      _query := s.subString(query+1, frag-query-1)
+    } else: {
+      query := frag
+    })
+
+    firstParam ::= _locateParam(s, netloc, query)
+    if( firstParam.isNotNil then: {
+      _parameters := URL.decodeMultiParameters(s.subString(firstParam, query-firstParam))
+      query := firstParam ; ### to delimit path 
+    })
+    
+    ; all remaining between
+;       netloc (inclusive) and query (exclusive) is the path
+;    
+
+    _segments := EmptyList.instance
+    if( netloc < query then: {
+    if( netloc = query - 1 &&  s[netloc] = '/'  then: fun() :Void {
+      _segments := List.with1("")
+    } else: {
+      if( netloc < query &&  s[query-1] = '/'  then: {
+	_segments := List.with1("")
+	query := query - 1
+      })
+
+      while({
+	netloc <= query
+      } do: {
+	path := _locatePath(s, netloc, query)
+
+	segment ::= URL.decode(s.subString(path+1, query-path-1))
+	_segments := List.cons(segment, _segments)
+
+	query := path
+      })
+    })
+    })
+
+    if( _segments.size > 0 &&  _segments[0] = ""  then: {
+      _segments := _segments.tail
+      _isAbsolute := true
+    } else: {
+      _isAbsolute := false
+    })
+  }
+
+_init8(scheme :String,
+       host :String,
+       port :Int,
+       isAbsolute :Bool,
+       segments :List(String),
+       parameters :Dictionary(String, List(String)),
+       query :String,
+       fragment :String) :Void
+  (* All decoded *)
+{
+    super._init
+
+    _scheme := scheme
+    _host   := host
+    _port   := port
+    _isAbsolute := isAbsolute
+    _segments   := segments
+    _parameters := parameters
+    _query  := query
+    _fragment := fragment
+  }
+
+_locateFragment(s :String) :Int
+  (* finding the components *)
+{
+    s.locate('#')
+  }
+
+_locateScheme(s :String) :Int
+  (* *)
+{
+    notAllowed ::= fun(c :Char) {
+      !(
+	 c.between('a', 'z') || 
+	 c.between('A', 'Z')  || 
+	 c.between('0', '9')  || 
+	 "+.-".includes(c) 
+      )
+    }
+
+    colon ::= s.detectKey(notAllowed)
+
+    if( colon != nil &&  s[colon] = ':'  then: { colon } else: { nil })
+  }
+
+_locateNetloc(s :String, start :Int) :Int
+  (* *)
+{
+    if( (start + 2 > s.size) ||
+     s[start] != '/'    ||
+     s[start+1] != '/'  then: fun() :Int { nil } else: {
+      slash ::= s.locate1('/', start+2)
+
+      if( slash != nil then: { slash } else: { s.size })
+    })
+  }
+
+_locatePort(s :String, start :Int, end :Int) :Int
+  (* *)
+{
+    colon ::= s.locate1(':', start)
+
+    if( colon != nil &&  colon < end  then: { colon } else: { nil })
+  }
+
+_locateQuery(s :String, start :Int, end :Int) :Int
+  (* *)
+{
+    qm ::= s.locate1('?', start)
+
+    if( qm != nil &&  qm < end  then: { qm } else: { nil })
+  }
+
+_locateParam(s :String, start :Int, end :Int) :Int
+  (* *)
+{
+    semi ::= s.locate1(';', start)
+
+    if( semi != nil &&  semi < end  then: { semi } else: { nil })
+  }
+
+_locatePath(s :String, start :Int, end :Int) :Int
+  (* *)
+{
+    slash ::= s.locateLast1('/', end)
+
+    if( slash != nil &&  slash >= start  then: { slash } else: { start-1 })
+  }
+
+}

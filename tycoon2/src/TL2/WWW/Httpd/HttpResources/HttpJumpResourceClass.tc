@@ -1,0 +1,15 @@
+class HttpJumpResourceClass
+super ConcreteClass(HttpJumpResource)
+(**)
+meta MetaClass
+{
+new(file :File) :HttpJumpResource
+  (* *)
+{
+  instance ::= _new
+  instance._file := file
+  instance._init
+  instance
+}
+
+}

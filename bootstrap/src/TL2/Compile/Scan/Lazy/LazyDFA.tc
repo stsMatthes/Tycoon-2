@@ -1,0 +1,283 @@
+class LazyDFA(Action <: Object)
+super Lazy, DFATemplate(LazyDFAState(Action), Action)
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ invariant:
+   collapsars.all(fun(l:LazyDFAState(Action)) {
+     l.isCollapsing
+   })
+ & ages.all(fun(l:LazyDFAState(Action)) {
+     !l.isCollapsing
+   })
+ & ages.size <= maxAge
+ & collapsars.size <= maxAge
+ & ages.size < maxAge => collapsars.isEmpty
+ ...
+
+ an ordered sequence of tokens with associated actions 
+ actions earlier in the list take precedence. *)
+meta LazyDFAClass(Action )
+
+{
+scan(in :TokenBuffer) :Action
+  (* ... remove, change, inspect tokens ... 
+  This method gives no new semantics over DFATemplate::scan, it just has everything inlined.
+    Effect: runs at 120% speed (needs only 83% as much time)
+ *)
+{
+  state ::= initialState
+  ch :Char := nil
+  final :LazyDFAState(Action) := nil
+  initialTokenSize ::= in.tokenSize
+  finalTokenSize ::= initialTokenSize ; token size at longest match 
+
+  ; local copy 
+    deadEndState ::= deadEndState
+
+  assert({ state !== deadEndState })
+  while({state !== deadEndState} do:{
+
+    if( state.isFinal then: {
+      finalTokenSize := in.tokenSize
+      final := state
+    })
+
+    ch := in.read
+; 
+;    tycoon.stdout<<state<<"--["<<ch.printString<<"]-->\n",
+;
+    if( ch.isNotNil
+    then: { state := state.state.transition(state,ch) }
+    else: { state := deadEndState })
+  })
+  if( final.isNotNil
+  then: { in.unread(in.tokenSize - finalTokenSize)
+      final.action }
+  else: { if( ch.isNotNil
+      then: { ; skip unexpected char and raise exception 
+	  ScannerError.new(ch).raise }
+      else: { if( in.tokenSize > initialTokenSize
+	  then: { ; unexpected end of input 
+	      ScannerError.new(ch).raise })
+	  ; else: eof 
+	  nil })
+      nil })
+}
+
+getState( nfaStates :Set(NFAState),
+	  withLockOn: LazyDFAState(Action)) :LazyDFAState(Action)
+  (* public for LazyDFAState: *)
+{
+  states.lookup(nfaStates, fun(l :LazyDFAState(Action)) {
+    l
+  }, {
+    if( withLockOn.isNotNil then: { withLockOn.lock })
+    result ::= newState(nfaStates)
+    if( withLockOn.isNotNil then: { withLockOn.unlock })
+    result
+  })
+}
+
+uncollapse(s :LazyDFAState(Action)) :Void
+  (* prevent s from an untimely death.
+     put someone else to the death wall. 
+ & collapsars.size = old collapsars.size *)
+require s.isCollapsing
+        & collapsars.includes(s)
+	& ages.size = maxAge
+  ensure ages.size = maxAge
+       & !s.isCollapsing
+      
+{
+  ;tycoon.stdout.write('U'),
+  ; tycoon.stdout << "Uncollapse " << s << '\n', 
+  collapsars.remove(s)
+  s.state := LazyDFAStateActive.instance
+  ages.addLast(s)
+
+  ; avoid overflow in the ages queue
+;     and keep the collapsars queue filled 
+  collapseNext
+}
+
+close(t :Set(NFAState)) :Void
+  (* snarfed & mutated from DFAGenerator
+
+ add to the set of NFA states t all NFA states
+     reachable via epsilon transitions *)
+{
+  q ::= Queue.new1(t.size * 2)
+  q.addLastAll(t)
+
+  while({!q.isEmpty} do: {
+    s1 ::= q.removeFirst
+    s1.epsilonMoves.do(fun(s2 :NFAState) {
+      n ::= t.size
+      t.add(s2)
+      if( n != t.size
+      then: { q.addLast(s2) })
+    })
+  })
+}
+
+private
+
+tokens :Sequence(Pair(NFA, Action))
+
+  (* all dfa states, indexed by set of nfa states *)
+
+states :Dictionary(Set(NFAState), LazyDFAState(Action))
+
+  (* the <ages> queue contains at most maxAge states.
+   After exceeding maxAge, states are promoted to collapsars. *)
+
+maxAge :Int
+
+ages :Queue(LazyDFAState(Action))
+
+  (* The collapsars queue contains at most maxCollapsars states.
+   After exceeding maxCollapsars, states are killed.
+   Lucky collapsars may be rescued from this fate via uncollapse. *)
+
+maxCollapsars :Int
+
+collapsars :Queue(LazyDFAState(Action))
+
+  (* for DFATemplate *)
+
+deadEndState :LazyDFAState(Action)
+
+  (* for DFATemplate *)
+
+initialState :LazyDFAState(Action)
+
+getInitialState :LazyDFAState(Action)
+  (* *)
+{
+  assert({ !tokens.isEmpty })
+  ; otherwise, initalState will be deadEndState 
+  nfaStates ::=
+    Set.fromReader(
+      tokens.map(fun(p:Pair(NFA,Action)) {
+        p.first.start
+      }))
+  close(nfaStates)
+  getState(nfaStates, nil)
+}
+
+isFinal(s :LazyDFAState(Action)) :Bool
+  (* for DFATemplate *)
+{ s.isFinal }
+
+transition(fromState :LazyDFAState(Action), on :Char) :LazyDFAState(Action)
+  (* for DFATemplate *)
+{ fromState.transition(on) }
+
+action(final :LazyDFAState(Action)) :Action
+  (* for DFATemplate *)
+{ final.action }
+
+newState(nfaStates :Set(NFAState)) :LazyDFAState(Action)
+  (* *)
+require !states.includesKey(nfaStates)
+{
+  ; find the highest priority action associated with this
+;     set of states (if any) 
+  token ::=
+    tokens.detect(fun(p:Pair(NFA, Action)) {
+      nfaStates.includes(p.first.final)
+    })
+  action ::= if( token.isNotNil then: { token.second } else: { nil })
+
+  state ::= LazyDFAState.new(self, nfaStates, action)
+  states[nfaStates] := state
+  ages.addLast(state)
+  if( ages.size > maxAge
+  then: { collapseNext
+      if( collapsars.size > maxCollapsars
+      then: { killNext })
+      ; else: still filling the collapsars queue 
+})
+  ; else: still filling the ages queue, collapsars queue is empty 
+  ;tycoon.stdout.write('N'),
+  ; tycoon.stdout << "New state " << state << '\n', 
+  state
+}
+
+collapseNext :Void
+  (* & collapsars.size = old collapsars.size + 1 *)
+require ages.size = maxAge + 1
+  ensure ages.size = maxAge
+      
+{
+  orgS ::= ages.removeFirst
+  s ::= orgS
+  while({ s.isLocked } do: {
+    ages.addLast(s)
+    s := ages.removeFirst
+    assert({ s !== orgS })  ; there must be at least one unlocked state 
+  })
+  ;tycoon.stdout.write('C'),
+  ; tycoon.stdout << "Collapsing " << s << '\n', 
+  s.state := LazyDFAStateCollapsing.instance
+  collapsars.addLast(s)
+}
+
+killNext :Void
+  (* & ages.size = old ages.size *)
+require collapsars.size = maxCollapsars + 1
+  ensure collapsars.size = maxCollapsars
+      
+{
+  s ::= collapsars.removeFirst
+  ;tycoon.stdout.write('K'),
+  ; tycoon.stdout << "Kill " << s << '\n', 
+  s.references.do(fun(observed :LazyDFAState(Action)) {
+    observed.observingStates.remove(s)
+  })
+  s.observingStates.do(fun(observer :LazyDFAState(Action)) {
+    observer.obituary(s)
+  })
+  states.removeKey(s.nfaStates)
+}
+
+_init :Void
+  (* *)
+{ super._init
+  assert({ tokens.isNotNil })
+  if( maxAge.isNil
+  then: { ; approximation based on number of NFA states 
+      totalNfaStates ::= tokens.inject(0, fun(accu :Int, p :Pair(NFA, Action)) {
+	accu + p.first.states.size
+      })
+      maxAge := (totalNfaStates / 3).max(10) })
+  assert({ maxAge > 0 })
+  ages := Queue.new1(maxAge+1)
+  if( maxCollapsars.isNil
+  then: { maxCollapsars := (maxAge / 10).max(3) })
+  collapsars := Queue.new1(maxCollapsars+1)
+  states := Dictionary.new1(maxCollapsars + maxAge + 1)
+  deadEndState := getState( Set.new, nil)
+  deadEndState.lock   ; never to be freed 
+  initialState := getInitialState
+  self
+}
+
+}

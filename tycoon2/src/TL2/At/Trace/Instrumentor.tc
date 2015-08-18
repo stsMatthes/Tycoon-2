@@ -1,0 +1,160 @@
+class Instrumentor
+super Trace
+{
+shouldInstrumentSelector( :TL2Selector) :Bool
+{ true }
+
+instrumentSubpackages(packageDir :String, errorLog :ErrorLog) :Void
+{
+  tycoon.tl.classManager.classTable.do(fun(c :TL2ClassPublic) {
+    if(c.pos.where.startsWith(packageDir) then: {
+      instrument(c, errorLog)
+    })
+  })
+}
+
+instrumentPackage(packageDir :String, errorLog :ErrorLog) :Void
+{
+  tycoon.tl.classManager.classTable.do(fun(c :TL2ClassPublic) {
+    if(c.pos.where.startsWith(packageDir) &&
+       c.pos.where.locateChar1('/', packageDir.size+1).isNil then: {
+      instrument(c, errorLog)
+    })
+  })
+}
+
+instrument(class_ :TL2ClassPublic, errorLog :ErrorLog) :Void
+{
+  tycoon.stdout <<"["<<class_.name<<"\n"
+  resolvedPath ::= _search(class_.pos.where)
+  if( resolvedPath.isNil then: {
+    errorLog.error(class_.pos, "Source code for "+class_.name+" not available")
+  } else: {
+    f ::=
+      try({
+        File.openRead(resolvedPath)
+      } else: fun(e:Exception) {
+	errorLog.error(SourcePos.new(resolvedPath,0,0), "Could not open file: "+e.printString)
+	nil
+      })
+    if( f.isNotNil then: {
+      protect({
+	parseUnit ::= syntax(class_).scanAndParse(class_.pos.where, f, errorLog)
+	if( !errorLog.hasErrors then: {
+	  if( parseUnit.isNil then: {
+	    errorLog.error(class_.pos, "Empty input?")
+	  } else: {
+	    parseUnit.accept(
+	      TL2FunParseUnitVisitor(:Void).new
+		.ifClass(fun(pub :TL2PUClass) {
+		  node ::= pub.builder
+		  if( node.name != class_.name then: {
+		    errorLog.error(node.pos, "expected class "+class_.name+", found "+node.name)
+		  } else: {
+		    instrumentClassBuilder(node, errorLog)
+		    node.build(tycoon.tl.compiler, tycoon.tl.classManager, errorLog)
+		  })
+		 })
+	       .otherwise(fun(pu :TL2ParseUnit) {
+		 errorLog.error(pu.pos, "Expected a class definition")
+		 nil
+		}))
+	  })
+	})
+      }, {
+        f.close
+      })
+    })
+  })
+  tycoon.stdout << "]"
+}
+	      
+instrumentCompiledMethod(className :Symbol, m :TL2CompiledMethod, errorLog :ErrorLog) :Void
+  (*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ public for InstrumentingVisitor *)
+{
+  m.body.accept(InstrumentingVisitor.new(self, className, errorLog))
+  wrapperPos ::= m.body.pos
+  m.body :=
+    TL2SendValue.new(wrapperPos,
+	TL2LiteralValue.new(wrapperPos, AtTraceDB.instance),
+	if(m.methodType.isComponent then: {#"tracedMethod@"} else: {#tracedMethod}),
+	List(:TL2Argument).with5(
+	  TL2IdeValue.new(TL2ValueIde.newRef(wrapperPos, "self")),
+	  TL2LiteralValue.new(wrapperPos, className),
+	  TL2LiteralValue.new(wrapperPos, m.getSelector(errorLog)),
+	  TL2ArrayValue.new(wrapperPos,
+	    m.domain.sfw(
+	      fun(i:TL2Ide) { TL2IdeValue.new( TL2ValueIde.newRef(wrapperPos, i.name) ) },
+	      fun(i:TL2Ide) { i.isValueIde }
+	    ).as(List)),
+	  TL2CompiledFun.new( wrapperPos,
+	    if(m.methodType.isComponent then: {#"[]@"} else: {#"[]"}),
+	    List.with0,
+	    nil,
+	    m.body)))
+}
+
+private
+
+instrumentClassBuilder(cb :TL2ClassBuilder, errorLog :ErrorLog) :Void
+{
+  cb.publicMethods.do(fun(m :TL2Method) {
+    instrumentMethod(cb.name.as(Symbol), m, errorLog)
+  })
+  cb.privateMethods.do(fun(m :TL2Method) {
+    instrumentMethod(cb.name.as(Symbol), m, errorLog)
+  })
+}
+
+instrumentMethod(className :Symbol, m :TL2Method, errorLog :ErrorLog) :Void
+{
+  m.acceptMethodVisitor(
+    TL2FunMethodVisitor.new
+     .ifCompiled(fun(m :TL2CompiledMethod) :Void {
+        instrumentCompiledMethod(className, m, errorLog)
+      })
+     .otherwise(fun( :TL2Method) {
+       ; nop
+      }))
+}
+
+_search(relpath :String) :String
+  (* *)
+{
+  result ::= tycoon.os.fs.search(tl2Path, relpath)
+  ; tycoon.stdout.writeln(relpath+" => "+result.printString), 
+  result
+}
+
+tl2Path :String
+  (* *)
+{
+  result ::= tycoon.ansiC.getenv("TL2_PATH")
+  if( result.isNotNil
+  then: { result }
+  else: { tycoon.os.fs.currentPath })
+}
+
+syntax( :TL2ClassPublic) :AbstractTL2Syntax
+{ tycoon.tl.newSyntax }
+
+}

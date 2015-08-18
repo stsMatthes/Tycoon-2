@@ -1,0 +1,20 @@
+;; open database-connection
+
+connection ::= SQLDriverManager.instance.connect(
+  URL.fromString("tysql:/odbc/hoxsun01:ADABAS;user=hoxdba;password=hoxdba"))
+  
+;; parameters depend on current database, here :
+;; database: ADABAS on hoxsun01,
+;; user:     hoxdba,
+;; password: hoxdba
+
+;; create statement
+
+statement::=connection.newStatement
+
+;; delete table
+statement.executeDirectUpdate("drop table testtable")
+
+;; close statement and disconnect user hoxdba
+statement.close
+connection.close ?

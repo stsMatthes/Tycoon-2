@@ -1,0 +1,18 @@
+class FunIndexGeneratorClass(K <: Object, E <: Object)
+super ConcreteClass(FunIndexGenerator(K,E))
+meta MetaClass
+{
+new(keyFn :Fun(:E):K) :FunIndexGenerator(K,E)
+{
+  new1(keyFn, 1)
+}
+
+new1(keyFn :Fun(:E):K, defaultCapacity :Int) :FunIndexGenerator(K,E)
+{
+  instance ::= _new
+  instance._keyFn := keyFn
+  instance._defaultCapacity := defaultCapacity
+  instance._init
+  instance
+}
+}

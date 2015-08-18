@@ -1,0 +1,46 @@
+<!doctype stml system>
+<stml processor='StmlProcessor'>
+<html>
+<title>
+Einfache Funktionen
+</title>
+<body>
+
+<define name=twice>
+<fun param="what">
+<ref name=what>ignoriert</ref>
+<ref name=what>ignoriert</ref></fun>
+</define>
+
+<B> Astounding feature: </B>
+<I> the scope of "fourTimes" doesn't end
+
+<define name=fourTimes>
+<fun param="what">
+<apply name=twice>
+<arg><apply name=twice>
+<arg><ref name=what>ignoriert</ref></arg>
+</apply></arg>
+</apply>
+</fun>
+</define>
+
+here </I>
+
+<apply name=twice>
+<arg>Hallo2!
+</arg>
+</apply>
+
+<define name=vier>
+<apply name=fourTimes>
+<arg>Hallo4!
+</arg>
+</apply>
+</define>
+
+<ref name=vier>ignoriert</ref>
+<ref name=vier>ignoriert</ref>
+
+</body>  
+</html>  

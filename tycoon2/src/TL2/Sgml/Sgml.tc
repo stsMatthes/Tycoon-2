@@ -1,0 +1,6 @@
+class Sgml
+super Object
+(**)
+meta AbstractClass
+{
+}

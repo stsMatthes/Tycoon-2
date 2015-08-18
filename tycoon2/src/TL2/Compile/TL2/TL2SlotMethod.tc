@@ -1,0 +1,65 @@
+class TL2SlotMethod
+super TL2Method
+meta AbstractClass
+{
+slot :TL2Slot
+  (*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ description of the slot accessed by this method *)
+
+offset :Int
+  (* index of accessed/updated slot (0 is first slot) *)
+
+isStruct :Bool
+  (* for fast inspection by TL2Slot *)
+{ false }
+
+acceptMethodVisitor(T <: Void, visitor :TL2MethodVisitor(T)) :T
+  (* *)
+{ visitor.visitSlot(self) }
+
+prettyPrint(out:Printer) :Void
+  (* *)
+{
+  super.prettyPrint(out)
+  out << ' ' << offset << ' ' << (identityHash % 10000)
+}
+
+private
+
+_init :Void
+{ super._init
+  pos := slot.pos
+  selector := selectorFromSlotName(slot.name)
+  methodType := TL2MethodType.new( pos, selector, makeDomain, makeResultType)
+  documentation := slot.documentation
+  isPrivate := slot.isPrivate
+  computeArityAndSorts(nil)  ;; ## HACK: error log ?
+}
+
+selectorFromSlotName(slotName :Symbol) :Symbol
+  deferred
+
+makeDomain :List(TL2Ide)
+  deferred
+
+makeResultType :TL2Type
+  deferred
+}

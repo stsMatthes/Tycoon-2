@@ -1,0 +1,15 @@
+class SugarGramClass
+super ConcreteClass(SugarGram)
+(**)
+meta MetaClass
+{
+new(terminals :SugarTerminals) :SugarGram
+  (* *)
+{
+  instance ::= _new
+  instance.terminals := terminals
+  instance._init
+  instance
+}
+
+}

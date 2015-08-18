@@ -1,0 +1,98 @@
+class Input
+super Reader(Char)
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+Readers reading characters
+
+Author:  Andreas Gawecki
+Date:    13-Feb-1996
+Updates: (Date)	  (Name)	(Description)
+*)
+meta AbstractClass
+{
+readBuffer(buffer :MutableString, start :Int, n :Int) :Int
+  (* read n characters into buffer, or fewer if the receiver is exhausted.
+     answer the number of characters actually read. *)
+require n >= 0
+  {
+  if( n == 0
+    then: { 0 }
+    else: { i ::= start
+	ch :Char := nil
+	end ::= start+n
+	while({i < end && (ch := read).isNotNil} do: {
+	  buffer[i] := ch
+          i := i + 1})
+	i-start })
+  }
+
+readString(n :Int) :String
+  (* read a string of n characters, or fewer if the receiver is exhausted.
+     At eof, returns the empty string. 
+ ensure result.size <= n && { result.size < n =>=> { read.isNil } } *)
+require n >= 0
+  
+{
+  buffer @::= MutableString.new(n)@
+  red ::= readBuffer(buffer, 0, n)
+  if( red < n then: { buffer.subString(0, red) } else: { buffer })
+}
+
+readlnBuffer(buffer :DynSequence(Char)) :Int
+  (* *)
+{
+  i ::= 0
+  ch ::= read
+  while({ch !== nil && ch !== '\n'} do: {
+    buffer[i] := ch
+    i := i + 1
+    ch := read})
+  if( ch !== nil || i > 0
+    then: { i }
+    else: { nil })
+  }
+
+readln :String
+  (* *)
+{
+  ga @::= GapString.new(160)@
+  n ::= readlnBuffer(ga)
+  if( n == nil
+    then: { result :String := nil }
+    else: { ga.asString })
+}
+
+linesDo(statement :Fun(:Int,:String):Void) :Void
+  (* *)
+{
+  line ::= readln
+  nLine ::= 0
+  while({ line.isNotNil } do:
+    {
+      statement[nLine, line] 
+      line := readln
+      nLine := nLine + 1
+    })
+}
+
+private
+
+}

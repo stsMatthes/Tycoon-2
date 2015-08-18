@@ -1,0 +1,43 @@
+tycoon.tl.loader.registerDirectory("WWW/FTP") ?
+
+tycoon.tl.loader.update ?
+
+?? ;; end of automated script
+
+define client :FTPClient ?
+
+client := FTPClient.new(IPAddress.byName("hoxsun01"), "test", "kodak", true) ?
+client.open ?
+
+client.list(".", fun(in :Input) {
+  buffer ::= MutableString.new(200)
+  n ::= in.readBuffer(buffer, 0, buffer.size)
+  while({ n > 0 } do: {
+    tycoon.stdout.writeBuffer(buffer, 0, n)
+    n := in.readBuffer(buffer, 0, buffer.size)
+  })
+}) ?
+
+client.nameList(".", fun(in :Input) {
+  tokenizer ::= Tokenizer.new(in, "\n")
+  fileName :String := tokenizer.read
+  while({ fileName.isNotNil } do: {
+    tycoon.stdout.writeln("Next File: "+fileName)
+    fileName := tokenizer.read
+  })
+}) ?
+
+client.binary ?
+client.get("/var/adm/messages", File.openWrite("/tmp/t")) ?
+
+client.makeDirectory("/home/test/tmp") ?
+client.put("/home/test/tmp/t", File.openRead("/tmp/t")) ?
+client.get("/home/test/tmp/t", File.openWrite("/tmp/t2")) ?
+client.removeDirectory("/home/test/tmp") ?
+client.delete("/home/test/tmp/t") ?
+client.removeDirectory("/home/test/tmp") ?
+
+client.currentDirectory ?
+client.changeDirectory("/home") ?
+
+client.close ?

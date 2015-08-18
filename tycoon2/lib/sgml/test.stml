@@ -1,0 +1,16 @@
+<title>SGML-basierte Programmierung dynamischer Seiten</title>
+<body>
+<if true="if1"> 
+<then>
+    <if true="if2">
+       abcd
+    <elseif true="elsif2">
+      efgh
+    <else>
+      ijkl
+    </if>
+<elseif true="elsif1">
+mnop
+<else>
+   qrst
+</if>

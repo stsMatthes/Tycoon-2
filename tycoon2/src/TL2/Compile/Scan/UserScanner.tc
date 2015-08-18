@@ -1,0 +1,172 @@
+class UserScanner(E <: Object, UserState <: Void)
+super Scan, Reader(E)
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ UserScanner
+      E: covariant
+      UserState: covariant
+ *)
+meta UserScannerClass(E,UserState)
+{
+errorHandler :Fun(:Char):Void
+
+  (* only public for actions compiled from tokens using grouping: *)
+
+startMarks :Sequence(Int)
+
+endMarks :Sequence(Int)
+
+userState :UserState
+  (* *)
+{ _userState }
+
+mode :Int
+  (* which set of regexps/actions to use. 0 is default. *)
+{ _mode }
+
+"mode:="(newMode :Int) :Int
+  (* *)
+{ ; dfas[newMode], 
+; bounds check 
+  _mode := newMode
+}
+
+tokenBuffer :TokenBuffer
+  (* delegated access to tokenBuffer *)
+{ _tokenBuffer }
+
+token :String
+  (* current token *)
+{ _tokenBuffer.token }
+
+tokenSize :Int
+  (* *)
+{ _tokenBuffer.tokenSize }
+
+tokenReader :StringInput
+  (* *)
+{ _tokenBuffer.tokenReader }
+
+marks :GapArray(Int)
+  (* submatches (grouping) *)
+{ _marks }
+
+submatchStart(n :Int) :Int
+  (* *)
+{
+  marks[startMarks[n]]
+}
+
+submatchEnd(n :Int) :Int
+  (* *)
+{
+  marks[endMarks[n]]
+}
+
+submatchSize(n :Int) :Int
+  (* *)
+{
+  submatchEnd(n) - submatchStart(n)
+}
+
+submatchReader(n :Int) :Reader(Char)
+  (* *)
+{
+  token.subSequenceReader(submatchStart(n), submatchSize(n))
+}
+
+submatchString(n :Int) :String
+  (* *)
+{
+  String.fromSubSequence(token, submatchStart(n), submatchSize(n))
+}
+
+tokenPos :Int
+  (* source position 
+ position of first char of this token *)
+{ _tokenBuffer.tokenPos }
+
+readPos :Int
+  (* position of the next character that will be read *)
+{ _tokenBuffer.readPos }
+
+read :E
+  (* actions *)
+{
+  tokenBuffer.tokenConsumed
+  readAppend
+}
+
+readAppend :E
+  (* *)
+{
+  dfa ::= _dfas[mode]
+  action ::=
+    try({
+      dfa.scan(tokenBuffer)
+    } else: fun(e:Exception) {
+      if( e."class" == ScannerError
+      then: { errorHandler[_typeCast(e, :ScannerError).ch] nil }
+      else: { e.raise })
+    })
+  if( action.isNotNil then: { action[self] } else: { nil })
+}
+
+unread(n :Int) :Void
+  (* shorten the current token by n characters, move back the read head. 
+ ensure tokenSize = old tokenSize - n
+        & tokenPos = old tokenPos *)
+require tokenSize >= n
+
+{ _tokenBuffer.unread(n) }
+
+private
+
+_dfas :Array(DFAInterface(Fun(:UserScanner(E,UserState)):E))
+
+_userState :UserState
+
+_tokenBuffer :TokenBuffer
+
+_mode :Int
+
+_marks :GapArray(Int)
+
+_init :Void
+  (* *)
+{ super._init
+  _mode := 0
+  _marks := GapArray.new(1)
+  if( errorHandler.isNil
+  then: { errorHandler := fun(ch :Char) { defaultError(ch) } })
+  self
+}
+
+defaultError(ch :Char) :Void
+  (* *)
+{
+  if( ch.isNotNil
+  then: { tycoon.stdout << "unexpected char: " <<
+	ch.printString << " (" << ch.asInt << ")\n" }
+  else: { tycoon.stdout << "unexpected end of input\n" })
+  ScannerError.new(ch).raise
+}
+
+}

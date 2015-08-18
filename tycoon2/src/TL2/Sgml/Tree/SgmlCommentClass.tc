@@ -1,0 +1,16 @@
+class SgmlCommentClass
+super ConcreteClass(SgmlComment)
+(**)
+meta MetaClass
+{
+new(position :SgmlPos, data :String) :SgmlComment
+  (* *)
+{
+  instance ::= _new
+  instance.position := position
+  instance.data := data
+  instance._init
+  instance
+}
+
+}

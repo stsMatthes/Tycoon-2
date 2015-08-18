@@ -1,0 +1,4 @@
+tycoon.tl.loader.registerDirectory("Sgml") ?
+tycoon.tl.loader.update ?
+tycoon.tl.typeChecker.check ?
+DO load "Sgml/Init.tyc" ?

@@ -1,0 +1,213 @@
+class ODBCCursor
+super SQLCursor
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+Cursor produced bei SQLStatement
+
+Author:  Michael Skusa
+
+Date:    16-Aug-1996
+
+Updates: (Date)		(Name)	(Description)
+
+         11-Mar-1997	MS	modified getObjects-method, for binary data
+				the string "*** Binary Large Object ***" is
+				returned. The binary data can be retrieved
+				using the getRaw-method.
+           
+				replaced integer values for return codes,
+				SQL-types and ODBC-standard-parameters with
+				integer-constants defined in class ODBC.
+
+	 4-Apr-1997	MS	Tycoons locale has to be C or POSIX.
+	                        Otherwise next() fails if cursor
+				contains TIMESTAMP-data.
+*)
+meta SimpleConcreteClass(ODBCCursor)
+{
+next():Bool
+  (* fetches the next result row from the database,
+      answers true on success,
+              false if no further data was found
+      note: - Because of a bug in the ADABAS-ODBC-Driver
+              next sometimes fails while "fetching" Real-values
+	      -> Bus Error
+    *)
+{
+  if( _hstmt.isNotNil then:
+  {
+  
+  error ::= odbc.SQLFetch(_hstmt)
+  if( ((error = odbc.SQL_SUCCESS) || error = odbc.SQL_SUCCESS_WITH_INFO)
+  then: {true}
+  else: {if( error = odbc.SQL_NO_DATA_FOUND
+     then: {false}
+     else: {ODBCError.new(odbc.NULL,odbc.NULL,_hstmt).raise})})
+  }
+  else: {n:Bool := nil})
+}
+
+private
+
+_hstmt:Int32
+
+_dataArea:MutableArray(AnyCValueHolder)
+
+_createCursorMetaData(hstmt:Int32):ODBCCursorMetaData
+  (* *)
+{
+  m ::= ODBCCursorMetaData.new()
+  m.retrieveColumnData(hstmt)
+  m
+}
+
+_allocateDataArea:Void
+  (* *)
+{
+  _dataArea:=MutableArray.new(metaData.columnCount)
+  for(0 to:_dataArea.size-1 do:fun (i:Int)
+    {
+      t ::= metaData.sqlType(i)
+      if( ((t>=odbc.SQL_NUMERIC) && t<=odbc.SQL_SMALLINT)
+      then: { if( ((metaData.scale(i) = 0) & (metaData.precision(i) <=8))
+          then: {_dataArea[i]:=CIntHolder.new}
+	  else: {_dataArea[i]:=CRealHolder.new})
+	} else:{
+      if( ((t>=odbc.SQL_FLOAT) && t<=odbc.SQL_DOUBLE)
+      then: {_dataArea[i]:=CRealHolder.new} else: {
+      if( (t=odbc.SQL_TIMESTAMP)
+      then: {_dataArea[i]:=CStringHolder.new(  metaData.precision(i)
+                                         + metaData.scale(i)
+					 + 1) } else:{
+      if( ((t= odbc.SQL_LONGVARCHAR) || t= odbc.SQL_LONGVARBINARY)
+      then: {_dataArea[i]:=CRawStringHolder.new(odbc.rawBufferLength)}
+      else: {_dataArea[i]:=CStringHolder.new(metaData.precision(i))})})})})
+    })
+}
+
+_allocateInfoDataArea():Void
+  (* *)
+{
+  _lengthDataArea:=MutableArray.new(metaData.columnCount)
+  for(0 to:metaData.columnCount()-1 do:fun (i:Int)
+    {
+	_lengthDataArea[i]:=CIntHolder.new
+	_lengthDataArea[i].setIntValue(odbc.SQL_NULL_DATA)
+    })
+}
+
+_bindColumns():Void
+  (* *)
+{
+  for(0 to:metaData.columnCount-1 do: fun (i:Int)
+    {
+      t ::= metaData.sqlType(i)
+      maxlength ::= if( ((t>=odbc.SQL_NUMERIC) && t<=odbc.SQL_DOUBLE)
+                        then: {0} ; numerical types 
+		        else: {
+		      if( (t=odbc.SQL_TIMESTAMP)  
+		        then: {metaData.precision(i)+metaData.scale(i)+2} else:{
+		      if( ((t=odbc.SQL_LONGVARCHAR) || t=odbc.SQL_LONGVARBINARY) 
+		        then: {odbc.rawBufferLength}      ; Raw 
+		        else: {metaData.precision(i)+1}) ; String 
+		      })})
+      CType ::= if( ((t>=odbc.SQL_NUMERIC) && t<=odbc.SQL_SMALLINT)
+                  then: { if( ((metaData.scale(i) = 0) && metaData.precision(i) <=8)
+                      then: {odbc.CTypeCode[Int]}
+		      else: {odbc.CTypeCode[Real]})
+		    } else:{
+		  if( ((t>=odbc.SQL_FLOAT) && t<=odbc.SQL_DOUBLE)
+		  then: {odbc.CTypeCode[Real]} else:{
+		  if( ((t=odbc.SQL_LONGVARCHAR) || t=odbc.SQL_LONGVARBINARY)
+		  then: {odbc.CTypeCode[File]}
+		  else: {odbc.CTypeCode[String]})})})
+      error ::= (odbc.SQLBindCol(_hstmt,i+1,CType,_dataArea[i].handle,
+                                   maxlength,_lengthDataArea[i].handle) != 0)
+      if( error then: { er ::= ODBCError.new(odbc.NULL,odbc.NULL,_hstmt)
+                self.close()
+		er.raise })
+     })
+}
+
+_unbindColumns():Void
+  (* *)
+{
+  odbc.SQLFreeStmt(_hstmt,odbc.SQL_UNBIND)
+}
+
+_isNull(column:Int):Bool
+  (* *)
+{
+  _lengthDataArea[column].value = odbc.SQL_NULL_DATA
+}
+
+_isDate(column:Int):Bool
+  (* *)
+{
+     (metaData.sqlType(column) >= odbc.SQL_DATE)
+  && metaData.sqlType(column) <= odbc.SQL_TIMESTAMP
+}
+
+_isBlob(column:Int):Bool
+  (* *)
+{
+     (metaData.sqlType(column) = odbc.SQL_LONGVARCHAR)
+  || metaData.sqlType(column) = odbc.SQL_LONGVARBINARY
+}
+
+_formatDate(column:Int):Date
+  (* *)
+{
+  if( metaData.sqlType(column) = odbc.SQL_DATE
+    then: {Date.fromString(_dataArea[column].stringValue,"%Y-%m-%d")}
+    else: {
+  if( metaData.sqlType(column) = odbc.SQL_TIME
+    then: {Date.fromString(_dataArea[column].stringValue,"%H:%M:%S")}
+    else: {
+  if( metaData.sqlType(column) = odbc.SQL_TIMESTAMP
+    then: {Date.fromString(_dataArea[column].stringValue,"%Y-%m-%d %H:%M:%S")}
+    else: {
+  CoerceError.new(_dataArea[column].stringValue,Date).raise })})})
+}
+
+_retrieveRaw(column:Int, outputFile:File):File
+  (* *)
+{
+  outputFile.openWrite
+  sqlError ::= ODBCError.new(odbc.NULL,odbc.NULL,_hstmt)
+  while({sqlError.isDataTruncated} do: 
+  {
+    data ::= _dataArea[column].rawStringValue
+    outputFile.writeBuffer(data,0,odbc.rawBufferLength)
+    odbc.SQLGetData(_hstmt,column+1,odbc.CTypeCode[File],
+                    _dataArea[column].handle,odbc.rawBufferLength,
+		    _lengthDataArea[column].handle)
+    sqlError := ODBCError.new(odbc.NULL,odbc.NULL,_hstmt)
+  })
+  outputFile.writeBuffer(_dataArea[column].rawStringValue,0,
+                         _lengthDataArea[column].intValue)
+  outputFile.close
+  if( sqlError.errorCode == 0
+  then: {outputFile}
+  else: {sqlError.raise})
+}
+
+}

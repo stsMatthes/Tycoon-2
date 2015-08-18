@@ -1,0 +1,81 @@
+class ReaderClass(E <:Object)
+super ConsGeneratorMixin(E, Reader(E)), AbstractClass
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+Metaclass of Reader
+
+Author:  Andreas Gawecki
+Date:    01-Mar-1996
+Updates: (Date)	     (Name)	   (Description)
+	 09-May-1996 Axel Wienberg added withN
+	 09-Jun-1998 Axel Wienberg use ConsGeneratorMixin
+*)
+meta MetaClass
+{
+
+cons(head :E, tail :Reader(E)) :Reader(E)
+  (* *)
+{
+  ;; recursive binding through the store
+  ;; facilitates constant read overhead for long cons chains of FunReaders
+  readFunTail ::= _readFun(tail)
+  FunReader2.new(fun(me :FunReader2(E)) {
+    me.readFun := readFunTail
+    head })
+}
+
+append(in1 :Reader(E), in2 :Reader(E)) :Reader(E)
+  (* *)
+  require in1 !== in2
+{
+  assert({ in1 !== in2 })
+  readFun2 ::= _readFun(in2)
+  FunReader2.new(fun(me :FunReader2(E)) {
+    e :E := in1.read
+    if( e.isNotNil
+      then: { e }
+      else: { me.readFun := readFun2
+	      me.read }) })
+}
+
+with0 :Reader(E)
+  (* *)
+{ EmptyReader.new }
+
+private
+
+_readFun(T <:Object, r :Reader(T)) :Fun(me :FunReader2(T)):T
+{
+  rClass ::= r."class"
+  if( rClass == FunReader2 then: {
+    ;; warning: not 100% type safe, because Reader is covariant in T,
+    ;; while FunReader2 is invariant.  Crash example:  ???
+    _typeCast(r, :FunReader2(T)).readFun
+  } else: {
+    if( rClass == EmptyReader then: {
+      fun(:FunReader2(T)){ nil }
+    } else: {
+      fun(:FunReader2(T)){ r.read }
+    })
+  })
+}
+
+}

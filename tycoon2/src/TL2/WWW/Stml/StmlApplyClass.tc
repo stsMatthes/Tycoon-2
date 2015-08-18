@@ -1,0 +1,65 @@
+class StmlApplyClass
+super ConcreteClass(StmlApply)
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+*)
+meta MetaClass
+{
+new(position :SgmlPos, functor :StmlRef, args :Array(StmlArg)) :StmlApply
+  (* *)
+{
+  instance ::= _new
+  instance.position := position
+  instance.functor := functor
+  instance.args := args
+  instance._init
+  instance
+}
+
+elementName :String
+  (* *)
+{ "APPLY" }
+
+elementContentType :SgmlContentType
+  (* *)
+{ SgmlContentType.element }
+
+elementBuild(
+       orgElement	:StmlElement,
+       start		:SgmlPos,
+       end		:SgmlPos,
+       attributes	:Dictionary(String, String),
+       contents		:GapArray(StmlComponent)) :StmlComponent
+  (* *)
+{
+  if( !List.fromReader(attributes.keys).listEqual(List.with1("NAME"))
+  then: { attributes.print })
+  assert({ List.fromReader(attributes.keys).listEqual(List.with1("NAME")) })
+  if( !contents.all(fun(c:StmlComponent){ c.isArg ||  c.isComment  })
+  then: { contents.print })
+  assert({ contents.all(fun(c:StmlComponent){ c.isArg ||  c.isComment  }) })
+  new(start,
+      StmlRef.new(start, attributes["NAME"]),
+      Array.fromReader(
+	contents.select(fun(c:StmlComponent){!c.isComment})
+		.map(fun(c:StmlComponent){ c.asArg })))
+}
+
+}

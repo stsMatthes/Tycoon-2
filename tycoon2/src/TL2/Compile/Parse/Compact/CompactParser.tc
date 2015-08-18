@@ -1,0 +1,84 @@
+class CompactParser(D <: Object)
+super Compact, LALR1Parser(D, Int, Int, Int)
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ parser machine 
+ 0% object oriented: Everything is an Int 
+ ### much more compact, but is it already fast enough? 
+ ### THESE OUGHT TO BE PRIVATE 
+ for method "findAction": 
+ state number -> start offset in terminalTable/actionTable *)
+meta CompactParserClass(D)
+{
+actionOffsets :Array(Int)
+
+terminalTable :Array(TerminalO)
+
+actionTable :Array(Int)
+
+  (* action codes: <= 0: shift to state -n
+	           > 0: index in <actions>
+		    1 = error
+		    2 = accept
+                    3 = reduce by rule n-3
+   *)
+
+actions :Array(CompactAction)
+
+  (* for method "findGoto": 
+ indexed by gotoOffsets depending on nonterminal *)
+
+gotoTable :Array(Int)
+  (*private*)
+
+doActionDispatch(action :Int) :Void
+  (* *)
+{
+  if( action <= 0 then: {
+    shift(action.negated)
+  } else: {
+    actions[action][self]
+    ; either calls back to reduce, accept or error 
+  })
+}
+
+doFindAction(state :Int, input :TerminalO) :Int
+  (* *)
+{
+  i ::= actionOffsets[state]
+  while({term ::= terminalTable[i]
+         term.isNotNil && term != input} do:{
+    i := i + 1
+  })
+  actionTable[i]
+}
+
+doFindGoto(gotoOffset :Int, state :Int) :Int
+  (* instead of a nonterminal, we pass a readily computed offset in
+   the goto Table *)
+{
+  i ::= gotoOffset
+  while({gotoTable[i] != state} do:{
+    i := 2 + i
+  })
+  gotoTable[1+i]
+}
+
+}

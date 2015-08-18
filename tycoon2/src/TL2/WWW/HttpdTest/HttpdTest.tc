@@ -1,0 +1,125 @@
+class HttpdTest
+super Object
+(**)
+meta SimpleConcreteClass(HttpdTest)
+{
+uriListPath :String
+
+uriList :DynSequence(String)
+
+server :IPAddress
+
+port :Int
+
+stop :Bool
+
+random :Reader(Long)
+
+workers :MutableArray(HttpdTestWorker)
+
+run(nWorkers :Int) :Void
+  (* *)
+{
+  loadURIs
+  stop := false
+  workers := MutableArray.new(nWorkers)
+  for(0 to:workers.size-1 do:fun(i :Int) {
+    newWorker(i)
+  })
+
+  launchBadGuy  
+}
+
+newWorker(n :Int) :Void
+  (* *)
+{
+  worker ::= HttpdTestWorker.new
+  workers[n] := worker
+  worker.n := n
+  worker.manager := self
+  worker.fork
+  wait
+}
+
+launchBadGuy :Void
+  (* *)
+{
+  Thread.new(fun() {
+    while({!stop} do: {
+      ;
+; * This file is part of the Tycoon-2 system.
+; *
+; * The Tycoon-2 system is free software; you can redistribute it and/or
+; * modify it under the terms of the GNU General Public License
+; * as published by the Free Software Foundation (Version 2).
+; *
+; * The Tycoon-2 system is distributed in the hope that it will be useful,
+; * but WITHOUT ANY WARRANTY; without even the implied warranty
+; * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+; * See the GNU General Public License for more details.
+; * 
+; * You should have received a copy of the GNU General Public
+; * License along with the Tycoon-2 system; see the file LICENSE.
+; * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+; * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+; * 
+; * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+; *
+; simulate some random connection failure: 
+      wait
+      i ::= random.read.asInt.abs % workers.size
+      try({
+	workers[i].interrupt
+      } else: fun(e :Exception) {
+      })
+    })
+  })
+}
+
+loadURIs :Void
+  (* *)
+{
+  uriList := GapArray.new(10)
+  in ::= File.openRead(uriListPath)
+  in.linesDo(fun(n :Int, line :String) {
+    if( line.trim.size > 0 then: {
+      tycoon.stdout.writeln(line)
+      uriList.add(line.trim)
+    })
+  })
+  in.close
+}
+
+wait :Void
+  (* *)
+{
+  max ::= 5000.asLong  ; maximum wait time in millisecons 
+  timeout ::= random.read.abs % max
+  
+  mx ::= Mutex.new
+  cv ::= Condition.new
+  cv.timedWait(mx, timeout)  
+}
+
+pick :String
+  (* choose some uri at random *)
+{
+  _i := random.read.asInt.abs % uriList.size
+  uriList[_i]
+}
+
+private
+
+_i :Int
+
+_init :Self
+  (* *)
+{
+  super._init
+  _i := (-1)
+  stop := false
+  random := LongRandom.new
+  self
+}
+
+}

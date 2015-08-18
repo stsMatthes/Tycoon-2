@@ -1,0 +1,15 @@
+class CRawStringHolderClass
+super ConcreteClass(CRawStringHolder)
+(**)
+meta MetaClass
+{
+new(length:Int):CRawStringHolder
+  (* *)
+{
+  s ::= _new()
+  s._length := length
+  s._allocate(length)
+  s
+}
+
+}

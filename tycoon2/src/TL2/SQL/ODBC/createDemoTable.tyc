@@ -1,0 +1,26 @@
+;; open database-connection
+
+connection ::= SQLDriverManager.instance.connect(
+  URL.fromString("tysql:/odbc/hoxsun01:ADABAS;user=hoxdba;password=hoxdba"))
+  
+;; parameters depend on current database, here :
+;; database: ADABAS on hoxsun01,
+;; user:     hoxdba,
+;; password: hoxdba
+
+;; create statement
+
+statement::=connection.newStatement
+
+;; create table
+statement.executeDirectUpdate
+  ("create table testtable (int_column fixed(5),float_column float(2),char_column varchar(20),date_column timestamp)")
+			    
+;; returns 0 (-> 0 rows updated)
+
+;; grant access to user hox
+statement.executeDirectUpdate("grant all on testtable to hox")
+
+;; close statement and disconnect user hoxdba
+statement.close
+connection.close ?

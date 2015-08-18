@@ -1,0 +1,17 @@
+tycoon.tl.loader.registerDirectory("SystemTracer") ?
+tycoon.tl.loader.update ?
+tycoon.tl.typeChecker.check ?
+
+??  ;; end of automated script
+
+define t :Tracer ?
+t := Tracer.new ?
+t.trace1(tycoon.tl.root,Array(:Object).with4(true,'x',4,"hallo"), tycoon.stdout) ?
+t.trace1(tycoon.tl.root,List.with3(1,2,3), tycoon.stdout) ?
+t.trace1(tycoon.tl.root,tycoon.tl.root.charTable, tycoon.stdout) ?
+
+;; see Compile/TL2/bootstrap2.tyc for real-life usage of this package
+
+define t :Tracer ?
+t := Tracer.new ?
+t.traceToFile(tycoon.tl.root, "dump") ?

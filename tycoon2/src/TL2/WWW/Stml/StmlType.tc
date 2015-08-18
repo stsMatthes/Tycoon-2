@@ -1,0 +1,168 @@
+class StmlType
+super Stml
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+*)
+meta AbstractClass
+{
+position :SourcePos
+  (* *)
+{ _position }
+
+equalType(t :StmlType) :Bool
+  (* *)
+deferred
+
+before(t :StmlType) :StmlType
+  (* *)
+deferred
+
+isSubTypeOf(t :StmlType) :Bool
+  (* *)
+deferred
+
+commonSuperType(t :StmlType) :StmlType
+  (* *)
+{
+  ; useful approximation 
+  if( isSubTypeOf(t)
+  then: { t }
+  else: { if( t.isSubTypeOf(self)
+      then: { t :StmlType := self }
+      else: { StmlTopType.new(t.position) ; ### 
+}) })
+}
+
+isStringContext :Bool
+  (* *)
+deferred
+
+emitWrong(errorLog :ErrorLog) :Void
+  (* if this is a WrongType, write a suitable message on errorLog *)
+{ }
+
+asTycoonType :TL2Type
+  (* *)
+deferred
+
+equalFunType(t :StmlFunType) :Bool
+  (* expected subclasses:
+   StmlFunType
+   StmlStringType
+   StmlWhiteStringType
+   StmlTypeVariable
+   StmlBottomType
+   StmlTopType
+   StmlWrongType
+   StmlTycoonType
+*)
+{ false }
+
+equalStringType(t :StmlStringType) :Bool
+  (* *)
+{ false }
+
+equalWhiteStringType(t :StmlWhiteStringType) :Bool
+  (* *)
+{ false }
+
+equalBottomType(t :StmlBottomType) :Bool
+  (* *)
+{ false }
+
+equalTopType(t :StmlTopType) :Bool
+  (* *)
+{ false }
+
+equalWrongType(t :StmlWrongType) :Bool
+  (* *)
+{ false }
+
+equalTycoonType(t :StmlTycoonType) :Bool
+  (* *)
+{ false }
+
+afterFun(t :StmlFunType) :StmlType
+  (* equalTypeVariable(t :StmlTycoonType) :Bool
+   { t.bindTo(self) } *)
+deferred
+
+afterString(t :StmlStringType) :StmlType
+  (* *)
+deferred
+
+afterWhiteString(t :StmlWhiteStringType) :StmlType
+  (* *)
+deferred
+
+afterTypeVariable(t :StmlTypeVariable) :StmlType
+  (* *)
+require !t.isBound
+  deferred
+
+afterBottom(t :StmlBottomType) :StmlType
+  (* *)
+deferred
+
+afterTop(t :StmlTopType) :StmlType
+  (* *)
+deferred
+
+afterTycoon(t :StmlTycoonType) :StmlType
+  (* *)
+deferred
+
+afterWrong(t :StmlWrongType) :StmlType
+  (* *)
+{ t }
+
+isSuperTypeOfFun(t :StmlFunType) :Bool
+  (* *)
+deferred
+
+isSuperTypeOfString(t :StmlStringType) :Bool
+  (* *)
+deferred
+
+isSuperTypeOfWhiteString(t :StmlWhiteStringType) :Bool
+  (* *)
+deferred
+
+isSuperTypeOfTycoon(t :StmlTycoonType) :Bool
+  (* *)
+deferred
+
+isSuperTypeOfBottom(t :StmlBottomType) :Bool
+  (* isSuperTypeOfTypeVariable(t :StmlTycoonType) :Bool  deferred *)
+{ true }
+
+isSuperTypeOfTop(t :StmlTopType) :Bool
+  (* *)
+{ false }
+
+isSuperTypeOfWrong(t :StmlWrongType) :Bool
+  (* *)
+{ true }
+
+private
+
+_position :SourcePos
+
+}

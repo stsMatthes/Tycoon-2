@@ -1,0 +1,75 @@
+class SymbolClass
+super StringGeneratorMixin(Symbol),
+      RandomAccessGeneratorMixin(Char, MutableString, Symbol),
+      Class
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+*)
+meta MetaClass
+{
+symbolTable :Set(Symbol)
+
+new(s :String) :Symbol
+  (* *)
+{ postProcess(s) }
+
+fromSequence(sequence :Sequence(Char)) :Symbol
+  (* *)
+{
+  sequenceClass ::= sequence.clazz
+  if( sequenceClass == Symbol then: {
+    _typeCast(sequence, :Symbol)
+  } else: {
+    if( sequenceClass == String
+     || sequenceClass == MutableString then: {
+      postProcess(_typeCast(sequence, :String))
+    } else : {
+      super.fromSequence(sequence)
+    })
+  })
+}
+
+init :Void
+  (* *)
+{ symbolTable := Set.new
+}
+
+private
+
+_new1(size :Int) :MutableString
+{ MutableString.new(size) }
+
+postProcess(s :String) :Symbol
+  (* *)
+{
+  found ::= symbolTable.find(s)
+  if( found.isNil then: {
+    sym ::= _new(s)
+    sym.initHash
+    symbolTable.addNew(sym)
+    sym
+  } else: {
+    found
+  })
+}
+
+_new(s :String) :Symbol
+  builtin
+}

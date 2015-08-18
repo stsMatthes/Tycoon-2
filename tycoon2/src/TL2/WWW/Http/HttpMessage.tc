@@ -1,0 +1,193 @@
+class HttpMessage
+super MimeMessage
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+	Http-Message
+
+	changed 23-Jul-97 -> super now MimeMessage
+*)
+meta HttpMessageClass()
+
+{
+parser :MimeMessageParser(Self)
+  (* *)
+{ HttpMessageParser.new }
+
+hasCacheControl :Bool
+  (* HTTP/1.1 'General headers' *)
+{ hasHeader("cache-control") }
+
+cacheControl :String
+  (* *)
+{ headerValue("cache-control") }
+
+"cacheControl:="(cc :String) :Void
+  (* *)
+{ setHeaderValue("cache-control", MimeString, cc) }
+
+hasConnection :Bool
+  (* *)
+{ hasHeader("connection") }
+
+connection :List(String)
+  (* *)
+{ headerValue("connection") }
+
+"connection:="(c :List(String)) :Void
+  (* *)
+{ setHeaderValue("connection", StringListHeader, c) }
+
+hasDate :Bool
+  (* *)
+{ hasHeader("date") }
+
+date :Date
+  (* *)
+{ headerValue("date") }
+
+"date:="(d :Date) :Void
+  (* *)
+{ setHeaderValue("date", MimeDate, d) }
+
+hasExpires :Bool
+  (* *)
+{ hasHeader("date") }
+
+expires :Date
+  (* *)
+{ headerValue("expires") }
+
+"expires:="(d :Date) :Void
+  (* *)
+{ setHeaderValue("expires", MimeDate, d) }
+
+hasForwarded :Bool
+  (* *)
+{ hasHeader("forwarded" ) }
+
+forwarded :List(String)
+  (* *)
+{ headerValue("forwarded") }
+
+"forwarded:="(f :List(String)) :Void
+  (* *)
+{ setHeaderValue("forwarded", StringListHeader, f) }
+
+hasKeepAlive :Bool
+  (* *)
+{ hasHeader("keep-alive") }
+
+keepAlive :List(String)
+  (* *)
+{ headerValue("keep-alive") }
+
+"keepAlive:="(ka :List(String)) :Void
+  (* *)
+{ setHeaderValue("keep-alive", StringListHeader, ka) }
+
+hasPragma :Bool
+  (* *)
+{ hasHeader("pragma") }
+
+pragma :List(String)
+  (* *)
+{ headerValue("pragma") }
+
+"pragma:="(p :List(String)) :Void
+  (* *)
+{ setHeaderValue("pragma", StringListHeader, p) }
+
+hasUpgrade :Bool
+  (* *)
+{ hasHeader("upgrade") }
+
+upgrade :List(String)
+  (* *)
+{ headerValue("upgrade") }
+
+"upgrade:="(u :List(String)) :Void
+  (* *)
+{ setHeaderValue("update", StringListHeader, u) }
+
+hasContentEncoding :Bool
+  (* *)
+{ hasHeader("content-encoding") }
+
+contentEncoding :String
+  (* *)
+{ headerValue("content-encoding") }
+
+"contentEncoding:="(e :String) :Void
+  (* *)
+{ setHeaderValue("content-encoding", MimeToken, e) }
+
+hasTransferEncoding :Bool
+  (* *)
+{ hasHeader("transfer-encoding") }
+
+transferEncoding :String
+  (* *)
+{ headerValue("transfer-encoding") }
+
+"transferEncoding:="(e :String) :Void
+  (* *)
+{ setHeaderValue("transfer-encoding", MimeToken, e) }
+
+encodeBody :Void
+  (* *)
+{
+  if( hasContentEncoding then: { body := Encoder.encode(contentEncoding, body) })
+  if( hasTransferEncoding then: { body := Encoder.encode(transferEncoding, body) })
+}
+
+decodeBody :Void
+  (* *)
+{
+  if( hasTransferEncoding then: { body := Encoder.decode(transferEncoding, body) })
+  if( hasContentEncoding then: { body := Encoder.decode(contentEncoding, body) })
+}
+
+copy :Self
+  (* *)
+{
+  c ::= shallowCopy
+  ; ## typechecker 
+  headers := _typeCast(headers.copy)
+  body    := _typeCast(body.copy)
+
+  c
+}
+
+noCache :Void
+  (* add a header indicating that caching MUST NOT occur *)
+{
+  nocache ::= "nocache"
+  if( hasPragma
+    then: { pragma := List.cons(nocache, pragma) }
+    else: { pragma := List.with1(nocache) })
+  cacheControl := nocache
+  ; expire now: 
+  headers["expires"] := HttpExpiresHeader.fromString("now")
+}
+
+private
+
+}

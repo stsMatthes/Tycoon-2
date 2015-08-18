@@ -1,0 +1,14 @@
+class SlaveClass
+super ConcreteClass(Slave)
+(**)
+meta MetaClass
+{
+new1(queue :WorkQueue(WorkItem(Int))) :Slave
+  (* *)
+{
+  m ::= _new
+  m._workQueue := queue
+  m
+}
+
+}

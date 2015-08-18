@@ -1,0 +1,24 @@
+<!doctype stml system>
+<HTML>
+  <HEAD>
+    <TITLE>Tycoon Types</TITLE>
+  </HEAD>
+
+  <BODY>
+      <H1>Tycoon Types</H1>
+
+      <UL> <LI>Klasse, was?</LI>
+<send receiver="tycoon.tl.classManager.classTable" selector="do">
+  <arg><fun param="c :ClassPublic">
+	<LI><tycoon> out << c.name </tycoon>
+</send>
+      </UL>
+	
+      <HR>
+      <ADDRESS><A HREF="mailto:">Axel Wienberg</A></ADDRESS>
+<!-- Created: Wed Oct 15 22:29:03 MET DST 1997 -->
+<!-- hhmts start -->
+Last modified: Wed Oct 15 22:32:53 MET DST 1997
+<!-- hhmts end -->
+  </BODY>
+</HTML>

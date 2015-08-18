@@ -1,0 +1,201 @@
+class SQLCursor
+super SQL
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+Cursor produced bei SQLStatement
+
+Author:  Michael Skusa
+
+Date:    16-Aug-1996
+
+Updates: (Date)		(Name)	(Description)
+
+         11-Mar-1997	MS	modified getObjects-method, for binary data the string
+	                        "*** Binary Large Object ***" is returned. The binary
+				data can be retrieved using the getRaw-method.
+*)
+meta AbstractClass
+{
+metaData:SQLCursorMetaData
+
+open(hstmt:Int32):Void
+  (* *)
+{
+  _hstmt:=hstmt
+  metaData:=_createCursorMetaData(hstmt)
+  _allocateDataArea()
+  _allocateInfoDataArea
+  _bindColumns
+}
+
+close():Void
+  (* invalidates internal data-structures,
+     is called automatically when the associated SQLStatement is closed
+     or reexecuted *)
+{
+  if( _hstmt.isNotNil then:
+  {
+    _unbindColumns()
+    _hstmt:=nil
+    for(0 to:_dataArea.size-1 do:fun (i:Int)
+      {
+        _dataArea[i].close()
+        _lengthDataArea[i].close()
+      })
+    metaData:=nil
+    _dataArea:=nil
+    _lengthDataArea:=nil
+  })
+}
+
+next():Bool
+  (* *)
+deferred
+
+getObject(n :Int):Object
+  (* fetches the next result row from the database,
+      answers true on success,
+              false if no further data was found
+    
+ answer the object at position n in the current result row,
+      n >= 0,
+      raises IndexOutOfBounds
+    *)
+{
+  if( _isNull(n)
+  then: {o:Object := nil}
+  else: {if( _isDate(n) then: {o:Object := _formatDate(n)} else:{
+     if( _isBlob(n) then: {o:Object := "*** Binary Large Object ***"}
+                else: {o:Object := _dataArea[n].value})})})
+}
+
+getObjects():Array(Object)
+  (* answers an array of all objects in the current row *)
+{
+  a ::= MutableArray.new(metaData.columnCount())
+  for(0 to:a.size-1 do:fun(i:Int){a[i]:=getObject(i)})
+  a
+}
+
+getInt(n :Int) :Int
+  (* answer the Int object at position n in the current result row,
+      n >= 0,
+      raises IndexOutOfBounds, CoerceError
+    *)
+{
+  if( _isNull(n)
+  then: {o:Int := nil}
+  else: {_dataArea[n].intValue})
+}
+
+getString(n :Int) :String
+  (*  answer the String object at position n in the current result row,
+      n >= 0,
+      raises IndexOutOfBounds, CoerceError
+   *)
+{
+  if( _isNull(n)
+  then: {o:String := nil}
+  else: {_dataArea[n].stringValue})
+}
+
+getDate(n :Int) :Date
+  (*  answer the Date object at position n in the current result row,
+      n >= 0,
+      raises IndexOutOfBounds, CoerceError
+   *)
+{
+  if( _isNull(n)
+  then: {o:Date := nil}
+  else: {_formatDate(n)})
+}
+
+getReal(n :Int) :Real
+  (*  answer the Real object at position n in the current result row,
+      n >= 0,
+      raises IndexOutOfBounds, CoerceError
+   *)
+{
+  if( _isNull(n)
+  then: {o:Real := nil}
+  else: {_dataArea[n].realValue})
+}
+
+getRaw(n :Int, value:File):File
+  (*  answer the binary object at position n in the current result row,
+      n >= 0,
+      raises IndexOutOfBounds, CoerceError
+   *)
+{
+  if( _isNull(n)
+  then: {o:File := nil}
+  else: {_retrieveRaw(n,value)})
+}
+
+private
+
+_hstmt:Int32
+
+_dataArea:MutableArray(AnyCValueHolder)
+
+_lengthDataArea:MutableArray(AnyCValueHolder)
+
+_createCursorMetaData(hstmt:Int32):SQLCursorMetaData
+  (* *)
+deferred
+
+_allocateDataArea():Void
+  (* *)
+deferred
+
+_allocateInfoDataArea():Void
+  (* *)
+deferred
+
+_bindColumns():Void
+  (* *)
+deferred
+
+_unbindColumns():Void
+  (* *)
+deferred
+
+_isNull(column:Int):Bool
+  (* *)
+deferred
+
+_isDate(column:Int):Bool
+  (* *)
+deferred
+
+_isBlob(column:Int):Bool
+  (* *)
+deferred
+
+_formatDate(column:Int):Date
+  (* *)
+deferred
+
+_retrieveRaw(column:Int, outputFile:File):File
+  (* *)
+deferred
+
+}

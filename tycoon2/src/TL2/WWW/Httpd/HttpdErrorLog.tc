@@ -1,0 +1,60 @@
+class HttpdErrorLog
+super Http, OutputDecorator
+(**)
+meta HttpdErrorLogClass()
+
+{
+write(ch :Char) :Void
+  (* *)
+{
+  if( ch == '\n'
+    then: { nl }
+    else: { _stamp _out.write(ch) _out.flush })
+}
+
+writeBuffer(buffer :String, start :Int, n :Int) :Void
+  (* *)
+{
+  if( start >= 0 && (start < buffer.size &&  n > 0 ) then: {
+    _stamp
+  })        
+  pos ::= buffer.locateChar1('\n', start)
+  if( pos.isNil ||  pos >= start+n 
+    then: { _out.writeBuffer(buffer, start, n)
+	_out.flush }
+    else: { m ::= pos-start
+	_out.writeBuffer(buffer, start, m)
+	nl
+	writeBuffer(buffer, pos+1, n-m-1)
+      })
+}
+
+nl :Void
+  (* *)
+{
+   _out.nl
+   _stamped := false
+}
+
+private
+
+_stamped :Bool
+
+_init :Void
+  (* *)
+{
+  super._init
+  _stamped := false
+  self
+}
+
+_stamp :Void
+  (* *)
+{
+  if( !_stamped then: {
+     _out << "[" << Date.now.format(Httpd.DATE_FORMAT) << "] "
+  })
+  _stamped := true
+}
+
+}

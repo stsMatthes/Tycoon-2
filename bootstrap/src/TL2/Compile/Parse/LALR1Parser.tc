@@ -1,0 +1,154 @@
+class LALR1Parser(D <: Object, 
+		     State <: Object, Action <: Object, NT <: Void)
+super AbstractParser(D)
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ template for the parse algorithm using an LR algorithm 
+ ... *)
+meta AbstractClass
+{
+logging :Bool
+
+_error :Fun(:Token(Object)):Void
+
+  (* DEBUG! actually, these are all private... 
+ the current parse state *)
+
+stateStack :Stack(State)
+
+valueStack :Stack(Object)
+
+source :Reader(Token(Object))
+
+lookahead :Token(Object)
+
+running :Bool
+
+failed :Bool
+
+eofToken :SimpleToken
+
+start :State
+
+parse(in :Reader(Token(Object)),
+      error :Fun(:Token(Object)):Void) :D
+  (* *)
+{
+  source := in
+  stateStack := Stack(:State).new
+  valueStack := Stack.new
+  running := true
+  failed := false
+  stateStack.addFirst(start)  ; initial state 
+  lookahead := source.read
+  if( lookahead.isNil then: {
+    lookahead := eofToken
+  })
+  while({running} do: {
+    topState ::= stateStack[0]
+    symbol :TerminalO := lookahead.tokenType
+    action ::= doFindAction(topState, symbol)
+    if( logging then: {
+      action.print tycoon.stdout.nl
+    })
+    doActionDispatch(action)
+  })
+  if( !failed then: {
+    assert({ stateStack.size = 2 })
+    assert({ valueStack.size = 1 })
+    _typeCast(valueStack[0], :D)
+  } else: {
+    error[lookahead]
+    nil
+  })
+}
+
+shift(newState :State) :Void
+  (* These are public so doActionDispatch can make other objects call
+   me: (-> CompactParser) 
+ shift the lookahead symbol and go into state <newState> *)
+{
+  valueStack.addFirst(lookahead.value)
+  stateStack.addFirst(newState)
+  lookahead := source.read
+  if( lookahead.isNil then: {
+    lookahead := eofToken
+  })
+}
+
+reduce(nonterminal :NT,
+       action :Fun(:Stack(Object)):Object, 
+       rhssize :Int) :Void
+  (* *)
+{
+  stateStack.removeSubSequence1(rhssize)
+  derived ::= action[valueStack]
+  topstate ::= stateStack[0]
+  valueStack.addFirst(derived)
+  stateStack.addFirst(doFindGoto(nonterminal, topstate))
+}
+
+accept :Void
+  (* *)
+{
+  running := false
+}
+
+error :Void
+  (* *)
+{
+  failed := true
+  running := false
+}
+
+private
+
+doFindAction(state :State, input :TerminalO) :Action
+  (* *)
+deferred
+
+doFindGoto(nonterminal :NT, state :State) :State
+  (* *)
+deferred
+
+doActionDispatch(action :Action) :Void
+  (* *)
+deferred
+
+_init :Void
+  (*
+defaultError
+{
+  let o = tycoon.stdout,
+  o.writeln("Syntax error, skipping rest of input:"),
+  while({lookahead.isNotNil && {lookahead != eofToken}},{
+    o.write(' '),
+    lookahead.print,
+    lookahead := source.read
+  }),
+  o.nl
+}
+*)
+{ super._init
+  logging := false
+  self
+}
+
+}

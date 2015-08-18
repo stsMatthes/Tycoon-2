@@ -1,0 +1,106 @@
+class OCICursorMetaData
+super SQLCursorMetaData
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+Data about properties of the associated SQL-Statement
+
+Author:  Michael Skusa
+
+Date:    16-Aug-1996
+
+Updates: (Date)		(Name)	(Description)
+	 14-mar-1997	MS	replaced integers for return-, type- and
+				error-codes with named constants
+*)
+meta SimpleConcreteClass(OCICursorMetaData)
+{
+hdbc:Int32
+
+retrieveColumnData(hstmt:Int32) :Void
+  (* *)
+{
+  ; create GapArrays, because number of columns is not known 
+  columnCount::=0
+  columnNames:GapArray(String) := GapArray.new(columnCount)
+  nulls:GapArray(Bool) := GapArray.new(columnCount)
+  precisions:GapArray(Int) := GapArray.new(columnCount)
+  scales:GapArray(Int) := GapArray.new(columnCount)
+  types:GapArray(Int) := GapArray.new(columnCount)
+
+  ; allocate valueholder for the odescr-call 
+  maxNameLength ::= 100
+  dbsize ::= CIntHolder.new
+  dbtype ::= CShortHolder.new
+  cbuf ::= CStringHolder.new(maxNameLength)
+  cbufl ::= CIntHolder.new
+  cbufl.value:=maxNameLength
+  dsize ::= CIntHolder.new
+  prec ::= CShortHolder.new
+  oscale ::= CShortHolder.new
+  nullok ::= CShortHolder.new
+  
+  ; execute odescr until call fails 
+  while(
+    {oci.odescr(hstmt,columnCount+1,dbsize.handle,dbtype.handle,cbuf.handle,
+                cbufl.handle,dsize.handle,prec.handle,oscale.handle,
+		nullok.handle) = 0} do:
+    {
+      columnCount:=columnCount+1
+      stringSize ::= if( cbufl.value > maxNameLength then: {maxNameLength}
+                                                   else: {cbufl.value})
+      str ::= MutableString.new(stringSize)
+      for(0 to:stringSize-1 do:fun (i:Int) {str[i]:=cbuf.value[i]})
+      columnNames.addLast(str)
+      nulls.addLast( nullok.value != 0 )
+      if( dbtype.value = oci.VARCHAR
+        then: {precisions.addLast(dsize.value)} else:{
+      if( dbtype.value = oci.DATE
+        then: {precisions.addLast(19)} ; DATE 
+        else: {precisions.addLast(prec.value)})})
+      scales.addLast(oscale.value)
+      types.addLast(dbtype.value)
+      cbufl.value:=100
+    }
+  )
+  dbsize.close dbtype.close cbuf.close cbufl.close
+  dsize.close prec.close oscale.close nullok.close
+  error ::= OCIError.new(hdbc,hstmt)
+  if( error.errorCode != oci.COLUMN_NOT_FOUND then: {error.raise})
+    ; error COLUMN_NOT_FOUND is raised by Oracle
+;       if no further columns exist 
+  ; create the metaData-arrays and copy the data from the GapArrays 
+  _columnCount:=columnCount
+  _columnNames:=MutableArray.new(_columnCount)
+  _nulls:=MutableArray.new(_columnCount)
+  _precisions:=MutableArray.new(_columnCount)
+  _scales:=MutableArray.new(_columnCount)
+  _types:=MutableArray.new(_columnCount)
+  for(0 to:_columnCount-1 do:fun (i:Int)
+    {
+      _columnNames[i]:=columnNames[i]
+      _nulls[i]:=nulls[i]
+      _precisions[i]:=precisions[i]
+      _scales[i]:=scales[i]
+      _types[i]:=types[i]
+    })
+}
+
+}

@@ -1,0 +1,26 @@
+<!DOCTYPE STML SYSTEM>
+<html>
+
+<title> irgend son titel</title>
+
+<body>
+
+  <define name=x>
+    Dies ist fetter Text als Wert
+  </define>
+
+  <define name=bold>
+    <fun param="content"><b><ref name=content//</b></fun>
+  </define>
+
+  <define name=italic>
+    <fun param="content"><i><ref name=content//</i></fun>
+  </define>
+
+
+
+   <tycoon>
+      bold[x],
+      italic[x]
+   </tycoon>
+    

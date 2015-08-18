@@ -1,0 +1,6 @@
+class SugarArgsList
+super SugarList(String)
+(**)
+meta SimpleConcreteClass(SugarArgsList)
+{
+}

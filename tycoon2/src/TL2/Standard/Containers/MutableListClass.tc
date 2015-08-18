@@ -1,0 +1,63 @@
+class MutableListClass(E <:Object)
+super AbstractListClass(E, MutableList(E))
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+Metaclass of MutableList.
+
+Author:  Andreas Gawecki
+Date:    14-Feb-1996
+Updates: (Date)	  (Name)	(Description)
+
+*)
+meta MetaClass
+{
+new :MutableList(E)
+  (* *)
+{
+  EmptyList.new
+  }
+
+fromReader(reader :Reader(E)) :MutableList(E)
+  (* *)
+{
+  e ::= reader.read
+  if( e.isNil
+    then: { new }
+    else: { l ::= cons(e,nil)
+        current ::= l
+	reader.do(fun(e:E) {
+	  next ::= cons(e,nil)
+	  current.tail := next
+	  current := next
+	})
+	current.tail := new
+	l })
+}
+
+append(l1 :MutableList(E), l2 :MutableList(E)) :MutableList(E)
+  (* *)
+{
+  if( l1.isEmpty
+    then: {l2}
+    else: {cons(l1.head, append(l1.tail, l2))})
+  }
+
+}

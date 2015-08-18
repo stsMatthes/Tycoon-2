@@ -1,0 +1,19 @@
+class HttpShutdownResource
+super HttpResource
+(**)
+meta HttpShutdownResourceClass()
+
+{
+httpd :Httpd
+
+get(request :HttpRequest) :HttpResponse
+  (* *)
+{
+   response ::= httpd.shutdown(request)
+   response.noCache
+   response
+}
+
+private
+
+}

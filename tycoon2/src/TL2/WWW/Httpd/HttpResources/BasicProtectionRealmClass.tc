@@ -1,0 +1,14 @@
+class BasicProtectionRealmClass
+super ConcreteClass(BasicProtectionRealm)
+(**)
+meta MetaClass
+{
+new(name :String) :BasicProtectionRealm
+  (* *)
+{
+    instance ::= _new
+    instance._init1(name)
+    instance
+  }
+
+}

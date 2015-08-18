@@ -1,0 +1,35 @@
+before next release:
+* all done!
+
+any time:
+* complete switch to free borland c compiler
+* tl2 compiler 
+  * optimization for repeat(until:)
+  * compile, at least scope&typecheck pre/postconditions
+  * inter-method compiler optimizations
+    (at machine(JIT) or at TL2-level?)
+* typechecker
+  * fix dependency tracking for "cached" subtype relationships and variance
+    (could use lots of memory?)
+* library
+  * use more keywords - new(size: capacity:)
+  * aContainer.map(aFun).as(aContainerClass) - pass on the size
+* typechecking for STML pages also after the initial compilation
+  (when used classes have been redefined)
+
+language:
+* packages (pool classes?)
+  * might simplify bootstrap
+* assess component extension
+  * maybe allow invocation of component methods (esp. constructors) in
+    reference context
+  * reconsider overloading of methods based on result sort
+    (we do not have it for arguments either)
+  * develop a truly useful component container library ("At")
+  * maybe allow assignment of literals (known immutable) to component vars,
+    implicit copy
+  * #()@
+  * tl2 compiler optimization
+    * if@, try@
+    * do not cell component variables that are never taken or assigned
+    * data flow - avoid cleanup if component var is always empty

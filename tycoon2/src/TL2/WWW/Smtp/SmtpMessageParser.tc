@@ -1,0 +1,6 @@
+class SmtpMessageParser(Message <: SmtpMessage)
+super MimeMessageParser
+(**)
+meta SimpleConcreteClass(SmtpMessageParser(Message))
+{
+}

@@ -1,0 +1,81 @@
+class TL2MutableClassState
+super TL2ClassState
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+*)
+meta SimpleConcreteClass(TL2MutableClassState)
+{
+pos :SourcePos
+
+sourceTime :Long
+
+fingerPrint :ByteArray
+
+name :String
+
+domain :List(TL2TypeIde)
+
+supers :List(TL2CPLType)
+
+  (* CPLTypes of the direct superclasess in declaration order. *)
+
+documentation :String
+
+selfTypeSig :TL2TypeIde
+
+  (* Self ide: constraints on Self, i.e. =,<: type *)
+
+metaClassDeclaration :TL2CPLType
+
+slots :Array(TL2Slot)
+  (* public and private slots defined in this class *)
+
+methodDictionary :TL2MethodDictionary(TL2Method)
+  (* public and private methods defined in this class *)
+
+setState(state :TL2ClassState) :Void
+  (* *)
+require state.name == name
+{
+  pos := state.pos
+  sourceTime := state.sourceTime
+  fingerPrint := state.fingerPrint
+  domain := state.domain
+  supers := state.supers
+  documentation := state.documentation
+  selfTypeSig := state.selfTypeSig
+  metaClassDeclaration := state.metaClassDeclaration
+  slots := state.slots
+  md ::= TL2MethodDictionary.new
+  state.methodDictionary.keysAndElementsDo(fun(key :Symbol, m :TL2Method) {
+    md[key] := m
+  })
+  methodDictionary := md
+}
+
+private
+
+_init :Void
+{ super._init
+  ;; do NOT _init methodDictionary, since it is a
+  ;; creation argument for my subclass TL2Class
+}
+
+}

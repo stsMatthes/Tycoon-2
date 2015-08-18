@@ -1,0 +1,21 @@
+class TestDriver
+super UML99
+meta SingletonClass(TestDriver)
+{
+
+setup :Void
+{
+  pim := PIM.new@
+  pim.isTracedComponent := true
+  pim.calendar.isTracedComponent := true
+  pim.contacts.isTracedComponent := true
+}
+
+test :Void
+{
+  pim.insertPerson("John Smith", Date.fromString("6.4.1974", "%d.%m.%Y"))
+}
+
+pim @: PIM
+
+}

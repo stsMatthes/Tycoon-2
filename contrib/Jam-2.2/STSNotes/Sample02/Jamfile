@@ -1,0 +1,15 @@
+#
+# Hauptprogramm besteht aus Hello.c
+#
+Main Hello : Hello.c ;
+
+#
+# Hauptprogramm benötigt die Bibliothek Util
+#
+LinkLibraries Hello : Util ;
+
+#
+# Die Bibliothek Util besteht aus Util.c
+#
+Library Util : Util.c ;
+

@@ -1,0 +1,135 @@
+class StmlWrongType
+super StmlType
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+*)
+meta  StmlWrongTypeClass
+{
+printOn(out :Output) :Void
+  (* *)
+{ out.writeString("Wrong") }
+
+emitWrong(errorLog :ErrorLog) :Void
+  (* *)
+{ if( !emitted
+  then: { emitted := true
+      errorLog.error(position, message+if( t1.isNotNil || t2.isNotNil then: {":"}else:{""}))
+      if( t1.isNotNil then: { errorLog.error(t1.position, msg1+": "+t1.printString) })
+      if( t2.isNotNil then: { errorLog.error(t2.position, msg2+": "+t2.printString) }) })
+}
+
+equalType(t :StmlType) :Bool
+  (* *)
+{ t.equalWrongType(self) }
+
+equalWrongType(t :StmlWrongType) :Bool
+  (* *)
+{ true }
+
+before(t :StmlType) :StmlType
+  (* *)
+{ t.afterWrong(self) }
+
+afterFun(t :StmlFunType) :StmlType
+  (* *)
+{ self }
+
+afterString(t :StmlStringType) :StmlType
+  (* *)
+{ self }
+
+afterWhiteString(t :StmlWhiteStringType) :StmlType
+  (* *)
+{ self }
+
+afterTypeVariable(t :StmlTypeVariable) :StmlType
+  (* *)
+require !t.isBound
+{ self }
+
+afterBottom(t :StmlBottomType) :StmlType
+  (* *)
+{ self }
+
+afterTop(t :StmlTopType) :StmlType
+  (* *)
+{ self }
+
+afterTycoon(t :StmlTycoonType) :StmlType
+  (* *)
+{ self }
+
+isSubTypeOf(t :StmlType) :Bool
+  (* the client usually expects "true" result.
+   With WrongType, he gets what he wants. *)
+{ t.isSuperTypeOfWrong(self) }
+
+isSuperTypeOfFun(t :StmlFunType) :Bool
+  (* *)
+{ false }
+
+isSuperTypeOfString(t :StmlStringType) :Bool
+  (* *)
+{ false }
+
+isSuperTypeOfWhiteString(t :StmlWhiteStringType) :Bool
+  (* *)
+{ false }
+
+isSuperTypeOfBottom(t :StmlBottomType) :Bool
+  (* *)
+{ false }
+
+isSuperTypeOfTop(t :StmlTopType) :Bool
+  (* *)
+{ false }
+
+isSuperTypeOfTycoon(t :StmlTopType) :Bool
+  (* *)
+{ false }
+
+isStringContext :Bool
+  (* *)
+{ true }
+
+private
+
+message :String
+
+msg1 :String
+
+t1 :StmlType
+
+msg2 :String
+
+t2 :StmlType
+
+emitted :Bool
+
+_init :Void
+  (* *)
+{ super._init
+  emitted := false
+  if( msg1.isNil then: { msg1 := "first" })
+  if( msg2.isNil then: { msg2 := "second" })
+  self
+}
+
+}

@@ -1,0 +1,20 @@
+class MimeInt
+super MimeHeaderValueImpl(Int)
+(**)
+meta MimeHeaderValueImplClass(Int)
+{
+private
+
+parseValue(s :String) :Int
+  (* *)
+{
+  s.asInt
+}
+
+unparseValue(i :Int) :String
+  (* *)
+{
+  i.printString
+}
+
+}

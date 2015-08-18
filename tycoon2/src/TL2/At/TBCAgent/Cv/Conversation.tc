@@ -1,0 +1,169 @@
+class Conversation(S<:Void)
+super Object
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ Conversation.tc
+
+   Tycoon Business Conversations (TBC) for Tycoon 2
+   ------------------------------------------------
+   This represents an single Conversation, or in other words, its 
+   current state and also entire history independently of its 
+   Specification. Moreover, each Conversation has an State-Object for its 
+   customers purpose. 
+   Additionally methods for maintaining and examining the history, the current
+   Dialog, and a progress index, also called 'stage', are available.
+   An important feature is the typed session-variable s of type :S,
+   whose type must be specified as parameter to this class.  This way,
+   every session is able to maintain its private context object in a typesafe
+   manner.  See also Customer/performerRole/rule for details and Test.tc
+   for examples.
+
+   13.08.97 hw : created
+   10.11.97 hw : introduced :S
+   
+*)
+meta ConversationClass(S)
+{
+
+s :S
+  (* An arbitrary customer state object.  Remains 'nil' on creation,
+     to be used (initialized and changed) by rules. *)
+
+convSpec :ConversationSpec
+  (* The associated conversation specification, passed to new(). *)
+
+hist :History
+  (* Patricks tolle Historie. *)
+
+stage(): Int
+  (*
+   * Return the current stage of the conversation.  A conversation starts 
+   * at zero and increments the stage at each performance of a rule (ie.
+   * sending/receiving the next dialog). So 1 denotes the initial dialog,
+   * and 0 that there was no conversation yet.
+   *)
+{
+  _stage
+}
+
+history(atStage :Int) :Dialog
+  (*
+   * Return the dialog from stage 'atStage'. Requires 1 <= aStage <= stage().
+   * Note that not a copy, but a reference to the original dialog is returned!
+   * "history(1)" will return the initial dialog.
+   *)
+{
+  if( atStage.between(1, _stage) then: {
+    _history[_history.size - atStage]
+  } else: {
+    KeyNotFoundError.new(_history,atStage).raise    ;### own Ex.-Class?
+  })
+}
+
+current() :Dialog
+  (* 
+   * Return the current dialog. A shortcut for "history(stage)", but more
+   * efficient.
+   *)
+{
+  _history[0]
+}
+
+newDialog(name :String) @:Dialog
+  (* 
+   * Create an instance of Dialog 'name' according to its specification.
+   * This dialog becomes the new currentDialog also.
+   *)
+{
+  d @::= convSpec[name].instance@
+  _push(d)
+  d@
+}
+
+saveDialog(aDialog :Dialog) :Dialog
+  (*
+   * Store an existing dialog into the history. This dialog becomes the 
+   * new currentDialog also and is returned unchanged.
+   *)
+{
+  _push(aDialog)
+}
+
+isValidRequest(name :String) :Bool
+  (*
+   * Store an existing dialog into the history. This dialog becomes the 
+   * new currentDialog also and is returned unchanged.
+   *)
+{
+  (_stage=0 && name=convSpec.initialRequestName) || 
+  current.dialogSpec.replies.includesKey(name)
+}
+
+isFinalDialog(dialog :Dialog) :Bool
+  (*
+   * Returns true iff a current dialog is a final dialog.
+   *)
+{
+  (dialog.dialogSpec.replies.size = 0) ; no more replies 
+}
+
+breakdownDialog(reason :String) @:Dialog
+  (*
+   * Create a breakdown dialog, which contains among other information
+   * the given reason string.
+   *)
+{
+  b @::= convSpec.breakdownDialogSpec.instance@
+  b["String_Reason"].str := reason
+  b["String_Conversation"].str := convSpec.name
+  b["String_Dialog"].str  := convSpec.locate(current.dialogSpec) 
+  ; ### figure out last request! 
+  b@
+}
+
+private
+
+_stage :Int
+  (* internal stage. initialized by new to 0. read by method stage(). *)
+
+_history :Stack(Dialog)
+  (* history of previously generated dialogs, current dialog on top.
+     may be accessed (read only) by methods history(i) and current. *)
+
+_push(aD :Dialog) :Dialog
+  (*
+   * Adds a Dialog to the _history and increments _stage accordingly.
+   * Returns the argument unchanged.
+   *)
+{
+  _stage := _stage + 1
+  _history.addFirst(aD)
+  aD
+}
+
+_init :Void
+  (* *)
+{
+  super._init
+  _stage   := 0
+  _history := Stack.new
+}
+
+}

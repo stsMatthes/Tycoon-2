@@ -1,0 +1,23 @@
+;; File   : boot.tyc
+;; Author : Andreas Gawecki
+;; Date   : 27-Feb-1996
+;; Purpose: Load TWL Kernel classes into an empty system.
+;; Author : Axel Wienberg
+;; Date   : 01-Oct-1996
+;; Purpose: loading into bootstrap system
+
+
+;; Forwarding definitions for TooL kernel classes.
+;; To be executed before any kernel classes are
+;; loaded into an empty system.
+
+;; must be the first one:
+class AbstractClass meta AbstractClass {} ?
+
+class Class meta AbstractClass {} ?
+
+class Object meta AbstractClass {} ?
+class ConcreteClass meta AbstractClass {} ?
+class MetaClass meta AbstractClass {} ?
+
+

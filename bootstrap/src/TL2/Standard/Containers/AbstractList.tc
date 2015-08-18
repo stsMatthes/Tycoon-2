@@ -1,0 +1,210 @@
+class AbstractList(E <:Object, L <:AbstractList(E, L))
+super Sequence(E)
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+Abstract superclass of List and MutableList,
+parameterized with the concrete subclass
+	 
+Author:  Andreas Gawecki
+Date:    14-Feb-1996
+Version: 1.0
+Updates: (Date)	  (Name)	(Description)
+*)
+Self <:L
+meta AbstractClass
+{
+isEmpty :Bool
+  (* *)
+{false}
+
+head :E
+  (* *)
+require !isEmpty
+  {
+  _head
+  }
+
+tail :L
+  (* *)
+require !isEmpty
+  {
+  _tail
+  }
+
+size :Int
+  (* *)
+{
+  1 + tail.size
+  }
+
+"[]"(i :Int) :E
+  (* *)
+{
+  if( i = 0
+    then: {head}
+    else: {tail[i-1]})
+}
+
+do(statement :Fun(:E):Void) :Void
+  (* *)
+{
+  statement[head]
+  tail.do(statement)
+}
+
+all(p :Fun(:E):Bool) :Bool
+  (* answer true if p(e) holds for all elements e in the receiver 
+     more efficient re-implementation including nil elements *)
+{
+  p[head] && tail.all(p)
+}
+
+some(p :Fun(:E):Bool) :Bool
+  (* answer true if p(e) holds for some element e in the receiver 
+     more efficient re-implementation including nil elements *)
+{
+  p[head] || tail.some(p)
+}
+
+reader :Reader(E)
+  (* *)
+{
+  l :L := self
+  FunReader.new(fun(){
+    if( !l.isEmpty
+      then: {e ::= l.head l := l.tail e}
+      else: {nil})})
+}
+
+nthTail(n :Int) :L
+  (* *)
+{ if( n.isZero
+  then: { self }
+  else: { tail.nthTail(n-1) })
+}
+
+subSequenceReader(start :Int, n :Int) :Reader(E)
+  (* *)
+{ n ::= n
+  l :L := nthTail(start)
+  FunReader.new(fun(){
+    if( n > 0
+      then: {e ::= l.head l := l.tail n := n - 1 e}
+      else: {nil})})
+}
+
+reverseReader :Reader(E)
+  (* *)
+{
+  List.reverse(self).reader
+}
+
+reverseDo(statement :Fun(:E):Void) :Void
+  (* Perform statement for each e in the receiver,
+     in reverse order. *)
+{
+  List.reverse(self).do(statement)
+}
+
+"="(o :Object) :Bool
+  (* ### beware! semantics may change *)
+{
+  self == o || (
+    (o."class" == List | o."class" == MutableList) && (
+      l ::= _typeCast(o, :List(Object))
+      listEqual(l)
+    ) || 
+      super."="(o)
+    
+  )
+}
+
+listEqual(l :List(Object)) :Bool
+  (* answer true if all elements of the receiver are equal to
+   the corresponding elements of the given list,
+   else answer false. *)
+{
+  !l.isEmpty && (
+    _elementEqual(head, l.head) && 
+      tail.listEqual(l.tail)
+    
+  )
+}
+
+locate(e :Object) :Int
+  (* *)
+{
+  locateAccu(e, 0)
+}
+
+locate1(e :Object, startingAt :Int) :Int
+  (* *)
+{
+  locateAccuStart(e, 0, startingAt)
+}
+
+locate2(e :Object, startingAt :Int, before :Int) :Int
+  (* *)
+{
+  locateAccuStartBefore(e, 0, startingAt, before)
+}
+
+locateAccuStartBefore(e :Object, i :Int, startingAt :Int, before :Int) :Int
+  (* not for public use: *)
+{
+  if( i >= startingAt
+  then: { locateAccuBefore(e, i, before) }
+  else: { tail.locateAccuStartBefore(e, i+1, startingAt, before) })
+}
+
+locateAccuBefore(e :Object, i :Int, before :Int) :Int
+  (* *)
+{
+  if( i >= before
+    then: { result :Int := nil }
+    else: { if( head = e	  ; ### assumes _elementEqual is "=" 
+	then: {i}
+	else: { tail.locateAccuBefore(e,i+1,before) }) })
+}
+
+locateAccuStart(e :Object, i :Int, startingAt :Int) :Int
+  (* *)
+{
+  if( i >= startingAt
+  then: { locateAccu(e, i) }
+  else: { tail.locateAccuStart(e, i+1, startingAt) })
+}
+
+locateAccu(e :Object, i :Int) :Int
+  (* *)
+{
+  if( head = e	  ; ### assumes _elementEqual is "=" 
+  then: {i}
+  else: { tail.locateAccu(e,i+1) })
+}
+
+private
+
+_head :E
+
+_tail :L
+
+}

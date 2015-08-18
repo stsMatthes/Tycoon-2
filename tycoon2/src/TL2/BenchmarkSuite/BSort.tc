@@ -1,0 +1,32 @@
+class BSort
+super Benchmark
+(**)
+meta BSortClass(BSort)
+{
+private
+
+_elem :Int
+
+_arr  :MutableArray(Int)
+
+_init() :Self
+  (* *)
+{
+  super._init
+  _arr := MutableArray.new(_elem)
+  self
+}
+
+_setup() :Void
+  (* *)
+{
+  tycoon.ansiC.srand(666)
+
+  for(0 to: _elem - 1 do:
+    fun(i :Int):Void
+    {
+      _arr[i] := tycoon.ansiC.rand
+    })
+}
+
+}

@@ -1,0 +1,297 @@
+class RandomAccessGeneratorMixin(E <: Object, C <: MutableSequence(E), Instance <: Sequence(E))
+super AbstractSequenceGenerator(E, Instance)
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+   implementation for AbstractSequenceGenerator that is based on
+   (intermediate) construction of a mutable sequence using random access.
+   subclasses must implement _new1 and postProcess.
+ *)
+meta AbstractClass
+{
+fromReader(reader :Reader(E)) :Instance
+  (* *)
+{
+  GapArray.fromReader(reader).as(self)
+}
+
+fromReverseReader(reader :Reader(E)) :Instance
+  (* *)
+{
+  Stack.fromReverseReader(reader).as(self)
+}
+
+reverse(sequence :Sequence(E)) :Instance
+  (* *)
+{
+  instance ::= _new1(sequence.size)
+  sequence.inject(sequence.size-1, fun(i :Int, e :E) {
+    instance[i] := e
+    i-1
+  })
+  postProcess(instance)
+}
+
+fromContainer(container :Container(E)) :Instance
+  (* *)
+{
+  fromContainerWithMap(container, fun(e :E) { e })
+}
+
+fromContainerWithMap(F <:Object, container :Container(F), map :Fun(:F):E) :Instance
+  (* *)
+{
+  instance ::= _new1(container.size)
+  container.inject(0, fun(i :Int, f :F) {
+    instance[i] := map[f]
+    i+1
+  })
+  postProcess(instance)
+}
+
+fromSequence(sequence :Sequence(E)) :Instance
+  (* *)
+{
+  fromSubSequence(sequence, 0, sequence.size)
+}
+
+fromSequenceWithMap(F <:Object, sequence :Sequence(F), map :Fun(:F):E) :Instance
+  (* *)
+{
+  fromContainerWithMap(sequence,map)
+}
+
+fromSubSequence(sequence :Sequence(E), start :Int, n :Int) :Instance
+  (* *)
+{
+  instance ::= _new1(n)
+  instance.replace(n,0,sequence,start)
+  postProcess(instance)
+}
+
+concat(s1 :Sequence(E), s2 :Sequence(E)) :Instance
+  (* equivalent to
+       concatAll( Array.with2(s1,s2) ) *)
+{
+  len1 ::= s1.size
+  len2 ::= s2.size
+  instance ::= _new1(len1 + len2)
+  instance.replace(len1, 0, s1, 0)
+  instance.replace(len2, len1, s2, 0)
+  postProcess(instance)
+}
+
+concatAll( sequences: Sequence(Sequence(E)) ) :Instance
+  (* *)
+{
+  size ::=
+    sequences.inject(0, fun(size :Int, sequence :Sequence(E)) {
+      size + sequence.size
+    })
+  instance ::= _new1(size)
+  sequences.inject(0, fun(writePos :Int, sequence :Sequence(E)) {
+    instance.replace(sequence.size, writePos, sequence, 0)
+    writePos + sequence.size
+  })
+  postProcess(instance)
+}
+
+with0: Instance
+  (* *)
+{
+  postProcess(_new1(0))
+}
+
+with1(e1 :E): Instance
+  (* *)
+{
+  instance ::= _new1(1)
+  instance[0] := e1
+  postProcess(instance)
+}
+
+with2(e1 :E, e2 :E): Instance
+  (* *)
+{
+  instance ::= _new1(2)
+  instance[0] := e1
+  instance[1] := e2
+  postProcess(instance)
+}
+
+with3(e1 :E, e2 :E, e3 :E): Instance
+  (* *)
+{
+  instance ::= _new1(3)
+  instance[0] := e1
+  instance[1] := e2
+  instance[2] := e3
+  postProcess(instance)
+}
+
+with4(e1 :E, e2 :E, e3 :E, e4 :E): Instance
+  (* *)
+{
+  instance ::= _new1(4)
+  instance[0] := e1
+  instance[1] := e2
+  instance[2] := e3
+  instance[3] := e4
+  postProcess(instance)
+}
+
+with5(e1 :E, e2 :E, e3 :E, e4 :E, e5 :E): Instance
+  (* *)
+{
+  instance ::= _new1(5)
+  instance[0] := e1
+  instance[1] := e2
+  instance[2] := e3
+  instance[3] := e4
+  instance[4] := e5
+  postProcess(instance)
+}
+
+with6(e1 :E, e2 :E, e3 :E, e4 :E, e5 :E, e6 :E): Instance
+  (* *)
+{
+  instance ::= _new1(6)
+  instance[0] := e1
+  instance[1] := e2
+  instance[2] := e3
+  instance[3] := e4
+  instance[4] := e5
+  instance[5] := e6
+  postProcess(instance)
+}
+
+with7(e1 :E, e2 :E, e3 :E, e4 :E, e5 :E, e6 :E, e7 :E): Instance
+  (* *)
+{
+  instance ::= _new1(7)
+  instance[0] := e1
+  instance[1] := e2
+  instance[2] := e3
+  instance[3] := e4
+  instance[4] := e5
+  instance[5] := e6
+  instance[6] := e7
+  postProcess(instance)
+}
+
+with8(e1 :E, e2 :E, e3 :E, e4 :E, e5 :E, e6 :E, e7 :E, e8 :E): Instance
+  (* *)
+{
+  instance ::= _new1(8)
+  instance[0] := e1
+  instance[1] := e2
+  instance[2] := e3
+  instance[3] := e4
+  instance[4] := e5
+  instance[5] := e6
+  instance[6] := e7
+  instance[7] := e8
+  postProcess(instance)
+}
+
+with9(e1 :E, e2 :E, e3 :E, e4 :E, e5 :E, e6 :E, e7 :E, e8 :E, e9 :E): Instance
+  (* *)
+{
+  instance ::= _new1(9)
+  instance[0] := e1
+  instance[1] := e2
+  instance[2] := e3
+  instance[3] := e4
+  instance[4] := e5
+  instance[5] := e6
+  instance[6] := e7
+  instance[7] := e8
+  instance[8] := e9
+  postProcess(instance)
+}
+
+with10(e1 :E, e2 :E, e3 :E, e4 :E, e5 :E, e6 :E, e7 :E, e8 :E,
+       e9 :E, e10 :E): Instance
+  (* *)
+{
+  instance ::= _new1(10)
+  instance[0] := e1
+  instance[1] := e2
+  instance[2] := e3
+  instance[3] := e4
+  instance[4] := e5
+  instance[5] := e6
+  instance[6] := e7
+  instance[7] := e8
+  instance[8] := e9
+  instance[9] := e10
+  postProcess(instance)
+}
+
+with11(e1 :E, e2 :E, e3 :E, e4 :E, e5 :E, e6 :E, e7 :E, e8 :E,
+       e9 :E, e10 :E, e11 :E): Instance
+  (* *)
+{
+  instance ::= _new1(11)
+  instance[0] := e1
+  instance[1] := e2
+  instance[2] := e3
+  instance[3] := e4
+  instance[4] := e5
+  instance[5] := e6
+  instance[6] := e7
+  instance[7] := e8
+  instance[8] := e9
+  instance[9] := e10
+  instance[10] := e11
+  postProcess(instance)
+}
+
+with12(e1 :E, e2 :E, e3 :E, e4 :E, e5 :E, e6 :E, e7 :E, e8 :E,
+       e9 :E, e10 :E, e11 :E, e12 :E): Instance
+  (* *)
+{
+  instance ::= _new1(12)
+  instance[0] := e1
+  instance[1] := e2
+  instance[2] := e3
+  instance[3] := e4
+  instance[4] := e5
+  instance[5] := e6
+  instance[6] := e7
+  instance[7] := e8
+  instance[8] := e9
+  instance[9] := e10
+  instance[10] := e11
+  instance[11] := e12
+  postProcess(instance)
+}
+
+private
+
+_new1(n :Int) :C
+  ensure result.size = n
+deferred
+
+postProcess(i :C) :Instance
+  (* called after initialising <i>, before delivering it to the client.
+   result is not necessary the same object (-> Symbol) *)
+deferred
+}

@@ -1,0 +1,117 @@
+class Base64Decoder
+super Encoder
+(**)
+meta ConcreteEncoderClass(Base64Decoder)
+{
+read :Char
+  (* *)
+{
+  if( atEnd then: fun() :Char { nil } else: {
+  ;
+; * This file is part of the Tycoon-2 system.
+; *
+; * The Tycoon-2 system is free software; you can redistribute it and/or
+; * modify it under the terms of the GNU General Public License
+; * as published by the Free Software Foundation (Version 2).
+; *
+; * The Tycoon-2 system is distributed in the hope that it will be useful,
+; * but WITHOUT ANY WARRANTY; without even the implied warranty
+; * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+; * See the GNU General Public License for more details.
+; * 
+; * You should have received a copy of the GNU General Public
+; * License along with the Tycoon-2 system; see the file LICENSE.
+; * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+; * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+; * 
+; * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+; *
+; not all consumed 
+  if( charCount < available then: {
+    charCount := charCount + 1
+    first8
+  } else: {
+    ; consumed full 24 bit 
+    if( charCount = 3 then: {
+      charCount := 0
+      buf := 0
+      available := 0
+    
+      c1 ::= _in.read
+
+      if( c1 != nil then: {
+        c2 ::= _in.read
+        c3 ::= _in.read
+        c4 ::= _in.read
+
+                   if( c1 = '=' | no64(c1) |
+        c2 = nil | c2 = '=' | no64(c2) |
+        c3 = nil |            no64(c3) |
+        c4 = nil | (c3 = '=' & c4 != '=' ) | no64(c4) then: {
+            MimeParserError.new("Unexpected char in Base64 encoding").raise
+        })
+
+        buf := (decode64(c1) << 18) + (decode64(c2) << 12) available := 1
+        if( c3 != '=' then: { buf := buf + (decode64(c3) << 6) available := 2 })
+        if( c4 != '=' then: { buf := buf + decode64(c4) available := 3 })
+      })
+      
+      if( available > 0 then: { charCount := charCount + 1 first8 } else: { atEnd := true nil })
+    } else: {
+      atEnd := true nil
+    })
+  })
+  })
+}
+
+private
+
+buf :Int
+
+available :Int
+
+charCount :Int
+
+atEnd :Bool
+
+first8 :Char
+  (* *)
+{
+  octet ::= (buf & 16711680) >> 16
+  buf := (buf & 65535) << 8
+
+  octet.asChar
+}
+
+no64(c :Char) :Bool
+  (* *)
+{
+  c.isNotNil && !(
+    c.between('A', 'Z')   || 
+    c.between('a', 'z')  || 
+    c.between('0', '9')  || 
+    c = '+' | c = '/' | c = '=' 
+  )
+}
+
+decode64(c :Char) :Int
+  (* *)
+{
+  if( c.between('A', 'Z') then: { c.asInt - 'A'.asInt } else: {
+  if( c.between('a', 'z') then: { c.asInt - 'a'.asInt + 26 } else: {
+  if( c.between('0', '9') then: { c.asInt - '0'.asInt + 52 } else: {
+  if( c = '+' then: { 62 } else: { 63 })})})})
+}
+
+_init1(i :Input) :Void
+  (* *)
+{
+  super._init1(i)
+
+  charCount := 3 ; as if we had just consumed the buffer 
+  available := 0
+  buf := 0
+  atEnd := false
+}
+
+}

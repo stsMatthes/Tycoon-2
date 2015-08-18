@@ -1,0 +1,69 @@
+x  FinalizeableDictionary bauen, d.h. nach "aDict.finalize()" ist keine 
+   Erweiterung des Inhalts moeglich, stattdessen Exception werfen.
+   Aenderung ggf. ueber method
+   "_changeAllowed(k :K, oldE :E, newE :E) :Bool" zulassen?
+   Dann koennten Specs immer false antworten und Contents 
+   "self.spec.matches(newE.spec)".
+   Methode finalized():Bool zum Abfragen.
+   Ganze ContentSpec-Baeume per Visitor finalisieren!
+   GEMACHT und wieder VERWORFEN (21.9.97)
+  
+x  SequenceContentSpec und SequenceContent fehlt noch.
+
+x  Dialog als Subklasse von RecordContent?  Zugriff auf die Contents waere noch 
+   leichter.  Dann sollte allerdings auch DialogSpec Subklasse von 
+   RecordContentSpec sein, und die nicht nur aggregieren...
+   Letzteres ist aber konzeptionell nicht schoen.
+   NIX
+
+x  Verzeichnisstruktur zur Gliederung der Sourcen der Klassen ueberlegen.
+
+x  Visitor fuer vollstaendige TBCSpec bauen.
+   Abstrakte Superklase TBCSpecVisitor, erbt von ContentSpecVisitor UND
+   ContentVisitor! -> Zusaetzlich nur noch Conversation-,Dialog-,Request-Spec
+   -Visitoren noetig.
+   Beispielvisitor: TBCSpecPrettyPrinter
+   DONE
+   
+x  Ganze TBCSpec per Finalizer-class finalisieren, nicht: finalize von
+   ConversationSpec spezialisieren.
+   S.O.
+
+x  AtomicContent[Specs] sind irgendwie noch sehr bloed!
+   Erfordern ueberall bei Zuweisungen noch typeCasts, einfach
+   aContent.value := "Karin" geht (natuerlich) nicht.
+   Ausserdem z.B. im Visitor value.clazz typecases und downcasts!
+   JETZT EINFACH FLACH, DIREKT <: ContentSpec
+
+x  Typechecker-bugs(?) bei aFinalizableDictionary[]:=
+   1) LAG AN FALSCHER METAKLASSE
+   2) OBSOLET
+   
+x  Zuweisung der Art aContent.value:="Karin", die oft noetig und sinnvoll 
+   sind, koennen nicht statisch getypchecked werden, da die aktuelle 
+   Subklasse von aContent :Content natuerlich statisch nicht bekannt ist. 
+   Weiterhin ist auch die aktuelle Subklasse des per 'value' angesprochenen 
+   AtomicContents unbekannt.
+   -> Jede Menge _typeCasts verwenden?
+   -> Schlauere Zuweisungsmethoden, die den Check auf die Laufzeit 
+      verschieben oder dynamisch sind (ala visitor)?
+   Idee: in ':Content' setStr, setInt, setReal, set..., getStr, ... deferred def.
+   DONE
+
+x  Volker-Request 21.09.97:
+   Alternativen der Choices nicht nur statisch an den ContentSpecs, sondern
+   dynamisch an den Contents der Dialogen erwuenscht.
+   - Wozu dann aber noch Specs?
+   - Neuen Spec/Content Typ dafuer?
+   - Atomic Types aufbohren?
+   - Alternative: FinalizableDict wegwerfen, Alternativen dyn. vom Performer in 
+     die Spec des jeweiligen Dialoges eintragen lasssen, bevor er gesendet wird.
+   ALTERNATIVEN SIND JETZT NUR NOCH IN DEN CONTENTS.
+
+x  Der Beginn einer Konv. ist (mir) nicht klar.
+   Sendet Customer den initialen Dialog ausgefuellt zum Performer,
+   oder beginnt der Performer nach einer speziellen Anfrage, den initialen 
+   Dialog an den Customer zu senden (der ihn dann ausgefuellt zueueckschickt)?
+   Und welche Rules werden dabei verwendet?
+   LOESUNG: P. erhaelt *initial*request* ohne dialog (bzw. nil) und muss den
+   initialen dialog zurueckgeben, der -> C geht

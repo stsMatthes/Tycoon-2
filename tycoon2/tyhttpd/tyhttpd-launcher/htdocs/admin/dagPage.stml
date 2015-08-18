@@ -1,0 +1,73 @@
+<!doctype stml system>
+<!-- file: twlDAGPart.stml
+   author: Axel Wienberg, Jens Wahlen
+     date: ??-Jul-1997
+  purpose: produce a partial view of the Tycoon inheritance tree
+ -->
+
+<stml processor="HtmlFormProcessor" language='tycoon-1.0'>
+<HTML>
+<HEAD>
+  <TITLE>TWL Class Hierarchy Browser</TITLE>
+</HEAD>
+
+<BODY>
+
+<tycoon>
+  classManager ::= tycoon.tl.classManager
+  nodes ::= StringBuilderOutput.new
+  dontVisit ::= Set(:String).new
+  if( multiFormFields.includesKey("exclude")
+  then: { dontVisit.addAll(multiFormFields["exclude"]) })
+
+  visited ::= Set(:String).new
+  recur :Fun1(String, Void) := nil
+  recur :=
+    fun(className:String) {
+      if( !visited.includes(className) 
+       && !dontVisit.includes(className) then: {
+        c ::= classManager.get(className)
+        c.supers.do(fun(t :TL2CPLType) {
+	  recur[t.className]
+	})
+        if( c.supers.some(fun(t :TL2CPLType) {
+          dontVisit.includes(t.className)
+        }) then: {
+          dontVisit.add(className)
+        } else: {
+	  if( c."metaclass" == AbstractClass
+	  then: { nodes.write('$') })
+	  nodes << className << '-'
+	  c.supers.doBetween(fun(t :TL2CPLType) {
+	    nodes << t.className
+	  }, {
+	    nodes << ','
+	  })
+	  nodes << ' '
+	  visited.add(className)
+        })
+      })
+    }
+  tycoon.tl.classManager.classTable.keys.do(recur)
+  dontVisit := Set(:String).new
+
+  if( formFields.includesKey("meta") then: {
+    ;; add metaclasses for all classes added up to now
+    copyVisited ::= Set(:String).new
+    visited.do(fun(className :String) { copyVisited.add( className ) } )
+    copyVisited.do(fun(className :String) { 
+      c ::= classManager.get(className)
+      metaC ::= c."metaclass"
+      recur[metaC.name]
+    })
+  })
+</tycoon>
+
+<APPLET archive="java/applet.jar" code="DAG.class" width=5000 height=5000>
+<PARAM name=urlPrefix  value="/admin/interface.stml?class=">
+<PARAM name=urlPostfix value="">
+<PARAM name=nodes  value="`nodes.contents`"> 
+Sorry, Java enabled browser required.
+</APPLET>
+</BODY>
+</HTML>

@@ -1,0 +1,323 @@
+class String
+super Array(Char), OrderedSequence(Char, String)
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+Author:  Andreas Gawecki
+Date:    13-Feb-1996
+Purpose: Strings with immutable state.
+Updates: (Date)	  (Name)	(Description)
+
+*)
+meta StringClass()
+
+{
+"[]"(i :Int) :Char
+  (* Return the value which is stored at index i *)
+require includesKey(k)
+  ensure result.isNotNil
+  builtin
+
+size :Int
+  (*##inline  for efficiency (don't wait for customizer!) *)
+builtin
+
+"="(x :Object) :Bool
+  (* *)
+{
+  self == x || (
+    clazz ::= x."class"
+    (clazz == String || (clazz == MutableString || clazz == Symbol)) &&
+      (
+      x ::= _typeCast(x, :String)
+      tycoon.ansiC.strcmp(self,x) == 0
+      ))
+  }
+
+stringEqual(s :String) :Bool
+  (* *)
+{ order(s) == 0
+}
+
+order(x :String) :Int
+  (* *)
+{
+  ; check argument type to protect C function: 
+  clazz ::= x."class"
+  if( clazz == String || (clazz == MutableString || clazz == Symbol)
+    then: { tycoon.ansiC.strcmp(self,x) }
+    else: { super.order(x) })
+  }
+
+"+"(aString :String) :String
+  (* String concatenation *)
+{
+  String.concat(self, aString)
+}
+
+asInt :Int
+  (* *)
+{
+  Int.fromReader(reader)
+  }
+
+asLong :Long
+  (* *)
+{
+  Long.fromReader(reader)
+  }
+
+asReal :Real
+  (* *)
+{
+  tycoon.ansiC.atof(self)
+  }
+
+asSymbol :Symbol
+  (* *)
+{
+  Symbol.new(self)
+  }
+
+asUpperCase :String
+  (* *)
+{
+  String.fromUpperCase(self)
+}
+
+asLowerCase :String
+  (* *)
+{
+  String.fromLowerCase(self)
+}
+
+writeOn(out :Output) :Void
+  (* *)
+{
+  out.writeString(self)
+}
+
+printOn(out :Output) :Void
+  (* *)
+{
+  out.write('\"')
+  do(fun(ch :Char) {ch.printEscapeSequence(out)})
+  out.write('\"')
+  }
+
+__basicSize :Int
+  (* for bootstrap *)
+{ size+1 }
+
+__basicAt(i :Int) :Object
+  (* *)
+{
+  if( i = size then: { 0.asChar } else: { self[i] })
+}
+
+__basicAtPut(i :Int, value :Object) :Object
+  (* *)
+{
+  assert({ false })
+}
+
+locate(e :Object) :Int
+  (* *)
+{
+  if( e."class" == Char
+    then: { locateChar(_typeCast(e)) }
+    else: { nil })
+}
+
+locate1(e :Object, startingAt :Int) :Int
+  (* *)
+{
+  if( e."class" == Char
+    then: { locateChar1(_typeCast(e), startingAt) }
+    else: { nil })
+}
+
+locate2(e :Object, startingAt :Int, before :Int) :Int
+  (* *)
+{
+  if( e."class" == Char
+    then: { locateChar2(_typeCast(e), startingAt, before) }
+    else: { nil })
+}
+
+locateChar(ch :Char  ) :Int
+  (* , startingAt :Int := 0, before :Int := size 
+ for the indices at which the receiver contains a character
+     equal to 'ch', answer the lowest index which
+     is greater than or equal to 'startingAt'.
+     answer nil if no such index exists.
+   *)
+{
+  _locate(ch, 0, size)
+}
+
+locateChar1(ch :Char, startingAt :Int) :Int
+  (* ### simulate optional arguments *)
+{
+  _locate(ch, startingAt.max(0), size)
+}
+
+locateChar2(ch :Char, startingAt :Int, before :Int) :Int
+  (* ### simulate optional arguments 
+ ##make builtin *)
+{
+  _locate(ch, startingAt.max(0), before.min(size))
+}
+
+locateLastChar(ch :Char  ) :Int
+  (*, startingAt :Int := 0, before :Int := self.size 
+ for the indices at which the receiver contains a character
+     equal to 'ch', answer the highest index which
+     is less than 'before'.
+     answer nil if no such index exists.
+  *)
+{
+  _locateLast(ch, 0, size)
+}
+
+locateLastChar1(ch :Char, before :Int) :Int
+  (* ### simulate optional arguments *)
+{
+  _locateLast(ch, 0, before.min(size))
+}
+
+locateLastChar2(ch :Char, startingAt :Int, before :Int) :Int
+  (* ### simulate optional arguments *)
+{
+  _locateLast(ch, startingAt.max(0), before.min(size))
+}
+
+locateSubString(sub :String, startingAt :Int ) :Int
+  (* := 0 for the indices at which the receiver contains
+     'sub' as a substring, answer the lowest index
+     which is greater than 'startingAt'.
+     answer nil if no such index exists.
+     ## startingAt will become optional parameter with default value
+     ##make builtin
+  *)
+{
+  result ::= tycoon.tycoonOS.string_locateSubString(self, sub, startingAt)
+  if( result !== (-1 )then: {result} else: {nil})
+}
+
+locateLastSubString(sub :String, before :Int ) :Int
+  (* := self.size for the indices at which the receiver contains
+     'sub' as a substring, answer the highest index
+     which is less than 'before'.
+     answer nil if no such index exists.
+     ## before will become optional parameter with default value
+     ##make builtin
+  *)
+{
+  result ::= tycoon.tycoonOS.string_locateLastSubString(self, sub, before)
+  if( result !== (-1 )then: {result} else: {nil})
+}
+
+locateSomeChar(chars :String, startingAt :Int ) :Int
+  (* := 0 for the indices at which the receiver contains characters also included
+     in 'chars', answer the lowest index which is greater than or equal to
+     'startingAt'. answer nil if no such index exists.
+     ## startingAt will become optional parameter with default value
+     ##make builtin, type 'chars' as Container(Char)
+  *)
+{
+  result ::= tycoon.tycoonOS.string_locateSomeChar(self, chars, startingAt)
+  if( result !== size then: {result} else: {nil})
+}
+
+locateSomeCharBefore(chars :String, before :Int ) :Int
+  (* := self.size for the indices at which the receiver contains characters also included
+     in 'chars', answer the highest index which is less than
+     'before'. answer nil if no such index exists.
+     ## before will become optional parameter with default value
+     ##make builtin, type 'chars' as Container(Char)
+  *)
+{
+  result ::=
+    tycoon.tycoonOS.string_locateSomeCharBefore(self, chars, before)
+  if( result !== (-1 )then: {result} else: {nil})
+}
+
+startsWith(other :String) :Bool
+  (* answer true if 'other' is a prefix of the receiver,
+     else answer false
+  *)
+{
+  otherSize ::= other.size
+  size >= otherSize && 
+    subStringEqual(otherSize, 0, other, 0) 
+}
+
+endsWith(other :String) :Bool
+  (* answer true if 'other' is a postfix of the receiver,
+     else answer false
+  *)
+{
+  otherSize ::= other.size
+  size >= otherSize && 
+    subStringEqual(otherSize, size-otherSize, other, 0) 
+}
+
+subStringEqual(n :Int, at :Int, other :String, startingAt :Int) :Bool
+  (* answer true if the n character sequence at..at+n-1 of
+     the receiver is equal to the n character sequence
+     startingAt..startingAt+n-1 of 'other',
+     else answer false
+  *)
+{
+  
+  result ::= true
+  i ::= n
+  while({result && (i := i-1) >= 0} do: {
+    result := self[at+i] == other[startingAt+i]
+    })
+  result     
+}
+
+subString(start: Int, length: Int): String
+  (* the subString starting at 'start' with length 'length'
+   if start + length > self.size, KeyNotFoundError is raised
+*)
+{
+  String.fromSubSequence(self, start, length)
+}
+
+trim :String
+  (* answer a String with the same contents as the receiver,
+     but with white space removed from both ends.
+  *)
+{
+  size ::= size
+  start ::= 0
+  while({start < size && self[start].isSpace} do: {start := start+1})
+  end ::= size-1
+  while({end > start && self[end].isSpace} do: {end := end-1})
+  String.fromSubSequence(self, start, end-start+1)
+}
+
+private
+
+}
+

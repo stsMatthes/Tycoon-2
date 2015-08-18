@@ -1,0 +1,87 @@
+class TL2FunParseUnitVisitor(T <: Void)
+super TL2ParseUnitVisitor1(T)
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+*)
+meta SimpleConcreteClass(TL2FunParseUnitVisitor(T))
+{
+visitClass(pu :TL2PUClass) :T
+  (* *)
+{ if( _ifClass.isNil then: { super.visitClass(pu) } else: { _ifClass[pu] }) }
+
+visitDefine(pu :TL2PUDefine) :T
+  (* *)
+{ if( _ifDefine.isNil then: { super.visitDefine(pu) } else: { _ifDefine[pu] }) }
+
+visitBindings(pu :TL2PUBindings) :T
+  (* *)
+{ if( _ifBindings.isNil then: { super.visitBindings(pu) } else: { _ifBindings[pu] }) }
+
+visitDo(pu :TL2PUDo) :T
+  (* *)
+{ if( _ifDo.isNil then: { super.visitDo(pu) } else: { _ifDo[pu] }) }
+
+visitDefault(pu :TL2ParseUnit) :T
+  (* *)
+{ if( _otherwise.isNil then: { super.visitDefault(pu) } else: { _otherwise[pu] }) }
+
+ifClass(action :Fun(:TL2PUClass):T) :Self
+  (* *)
+{ _ifClass := action
+  self
+}
+
+ifDefine(action :Fun(:TL2PUDefine):T) :Self
+  (* *)
+{ _ifDefine := action
+  self
+}
+
+ifBindings(action :Fun(:TL2PUBindings):T) :Self
+  (* *)
+{ _ifBindings := action
+  self
+}
+
+ifDo(action :Fun(:TL2PUDo):T) :Self
+  (* *)
+{ _ifDo := action
+  self
+}
+
+otherwise(action :Fun(:TL2ParseUnit):T) :Self
+  (* *)
+{ _otherwise := action
+  self
+}
+
+private
+
+_ifClass :Fun(:TL2PUClass):T
+
+_ifDefine :Fun(:TL2PUDefine):T
+
+_ifBindings :Fun(:TL2PUBindings):T
+
+_ifDo :Fun(:TL2PUDo):T
+
+_otherwise :Fun(:TL2ParseUnit):T
+
+}

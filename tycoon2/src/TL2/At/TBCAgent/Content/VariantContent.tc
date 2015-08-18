@@ -1,0 +1,119 @@
+class VariantContent
+super ConcreteContent(VariantContentSpec)
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ VariantContent.tc
+
+   Tycoon Business Conversation (TBC) for Tycoon 2
+   -----------------------------------------------
+   Variant Contents. At a given time, only one of the possible variants 
+   (which are Contents by itself) is instantiated. By default, the 
+   new()-method instantiates the first of the given variants.
+   Switching between variants is done by selectVariant, which selects
+   another variant by name. The currently active variant can be retrieved by
+   selectedVariantName and selectedVariant.
+
+   A test, whether the current variant of a content x matches an expected 
+   ContentSpec, can easily be done by
+     x.selectedVariant.spec.matches(aSpec)
+   Or, even simpler, by comparing names.
+
+   09.08.97 hw : created
+   
+*)
+meta VariantContentClass
+{
+
+variant() :VariantContent
+  (* *)
+{
+  self
+}
+
+visit(v :ContentVisitor) :Void
+  (* *)
+{
+  v.variantContent(self)
+  ;### oder  _selectedVariantContent.visit(self)  ?? nicht wirklich. 
+}
+
+selectedVariantName() :String
+  (* Returns the name of the selected variant *)
+{
+  _selectedVariantName
+}
+
+selectedVariant() :Content
+  (* returns the currently selected variants contents *)
+{
+  _selectedVariantContent
+}
+
+selectVariant(name :String) :Void
+  (* selects another variant by name. if name is not a valid variant,
+       an exception of type KeyNotFoundError is thrown *)
+{
+  if( spec.includesKey(name) then: {
+    _selectedVariantName    := name 
+    _selectedVariantContent := spec[name].instance@
+  } else: {
+    KeyNotFoundError.new(spec,name).raise
+  }) 
+}
+
+"[]"(name :String) :Content
+  (* access current variant by name. if current variant is not "name", an 
+     exception is raised, otherwise, the variant is returned. *)
+{
+  if( _selectedVariantName.stringEqual(name)
+    then: {_selectedVariantContent}
+    else: {KeyNotFoundError.new(spec,name).raise})
+}
+
+"[]:="(name :String, content @:Content) :Void
+  (* set a new variant. exception is raised, if name is not an valid 
+     variant or if contents spec doesnt match names spec.
+     In the latter case, an CoerceError-Exception is thrown *)
+{
+  if( spec.includesKey(name) then: {
+    if( spec[name].matches(content.spec) then: {
+      _selectedVariantName    := name
+      _selectedVariantContent := content@
+    } else: {
+      SpecError.new(content, spec).raise
+    })
+  } else: {
+    KeyNotFoundError.new(spec,name).raise
+  })
+}
+
+private
+
+_selectedVariantName :String
+
+_selectedVariantContent @:Content
+
+_init :Void
+{
+  super._init
+  selectVariant(spec.keys.read)
+}
+
+}

@@ -1,0 +1,45 @@
+<!doctype stml system>
+<stml processor=KoltarProcessor language='tycoon-1.0'>
+<head>
+<title> Wann Du nicht gebraucht wirst... </title>
+</head>
+<body>
+
+<center><h1><img src='koltar.gif' width=100 height=100 align=middle>
+Wann Du nicht gebraucht wirst...
+<img src='koltar.gif' width=100 height=100 align=middle></h1>
+
+<table border="1" rules=rows>
+<thead>
+<tr><th>Datum</th>
+<send receiver='application.sklaven' selector='do'>
+  <arg><fun param='sklave :KoltarSklave'>
+    <th><tycoon> out << sklave.name </tycoon> </th>
+</send>
+</tr>
+</thead>
+<tbody>
+<send receiver='application' selector='rowsDo'>
+  <arg><fun param='row :KoltarRow'>
+    <tr>
+      <th><a href='`"date.stml?ich="+formFields["ich"]+"&"+"datum="+row.date.asTime.printString`'><tycoon> out << row.date.format("%d.%m (%a)") </tycoon></a></th>
+      <send receiver='application.sklaven' selector='do'>
+	<arg><fun param='sklave :KoltarSklave'>
+	  <td><tycoon> out << row.werWas[sklave].name </tycoon></td>
+      </send>
+    </tr>
+</send>
+</tbody>
+</table>
+
+</center>
+
+      <HR>
+      
+      <A HREF="http://www.sts.tu-harburg.de/~ax.wienberg"><I>Axel Wienberg</I></A>. Your <a href="mailto:2wienbe@informatik.uni-hamburg.de">feedback</A> is welcome!
+<!-- hhmts start -->
+Last modified: Tue Jun 23 16:53:30 MET DST 1998
+<!-- hhmts end -->
+
+</body>
+

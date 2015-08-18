@@ -1,0 +1,76 @@
+class StandardDateParser
+super Object
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+*)
+meta SingletonClass(StandardDateParser)
+{
+parse(string :String) :Date
+  (* *)
+{
+  date ::= Date.new
+  tokenizer ::= Tokenizer.new(string.reader, " :,\n")
+  tokenizer.read
+  date.day := tokenizer.read.asInt
+  month ::= tokenizer.read
+  monthDict.lookup(month, fun(m :Int) { date.month := m },
+    { CoerceError.new(self, Date).raise })
+  date.year := tokenizer.read.asInt
+  if( date.year < 100 then: {
+    date.year := date.year + ((Date.now.year / 100) * 100)
+  })
+  date.hour := tokenizer.read.asInt
+  date.minute := tokenizer.read.asInt
+  date.second := tokenizer.read.asInt
+  date.zoneName := tokenizer.read
+;  tycoon.stdout.writeString("\nday: " + date.day.printString + "\nmonth: " +
+;  date.month.printString + "\nyear: " + date.year.printString + "\nhour: " +
+;  date.hour.printString + "\nminute: " + date.minute.printString + "\nsecond: " +
+;  date.second.printString + "\nzoneName: " + date.zoneName), 
+  date.normalize
+  date 
+  }
+
+private
+
+monthDict :Dictionary(String, Int)
+
+_init :Void
+  (* *)
+{
+  super._init
+  monthDict := Dictionary.new1(13)
+  monthDict["Jan"] := 1
+  monthDict["Feb"] := 2
+  monthDict["M\228r"] := 3
+  monthDict["M&auml;r"] := 3
+  monthDict["Apr"] := 4
+  monthDict["Mai"] := 5
+  monthDict["Jun"] := 6
+  monthDict["Jul"] := 7
+  monthDict["Aug"] := 8
+  monthDict["Sep"] := 9
+  monthDict["Okt"] := 10
+  monthDict["Nov"] := 11
+  monthDict["Dez"] := 12
+  self
+  }
+
+}

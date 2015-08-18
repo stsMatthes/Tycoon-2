@@ -1,0 +1,15 @@
+;; DO load "TBCAgent/initTBC.tyc" ?
+
+
+;; create singletons
+
+AgentITCSystem.init ?
+Global.init ?
+Test.init ?
+TBC.init ?
+
+Global.instance.mustTrace:=true ?
+
+Currency.init ?
+Currency.setRates("DM", "NOK", 4.0) ?
+

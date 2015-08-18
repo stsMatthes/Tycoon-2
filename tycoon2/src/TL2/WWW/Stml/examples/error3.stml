@@ -1,0 +1,34 @@
+<!DOCTYPE STML SYSTEM>
+<stml processor='StmlProcessor'>
+<html>
+<title>
+Error 3
+</title>
+<body>
+<!--- this is not an error -->
+<define name=x>
+  <fun>
+    <ref name=z//
+  </fun>
+</define>
+
+<!-- but this is -->
+
+<define name=y>
+  <fun>
+  </fun>
+  <ref name=q//
+</define>
+
+<!-- and so is this -->
+
+<define name=w>
+  <ref name=r//
+
+
+  <fun>
+  </fun>
+</define>
+
+</body>  
+</html>  

@@ -1,0 +1,19 @@
+class SgmlContentType
+super Sgml
+(**)
+meta SgmlContentTypeClass()
+
+{
+name :String
+
+_brand_SgmlContentType :Void
+  (* *)
+{ }
+
+printOn(out :Output) :Void
+  (* *)
+{
+  out.writeString(name)
+}
+
+}

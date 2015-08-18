@@ -1,0 +1,127 @@
+class TL2OperType
+super TL2TypeImpl, TL2ApplyMixin
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+*)
+meta TL2OperTypeClass
+{
+domain :List(TL2TypeIde)
+
+range :TL2Type
+
+accept(T <: Void, visitor :TL2TypeVisitor(T)) :T
+  (* *)
+{ visitor.visitOperType(self) }
+
+apply(T <: Void, args :List(TL2Type), subst :TL2Subst, argsSubst :TL2Subst, exact :Bool, cont :Fun(:TL2Type, :TL2Subst):T) :T
+  (* applies self to args,
+     and calls cont with the result
+  *)
+{
+    ; domain.forAll(!inSubst) 
+    applyArgs(pos, domain, args, subst, argsSubst, range, false, false, false, cont)
+  }
+
+checkApplication(args :List(TL2Type), subst :TL2Subst) :Void
+  (* *)
+{
+    applyArgs(pos, domain, args, subst, subst, range, true, true, false, fun(:TL2Type, :TL2Subst) {})
+  }
+
+lookupWithSelf(T <: Void,
+	         selector :Symbol,
+	         subst :TL2Subst,
+		 withPrivate :Bool,
+		 selfType :TL2Type,
+		 selfTypeSubst :TL2Subst,
+	         cont: Fun(:TL2Method, :TL2Subst):T) :T
+  (* *)
+{
+    raiseError
+  }
+
+methodsDoWithSelf(subst :TL2Subst,
+		    withPrivate :Bool,
+		    selfType :TL2Type,
+		    selfTypeSubst :TL2Subst,
+		    callback: Fun(:TL2Method, :TL2Subst):Void) :Void
+  (* *)
+{
+    raiseError
+  }
+
+checkSubObjectType(big :TL2ObjectType, subst :TL2Subst, bigSubst :TL2Subst) :Void
+  (* subtype tests: inherits
+     checkSubIdeType
+     checkSubUnifyType
+     checkSubMethodType
+  
+ oper is no subtype of parameterless object types *)
+{ raiseSubTypeError(self, big) }
+
+checkSubNilType(big :TL2NilType, subst :TL2Subst, bigSubst :TL2Subst) :Void
+  (* *)
+{ raiseSubTypeError(self, big) }
+
+checkSubApplyType(big :TL2ApplyType, subst :TL2Subst, bigSubst :TL2Subst) :Void
+  (* *)
+{
+    big.expose(bigSubst, true, fun(big :TL2Type, bigSubst :TL2Subst) { checkSubType(big, subst, bigSubst) })
+  }
+
+checkSubOperType(big :TL2OperType, subst :TL2Subst, bigSubst :TL2Subst) :Void
+  (* sub oper
+     A = ForAll(B <: C).D
+     E = ForAll(F <: G).H
+
+     F <: G |- A(F) type   F <: G |- D[F / B] <: H
+    -----------------------------------------------
+                    |- A <: E
+
+  *)
+{
+    bigArgs ::= List.fromReader(big.domain.map(fun(i :TL2TypeIde) {
+      TL2IdeType.new(i)
+    }))
+
+    applyArgs(pos, domain, bigArgs, subst, bigSubst, range, true, false, true, fun(range :TL2Type, subst :TL2Subst) {
+      range.checkSubType(big.range, subst, bigSubst)
+    })
+  }
+
+prettyPrint(out :Printer) :Void
+  (* *)
+{
+    out.writeAll("(\\-/")
+    domain.doBetween(fun(i :TL2TypeIde) { i.prettyPrint(out) }, { out.writeAll(", ") })
+    out.writeAll(".")
+    range.prettyPrint(out)
+    out.writeAll(")")
+  }
+
+private
+
+doExpose(T <: Void, subst :TL2Subst, exact :Bool, cont :Fun(:TL2Type, :TL2Subst):T) :T
+  (* *)
+{
+    cont[self, subst]
+  }
+
+}

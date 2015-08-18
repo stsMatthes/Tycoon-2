@@ -1,0 +1,9 @@
+class TL2WeakRefDescriptor
+super TL2TspDescriptor
+meta SingletonClass(TL2WeakRefDescriptor)
+{
+
+layout :Int
+{ layoutWeakRef }
+
+}

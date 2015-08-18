@@ -1,0 +1,95 @@
+class Profiler
+super Object
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+   A Profiler loop through the TVM runtime stack in constant intervals
+   and records the activated methods.
+
+   Author:  Marc Weikard
+   Date:    02-Apr-1997
+   Updates: (Date)	  (Name)	(Description)
+*)
+meta SimpleConcreteClass(Profiler)
+{
+reset :Void
+  (* *)
+{
+  if( _running then: { stop })
+  _dll.tmprofile_reset
+  }
+
+start :Void
+  (* *)
+{
+  if( !_running then: { _dll.tmprofile_start })
+  _running := true
+  }
+
+stop :Void
+  (* *)
+{
+  if( _running then: { _dll.tmprofile_stop })
+  _running := false
+  }
+
+setSampleRate(microSeconds :Int) :Void
+  (* *)
+{
+  _sampleRate := microSeconds
+  _dll.tmprofile_setResolution(microSeconds)
+  }
+
+setAccumulating(f :Bool) :Void
+  (* *)
+{
+  _accumulating := f
+  _dll.tmprofile_setMode(f)
+  }
+
+result :Void
+  (* *)
+{
+  if( !_running then: { _dll.tmprofile_result })
+  }
+
+private
+
+_dll :TVM
+
+_sampleRate :Int
+
+_accumulating :Bool
+
+_running :Bool
+
+_init :Void
+  (* *)
+{
+  _dll := TVM.new
+  _dll.open
+  _running := false
+  reset
+  setSampleRate(100000)
+  setAccumulating(false)
+  self
+}
+
+}

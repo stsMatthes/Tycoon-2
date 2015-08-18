@@ -1,0 +1,18 @@
+class IdlerTCBClass(Instance <:IdlerTCB)
+super TaskControlBlockClass(Instance)
+(**)
+meta MetaClass
+{
+createTCB(id :Int,
+       prio :Int,
+       workQueue :Queue(Packet),
+       initialState :TaskState,
+       privateData :IdleTaskRec) :Instance
+  (* *)
+{
+  obj ::= create(id,prio,workQueue,initialState)
+  obj.handle := privateData
+  obj
+}
+
+}

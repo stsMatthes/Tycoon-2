@@ -1,0 +1,84 @@
+class TL2UnificationDB
+super TL2
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+*)
+meta SimpleConcreteClass(TL2UnificationDB)
+{
+saveUnivar(u :TL2UnifyType) :Void
+  (* *)
+{
+    varStack.addFirst(u)
+    ltStack.addFirst(u.lowerBoundType)
+    lsStack.addFirst(u.lowerBoundSubst)
+    utStack.addFirst(u.upperBoundType)
+    usStack.addFirst(u.upperBoundSubst)
+  }
+
+unificationState :Int
+  (* *)
+{
+    varStack.size
+  }
+
+retractTo(to :Int) :Void
+  (* *)
+{
+    while({unificationState > to} do: {
+      v ::= varStack.removeFirst
+      lt ::= ltStack.removeFirst
+      ls ::= lsStack.removeFirst
+      ut ::= utStack.removeFirst
+      us ::= usStack.removeFirst
+
+      v.resetTo(lt, ls, ut, us)
+    })
+  }
+
+reset :Void
+  (* *)
+{
+    varStack := Stack.new
+    ltStack  := Stack.new
+    lsStack  := Stack.new
+    utStack  := Stack.new
+    usStack  := Stack.new
+  }
+
+private
+
+varStack :Stack(TL2UnifyType)
+
+ltStack  :Stack(TL2Type)
+
+lsStack  :Stack(TL2Subst)
+
+utStack  :Stack(TL2Type)
+
+usStack  :Stack(TL2Subst)
+
+_init :Void
+  (* *)
+{
+    reset
+    self
+  }
+
+}

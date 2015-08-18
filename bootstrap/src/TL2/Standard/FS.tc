@@ -1,0 +1,240 @@
+class FS
+super Object
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ Generic Filesystem operations
+   either on the namespace -> path operations
+   or on the files themselves
+
+   Author: Andreas Gawecki, Matthias Ernst
+   Date  : 15.11.96
+
+ Pathname methods: Manipulating pathnames in a portable fashion.
+
+  A file system is usually a directed, rooted and possibly cyclic graph
+  where non-leaf nodes are called directories and leaf nodes are called files.
+  the arcs of the graph are labeled with a string called arc name, where
+  all arc names within a directory are distinct. A path is a string
+  conforming to the syntax of the underlying operating system, consisting
+  of a sequence of arc names specifying a path starting from some
+  distinguished directory (i.e., some 'root' directory or some 'current'
+  directory) and ending at the referent of the path. A path
+  may be absolute, containing a root directory name as the first arc,
+  or relative to some 'current directory', implicitely containing
+  the 'current directory name' as returned by currentPath as the first
+  arc name.
+
+  The current filesystem can be accessed via tycoon.os.fs
+
+  
+  
+  
+  Operations:
+	composePath    : subPaths->path
+	decomposePath  : path->Reader(arcs)
+	isAbsolutePath : path->bool
+	isRelativePath : path->bool
+	isValidPath    : path->bool
+	extendPath     : path, extension -> path
+	pathExtension  : path -> extension
+	pathBase       : path -> path
+	pathPrefix     : path -> path
+	lastArc        : path -> arc
+	replaceExtension: path, extension -> path
+
+	maxPathLen: Int
+	maxArcLen: Int
+
+	relativePath: fromWhere, ToWhere -> relativePath
+
+	currentPathArc    : path
+	parentPathArc     : path
+	?? rootPath       : path
+	
+	realpath: path -> "physical" path
+
+	?? equal: path, path -> bool
+	tmpnam            : path
+
+
+   Updates: (Date)    (Name)            (Description)
+            03-Mar-99 Andre Willomat    new tycoonOS
+
+*)
+meta AbstractClass
+{
+pathSeparator: Char
+  (* answer the path separator of the receiver, e.g. ':' on Unix *)
+deferred
+
+pathArcSeparator: Char
+  (* answer the path arc separator of the receiver, e.g. '/' on Unix *)
+deferred
+
+pathExtender: Char
+  (* answer the extension separator of the receiver, e.g. '.' on Unix *)
+deferred
+
+maxPathLen: Int
+  (* answer the maximum length a path may have on this system *)
+deferred
+
+maxArcLen: Int
+  (* answer the maximum length an arc may have on this system *)
+deferred
+
+search(searchPath :String, file :String) :String
+  (* lookup file of the given file in searchPath.
+     answer the complete path of the file, or nil if not found *)
+{
+   if( isAbsolutePath(file)
+   then: { if( File.new(file).exists then: { file } else: { nil }) }
+   else: { paths ::= Tokenizer.new(searchPath.reader, pathSeparator.asString)
+       composedPaths ::=
+	 paths.map(fun(path :String){ composePath(List.with2(path, file)) })
+       composedPaths.detect(fun(path :String) { File.new(path).exists }) })
+}
+
+isValidPath(path: String): Bool
+  (* *)
+deferred
+
+isAbsolutePath(path: String): Bool
+  (* answer true if path conforms to the syntax of the
+    receiver, else answer false
+ *)
+deferred
+
+isRelativePath(path: String): Bool
+  (* *)
+deferred
+
+rootPath :String
+  (* answer the/a root of the Filesystem
+   some systems have many roots, one of
+   these is chosen in this case *)
+deferred
+
+composePath(subPaths: Sequence(String)): String
+  (* answer path resulting if one concatenates all the subPaths.
+   only the first subPath may (but need not) denote an absolute path
+   otherwise FSError is raised *)
+deferred
+
+decomposePath(path: String): Reader(String)
+  (* parse path and answer the list of arc names.
+     if path is an absolute path name the first element of the result
+     will be the root directory name, else it will be equal to
+     the current directory arc name as returned by self.currentPath *)
+deferred
+
+extendPath(path: String, extension: String): String
+  (* add extension to the denoted path
+   raises FSError if one tries to extend an empty arc
+   
+   i.e.    '/tmp/hallo.tar', 'gz' -> '/tmp/hallo.tar.gz'
+           '/tmp/hallo.tar', ''   -> '/tmp/hallo.tar.'
+           '/tmp/hallo/', 'gz'    -> FSError *)
+deferred
+
+pathExtension(path: String): String
+  (* give the extension of this path, nil if none
+   '/tmp/hallo.tar.gz' -> 'gz'
+   '/tmp/hallo' -> nil *)
+deferred
+
+replaceExtension(path: String, extension: String): String
+  (* replaces the extension of the last arc with 'extension'
+   raises FSError if path has no extension
+   
+   ('/tmp/hallo.tar.gz', 'Z') -> '/tmp/hallo.tar.Z'
+   ('/tmp/hallo', 'gz') -> FSError *)
+deferred
+
+pathBase(path: String): String
+  (* remove extension of this path
+   raises FSError, if there is none *)
+deferred
+
+lastArc(path: String): String
+  (* the last arc in path, or path itself if only a root directory
+   '/a/b/c.tar.gz' -> 'c.tar.gz'
+   '/a/b/' -> 'b'
+   'c:\' -> 'c:\' *)
+deferred
+
+relativePath(from: String, to: String): String
+  (* a path relative to 'from' that reaches the same node as 'to'
+   On Posix, the use of realpath is required, therefore this call
+   may fail with IOError being raised
+   if no relative path can be found(e.g. if the paths point to files on different drives),
+   FSError is raised
+
+   'to' and 'from' must both be absolute paths.
+   *)
+deferred
+
+pathPrefix(path: String): String
+  (* path without the last arc
+   raises FSError if path denotes a root directory or only the current
+   directory *)
+deferred
+
+currentPath: String
+  (* An arc name corresponding to the current directory, e.g. '.' in POSIX *)
+deferred
+
+parentPath: String
+  (* An arc name corresponding to the parent directory, e.g. '..' in POSIX
+   CAVEAT:
+     composePath(path, parentPathArc) may not point to the same place as
+     pathPrefix due to symbolic links or such *)
+deferred
+
+realPath(path: String): String
+  (* a uniquely identified, absolute path, pointing to the same place as path.
+   Resolves '.', '..', symbolic links, but not hard links ...
+
+   Since this operation interacts with the real filesystem it will fail, if
+   - the denoted file/directory does not exist
+   - the user does not have the permissions to traverse the directory tree
+
+   In this case IOError will be raised
+
+   On Unix calls 'realpath'. *)
+deferred
+
+canonicalizePath(path: String): String
+  (* normalization of path. May incur case changes, arc truncation, removal of '.'.
+   Result points to the same location 'path' would refer to.
+   Tries to do about what the filesystem does when creating the path.
+   Pure string handling, will not invoke filesystem operations. *)
+deferred
+
+tmpnam :String
+  (* return a multithreaded-safe file name that can safely be used for a
+   temporary file *)
+{
+  tycoon.atomic({
+    tycoon.ansiC.tmpnam(MutableString.new(tycoon.tycoonOS.filename_tempNameSize))
+  })
+}
+
+}

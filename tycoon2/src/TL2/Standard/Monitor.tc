@@ -1,0 +1,178 @@
+class Monitor
+super MutexHolder
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+  Monitor Objects are re-entrant, i.e. they may be
+  entered recursively by the same thread.
+
+  Author:  Andreas Gawecki
+  Date:    27-Jan-1997
+  Updates: (Date)	  (Name)	(Description)
+	   08-Oct-1997    awienber	debugged __release (check owner)
+*)
+meta AbstractClass
+{
+private
+
+_monitorWaiters @:Condition
+  (* threads waiting to enter the monitor *)
+
+_monitorNestingLevel :Int
+  (* count of (re-)entrances *)
+
+_monitorOwner :Thread(Void)
+  (* the thread holding the monitor, or nil if free *)
+
+_init :Void
+  (* establish a weak reference to the receiver *)
+{
+  super._init
+  _monitorWaiters := _createMonitorWaiters@
+  _monitorNestingLevel := 0
+  _monitorOwner := nil
+  self
+}
+
+_createMonitorWaiters @:Condition
+  (* *)
+{
+  Condition.new@
+}
+
+synchronize(T <:Void, statement :Fun():T) :T
+  (* *)
+{
+  _mx.lock
+  __synchronize(statement, {__aquire})
+}
+
+wait(cv :Condition) :Void
+  (* release the receiver monitor and wait for something to happen.
+     to be more accurate: wait until some other thread signals the given Condition variable.
+     be aware of spurious wakeups! see Condition::wait.
+  
+ precondition: we hold the monitor *)
+{
+  __release({ cv.wait(_mx) })
+}
+
+timedWait(cv :Condition, timeout :Long) :Bool
+  (* same as Monitor::wait, but timeouts may occur (see Condition::timedWait).
+     answer true if the receiver was woken up by a signal (modulo spurious wake-ups!),
+     answer false if a timeout occured.
+     in either case, the receiver is acquired again.
+
+  
+ precondition: we hold the monitor *)
+{
+  __release({ cv.timedWait(_mx, timeout) })
+}
+
+__release(T <:Void, statement :Fun():T) :T
+  (* release the receiver monitor and execute statement.
+     then re-acquire the receiver,
+     answer the value returned by 'statement'.
+  
+ precondition: we hold the monitor *)
+{
+  lock({
+    assert({ Thread.this == _monitorOwner })
+    owner ::= _monitorOwner
+    level ::= _monitorNestingLevel
+;
+;tycoon.tycoonOS.isNotNil ? {      
+;let msg = "Release Monitor(" + _monitorOwner._handle.printString+"/"+_monitorNestingLevel.printString + "): " + printString + "\n",
+;tycoon.tycoonOS.file_write(1, msg, msg.size)
+;},
+;
+    _monitorOwner := nil
+    _monitorNestingLevel := 0
+
+    _monitorWaiters.signal
+  
+    result ::= statement[]
+
+    __aquire
+    
+    _monitorOwner := owner
+    _monitorNestingLevel := level
+;
+;tycoon.tycoonOS.isNotNil ? {      
+;let msg = "Acquire Monitor(" + _monitorOwner._handle.printString+"/"+ _monitorNestingLevel.printString + "): " + printString + "\n",      
+;tycoon.tycoonOS.file_write(1, msg, msg.size)
+;},
+;
+    result
+  })
+}
+
+__synchronize(T <:Void, statement :Fun():T, aquire :Fun():Void) :T
+  (* precondition: we hold the lock *)
+{
+  ; 1. aquire the monitor: 
+  protect({
+    myself ::= Thread.this 
+    assert({ _monitorNestingLevel >= 0 })  
+
+    if( _monitorOwner == myself
+      then: { _monitorNestingLevel := _monitorNestingLevel+1 void }
+      else: {  aquire[]
+	  _monitorOwner := myself
+	  _monitorNestingLevel := 1
+	})},
+    {
+    _mx.unlock
+  })
+;
+;tycoon.tycoonOS.isNotNil ? {      
+;let msg = "Acquire Monitor(" + _monitorOwner._handle.printString+"/"+_monitorNestingLevel.printString + "): " + printString + "\n",      
+;tycoon.tycoonOS.file_write(1, msg, msg.size)
+;},
+;
+
+  ; 2. execute the statement: 
+  protect(statement,
+    fun() {
+      ; 3. release the monitor: 
+;
+;tycoon.tycoonOS.isNotNil ? {      
+;let msg = "Release Monitor(" + _monitorOwner._handle.printString+"/"+_monitorNestingLevel.printString + "): " + printString + "\n",      
+;tycoon.tycoonOS.file_write(1, msg, msg.size)
+;},
+;
+      lock(fun(){
+        assert({ _monitorNestingLevel > 0 })
+	if( (_monitorNestingLevel := _monitorNestingLevel-1) == 0
+	  then: { _monitorOwner := nil
+	      _monitorWaiters.signal })
+       })
+    })   
+}
+
+__aquire :Void
+  (* *)
+{
+  while({_monitorNestingLevel !== 0} do: {
+    _monitorWaiters.wait(_mx)
+  })
+}
+
+}

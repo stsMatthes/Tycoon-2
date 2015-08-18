@@ -1,0 +1,188 @@
+class PeriodicEventParser
+super Events
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+parser for cron tab entries
+
+Author:  Gerd Bremer
+Date:    17-Oct-1997
+Updates: (Date)	  (Name)	(Description)
+*)
+meta SimpleConcreteClass(PeriodicEventParser)
+{
+minutes :List(Int)
+
+hours :List(Int)
+
+dayOfMonth :List(Int)
+
+month :List(Int)
+
+weekday :List(Int)
+
+char :Char
+  (* the next character in the input, NOT consuming *)
+{ _char }
+
+next :Char
+  (* *)
+{ _char := _r.read }
+
+reader :Reader(Char)
+  (* *)
+{ Reader.cons(_char, _r) }
+
+skip(c :Char) :Void
+  (* *)
+{ if( char = c then:
+      { next } else:
+      {
+        msg ::= "PeriodicEventParser::skip: Expected " + c.printString +
+	          ", got " + char.printString
+        PeriodicEventError.new(msg).raise
+      })
+  }
+
+skipws :Void
+  (* horizontal whitespace *)
+{ while({ char = ' ' | char = '\t'} do:
+      { next })
+  }
+
+readInteger :Int
+  (* read integer value *)
+{
+    result :Int := nil
+    while({ char.isNotNil &&  char.isDigit } do:
+      {
+        if( result.isNil then:
+          { result := char.digitValue } else:
+	  { result := result * 10 + char.digitValue })
+	next
+      })
+    if( result.isNotNil then:
+      { result } else:        
+      {
+        msg ::= "PeriodicEventParser::readInteger: Expected integer value, found "
+	          + char.printString
+	PeriodicEventError.new(msg).raise
+      })
+  }
+
+readList(list :List(Int)) :List(Int)
+  (* read integer value list 
+ ------------------------------------------------------------ *)
+require list.isNotNil
+
+
+  { if( char.isNil ||  char = ' '  then:
+      { list } else:
+      { if( char = '*' &&  list.isEmpty  then:
+          { nil } else:
+	  { if( char = ',' &&  !list.isEmpty  then:
+	      {
+		next
+		readList(readElement(list))
+	      } else:
+	      {
+		if( char.isDigit then:
+		  { readList(readElement(list)) } else:
+		  {
+		    msg ::= "PeriodicEventParser::readList: Unexpected char " +
+		              char.printString
+		    PeriodicEventError.new(msg).raise
+		  })
+	      })
+	  })
+      })
+  }
+
+readElement(list :List(Int)) :List(Int)
+  (* read integer range or single integer value 
+ ------------------------------------------------------------ *)
+require list.isNotNil
+
+
+  { if( char.isNotNil then:
+      { 
+	i ::= readInteger	
+	if( char.isNil || ( char = ' ' ||  char = ',' ) then:
+	  { List.cons(i, list) } else:
+	  { if( char = '-' then:
+	      {
+		next
+		j ::= readInteger
+		List.append(:Int, :Int, list, PeriodicEvent.rangeList(i,j))
+	      } else:
+	      {
+		msg ::= "PeriodicEventParser::readElement: Unexpected char " +
+		          char.printString
+		PeriodicEventError.new(msg).raise
+	      })		      		
+	  })
+      } else:
+      {
+        msg ::= "PeriodicEventParser::readElement: Unexpected end of input"
+        PeriodicEventError.new(msg).raise
+      })
+  }
+
+read(s :String, action :Fun():Void) :PeriodicEvent
+  (* create periodic event from string 
+ ------------------------------------------------------------ *)
+{
+    if( s.isNotNil &&  action.isNotNil  then:
+      {
+	_r := s.reader
+	_char := _r.read
+	skipws
+
+	minutes := readList(List.new)
+	skipws
+
+	hours := readList(List.new)
+	skipws
+
+	dayOfMonth := readList(List.new)
+	skipws
+
+	month := readList(List.new)
+	skipws
+
+	weekday := readList(List.new)
+
+	PeriodicEvent.new(minutes, hours, dayOfMonth, month, weekday, action)
+      } else:
+      {
+        msg ::= if( action.isNil then:
+          { "PeriodicEventParser::read: Action is nil" } else:
+	  { "PeriodicEventParser::read: string \'s\' is nil" })
+	PeriodicEventError.new(msg).raise
+      })
+  }
+
+private
+
+_r :Reader(Char)
+
+_char :Char
+
+}

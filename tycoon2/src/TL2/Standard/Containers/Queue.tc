@@ -1,0 +1,201 @@
+class Queue(E <: Object)
+super DynSequence(E)
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ invariant
+  0 <= _readPos & _readPos < _elements.size,
+  0 <= _writePos & _writePos < _elements.size,
+  isEmpty = (_readPos = _writePos) *)
+meta QueueClass(E)
+{
+"[]"(i :Int) :E
+  (* Return the element with key 'k' .
+     Raise KeyNotFoundError if no such key exists. *)
+{
+  ;; the check is slow, but the interface requires it.
+  if( includesKey(i) then: {
+    _elements[(_readPos + i) % _elements.size]
+  } else: {
+    _raiseKeyNotFoundError(i)
+  })
+}
+
+"[]:="(i :Int, e :E) :E
+  (* Set the value of the element with key 'k' to 'e' *)
+  require validKey(i)
+  ensure self[i] == e
+{ _elements[ (_readPos + i) % _elements.size ] := e
+}
+
+size :Int
+  (* *)
+{ if( _writePos >= _readPos
+   then: { _writePos - _readPos }
+   else: { (_writePos + _elements.size) - _readPos })
+}
+
+addLast(e :E) :Void
+  (* *)
+{
+  _elements[_writePos] := e
+  _writePos := (_writePos + 1) % _elements.size
+  if( _writePos = _readPos then: { _grow })
+  e
+}
+
+addFirst(e :E) :Void
+  (* *)
+{
+  _readPos :=
+    if( _readPos = 0 then: { _elements.size } else: { _readPos }) - 1
+  _elements[_readPos] := e
+  if( _writePos = _readPos then: { _grow })
+  e
+}
+
+removeSubSequence(n :Int, at :Int) :Void
+  (* remove n elements starting at position <at>.
+   All following elements move <n> positions back,
+   the receiver`s size shrinks by <n>. *)
+{
+  replace(at, n, self, 0)  ; ### inefficient 
+  newReadPos ::= _readPos + n
+  if( newReadPos >= _elements.size
+  then: { _elements.fill(_elements.size - _readPos, _readPos, nil)
+      _readPos := newReadPos - _elements.size
+      _elements.fill(_readPos, 0, nil) }
+  else: { _elements.fill(n, _readPos, nil)
+      _readPos := newReadPos })
+}
+
+removeFirst :E
+  (* *)
+require !isEmpty
+{
+  assert({ !isEmpty })
+  e ::= _elements[_readPos]
+  _elements[_readPos] := nil   ; avoid storage leak 
+  _readPos := (_readPos + 1) % _elements.size
+  e
+}
+
+removeLast :E
+  (* *)
+require !isEmpty
+{
+  assert({ !isEmpty })
+  _writePos :=
+    if( _writePos = 0 then: { _elements.size } else: { _writePos }) - 1
+  e ::= _elements[_writePos]
+  _elements[_writePos] := nil   ; avoid storage leak 
+  e
+}
+
+insert(e :E, at :Int)  :E
+  (* *)
+require 0 <= at & at <= size
+{
+  size ::= size
+  assert({ at >= 0 & at <= size })
+  if( at <= size / 2
+  then: { addFirst(nil)
+          replace(at, 0, self, 1) } ; ### inefficient 
+  else: { addLast(nil)
+          replace(size-at, at+1, self, at) }) ; ### inefficient 
+  self[at] := e
+}
+
+removeKey(at :Int) :E
+  (* *)
+require validKey(at)
+{
+  size ::= size
+  assert({ at >= 0 & at < size })
+  result ::= self[at]
+  if( at <= size / 2
+  then: { replace(at, 1, self, 0)  ; ### inefficient 
+	  removeFirst }
+  else: { replace(size-at-1, at, self, at+1)  ; ### inefficient 
+	  removeLast })
+  result
+}
+
+removeAny :E
+  (* more efficient redefinition *)
+{ removeFirst }
+
+private
+
+_elements @:MutableArray(E)
+
+_readPos :Int
+
+_writePos :Int
+
+addPosition :Int
+  (* from DynSequence *)
+{ ; always add at the end 
+  size
+}
+
+removePosition :Int
+  (* *)
+require !isEmpty
+{ 0 }
+
+_grow :Void
+  (* *)
+{
+  assert({ _readPos = _writePos })
+  newElements @::= MutableArray.new( 2 * _elements.size )@
+  left ::= _readPos
+  right ::= _elements.size - left
+  newElements.replace(right, 0, _elements, _readPos)
+  newElements.replace(left, right, _elements, 0)
+  _readPos := 0
+  _writePos := _elements.size
+  _elements := newElements@
+}
+
+_locate(e :Object, startingAt :Int, before :Int) :Int
+  (* *)
+{
+  internalStart ::= (_readPos + startingAt) % _elements.size
+  internalBefore ::= (_readPos + before) % _elements.size
+  if( internalStart < internalBefore
+  then: { _internalToExternal(
+        _elements.locate2(e, internalStart, internalBefore)) }
+  else: { location ::= _elements.locate1(e, internalStart)
+      if( location.isNotNil
+      then: { _internalToExternal(location) }
+      else: { _internalToExternal(
+	     _elements.locate2(e, 0, internalBefore)) }) })
+}
+
+_internalToExternal(internalPos :Int) :Int
+  (* *)
+{ if( internalPos.isNotNil
+  then: { if( internalPos >= _readPos
+      then: { internalPos - _readPos }
+      else: { internalPos + _elements.size - _readPos }) }
+  else: { nil })
+}
+
+}

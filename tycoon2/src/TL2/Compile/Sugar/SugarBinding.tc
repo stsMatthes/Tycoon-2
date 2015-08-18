@@ -1,0 +1,27 @@
+class SugarBinding
+super SugarSequenceElement
+(**)
+meta SugarBindingClass()
+{
+ide :String
+
+type :String
+
+equal :String
+
+val :String
+
+sequenceElementCase(T <: Void,
+  ifBinding :Fun(:SugarBinding):T,
+            :Fun(:SugarValue):T) :T
+  (* *)
+{ ifBinding[self] }
+
+printOn(out :Output) :Void
+  (* *)
+{
+  out << ide << if( type.isEmpty then:{"::"}else:{type+":"})<<equal
+	     << val
+}
+
+}

@@ -1,0 +1,71 @@
+class FileURLConnection
+super URLConnection
+(**)
+meta AbstractURLConnectionClass(FileURLConnection)
+{
+openRead :Input
+  (* *)
+{
+  path ::= tycoon.os.fs.composePath(List.cons(tycoon.os.fs.rootPath, url.arcs))
+  File.openRead(path)
+}
+
+writeTo(content :String) :Void
+  (* *)
+{
+  path ::= tycoon.os.fs.composePath(List.cons(tycoon.os.fs.rootPath, url.arcs))
+  mkdirhier(path)
+  f ::= File.openWrite(path)
+  protect({ f.writeAll(content) }, { f.close })
+}
+
+delete :Void
+  (* *)
+{
+  path ::= tycoon.os.fs.composePath(List.cons(tycoon.os.fs.rootPath, url.arcs))
+  File.new(path).remove
+}
+
+basicAuthorization(:String, :String) :Void
+  (* *)
+{}
+
+private
+
+mkdirhier(path :String) :Void
+  (*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ path is the name of a file.
+   ensure that the directories beneath it exist
+*)
+{
+  arcs ::= tycoon.os.fs.decomposePath(path)
+  dir  ::= arcs.read
+
+  arc :String := nil
+  while({arc := arcs.read arc != nil} do: {
+    d ::= Directory.new(dir)
+    if( !d.exists then: { d.mkDir })
+
+    dir := tycoon.os.fs.composePath(Array.with2(dir, arc))
+  })
+}
+
+}

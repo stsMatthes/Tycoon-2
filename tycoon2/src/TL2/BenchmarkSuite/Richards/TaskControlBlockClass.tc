@@ -1,0 +1,24 @@
+class TaskControlBlockClass(Instance <: TaskControlBlock)
+super ConcreteClass(Instance)
+(**)
+meta MetaClass
+{
+benchmark :Richards
+
+create(id :Int,
+       prio :Int,
+       workQueue :Queue(Packet),
+       initialState :TaskState) :Instance
+  (* *)
+{
+  obj ::= _new
+  obj.ident := id
+  obj.priority := prio
+  obj.input := workQueue
+  obj.packetPending := initialState.packetPending
+  obj.taskWaiting := initialState.taskWaiting
+  obj.taskHolding := initialState.taskHolding
+  obj
+}
+
+}

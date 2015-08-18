@@ -1,0 +1,132 @@
+class TokenBuffer
+super Scan, BufferInput
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ A TokenBuffer extends a BufferInput with the ability to retrieve all
+   input read since the last call to <tokenConsumed>.  This part of the
+   input is called the token. *)
+meta TokenBufferClass()
+{
+token :String
+  (* return the portion of input read since the last call to <tokenConsumed> *)
+{
+  String.fromSubSequence(_buffer, _tokenStart, tokenSize)
+}
+
+tokenReader :StringInput
+  (* *)
+{
+  StringInput.new2(_buffer, _tokenStart, tokenSize)
+}
+
+tokenSize :Int
+  (* *)
+{ _position - _tokenStart }
+
+tokenPos :Int
+  (* position of first char of this token *)
+{ _tokenPos }
+
+readPos :Int
+  (* *)
+{ _tokenPos + tokenSize }
+
+tokenConsumed :Void
+  (*  *)
+{
+  _tokenPos := readPos
+  _tokenStart := _position
+  ; assert tokenSize = 0 
+}
+
+unread(n :Int) :Void
+  (* shorten the current token by n characters, move back the read head. *)
+require tokenSize >= n
+ensure tokenSize = old tokenSize - n
+     & tokenPos = old tokenPos
+
+{
+  assert({ tokenSize >= n })
+  _position := _position - n
+  ; _tokenStart, _tokenPos remain the same 
+}
+
+private
+
+_bufferSize :Int
+  (* number of bytes used in the buffer *)
+
+_buffer :MutableString
+  (* *)
+
+_tokenStart :Int
+  (* index of first char of token in buffer *)
+
+input :Input
+  (* *)
+
+_tokenPos :Int
+  (* character number of first char of token in input *)
+
+_moreBuffer(:Int) :Bool
+  (* *)
+{
+  if( _tokenStart > 0  then: {
+    ;; move token to start of buffer 
+    tokenSize ::= self.tokenSize
+    ; tycoon.stdout.writeln("TokenBuffer: move token start="+_tokenStart.printString+" size="+tokenSize.printString), 
+    _buffer.replace(tokenSize, 0, _buffer, _tokenStart)
+    _tokenStart := 0
+    _bufferSize := _position := tokenSize
+  })
+  ; assert _position = _bufferSize, 
+  ; assert _tokenStart = 0, 
+
+  if( _bufferSize = _buffer.size  then: {
+    ;; grow buffer 
+    ; tycoon.stdout.writeln("InputScanner: grow buffer"), 
+    newBuffer ::= MutableString.new(_bufferSize * 2)
+    newBuffer.replace(_bufferSize, 0, _buffer, 0)
+    _buffer := newBuffer
+  })
+  ; assert _bufferSize < _buffer.size, 
+
+  ; fill buffer 
+  nBytes ::= input.readBuffer(_buffer, _bufferSize, _buffer.size - _bufferSize)
+  ; tycoon.stdout.writeln("read "+nBytes.printString+" bytes"), 
+  _bufferSize := _bufferSize + nBytes
+
+  notEof ::= nBytes > 0
+}
+
+_init :Void
+  (* *)
+{ super._init
+  assert({ input.isNotNil })  ; set by metaclass 
+  if( _buffer.isNil  ; may be set by metaclass 
+  then: { _buffer := MutableString.new(4000) })
+  _tokenStart := 0 ; token starts at the beginning of the buffer 
+  _tokenPos := 0   ; token starts at beginning of input 
+  _position := 0   ; that`s where we are reading 
+  _bufferSize := 0 ; buffer contains no data 
+  self
+}
+
+}

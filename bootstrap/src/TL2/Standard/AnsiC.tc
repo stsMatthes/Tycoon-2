@@ -1,0 +1,200 @@
+class AnsiC
+super DLL
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+Standard ANSI C library
+
+Note: this DLL may contain only those Ansi C functions which do not depend on
+      any system dependent header files, i.e. constants, typedefs (e.g. size_t)
+      etc.
+
+Note: visitXXX methods must deliver a valid dll file name. 
+
+Note: For all functions with filename parameter better use the corresponding
+      functions from TycoonOS.
+
+Author:  Andreas Gawecki
+Date:    21-Feb-1996
+Updates: (Date)	   (Name)	     (Description)
+         03-Mar-99 Andre Willomat    new tycoonOS
+*)
+meta SimpleConcreteClass(AnsiC)
+{
+
+visitOS( :OS) :String
+  (* no DLL resolution: Ansi C lib & symbols are already defined in static.h *)
+{
+  "libc.so"
+}
+
+NULL :Nil
+  (*## common declarations: stddef.h etc...*)
+{
+  nil
+}
+
+
+atoi(:String) :Int
+  (* *)
+extern "atoi"
+
+atof(:String) :Real
+  (* *)
+extern "atof"
+
+rand :Int
+  (* *)
+extern "rand"
+
+srand(seed :Int) :Void
+  (*##change seed to unsignedInt: *)
+extern "srand"
+
+getenv(:String) :String
+  (* *)
+extern "getenv"
+
+strtod(s :String, endp :Nil) :Real
+  (*##second arg must be NULL == nil: *)
+extern "strtod"
+
+strcpy(:MutableString, :String) :Void
+  (*##wait with return types till bootstrap: *)
+extern "strcpy"
+
+strncpy(:MutableString, :String, :Int) :Void
+  (* *)
+extern "strncpy"
+
+strcat(:MutableString, :String) :Void
+  (* *)
+extern "strcat"
+
+strncat(:MutableString, :String, :Int) :Void
+  (* *)
+extern "strncat"
+
+strstr(:String, :String) :String
+  (* *)
+extern "strstr"
+
+strcmp(:String, :String) :Int
+  (* ### return type? *)
+extern "strcmp"
+
+strncmp(:String, :String, :Int) :Int
+  (* *)
+extern "strncmp"
+
+strerror(:Int) :String
+  (* *)
+extern "strerror"
+
+memset(:MutableString, :Char, :Int) :Void
+  (* *)
+extern "memset"
+
+strlen(:String) :Int
+  (* *)
+extern "strlen"
+
+exit(:Int) :Void
+  (* *)
+extern "exit"
+
+abort() :Void
+  (* *)
+extern "abort"
+
+malloc(size :Int) :Int32
+  (* use with caution, avoid memory leaks (weak references are forthcoming): *)
+extern "malloc"
+
+free(:Int32) :Void
+  (* *)
+extern "free"
+
+
+
+sprintf_String(buffer :MutableString, fmt :String, value :String) :Void
+  (* %s
+     USE WITH CAUTION. The format string must contain exactly one 'printf'
+     format specifier of the correct type. Note that no array bounds
+     checking is performed. C never does that. *)
+extern  "sprintf"
+
+sprintf_Real(buffer :MutableString, fmt :String, value :Real) :Void
+  (* %e
+     USE WITH CAUTION. The format string must contain exactly one 'printf'
+     format specifier of the correct type. Note that no array bounds
+     checking is performed. C never does that. *)
+extern  "sprintf"
+
+sprintf_Int(buffer :MutableString, fmt :String, value :Int) :Void
+  (* %d
+     USE WITH CAUTION. The format string must contain exactly one 'printf'
+     format specifier of the correct type. Note that no array bounds
+     checking is performed. C never does that. *)
+extern  "sprintf"
+
+sprintf_Int32(buffer :MutableString, fmt :String, value :Int32) :Void
+  (* %d
+     USE WITH CAUTION. The format string must contain exactly one 'printf'
+     format specifier of the correct type. Note that no array bounds
+     checking is performed. C never does that. *)
+extern  "sprintf"
+
+strftime(buffer :MutableString, smax :Int, fmt :String, ptp :Int32) :Int
+  (* *)
+extern "strftime"
+
+
+;
+; Instead of following functions better use corresponding
+; tycoonOS functions...
+;
+
+system(:String) :Int
+  (* *)
+extern "system"
+
+tmpnam(:MutableString) :String
+  (* *)
+extern "tmpnam"
+
+remove(:String) :Int
+  (* *)
+extern "remove"
+
+rename(:String, :String) :Int
+  (* *)
+extern "rename"
+
+
+private
+
+_resolve :Void
+  (* no DLL resolution: Ansi C lib & symbols are already defined in static.h *)
+{
+  _path := "libc.so"
+}
+
+}

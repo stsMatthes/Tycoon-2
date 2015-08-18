@@ -1,0 +1,8 @@
+class BPuzzleException
+super Exception
+(**)
+meta SimpleConcreteClass(BPuzzleException)
+{
+val :Int
+
+}

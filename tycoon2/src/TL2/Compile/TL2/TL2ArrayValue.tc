@@ -1,0 +1,132 @@
+class TL2ArrayValue
+super TL2Value
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+*)
+meta TL2ArrayValueClass
+{
+values :List(TL2Value)
+
+accept(T <: Void, v :TL2ValueVisitor(T)) :T
+  (* *)
+{ v.visitArray(self) }
+
+isComponent :Bool
+{ ;; definitely not, otherwise we could not compile the array as a literal
+  false
+}
+
+isLiteral :Bool
+{ values.all(fun(v:TL2Value){ v.isLiteral }) }
+
+getLiteralValue :Object
+require isLiteral
+{
+  Array.fromContainerWithMap(values,
+    fun(v :TL2Value){ v.getLiteralValue })
+}
+
+prettyPrint(out :Printer) :Void
+  (* *)
+{
+  separator ::=
+    if( isSimple then: { ", " } else: { ",\n" })
+  out << "#("
+  out.withRelIndent(2, {
+    values.doBetween(fun(v :TL2Value) {
+      v.prettyPrint(out)
+    }, {
+      out << separator
+    })
+  })
+  out << ")"
+}
+
+children :Reader(TL2ProgramObject)
+{ values.reader }
+
+scope(env :TL2Scoper) :TL2ArrayValue
+  (* *)
+{
+  values := env.scopeList(:TL2Value, values)
+  ;; ### should AtArrays be allowed?
+  values.do(fun(v :TL2Value) {
+    if(v.isComponent then: {
+      env.errorLog.error(v.pos, "component in array expression")
+    })
+  })
+  arrayType := TL2IdeType.new(TL2TypeIde.newRef(pos, "Array")).scope(env)
+  self
+}
+
+genCode(backEnd :BEMethodManager) :Void
+  (* *)
+{
+  if( isLiteral then: {
+    literal ::= getLiteralValue
+    backEnd.loadLiteral(literal)
+  } else: {
+    values.do(fun(v :TL2Value) {
+      v.genCode(backEnd)
+    })
+    backEnd.makeArray(values.size)
+  })
+}
+
+genCodeIgnore(backEnd :BEMethodManager) :Void
+  (* *)
+{ backEnd.errorLog.warning(pos, "unused array expression")
+  values.do(fun(v :TL2Value) {
+    v.genCodeIgnore(backEnd)
+  })
+}
+
+genCodeBranch(backEnd :BEMethodManager, dest :BEMMLabel, branchIf :Bool) :Void
+  (* *)
+{
+  backEnd.errorLog.error(pos, "array expression used as conditional")
+  super.genCodeBranch(backEnd, dest, branchIf)
+}
+
+private
+
+arrayType :TL2Type
+  (* the type "Array" *)
+
+doCheck(T <: Void, cont :Fun(:TL2Type, :TL2Subst):T) :T
+  (* *)
+{
+  e ::= TL2UnifyType.new
+  emptySubst ::= TL2EmptySubst.instance
+
+  values.do(fun(v :TL2Value) {
+    v.check(fun(t :TL2Type, s :TL2Subst) {
+      setError(v.pos, "Wrong-typed array element", {
+        t.checkSubType(e, s, emptySubst)
+      })
+    })
+  })
+
+  resultType ::= TL2ApplyType.new(arrayType, List.with1(e))
+  resultType.checkType(emptySubst)
+  cont[resultType, emptySubst]
+}
+
+}

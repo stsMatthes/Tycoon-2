@@ -1,0 +1,15 @@
+class HtmlGeneratorClass
+super ConcreteClass(HtmlGenerator)
+(**)
+meta MetaClass
+{
+new(out :Output) :HtmlGenerator
+  (* *)
+{
+  instance ::= _new
+  instance._init
+  instance._out := out
+  instance
+  }
+
+}

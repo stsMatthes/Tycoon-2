@@ -1,0 +1,19 @@
+class KoltarDienstClass
+super Koltar, ConcreteClass(KoltarDienst)
+meta MetaClass
+{
+new(name :String, erklaerung :String) :KoltarDienst
+{
+  i ::= _new
+  i.name := name
+  i.erklaerung := erklaerung
+  i
+}
+
+load(in :Input) :KoltarDienst
+{
+  i ::= _new
+  i._load(in)
+  i
+}
+}

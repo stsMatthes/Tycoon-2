@@ -1,0 +1,77 @@
+class MD5Class
+super SimpleConcreteClass(MD5)
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+*)
+meta MetaClass
+{
+string(s :String) :ByteArray
+  (* ### md5 as a Resource?  Collect WeakRefs? *)
+{
+  md5 ::= new
+  md5.update(s)
+  md5.final
+}
+
+subString(s :String, start :Int, n :Int) :ByteArray
+  (* *)
+{
+  md5 ::= new
+  md5.updateSubString(s, start, n)
+  md5.final
+}
+
+file(path :String) :ByteArray
+  (* *)
+{
+  f ::= File.openRead(path)
+  buffer ::= MutableString.new(4096)
+  md5 ::= new
+  result :ByteArray := nil
+  protect({
+    while({ red ::= f.readBuffer(buffer, 0, buffer.size)
+	    red > 0
+	    && ( md5.updateSubString(buffer, 0, red)
+		 true )} do: {})
+  }, {
+    result := md5.final
+    f.close
+  })
+  result
+}
+
+test :Void
+  (* test suite from rfc1321 *)
+{
+  tycoon.stdout.writeln("MD5 test suite:")
+  Array.with7(
+    "",
+    "a",
+    "abc",
+    "message digest",
+    "abcdefghijklmnopqrstuvwxyz",
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789",
+    "12345678901234567890123456789012345678901234567890123456789012345678901234567890").do(
+  fun(s:String) {
+    tycoon.stdout.writeln("MD5 (\""+s+"\") = "+string(s).printHexString)
+  })
+}
+
+}

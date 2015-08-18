@@ -1,0 +1,102 @@
+class ThreadClass(T <:Void,Instance <:Thread(T))
+super ConcreteClass(Instance)
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+*)
+meta MetaClass
+{
+
+new(fn :Fun():T) :Instance
+  (* spawn a new thread computing the given function.
+     answer the running new thread.
+  *)
+{
+  t ::= _new
+  t._fn := fn
+  t._init
+  t
+}
+
+new(fn :Fun():T) @:Instance
+  (* spawn a new thread computing the given function.
+     answer the running new thread.
+  *)
+{
+  fetch(new(fn))@
+}
+
+this :Thread(Void)
+  (* *)
+builtin
+
+sleep(seconds :Long) :Void
+  (* calling thread suspends execution for n seconds. If the system is
+     committed during a call to sleep, at restart the sleeping thread will
+     sleep again for n seconds. *)
+builtin
+
+testCancel :Void
+  (* raise a ThreadCancelled exception if there is a cancel request pending
+     for the current thread. *)
+builtin
+
+STATE_RUNNING :Int
+  (* tycoon thread state *)
+{ 0 }
+
+STATE_TERMINATED :Int
+  (* *)
+{ 1 }
+
+TRACE_NONE :Int
+  (* *)
+{ 0 }
+
+TRACE_SEND :Int
+  (* signal debug events for message sends *)
+{ 1 }
+
+TRACE_RETURN :Int
+  (* signal debug events for return from compiled methods *)
+{ 2 }
+
+TRACE_EXCEPTION :Int
+  (* signal debug events for raised exceptions *)
+{ 4 }
+
+TRACE_INTRACOMPONENT :Int
+  (* also signal events that stay inside the border of one traced component *)
+{ 8 }
+
+TRACE_NONCOMPONENT :Int
+  (* signal all events, independent of traced components *)
+{ 16 }
+
+TRACE_INHERIT :Int
+  (* copy flags to forked threads *)
+{ 32 }
+
+private
+
+_new :Instance
+  (* *)
+builtin
+
+}

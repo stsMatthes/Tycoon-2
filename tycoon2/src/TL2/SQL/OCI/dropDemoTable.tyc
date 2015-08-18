@@ -1,0 +1,14 @@
+;; open database-connection
+
+connection ::= SQLDriverManager.instance.connect(
+  URL.fromString("tysql:/oci/DBIS;user=scott;password=tiger"))
+ 
+;; create statement
+statement::=connection.newStatement
+
+;; delete table
+statement.executeDirectUpdate("drop table testtable")
+
+;; close statement and disconnect user hoxdba
+statement.close
+connection.close ?

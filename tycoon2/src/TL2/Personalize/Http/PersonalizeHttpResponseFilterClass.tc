@@ -1,0 +1,16 @@
+class PersonalizeHttpResponseFilterClass
+super ConcreteClass(PersonalizeHttpResponseFilter)
+(**)
+meta MetaClass
+{
+new(resource :HttpResource, client :PersonalizeHttpClient) :PersonalizeHttpResponseFilter
+  (* *)
+{
+  instance ::=  _new
+  instance._init
+  instance.resource := resource
+  instance.client := client
+  instance
+}
+
+}

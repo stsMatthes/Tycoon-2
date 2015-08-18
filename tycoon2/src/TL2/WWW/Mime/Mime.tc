@@ -1,0 +1,6 @@
+class Mime
+super WWW
+(**)
+meta AbstractClass
+{
+}

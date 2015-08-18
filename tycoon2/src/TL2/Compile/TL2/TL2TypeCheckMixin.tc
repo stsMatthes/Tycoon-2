@@ -1,0 +1,126 @@
+class TL2TypeCheckMixin
+super TL2
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+*)
+meta AbstractClass
+{
+private
+
+_trace(T <: Void, trace :TL2TypeCheckTrace, t :Fun():T) :T
+  (* some implementation helpers 
+ Wrap these around the actual typetests to have the tests
+     included in the backtrace of a type error:
+
+     traceType(t, {
+       .. include the actual tests
+     }),
+
+  *)
+{
+    try({
+      t[]
+    } else: fun(e :Exception) {
+      if( e."class" == TL2TypeCheckTypeError ||  e."class" == TL2TypeCheckAbort  then: {
+        _typeCast(e, :TL2TypeCheckError).addTrace(trace)
+      })
+      e.raise
+    })
+  }
+
+trace(T <: Void, pos :SourcePos, msg :String, t :Fun():T) :T
+  (* *)
+{
+    _trace(TL2TypeCheckTrace.simple(pos, msg), t)
+  }
+
+traceType(T <: Void, type :TL2Type, t :Fun():T) :T
+  (* *)
+{
+    _trace(TL2TypeCheckTrace.type(type), t)
+  }
+
+traceSubType(T <: Void, small :TL2Type, big :TL2Type, t :Fun():T) :T
+  (* *)
+{
+    _trace(TL2TypeCheckTrace.subType(small, big), t)
+  }
+
+traceValue(T <: Void, v :TL2Value, t :Fun():T) :T
+  (* *)
+{
+    _trace(TL2TypeCheckTrace.value(v), t)
+  }
+
+setError(T <: Void, pos :SourcePos, msg :String, t :Fun():T) :T
+  (* *)
+{
+    setErrorWithPositions(List.with1(pos), msg, t)
+  }
+
+setError2(T <: Void, pos1 :SourcePos, pos2 :SourcePos, msg :String, t :Fun():T) :T
+  (* *)
+{
+    setErrorWithPositions(List.with2(pos1, pos2), msg, t)
+  }
+
+setErrorWithPositions(T <: Void, pos :Collection(SourcePos), msg :String, t :Fun():T) :T
+  (* *)
+{
+    try({
+      t[]
+    } else: fun(e :Exception) {
+      if( e."class" == TL2TypeCheckTypeError then: {
+        e ::= _typeCast(e, :TL2TypeCheckError)
+	if( e.error.isNil then: { e.setErrorWithPositions(pos, msg) })
+      })
+      e.raise
+    })
+  }
+
+raiseError :Nil
+  (* *)
+{
+    TL2TypeCheckTypeError.new.raise
+  }
+
+raiseTypeError(t :TL2Type) :Nil
+  (* *)
+{
+    raiseError
+  }
+
+raiseSubTypeError(small :TL2Type, big :TL2Type) :Nil
+  (* *)
+{
+    raiseError
+  }
+
+typeChecker :TL2TypeChecker
+  (* *)
+{
+    ; ### HACK for bootstrap 
+    tc ::= tycoon.tl.typeChecker
+    if( tc."class" = TL2TypeChecker
+    then: { _typeCast(tc, :TL2TypeChecker) }
+    else: { nil })
+  }
+
+}

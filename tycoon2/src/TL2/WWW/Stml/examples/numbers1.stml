@@ -1,0 +1,53 @@
+<!DOCTYPE STML SYSTEM>
+<stml processor='StmlProcessor'>
+<html>
+<title>
+Einfache Funktionen
+</title>
+<body>
+
+<define name=twice>
+<fun param="what">
+<ref name=what//
+<ref name=what//</fun>
+</define>
+
+<B> Astounding features: </B>
+<I> the scope of "fourTimes" doesn't end
+
+<define name=fourTimes>
+<fun param="what">
+<apply name=twice>
+<arg><apply name=twice>
+<arg><ref name=what//</arg>
+</apply></arg>
+</apply>
+</fun>
+</define>
+
+here </I>
+
+<apply name=twice>
+<arg>Hallo2!
+</arg>
+</apply>
+
+<define name=vier>
+<apply name=fourTimes>
+<arg>Hallo4!
+</arg>
+</apply>
+</define>
+
+<p>
+<ref name=vier//
+
+<p>
+<tycoon>
+for(1,10,fun(i:Int) {
+  out.writeString(i.printString+": "+vier+"<BR>")
+})
+</tycoon>
+
+</body>  
+</html>  

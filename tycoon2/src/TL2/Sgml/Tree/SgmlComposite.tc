@@ -1,0 +1,108 @@
+class SgmlComposite
+super SgmlComponent
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ positions will be nil if sgmlTreeBuilder.interestedInPositions was false *)
+meta SgmlCompositeClass()
+
+{
+startPosition :SgmlPos
+
+endPosition :SgmlPos
+
+element :SgmlElement
+
+attributes :Dictionary(String, String)
+
+components :Array(SgmlComponent)
+
+defaultedAttribute(name :String) :String
+  (* return the value specified for attribute <name>, or the default
+     value if no value was specified.  If there is no default value,
+     an exception is raised. *)
+{
+  attributes.lookup(name,
+    fun(s:String){ s },
+    { element.defAttrVal[name] })
+}
+
+case( T <: Void,
+      ifComposite :Fun(:SgmlComposite):T,
+      :Fun(:SgmlLeaf):T) :T
+  (* *)
+{ ifComposite[self] }
+
+printOnGenerator(out :SgmlGenerator) :Void
+  (* *)
+{ out.startElement(element.name, attributes)
+  if( !components.isEmpty then: {
+    if( element.contentType == SgmlContentType.element
+     then: { out.nl
+	 components.do(fun(o:SgmlComponent){
+	   o.printOnGenerator(out)
+	   out.nl
+	 })
+       }
+     else: { components.do(fun(o:SgmlComponent){
+	   o.printOnGenerator(out)
+	 })
+       })
+  })
+  if( element.contentType !== SgmlContentType.empty then: {
+    out.endTag(element.name)
+  })
+}
+
+lookupComposite(dict :Dictionary(String, Fun(:SgmlComposite):Void)) :Void
+  (* *)
+{ 
+  dict.lookup(element.name, fun( op :Fun(:SgmlComposite):Void) {
+    op[self]
+  }, {})
+  components.do(fun(comp :SgmlComponent) {
+    comp.lookupComposite(dict)
+  })
+}
+
+substitute(
+  Context <: Object,
+  context :Context,
+  dict :Dictionary(String,
+                   Fun(:Context, :SgmlComposite):Array(SgmlComponent)
+		  )
+  ) :Array(SgmlComponent)
+  (* *)
+{
+  dict.lookup(element.name,
+    fun(op :Fun(:Context, :SgmlComposite):Array(SgmlComponent))
+      { op[context, self] },
+    fun()
+      { newComponents ::= GapArray.new0
+	components.do(fun(comp :SgmlComponent) {
+	  newCo ::= comp.substitute(context, dict)
+	  if( newCo.isNotNil then: { newComponents.addLastAll(newCo) })
+	})
+	co ::= copy
+	co.components := newComponents.asArray
+	Array.with1(co)
+      })
+  }
+
+}

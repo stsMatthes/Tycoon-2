@@ -1,0 +1,71 @@
+class StmlDefine
+super StmlComponent
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+*)
+meta StmlDefineClass
+{
+name :String
+
+typeSource :String
+
+type :StmlType
+
+value :StmlSequence
+
+computeTypeInSequence( bindings :StmlBindings,
+		       errorLog :ErrorLog,
+		       computeRest :Fun(:StmlBindings):StmlType) :StmlType
+  (* compute your type, possibly extending the bindings
+      for the rest of the sequence *)
+{ valueT ::= value.computeSequenceType(bindings, errorLog, true)
+  type :=
+    if( typeSource.isNotNil
+    then: { expectedType ::=
+	  StmlTypeParser.instance.parseType(
+	    StringInput.new(typeSource),
+	    position,
+	    errorLog)
+	if( expectedType.isNotNil
+	then: { if( !valueT.isSubTypeOf(expectedType)
+	    then: { t :StmlType :=
+	          StmlWrongType.new( position, "bad types in define",
+			   "declared", expectedType, "value", valueT)
+		t.emitWrong(errorLog) })
+	    expectedType }
+	else: { ; parse error in declared type, take valueT 
+	    valueT }) }
+    else: { ; no type declared 
+        valueT })
+
+  bindings.withBinding(name, type, computeRest)
+}
+
+compileAsValue(out :StmlASTWriter) :Void
+  (* *)
+{
+  out.emitLet(position, name, type.asTycoonType, value.compileToValue(out.context))
+}
+
+compileAsString(out :StmlASTOutput) :Void
+  (* *)
+{ compileAsValue(out) }
+
+}

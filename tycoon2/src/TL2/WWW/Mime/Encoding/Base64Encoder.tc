@@ -1,0 +1,88 @@
+class Base64Encoder
+super Encoder
+(**)
+meta ConcreteEncoderClass(Base64Encoder)
+{
+read :Char
+  (* *)
+{
+  if( atEnd then: fun() :Char { nil } else: {
+  ;
+; * This file is part of the Tycoon-2 system.
+; *
+; * The Tycoon-2 system is free software; you can redistribute it and/or
+; * modify it under the terms of the GNU General Public License
+; * as published by the Free Software Foundation (Version 2).
+; *
+; * The Tycoon-2 system is distributed in the hope that it will be useful,
+; * but WITHOUT ANY WARRANTY; without even the implied warranty
+; * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+; * See the GNU General Public License for more details.
+; * 
+; * You should have received a copy of the GNU General Public
+; * License along with the Tycoon-2 system; see the file LICENSE.
+; * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+; * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+; * 
+; * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+; *
+; not all consumed 
+  if( charCount < available then: {
+    charCount := charCount + 1
+    first6
+  } else: {
+    ; consumed full 24 bit 
+    if( charCount = 4 then: {
+      charCount := 0
+      buf := 0
+      available := 0
+    
+      c1 ::= _in.read
+      if( c1 != nil then: { available := 2 buf := c1.asInt << 16
+        c2 ::= _in.read
+        if( c2 != nil then: { available := 3 buf := buf + (c2.asInt << 8)
+          c3 ::= _in.read
+	  if( c3 != nil then: { available := 4 buf := buf + c3.asInt })
+        })
+      })
+
+      if( available > 0 then: { charCount := charCount + 1 first6 } else: { atEnd := true nil })
+    } else: {
+      if( charCount < 4 then: { charCount := charCount + 1 '=' } else: { atEnd := true nil })
+    })
+  })
+  })
+}
+
+private
+
+buf :Int
+
+available :Int
+
+charCount :Int
+
+atEnd :Bool
+
+first6 :Char
+  (* *)
+{
+  sextet ::= (buf & 16515072) >> 18
+  
+  buf := (buf & 262143) << 6
+
+  "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"[sextet]
+}
+
+_init1(i :Input) :Void
+  (* *)
+{
+  super._init1(i)
+
+  charCount := 4 ; as if we had just consumed the buffer 
+  available := 0
+  buf := 0
+  atEnd := false
+}
+
+}

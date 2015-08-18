@@ -1,0 +1,161 @@
+class X_TL2Method
+super X_TL2ProgramObject
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+*)
+meta AbstractClass
+{
+selector :Symbol
+
+methodType :X_TL2MethodType
+
+documentation :String
+
+precondition :X_TL2Value
+
+postcondition :X_TL2Value
+
+isPrivate :Bool
+
+arity :Int
+  (* number of value arguments, without receiver (used by TVM) *)
+
+sorts :Int
+  (* bitmap giving argument sorts (used by TVM) *)
+
+_keywords :Array(Symbol)
+  (* the expected keywords (used by TVM) *)
+
+nativeCode :Int
+  (* not used by Tycoon *)
+
+acceptMethodVisitor(T <: Void, visitor :X_TL2MethodVisitor(T)) :T
+  (* *)
+deferred
+
+positionalDomain :List(X_TL2Ide)
+  (* *)
+{ methodType.positionalDomain }
+
+keywordDomain :List(X_TL2KeywordIde)
+  (* *)
+{ methodType.keywordDomain }
+
+keywords :Array(Symbol)
+  (* *)
+{
+  if( _keywords.isNotNil then: {
+    _keywords
+  } else: {
+    ;; fetch from methodType if machine slot is uninitialized
+    Array.fromContainerWithMap(methodType.keywordDomain, fun(kwi:X_TL2KeywordIde){ kwi.keyword })
+  })
+}
+
+range :X_TL2Type
+  (* *)
+{ methodType.range }
+
+"range:="(t :X_TL2Type) :X_TL2Type
+  (* *)
+{ methodType.range := t }
+
+prettyPrint(out:Printer) :Void
+  (* *)
+{
+;selector.printOn(out),
+;  out.write(' '),
+  out.writeAll(if( isPrivate then: {"private "} else: {"public "}))
+  methodType.prettyPrint(out)
+}
+
+scopeMethod(env :X_TL2Scoper) :Void
+  (* *)
+{
+  methodType := methodType.scope(env)
+}
+
+compileMethod(selfSig :X_TL2ValueIde, compiler :X_TL2Compiler) :Void
+  (* *)
+{
+  ;; make sure the selector is known (for perform)
+  ;; this also initializes arity and sorts
+  compiler.getSelectorId(getSelector(compiler))
+}
+
+disassemble(reader :X_BEByteCodeReader) :Void
+  (* *)
+{ disassembleOn(Printer.new(tycoon.stdout), reader) }
+
+disassembleOn(out :Printer, reader :X_BEByteCodeReader) :Void
+  (* *)
+{ ; X_TL2CompiledMethod implements this 
+}
+
+finalize :Void
+  (* *)
+{ ; X_TL2CompiledMethod implements this 
+}
+
+patchClass(compiledIn :X_TL2ClassPublic) :Void
+  (* *)
+{ ; X_TL2CompiledMethod implements this 
+}
+
+getSelector(compiler: X_TL2Compiler) :X_TL2Selector
+{
+  ;; just in case arity and sorts have not been computed yet
+  computeArityAndSorts(compiler)
+  X_TL2Selector.new1(selector, arity, sorts, _keywords)
+}
+
+private
+
+computeArityAndSorts(compiler :X_TL2Compiler) :Void
+  (* fill in the machine-relevant slots "arity", "sorts" and "_keywords". *)
+{
+  if( _keywords.isNil then: {
+    arity ::= 0
+    sorts ::= 0
+    visitIde ::=
+    fun(i :X_TL2Ide) {
+      if( i.isValueIde then: {
+	vi ::= i.asValueIde
+	if( vi.component then: {
+	  mask ::= (1 << arity)
+	  if( mask.isZero then: {
+	    compiler.errorLog.error(vi.pos, "implementation restriction: only first 32 parameters may be components")
+	  })
+	  sorts := sorts | mask
+	})
+	arity := arity + 1
+      })
+    }
+    positionalDomain.do(visitIde)
+    keywordDomain.do(fun(kwi:X_TL2KeywordIde){
+      visitIde[kwi.ide]
+    })
+    self.arity := arity
+    self.sorts := sorts
+    self._keywords := X_TL2Selector.checkKeywords(keywords, pos, compiler)
+  })
+}
+
+}

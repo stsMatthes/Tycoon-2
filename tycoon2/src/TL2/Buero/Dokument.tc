@@ -1,0 +1,6 @@
+class Dokument
+super Buero
+meta DokumentClass
+{
+text @:String
+}

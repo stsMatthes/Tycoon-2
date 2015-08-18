@@ -1,0 +1,75 @@
+<!doctype stml system>
+ 
+<stml processor=HttpdLauncherProcessor language='tycoon-1.0'>
+
+<title>Tycoon Web Server Launching Pad</title>
+
+<body bgcolor="#FFFFFF">
+
+<center><h1>Tycoon Web Server Launching Pad</h1></center>
+
+<form  action="index-action.stml">
+
+<table width="100%" border=1>
+<tbody>
+<tycoon/heading ::= false/
+<send selector=serversDo>
+<arg><fun>
+
+  <if true="!heading">
+    <tr><td colspan=8><font size="+2"><b>Installed Tycoon Web Servers:</b></font>
+    <tr><td colspan=8></td></tr>
+    <tycoon/heading := true/ 
+  </if>
+
+  <tr><td></td>
+      <td align=center>
+        <b><if true=isRunning>
+		<a href='`"http://" +
+		  if( properties.host = Httpd.anyHost then: { "localhost" } else: { properties.host })
+		  + ":" + properties.port.printString`'>
+		   <ref name=server>tyhttpd-X</ref>
+		</a>
+	    <else>
+	      <ref name=server>tyhttpd-X</ref>
+	    </if>
+       </b>
+      <td align=center><if true="!isRunning">
+          <input type=submit name='`server`' value="Start">
+	<else>
+	  <i/Start/
+	</if>
+      <td align=center><if true=isRunning>
+          <input type=submit name='`server`' value="Stop">
+	<else>
+	  <i/Stop/
+	</if>
+      <td align=center><if true=isRunning>
+          <input type=submit name='`server`' value="Restart">
+	<else>
+	  <i/Restart/
+	</if>
+      <td align=center><if true=isRunning>
+          <input type=submit name='`server`' value="Kill!">
+        <else>
+	  <i/Kill!/
+	</if>
+      <td></td>
+      <td align=center>
+        <input type=submit name='`server`' value="Reinstall">
+</send>
+
+<!--##
+<form action="create.stml" method="GET">
+<tr><td align=center colspan=7 >
+  <input type=submit name=create value="Create a new Tycoon Web Server">
+</form>
+-->
+
+</table>
+</form>
+<hr>
+  <a href="../index.html">
+    <img src="/hox-icons/back.gif" align=left alt="back" border=0>
+   Back to Control Pad
+  </a>

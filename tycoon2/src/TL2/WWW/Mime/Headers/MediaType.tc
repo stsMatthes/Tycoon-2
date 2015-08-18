@@ -1,0 +1,105 @@
+class MediaType
+super Mime
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+      Now Mime Content-Types with parameters
+      changed 22-Jul-97, Ingo Richtsmeier
+      update: GB 01-Oct-1997
+                insert missing method body implementations of
+                  hasBoundary, boundary, "boundary:=", and hasCharset
+		insert pre- and post conditions
+*)
+meta MediaTypeClass()
+
+{
+type :String
+  (* case insensitive 
+ ------------------------------------------------------------ *)
+ensure result.isNotNil
+
+
+  { _type }
+
+subtype :String
+  (* case insensitive 
+ ------------------------------------------------------------ *)
+ensure result.isNotNil
+
+
+  { _subtype }
+
+parameters :MimeHeaderDictionary(String)
+  (*  parameter names are case insensitive 
+ ------------------------------------------------------------ *)
+{ _parameters }
+
+hasBoundary :Bool
+  (* ------------------------------------------------------------ *)
+{ _parameters.includesKey(MediaType.boundaryName) }
+
+boundary :String
+  (* ------------------------------------------------------------ *)
+{ _parameters.lookup(MediaType.boundaryName,
+      fun(value :String){ value },
+      fun(){ nil })
+  }
+
+"boundary:="(b :String) :Void
+  (* ------------------------------------------------------------ *)
+require b.isNotNil &
+    b.size <= 70
+
+  { _parameters[MediaType.boundaryName] := b }
+
+hasCharset :Bool
+  (* ------------------------------------------------------------ *)
+{ _parameters.includesKey(MediaType.charsetName) }
+
+printOn(out :Output) :Void
+  (* ------------------------------------------------------------ *)
+require out.isNotNil
+
+  {
+    out <<type << "/" << subtype
+    if( _parameters.isNotNil then:
+    { _parameters.keysAndElementsDo(
+        fun(k :String, e:String) {out << "; " << k << "=" << e})
+    })
+  }
+
+private
+
+_type :String
+
+_subtype :String
+
+_parameters :MimeHeaderDictionary(String)
+
+_init2(t :String, s :String): Self
+  (* *)
+{
+  _type := t
+  _subtype := s
+  _parameters := MimeHeaderDictionary.new
+  self
+}
+
+}

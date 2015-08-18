@@ -1,0 +1,12 @@
+class X_TL2ThreadDescriptor
+super X_TL2StructDescriptor
+meta SingletonClass(X_TL2ThreadDescriptor)
+{
+
+format :String
+{ "ioiiiiiioooooooooooo" }
+
+layout :Int
+{ layoutThread }
+
+}

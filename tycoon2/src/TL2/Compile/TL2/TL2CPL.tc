@@ -1,0 +1,93 @@
+class TL2CPL
+super TL2, ListSet(TL2CPLType)
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ A ListSet with CPLTypes as elements.
+   Element equality is determined on equality of the classes
+   just like in the CPL itself
+*)
+meta TL2CPLClass()
+
+{
+private
+
+_init1(clazz :TL2ClassPublic) :Void
+  (* *)
+{
+    super._init
+    
+    clazz.supers.reverseDo(fun(t :TL2CPLType) {
+      subst ::= t.oper.apply(t.args, TL2EmptySubst.instance, TL2EmptySubst.instance, true, fun(:TL2Type, s :TL2Subst) { s })
+      oper  ::= clazz.classManager.get(t.className).typeIde.type ; ## this could be done better 
+
+      cpl ::= oper.visitor(:List(TL2CPLType)).
+        ifClassInstanceType(fun(oper :TL2ClassInstanceType) {
+	  List.fromReader(oper.cpl.reader)
+	}).
+	ifOperType(fun(oper :TL2OperType) {
+	  List.fromReader(_typeCast(oper.range, :TL2ClassInstanceType).cpl.map(fun(t :TL2CPLType) {
+	    TL2CPLType.new(t.ide, List.fromReader(t.args.map(fun(arg :TL2Type) { substituteType(arg, subst) })))
+	  }))
+	}).
+	visitType(oper)
+      
+      addAll(cpl.reverseReader)
+    })
+    
+    addNew(
+      TL2CPLType.new(
+        clazz.typeIde,
+	List.fromReader(clazz.domain.map(fun(t :TL2TypeIde) { TL2IdeType.new(t) }))
+      )
+    )
+  }
+
+substituteType(t :TL2Type, s :TL2Subst) :TL2Type
+  (* chance again to drop some ide''s --- use TL2Type::reduce *)
+{
+    t.reduce(s, fun(t :TL2Type, s :TL2Subst) {
+      if( s == TL2EmptySubst.instance then: {
+        t
+      } else: {
+        TL2SubstType.new(t, s)
+      })
+    })
+  }
+
+_elementEqual(c1 :TL2CPLType, c2 :Object) :Bool
+  (*
+    It is prohibited to use the same class parameterized with different types
+    in the transitive closure of superclasses.
+    ## 'Different types' is interpreted by name not by structure
+    ##
+    ## class X super Y(Z);
+    ##
+    ## class A super T(X), T(Y(Z)); is therefore also forbidden.
+    ##
+  *)
+{
+    c2."class" == TL2CPLType && (
+      c2 ::= _typeCast(c2, :TL2CPLType)
+      ; ## not implemented yet 
+      c1.ide == c2.ide
+    )
+  }
+
+}

@@ -1,0 +1,14 @@
+class HttpdAdminSessionClass
+super ConcreteClass(HttpdAdminSession)
+meta MetaClass
+{
+
+new(name :String) :HttpdAdminSession
+{
+  instance ::= _new
+  instance.name := name
+  instance._init
+  instance
+}
+
+}

@@ -1,0 +1,99 @@
+class Ordered(F <:Ordered(F))
+super Object
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+File:    Ordered.tc
+System:  TooL: Base-Library
+Author:  Andreas Gawecki
+Date:    01-Mar-1995
+Version: 1.0
+Purpose: A linear order "<=" over a domain is captured
+	 by a method order for which the following
+	 properties hold.
+
+                        | <0   if self "<=" x and not x "<=" self
+	 self.order(x)  | =0   if self "<=" x and x "<=" self
+		        | >0   if x "<=" self and not self "<=" x
+Updates: (Date)	  (Name)	(Description)
+
+*)
+Self <: F
+meta AbstractClass
+{
+order(x :F) :Int
+  (* *)
+deferred
+
+"="(x :Object) :Bool
+  (* this code works only for instances of subclasses
+     which can compare only instances of the same subclass.
+     This is true for the standard classes Int, Char, Real etc.
+     Other subclasses should override this method accordingly.
+   *)
+{
+  self."class"() == x."class"() && 
+    order(_typeCast(x)) == 0
+        
+  }
+
+"<"(x :F) :Bool
+  (* *)
+{
+  order(x) < 0
+  }
+
+">"(x :F) :Bool
+  (* *)
+{
+  order(x) > 0
+  }
+
+"<="(x :F) :Bool
+  (* *)
+{
+  order(x) <= 0
+  }
+
+">="(x :F) :Bool
+  (* *)
+{
+  order(x) >= 0
+  }
+
+min(x :F) :F
+  (* *)
+{
+  if( self > x then: {x} else: {self}) 
+  }
+
+max(x :F) :F
+  (* *)
+{
+  if( self < x then: {x} else: {self}) 
+  }
+
+between(x :F, y :F) :Bool
+  (* *)
+{
+  self >= x && self <= y
+  }
+
+}

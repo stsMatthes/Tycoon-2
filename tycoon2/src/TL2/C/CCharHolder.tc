@@ -1,0 +1,40 @@
+class CCharHolder
+super CValueHolder(Char)
+(**)
+meta SimpleConcreteClass(CCharHolder)
+{
+valueClass():Class
+  (* *)
+{ Char }
+
+value():Char
+  (* *)
+{ if( handle.isNotNil then: {tycoon.tycoonOS.memory_peekChar(handle,0)}
+                  else: {i:Char := nil}) }
+
+charValue():Char
+  (* *)
+{ value() }
+
+"value:="(v:Char):Char
+  (* *)
+{ if( handle.isNotNil then: {tycoon.tycoonOS.memory_pokeChar(handle,0,v)
+                     tycoon.tycoonOS.memory_peekChar(handle,0)}
+		  else: {nil}) }
+
+setCharValue(v:Char):Char
+  (* *)
+{ value:=v }
+
+private
+
+_init:Self
+  (* *)
+{
+  super._init
+  super._allocate(1)
+  tycoon.tycoonOS.memory_pokeChar(handle,0,' ')
+  self
+}
+
+}

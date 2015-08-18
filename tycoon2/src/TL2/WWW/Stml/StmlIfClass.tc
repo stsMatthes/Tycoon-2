@@ -1,0 +1,90 @@
+class StmlIfClass
+super ConcreteClass(StmlIf)
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+*)
+meta MetaClass
+{
+new(position :SgmlPos, condition :StmlTycoonSource, then :StmlSequence, else :StmlSequence) :StmlIf
+  (* *)
+{
+  instance ::= _new
+  instance.position := position
+  instance.condition := condition
+  instance.then := then
+  instance.else := else
+  instance._init
+  instance
+}
+
+elementName :String
+  (* *)
+{ "IF" }
+
+elementContentType :SgmlContentType
+  (* *)
+{ SgmlContentType.mixed }
+
+elementBuild(
+       orgElement	:StmlElement,
+       start		:SgmlPos,
+       end		:SgmlPos,
+       attributes	:Dictionary(String, String),
+       contents		:GapArray(StmlComponent)) :StmlComponent
+  (* *)
+{
+  assert({ attributes.keys.readerEqual(Reader.with1("TRUE")) })
+  r ::= contents.reader
+  thenSequence ::= GapArray.new(contents.size)
+  current ::= r.read
+  while({current.isNotNil
+	 &&  !current.isElseIf 
+	 &&  !current.isElse } do: {
+    thenSequence.addLast(current)
+    current := r.read
+  })
+  new(start,
+      StmlTycoonSource.new(start, attributes["TRUE"]),
+      StmlSequence.new(start, thenSequence.asArray),
+      parseElse(current, r))
+}
+
+private
+
+parseElse(e :StmlComponent, r :Reader(StmlComponent)) :StmlSequence
+  (* *)
+{
+  if( e.isNotNil
+  then: { if( e.isElseIf
+      then: { e ::= e.asElseIf
+	  ifExpr ::=
+	    new(e.position,
+		e.condition,
+		e.then,
+		parseElse(r.read, r))
+	  StmlSequence.new(e.position, Array.with1(ifExpr)) }
+       else: { ; else 
+	  assert({ e.isElse })
+	  assert({ r.read.isNil })
+	  e.asElse.value })}
+   else: { nil })
+}
+
+}

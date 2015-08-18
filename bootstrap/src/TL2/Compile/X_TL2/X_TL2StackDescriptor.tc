@@ -1,0 +1,9 @@
+class X_TL2StackDescriptor
+super X_TL2ArrayDescriptor
+meta SingletonClass(X_TL2StackDescriptor)
+{
+
+layout :Int
+{ layoutStack }
+
+}

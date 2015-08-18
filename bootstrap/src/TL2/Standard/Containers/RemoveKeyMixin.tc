@@ -1,0 +1,83 @@
+class RemoveKeyMixin(K <: Object, E <: Object)
+super KeyedContainer(K, E), RemoveMixin(E)
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+  removing keys in keyed containers
+  RemoveMixin implemented in terms of removeKey
+
+Author:  Axel Wienberg
+Date:    02-Oct-1998
+*)
+meta AbstractClass
+{
+
+removeKey(k :K) :E
+  (* remove the element with key 'k' *)
+  require validKey(k)
+  ensure !old includesKey(k)
+	 || (size = old size - 1
+             && occurrencesOf(old self[k]) = old occurrencesOf(self[k]) - 1)
+  deferred
+
+clear :Void
+  (* *)
+  ensure isEmpty
+{
+  while({ !isEmpty } do: {
+    removeAny
+  })
+}
+
+removeAny :E
+  (* remove and return an arbitrary element *)
+  require !isEmpty
+  ensure size = old size - 1
+      && occurrencesOf(result) = old occurrencesOf(result)-1
+{ removeKey(removePosition) }
+
+remove(e:Object) :E
+  (* *)
+  ensure !old includes(e)
+	 || (size = old size - 1
+             && occurrencesOf(e) = old occurrencesOf(e) - 1)
+{
+  k ::= locate(e)
+  if( k.isNotNil then: {
+    removeKey(k)
+  } else: {
+    nil
+  })
+}
+
+private
+
+removePosition :K
+  (* where to remove elements with unspecified position *)
+  require !isEmpty
+  ensure validKey(k)
+{
+  kr ::= keys
+  k ::= kr.read
+  kr.close
+  k
+}
+
+}

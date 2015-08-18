@@ -1,0 +1,28 @@
+tycoon.tl.loader.registerDirectory("Koltar") ?
+tycoon.tl.loader.update ?
+tycoon.tl.typeChecker.check ?
+tycoon.tl.typeChecker.finalize ?
+
+define tyhttpd :Httpd ?
+tyhttpd := Httpd.new ?
+tyhttpd.home := tycoon.hoxHome + "/tyhttpd/tyhttpd-koltar" ?
+tyhttpd.configure ?
+
+define koltarApplication :KoltarApplication ?
+koltarApplication := KoltarApplication.new ?
+resourceFactory ::= HttpFunResourceFactory.new
+resourceFactory.generators["jump"] :=
+  fun(file:File){
+    JumpResource.new(file)
+  }
+resourceFactory.generators["stml"] :=
+  fun(file:File){
+    StmlResource.new(koltarApplication, file)
+  }
+dir ::= tyhttpd.root.lookupDirectory(EmptyList.new)
+dir.resourceFactory := resourceFactory
+dir["stop"] := HttpShutdownResource.new(tyhttpd) ?
+
+;; tyhttpd.root.reindex ?
+;; tyhttpd.serve ?
+

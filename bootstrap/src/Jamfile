@@ -1,0 +1,11 @@
+#
+# Jamfile 1.0  98/05/03  Andre Willomat
+#
+
+#
+# Make all Subdirs
+#
+
+SubInclude HOX_HOME src tycoonOS ;
+SubInclude HOX_HOME src tm ;
+

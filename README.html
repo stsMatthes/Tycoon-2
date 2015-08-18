@@ -1,0 +1,989 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<html>
+
+  <head>
+	<title>Tycoon-2 Distribution</title>
+	<meta name="keywords" content="Tycoon-2, Tycoon, Tycoon 2, Tycoon2, Distribution">
+	<meta name="description" content="Guide for the STS Tycoon-2 system distribution">
+	<meta name="author" content="Holm Wegner">
+  </head>
+  
+  <body bgcolor="#FFFFFF" text="#000000" link="#333399" vlink="#771177" alink="#775599">
+
+ 	<div align="center">
+	  <h1><font color="#331199">STS Tycoon-2 Distribution Guide</font></h1>
+	</div>
+
+	<h2><font color="#331199">Contents:</font></h2>
+
+	<ul>
+	  <li><a href="#ver">Version</a></li>
+	  <li><a href="#lic">Licence</a></li>
+	  <li><a href="#req">Hard- and software requirements for Tycoon-2</a></li>
+	  <li><a href="#ins">Installing Tycoon-2</a>
+		<ul>
+		  <li><a href="#sol">Installation for Unix</a></li>
+		  <li><a href="#win">Installation for Windows</a></li>
+		  <li><a href="#jam">Installing JAM/MR</a></li>
+		</ul>
+	  </li>
+	  <li><a href="#org">Organisation of the Tycoon-2 System</a></li>
+	  <li><a href="#syn"><b>WARNING:</b> Syntax-changes</a></li>
+	  <li><a href="#run">Running Tycoon-2</a></li>
+	  <li><a href="#compile">Configuring and Compiling the Tycoon-2 virtual machine</a></li>
+	  <li><a href="#exp">Simple Toplevel Examples</a></li>
+	  <li><a href="#use">Using Tycoon-2 and its Tools</a>
+		<ul>
+		  <li><a href="#classloader">The Class-Loader</a></li>
+		  <li><a href="#typechecker">The Type-Checker</a></li>
+		  <li><a href="#classbrowser">The Class-Browser</a></li>
+		  <li><a href="#debugger">The Debugger</a></li>
+		  <li><a href="#tvmopt">Tycoon-2 Virtual Machine (TVM) Options</a></li>
+		</ul>
+	  </li>
+	  <li><a href="#cls">Simple Class Examples (Piggybank)</a></li>
+	  <li><a href="#app">Static Class Library Overview</a></li>
+	  <li><a href="#prg">Sample Programs</a></li>
+	  <li><a href="#faq">FAQ</a></li>
+	  <li><a href="#adv">Advanced Topics</a>
+		<ul>
+		  <li><a href="#port">Porting Tycoon-2 to a new Platform</a></li>
+		  <li><a href="#boot">Bootstrapping a Tycoon-2 System</a></li>
+		</ul>
+	  </li>
+<!--
+	  <li><a href="#sys">Tycoon-2 Applications and Systems</a>
+		<ul>
+		  <li><a href="#http">The Tycoon-2 Web Server</a></li>
+		  <li><a href="#stml">The Structured Tycoon Markup Language</a></li>
+		  <li><a href="#tbc2">The Tycoon-2 Business Conversations</a></li>
+		</ul>
+	  </li>
+	  <li><a href="#comp">Components in Tycoon-2</a></li>
+-->
+	</ul>
+
+	<hr>
+
+	<a name="ver"></a><h2><font color="#331199">Version</font></h2></a>
+
+	<p>
+	  The current Version of Tycoon-2,
+	  which is described in this documentation, is <b>Version 1.0.3</b>.
+	</p>
+
+	<hr>
+
+	<a name="lic"></a><h2><font color="#331199">License</font></h2></a>
+
+	<p>
+	  Tycoon-2 is published under the <b>GNU GENERAL PUBLIC LICENSE (GPL)</b>.
+	  See <a href="LICENSE.txt">here</a> (local version) or at
+	  <a href="http://www.opensource.org/gpl-license.html">http://www.opensource.org/gpl-license.html</a>
+	  for the agreement.
+	</p>
+
+	<hr>
+
+	<a name="req"></a><h2><font color="#331199">Hard- and software requirements for Tycoon-2</font></h2></a>
+
+	<p>
+	  Tycoon-2 was tested on Unix platforms (Solaris 5.x,
+	  HP-UX 10.x and Linux) and Windows (NT 4.0, 2000, XP).  A minimum of 64 MB
+	  RAM is recommended for all platforms.  The distribution will use
+	  about 100 MB of diskspace on
+	  installation and tends to grow while using,
+	  depending on the size of the persistent stores.
+	</p>
+
+	<p>
+	   To use the Tycoon-2 STML web pages (<a
+	   href="http://www.sts.tu-harburg.de/papers/STS-Rep-1997.html#GaWi97">[GaWi97]</a>,
+	   <a
+	   href="http://www.sts.tu-harburg.de/papers/STS-Rep-1997.html#MaWi97">[MaWi97]</a>),
+	   you need to have a current version of James
+	   Clark's SGML parser <b>nsgmls</b> installed.  Nsgmls can be
+	   downloaded from <a
+	   href="http://www.jclark.com/sp/">http://www.jclark.com/sp/</a>. The
+	   distribution was tested with nsgmls version 1.3.4.
+	</p>
+
+	<p>
+	  For compiling the Tycoon-2 virtual machine, a platform-independent
+	  make-tool, called <b>JAM</b>, is used.
+	  A slightly customized version of JAM version 2.2 is included in this Tycoon-2 distribution
+	  (in the directory <tt>contrib/Jam-2.2</tt>).
+	  JAM comes from 
+	  <a href="http://www.perforce.com/jam/jam.html">Perforce Software</a>.
+	  For Windows JAM needs the additional tools <tt>rm.exe</tt>,
+	  <tt>touch.exe</tt> and <tt>echo.exe</tt> from the <a href="http://www.cygnus.com/misc/gnu-win32/">Cygnus</a>
+	  GNU Tools for Win32. These tools are also bundled with the Tycoon-2 distribution
+	  and can be found in the directory <tt>contrib/win32</tt>.
+	</p>
+	
+	<p>
+	  For building the Tycoon-2 virtual machine on Windows, either the free Borland C++
+	  compiler or the Microsoft Visual C++ Compiler v 5.0 or higher is needed.
+	  For Unix systems, <b>cc</b> or <b>gcc</b> can be used. The binaries
+	  for Linux are compiled for the glibc2. If you still have got a libc5 system,
+	  you have to recompile the TVM (see <a href="#compile">below</a>).
+	</p>
+	
+	<p>
+	  <b>Windows 95/98</b>: Windows platforms earlier than Windows <b>NT</b> 4.0 are not
+	  supported any longer for Tycoon-2. You can use Tycoon-2 with Windows 95/98, but because
+	  of thread-synchronisation problems on that platform, you will have
+	  following severe limitations:
+	</p>
+	<ol>
+	  <li> No garbage collection is available </li>
+	  <li> No multithreaded applications </li>
+	</ol>
+	<p>
+	  On Windows 95 you need the WinSockets 2.0 update from Microsoft. All security
+	  functions from tosSecurity (e.g. getuid, getgid, ...) are only available under
+	  Windows NT and later.
+	</p> 
+	
+	<hr>
+	
+	<a name="win"></a><h3><font color="#331199">Installation for Windows</font></h3></a>
+
+	<b>Steps:</b>
+
+	<ol>
+	  <li>
+		Add the directory <tt>contrib\win32</tt> to your path, or copy all files from
+		<tt>contrib\win32</tt>
+		into a directory in your PATH. This directory contains some tools needed
+		by jam (rm, touch, cygecho) and the cygwin dlls they require, and some dll's needed by the Tycoon-2 runtime.
+	  </li>
+	</ol>
+
+	<a name="jam"></a><h3><font color="#331199">Installing JAM/MR</font></h3></a>
+
+	<p>
+	  If you need (or want) to compile the Tycoon-2 virtual machine, you
+	  need to install a version of Jam (version &gt;= 2.2).
+	  You can find an full Jam distribution on the directory
+	  <tt>contrib/Jam-2.2</tt>. Simple copy the Jam executable from the
+	  <tt>contrib/Jam-2.2/bin.xxxx</tt> subdirectory (xxxx = your platform)
+	  into a directory in your path.
+	</p>
+	
+	<p>
+	  Further notes for recompiling a new Jam-Version can be found in 
+	  <a href="jam/README.JAM.html">README.JAM</a>.
+	  Information for writing Jamfiles can be found in the
+	  <a href="jam/Jam.html">JAM Documentation</a> provided by
+	  Perforce Software, Inc.
+	</p>
+	
+	<hr>
+	
+	<a name="org"></a><h2><font color="#331199">Organisation of the Tycoon-2 System</font></h2></a>
+
+	<p>
+	  NOTE: Alle pathnames in this documentation are Unix-pathnames,
+	  i.e. the separator is "/". For Windows, the backslash "\" is used.
+	  In most cases, Tycoon-2 (and even Jam) convert them transparently.
+	</p>
+	<p>
+	  All files and (sub-)directories are contained in one directory called <b>tycoon-2</b>
+	  which is installed from the archieve <b>tycoon2-102.tgz</b>.
+	  This directory contains all further directories and files, and is organized as follows:
+	</p>
+
+	<dl>
+	<dl>
+	  <dt><b>tycoon2/</b></dt>
+	  <dd>This is the directory for the <i>normal usage</i>. It contains:</dd>
+	<dl>
+	  <dt><b>Clean.ts</b></dt>
+	  <dd>
+		This is the initial persistent store.
+		Hint: Use only a backup copy of the initial store, e.g. <b>TL2.ts</b>; if you damage
+		your working-store or want to start over from scratch, you can easily restore
+		from the initial status.
+	  </dd>
+	  <dt><b>TL2.ts</b></dt>
+	  <dd>
+		This is your working persistent store, a copy of the initial store <b>Clean.ts</b>.
+	  </dd>
+	  <dt><b>Jamrules / Jamfile</b></dt>
+	  <dd>
+		The Jam files for compiling the Tycoon-2 virtual machine. The Jamrules
+		contains all the compiler flags, e.g for debugging or tracing the TVM.
+	  </dd>
+	  <dt><b>lib/</b></dt>
+	  <dd>
+		This directory contains dynamic loadable libraries both for Unix and for Windows,
+		separated in subdirectories named <b>Linux_i386</b> and <b>Solaris2_SPARC</b> etc.
+		They are used by the TVM only.
+	  </dd>
+	  <dt><b>lib/sgml/</b></dt>
+	  <dd>
+	        Contains files needed to parse SGML (CATALOG and document type definitions).
+	  </dd>
+
+	  <dt><b>tools/</b></dt>
+	  <dd>
+		This directory contains some additional tools for setting up the environment
+		variables. These shell-scripts in the <b>Win32</b>
+		and <b>Unix</b> subdirectories are explained in section
+		<a href="#run">Running Tycoon-2</a>.
+	  </dd>
+
+	  <dt><b>src/</b></dt>
+	  <dd>
+		Contains all sources: Sources of the Tycoon-2 virtual machine in <b>tm/</b> and <b>tycoonOS/</b>,
+		and all Tycoon-2 sources (standard library, compiler, etc.) in <b>TL2/</b>.
+	  </dd>
+
+	  <dt><b>bin/</b></dt>
+	  <dd>Contains executable files in platform-specific subdirectories.</dd>
+
+	</dl>
+
+	<dt><b>bootstrap/</b></dt>
+	<dd>
+	  This is the directory for the <i>bootstrapping</i> the system.
+	  All files and directories following the organisation of the <tt>tycoon2</tt>
+	  directory, limited to all that, what is really needed by a bootstrap.
+	  You will not need it unless you want to change the virtual machine or the compiler.
+	  For informations on bootstrapping see <a href="#boot">below</a>.
+	</dd>
+
+	<dt><b>contrib/</b></dt>
+	<dd>
+	  Contains some additional tools like Jam, the MS Windows C-runtime DLL's, and a Tycoon-2 mode for <b>XEmacs</b>.
+	</dd>
+	
+	<dt><b>doc/</b></dt>
+	<dd>
+	  Documentation for the Tycoon-2 system (under
+	  construction). Also contains some code examples.  Currently,
+	  the best documentation are the published <a href="entry.html#pub">papers and theses</a>.
+	</dd>
+  </dl>
+  </dl>
+
+	<hr>
+
+	<a name="syn"><h2><font color="#331199">WARNING: Syntax changes</font></h2></a>
+
+	<p>
+	  Since Tycoon-2 version 1.0.2, we have completed the transition to the
+	  Tycoon-2 syntax version 1.0 as described in <a href="http://www.sts.tu-harburg.de/papers/STS-Rep-1998.html#GaWi98">[GaWi98]</a>.  Some papers and documentation may still
+	  use an older version of the surface syntax.  The old syntax is no longer understood by the system,
+	  but a conversion tool is included (see "tycoon2/src/TL2/Compile/Sugar/Sugar2.tyc").
+	</p>
+
+	<hr>
+
+	<a name="run"><h2><font color="#331199">Running Tycoon-2</font></h2></a>
+
+	<p>
+	  This section describes how to start the Tycoon-2 system.
+	  Once installed as described above (section <a href="#ins">Installing Tycoon-2</a>),
+	  at the beginning each session the environment (variables, path etc.) has to be set up.
+	  This is accomplished by the shell-script <b>tools/Unix/def_tl2_sh</b> on Unix systems
+	  and by <b>tools/Win32/def_tl2.bat</b> on Windows
+	  (If you want to compile the tycoon runtime or virtual machine, ensure that you have set the MS Visual Studio environment variables or BCCROOT set before invoking def_tl2.bat).
+	  The scripts are setting up shell variables which are used by Tycoon-2, like $PATH,
+	  $HOX_HOME (which is the mentioned root directory), or $HOX_HOST (which contains
+	  the current platform).
+	</p>
+	
+	<p>
+	  First change the current directory to your Tycoon-2 working directory
+	  (<tt>tycoon-2/tycoon2</tt> for normal development, <tt>tycoon-2/bootstrap</tt>
+	  for using the bootstrap system), then execute the script in this place
+	  ($HOX_HOME will be set to the current working directory).
+	</p>
+	<pre>
+  Unix:                                  Windows:
+  cd xxx/tycoon-2/tycoon2                cd xxx\tycoon-2\tycoon2
+  source tools/Unix/def_tl2_sh           tools\win32\def_tl2
+	</pre>
+	<p>
+	  If you use a C shell under UNIX, you should use the <tt>tools/Unix/def_tl2_csh</tt>
+	  script.
+	  If you have problems under Windows with the MSVCNT environment variable
+	  (set by <tt>tools/Win32/def_tl2.bat</tt>) see further hints on 
+	  <a href="jam/README.JAM.html">README.JAM</a>
+	</p>
+	
+	<p>
+	  The next step is to invoke Tycoon-2 with a persistent store.
+	  On all platforms, the call is:
+	</p>
+	<pre>
+tycoon2 TL2.ts
+	</pre>
+	<p>
+	  After a short loading time, the Tycoon-2 Toplevel prompt will appear.
+	  The next steps are described in section <a href="#exp">Simple Toplevel Examples</a>.
+	</p>
+	
+	<hr>
+	
+	<a name="compile"><h2><font color="#331199">Configuring and Compiling the Tycoon-2 virtual machine</font></h2></a>
+	
+	<p>
+	  If you do not have binary files for your desired platform, or if you modify
+	  the Tycoon-2 virtual machine (e.g. the C sources under
+	  <tt>tycoon-2/tycoon2/src/tm</tt>) you have to compile new Tycoon-2 binaries
+	  with Jam.
+	  First of all, you have to set the environment variables for the machine variant
+	  you want to recompile (bootstrap or development machine) as described
+	  in <a href="#run">Running Tycoon-2</a>. On Windows platforms ensure that you
+	  the MS Visual Studio environment variables are set.
+	</p>
+	
+	<p>
+	  Then set up your configuration. This is done by editing the
+	  compiler options in the Jamrules file (e.g. turn on TVM tracing flags).
+	  <!-- In the future we will have a comfortable Java configuration dialog on
+	  <tt>tycoon-2/tycoon2/config</tt>. --> Available options are:
+	  <dl>	  
+	    <dt>BUILDMODE</dt>
+	    <dd>controls C compiler optimization level and debug information. "rt" for optimized runtime version, "debug" for debuggable version.</dd>
+	    <dt>BOOTSTRAP</dt>
+	    <dd>Include code to transform a dump file into an executable store.  Needed for bootstrap.  No performance impact.</dd>
+	    <dt>ASSERTIONS</dt>
+	    <dd>Enable assertions in the Tycoon Virtual Machine.  May avoid store corruption, and may produce better diagnostics than a SEGFAULT. Slight performance impact.</dd>
+	    <dt>TVM_TRACE<dt>
+	    <dd>Include code to enable tracing of calls between components, as described in <a href="http://www.sts.tu-harburg.de/papers/STS-Pub-1999.html#WMB99">[WMB99]</a>. Serious performance impact for traced code, minimal impact for other threads.</dd>
+	    <dt>TSP_SUPERCOMPONENTS</dt>
+	    <dd>Store the supercomponent of each object in the object header.  Required for the UML99 demo.  Increases the store size by 15%.  A store produced by a machine with TSP_SUPERCOMPONENTS enabled cannot be read by a machine without TSP_SUPERCOMPONENTS and vice versa.  When you change this option, you need to create a new store from a bootstrap dump file.</dd>
+	    <dt>TSP_DEBUG</dt>
+	    <dd>Debugging for the Tycoon Store. ###</dd>
+	    <dt>TVM_DEBUG</dt>
+	    <dd>Debugging for the Tycoon Virtual Machine. ###</dd>
+	    <dt>TMDEBUG_TEST</dt>
+	    <dd>###</dd>
+	  </dl>  
+	</p>
+	<p>
+	  Finally, you change to the directory containing the Jamrules file
+	  (<tt>tycoon-2/tycoon2</tt>, or <tt>tycoon-2/bootstrap</tt>) and invoke jam there:
+	</p>
+	<pre>
+cd xxx/tycoon-2/tycoon2
+jam
+	</pre>
+	<p>
+	  You can also clean up all currently generated binary files:
+	</p>
+	<pre>
+cd xxx/tycoon-2/tycoon2
+jam clean
+	</pre>
+	
+	<hr>
+	
+	<a name="exp"><h2><font color="#331199">Simple Toplevel Examples</font></h2></a>
+	
+	<p>
+	  After starting Tycoon-2, the Toplevel prompt  (<b>|&gt;</b>) will appear.
+	</p>
+	
+	<pre>
+sun02\&gt; tycoon2 TL2.ts
+System re-started.
+1
+|&gt;
+	</pre>
+
+	<p>
+	  <b>HINT:</b> All commands and statements in the toplevel must end with a question mark (<b>?</b>).
+	  The toplevel won't react and start execution of the typed text
+	  until it sees the question mark.  So if the system seems to be "hanging", try typing another question mark.
+	</p>
+	<p>
+	  The most comfortable way to use the toplevel is using the supplied tl2-mode for Emacs (see contrib/xemacs/).
+	  Second to that, you can copy and paste code lines from a text-editor into a shell window.
+	</p>
+	<p>
+	  A number of simple, ready-to-type-in code examples are provided
+	  <a href="simple-toplevel-examples.html">here</a>.
+	  They cover literals, operators, function objects, blocks, scope,
+	  visibility and control structures.
+	  They are intended to get familiar with the syntax and the usage of the toplevel of Tycoon-2.
+	  There is also a <a href="simple-toplevel-examples.tyc">text-only-version</a> of these examples.
+	  The latter file can be found in the distribution at <b>doc/codeExamples/demo.tyc</b>
+	</p>
+	<p>
+	  Tycoon-2 can always be aborted simply by pressing <b>ctrl-c</b>.
+	  In this case, the persistent store will not be saved and and all changes since the last
+	  commit will be lost.
+	</p>
+	<p>
+	  To save the Tycoon-2 persistent store, at the toplevel type
+	</p>
+	<pre>
+|&gt; tycoon.saveSystem ?
+        </pre>
+	<p>
+	  Instead of typing long sequences of often used command in the toplevel again and again,
+	  the toplevel can read its command from a file. To execute a file containing Tycoon-2
+	  statements (e.g. the mentioned <b>test.tyc</b>), type
+	</p>
+	<pre>
+|&gt; DO load "Test/test.tyc"?
+	</pre>
+	<p>
+	  The default current directory for <b>DO load</b> commands is the <b>src/TL2/</b> directory and is defined
+	  by the shell environment variable <b>TL2_PATH</b>.  If you want to load the code examples, add the code Examples directory to the TL2_PATH:
+	</p>
+	<pre>
+sh:  TL2_PATH=../doc/codeExamples:$TL2_PATH
+csh: setenv TL2_PATH ../doc/codeExamples:$TL2_PATH
+cmd: set TL2_PATH=..\doc\codeExamples;%TL2_PATH%
+        </pre>
+	<p>
+	  Note: There is a convention to name files containing scripts with the extension <b>.tyc</b>.
+	  In contrast, files containing class-definitions have the same name as the class definition they contain, with the extension <b>.tc</b> (see below).
+	</p>
+
+	<hr>
+
+	<a name="use"><h2><font color="#331199">Using Tycoon-2 and its Tools</font></h2></a>
+
+	<p>
+	  Software develoment in Tycoon-2 is not normally done by typing
+	  entire classes into the toplevel prompt, although this would be possible.
+	  Normally, in object-oriented development in Tycoon-2, classes are written
+	  in files (having extension .tc) and are stored somewhere in <b>src/TL2/</b>.
+	  Similar to other programming languages and systems, the classloader (compiler)
+	  and typechecker is invoked by a call on the toplevel of Tycoon-2.
+	  Compiled classes are stored in Tycoon-2's <i>persistent object store</i>, which is saved in <b>TL2.ts</b>.
+	  The usage of the tools for developing software is discussed in the following subsections.
+	</p>
+
+	<hr>
+
+	<a name="classloader"><h3><font color="#331199">The Class Loader</font></h3></a>
+
+	<h4><font color="#331199">What is the task of the Class Loader?</font></h4>
+
+	<p>
+	  The classloader is a tool to check which classes-files in the <b>src/TL2/</b> directory
+	  have been changed since last loading and compilation and to load and compile them.
+	  <br>
+	  The classloader is accessible as an object named <tt>tycoon.tl.loader</tt>.
+	</p>
+
+	<h4><font color="#331199">How to use the Class Loader</font></h4>
+
+	<ol>
+	  <li>
+		To be able to use the classloader, each class definition has to be
+		in its own class-file with extension <b>.tc</b>.
+		In Tycoon-2, class names by convention start with an uppercase letter, and continue
+		with lower- and uppercase letters mixed, e.g. <b>FooBar</b>.
+		It is <strong>strongly</strong> recommended that class name and
+		class file name are identical, e.g. the class <b>Humble</b> has to be
+		written in a class file named <b>Humble.tc</b>.
+		Since both Window NT and all Unix OS support long filenames,
+		we encourage to give meaningful names to classes.
+		Additionally, there is a naming convention for metaclasses;
+		their name is usually postfixed with <b>Class</b>, e.g. the metaclass
+		(if one is defned) of the class <b>Humble</b> is named <b>HumbleClass</b>
+		and therefore stored in the file <b>HumbleClass.tc</b> in the same directory as Humble.tc.
+		It is advisable to create a new subdirectory in the <b>src/TL2/</b> directory for
+		own new projects, e.g. <b>/src/TL2/MyProject</b>. By convention directory-names
+		start with upper case letters.
+	  </li>
+
+	  <li>
+		For file- and pathnnames, the classloader assumes <b>src/TL2/</b> as implicit current directory,
+		so all file- and pathnames should be expressed relative to this default.
+		This directory is defined in the shell environment variable <b>TL2_PATH</b> and is
+		set up by the <b>def_tl2</b> starting script described above.
+		The following examples will make this obvious.
+	  </li>
+
+	  <li>
+		The next step is to tell the classloader, where are your class files located.
+		This is done by either directly by
+		<pre>
+tycoon.tl.loader.registerClassFile("Humble", "MyProject/Humble.tc") ?
+		</pre>
+		or a little bit more comfortably by
+		<pre>
+tycoon.tl.loader.registerFile("MyProject/Humble.tc") ?
+		</pre>
+		which assumes <b>Humble</b> as classname.
+		It is possible to process all class files in a directory (all files ending with .tc)
+		at once by the command
+		<pre>
+tycoon.tl.loader.registerDirectory("MyProject") ?
+		</pre>
+		The classloader prints a message "Building Foo" for each unknown class.
+		If the filename of an already registered class has changed,
+		a warning containing the old and new filename is printed.
+	  </li>
+
+	  <li>
+		The last step did only register the classes.
+		The next step is to start the loader, which actually parses
+		and compiles the classes.
+		This is done by
+		<pre>
+tycoon.tl.loader.update ?
+		</pre>
+		Now the loader will read and parse all classes changed since last compilation (a)
+		(even these, which were registered a long time ago)
+		and it is checked, if all needed classes (superclasses, metaclasses etc.)
+		are known (registered) (b).
+		After this, all necessary classes are compiled in a special dependency order (c).
+		If an error occurs, copiling is aborted, but already compiled classes won't be lost.
+		After (hopefully) fixing the bug, the nect update can be started and
+		compilation starts where at the point where the error occured.
+		<br>
+		The output while doing so looks as follows:
+		<ol type=a>
+		  <li> For each read source class file the path is printed out:
+			<pre>
+[./MyProject/Foo.tc...
+]
+[./MyProject/Humble.tc...
+]
+			</pre>
+		  </li>
+		  <li> The loader checks for neede classes:
+			<pre>
+[Checking for unknown class names...]
+			</pre>
+			Here error messages may be printed out.
+		  </li>
+		  <li>
+			The loader compiles all parsed classes in a dependency order, i.e.
+			it tries to compile subclasses and metaclasses before the class itself.
+			The loader also complains about circular relationships.
+			While compiling, following messages are printed:
+			<pre>
+[Building Foo
+ recomputing cpl in class Bar
+ ...
+]
+			</pre>
+			plus potential error messages.
+		  </li>
+		</ol>
+	  </li>
+
+	  <li>
+		If class files are deleted, the loader complains about missing files.
+		To switch off checking a class, type:
+		<pre>
+tycoon.tl.loader.unregisterClass("Foo") ?
+		</pre>
+		This turns off checking the class <b>Foo</b> whereever the class file was located before.
+		Since once compiled classes reside in the persistent store, they cannot be deleted permanently.
+		A workaround to get almost rid of a useless class is to overwrite it by an empty definition.
+		This is done most easily directly on the toplevel by a statement of the following form:
+		<pre>
+class Foo metaclass AbstractClass ?
+		</pre>
+		This is important for typechecking and helps to find classes which still make use of Foo, since
+		normally such an declaration will lead to typechecking errors in the dependent classes.
+	  </li>
+
+	</ol>
+
+	<h4><font color="#331199">Use of scripts</font></h4>
+
+	<p>
+	  If there are many files and directories to be registered,
+	  for example for a big package or project with many subdirectories,
+	  it is recommended to place all "registerDirectory" statements in one
+	  <b>.tyc</b> file residing in he root directory of the projects sources.
+	  A good convention is to name this script <b>make&gt;project-name&lt;.tyc</b>,
+	  e.g. <b>src/TL2/MyProject/makeMyProject.tyc</b>.
+	  It is <strong>strongly disencouraged</strong> to place class definitions
+	  into this files!
+	</p>
+	<p>
+	  There are sometimes classes which need explicit initialization after compilation,
+	  but just once, for example <i>singletons</i>.
+	  We recommend to place such initializations in a separate .tyc file, which
+	  is placed in the same directory as the make-script, having the prefix <b>init</b>,
+	  e.g. <b>src/TL2/MyProject/initMyProject.tyc</b>.
+	</p>
+
+	<p>
+	  Both types of scripts may easilsy be executed by the <b>DO load ...;</b> statement.
+	  The main advantage of this scheme is that packages can easily be transported to
+	  another Tycoon-2 system and be compiled and initialized.
+	</p>
+	<p>
+	  A full example of both a make and an init script might look as follows:
+	  <b>makeMyProject.tyc</b>:
+	</p>
+	<pre>
+    ;; DO load "MyProject/makeMyProject.tyc" ?
+
+    tycoon.tl.loader.registerDirectory("MyProject/Storage") ?
+    tycoon.tl.loader.registerDirectory("MyProject/Application") ?
+    tycoon.tl.loader.registerDirectory("MyProject/MyFramework/Basic") ?
+    tycoon.tl.loader.registerDirectory("MyProject/MyFramework/Advanced") ?
+    tycoon.tl.loader.registerDirectory("MyProject/Utilities") ?
+    tycoon.tl.loader.registerDirectory("MyProject/Test") ?
+
+    tycoon.tl.loader.update ?
+
+    tycoon.tl.typeChecker.check ?
+
+    ;; tycoon.saveSystem ?
+	</pre>
+	<p>
+	  The <b>initMyProject.tyc</b> could look like this:
+	</p>
+	<pre>
+    ;; DO load "MyProject/initMyProject.tyc" ?
+
+    ;; create singletons, init some slots
+
+    ITCSystem.init ?
+    MyFrameworkGlobal.init ?
+    Test.init ?
+
+    MyFrameworkGlobal.instance.mustTrace:=true ?
+
+    Currency.init ?
+    Currency.setRates("DM", "NOK", 4.0) ?
+	</pre>
+
+	<hr>
+
+	<a name="typechecker"><h3><font color="#331199">The Type-Checker</font></h3></a>
+
+	<h4><font color="#331199">Usage</font></h4>
+
+	<p>
+	  The Tycoon-2 typechecker operates completly indepent from the classloader.
+	  It is similar to the classloader accessable as
+	</p>
+	<pre>
+tycoon.tl.typeChecker
+	</pre>
+	
+	<p>
+	  This object has several slots and methods, which are listes below:
+	</p>
+
+	<ul>
+	  <li>
+		<tt>check</tt> checks all classes that are changed by the classloader.
+		No special order is applicated.
+		The typechecker runs until it encounters the first error.
+		Example:
+		<pre>
+tycoon.tl.typeChecker.check ?
+		</pre>
+		This is also the most common usage of the typechecker.
+	  </li>
+	  
+	  <li>
+		<tt>checkClass(c :ClassPublic)</tt> checks the class <tt>c</tt>
+		unconditionally (even if the class was not an the agenda).
+		Example:
+		<pre>
+tycoon.tl.typeChecker.checkClass(String) ?
+		</pre>
+	  </li>
+
+	  <li>
+		<tt>ignore(c :ClassPublic)</tt> removes class <tt>c</tt>
+		from the agenda. This can be used for example if the typechecker is
+		known to be buggy or if a class is known to have type-errors, but
+		this can be ignored for some reasons.
+		Note that changing any class on which depends <tt>c</tt> re-inserts
+		the class <tt>c</tt> into the agenda again.
+		Example:
+		<pre>
+tycoon.tl.typeChecker.ignore(TWLGram) ?
+		</pre>
+	  </li>
+	  
+	  <li>
+		<tt>agenda </tt> is the agenda. Example:
+		<pre>
+tycoon.tl.typeChecker.agenda ?
+		</pre>
+	  </li>
+	  <li>
+		<tt>dependencies:</tt>
+		If any class or pool-method is chaged, all dependent classes are
+		entered into the agenda.
+		The dependencies for a can be viewed by
+		<tt>tycoon.tl.typeChecker.dependencies[&quot;String&quot;]</tt>.
+		Example:
+		<pre>
+tycoon.tl.typeChecker.dependencies[&quot;Humble&quot;] ?
+		</pre>
+		prints out a Set of all Classnames dependent from <b>Humble</b>.
+		<br>
+	  </li>
+
+	  <li>
+		<tt>maxDepth</tt> is a slot describing the maximum of internal calls
+		in the typechecker. The default value is 10000, which can be too small
+		for very complex classes.
+		Example:
+		<pre>
+tycoon.tl.typeChecker.maxDepth := <i>big number</i> ?
+		</pre>
+	  </li>
+
+	  <li>
+		<tt>tycoon.tl.typeChecker.logSubTypeTests := true</tt>
+		switchs on a kind of &quot;Super-Verbose-Mode&quot; and is intended for
+		debugging the typechecker, dito the slots <tt>logTypeChecks, logValueChecks</tt>.
+	  </li>
+	  
+	</ul>
+
+	<hr>
+	
+	<a name="classbrowser"><h3><font color="#331199">The Class-Browser</font></h3></a>
+
+	<p>(### HW : todo)</p>
+
+	<p>
+	  Can be used to browse the inheritance structure.  When
+	  clicking on a class name, the class's interface including all
+	  inherited methods, docstrings, pre- and postconditions is
+	  shown.  Type names are hyperlinks to further interface
+	  views. (### AX : todo)
+	</p>
+
+	<hr>
+
+	<a name="debugger"><h3><font color="#331199">The Debugger</font></h3></a>
+
+	<p>The TVM contains some basic debugging functionality.  It is
+	currently used for generating sequence diagrams from running
+	code, in the Development/Browse Objects pages of the HttpdAdmin application.
+	To use this feature, you need to mark all objects
+        that should appear in the sequence diagram using "isTracedComponent := true".  Navigate to some
+	interesting object using the object browser and type some
+	message in the text field, then click on "trace" (not "eval").
+	(### AX : todo)</p>
+
+	<p>(### HW : todo)</p>
+
+	<hr>
+
+	<a name="tvmopt"><h3><font color="#331199">Tycoon-2 Virtual Machine (TVM) Options</font></h3></a>
+
+	<p>
+	  The Tycoon-2 virtual machine supports some diagnostic output in
+	  error situations.
+	  These options can be set by defining the shell environment
+	  variable <tt>HOX_DEBUG</tt>:
+	</p>
+
+	<P><tt>setenv HOX_DEBUG opt[=par[,par]*][,opt[=par[,par]*]]* </tt></P>
+
+	<div align="center">
+	  <table width="80%" border="1">
+		<tr>
+		  <th>opt </th>
+		  <th>par </th>
+		  <th>Explanation</th>
+		</tr>
+		
+		<tr>
+		  <td>all </td>
+		  <td>- </td>
+		  <td>Activates all Messages</td>
+		</tr>
+		<tr>
+		  <td>BackTrace </td>
+		  <td></td>
+		  <td>Specifies, which exceptions generate a backtrace</td>
+		</tr>
+		<tr>
+		  <td></td>
+		  <td>AllExceptions </td>
+		  <td>all</td>
+		</tr>
+		<tr>
+		  <td></td>
+		  <td>Type </td>
+		  <td>Typconversion for C-Calls</td>
+		</tr>
+		<tr>
+		  <td></td>
+		  <td>MustBeBoolean </td>
+		  <td>if (?:) or assert</td>
+		</tr>
+		<tr>
+		  <td></td>
+		  <td>DLLOpen</td>
+		  <td></td>
+		</tr>
+		<tr>
+		  <td></td>
+		  <td>DLLCall</td>
+		  <td></td>
+		</tr>
+		<tr>
+		  <td></td>
+		  <td>DivisionByZero</td>
+		  <td></td>
+		</tr>
+		<tr>
+		  <td></td>
+		  <td>IndexOutOfBounds </td>
+		  <td></td>
+		</tr>
+		<tr>
+		  <td>StoreGrow </td>
+		  <td>- </td>
+		  <td>Signalizes, when and how much the store grows</td>
+		</tr>
+		<tr>
+		  <td>ObjectCount </td>
+		  <td></td>
+		  <td>Changes in count of objects grouped by class</td>
+		</tr>
+		<tr>
+		  <td></td>
+		  <td>- </td>
+		  <td>without par: after each Store grow</td>
+		</tr>
+		<tr>
+		  <td></td>
+		  <td>CountOnGC </td>
+		  <td>after each garbage collection</td>
+		</tr>
+	  </table>
+	</div>
+
+	<p>
+	  The following example will cause the TVM to report a stack
+	  backtrace every time a exception of type
+	  <tt>DoesNotUnderstand</tt> or <tt>IndexOutOfBounds</tt> occurs.
+	</p>
+	<pre>
+setenv HOX_DEBUG BackTrace=DoesNotUnderstand,IndexOutOfBounds
+	</pre>
+
+	<hr>
+
+	<a name="cls"><h2><font color="#331199">Simple Class Examples (Piggybank)</font></h2></a>
+
+	<p>
+	  To illustrate the usage of TL2-classes there are some example
+	  classes called the <i>Piggybank</i> provided.
+	</p>
+	
+	<dl>
+	<dl>	  
+	  <dt><a href="doc/codeExamples/demo/Counter.tc">Counter.tc</a></dt>
+	  <dt><a href="doc/codeExamples/demo/Counter2.tc">Counter2.tc</a></dt>
+	  <dt><a href="doc/codeExamples/demo/Counter2Class.tc">Counter2Class.tc</a></dt>
+	  <dt><a href="doc/codeExamples/demo/CounterWithFun.tc">CounterWithFun.tc</a></dt>
+	  <dt><a href="doc/codeExamples/demo/CycleCounter.tc">CycleCounter.tc</a></dt>
+	  <dt><a href="doc/codeExamples/demo/DoubleCounter.tc">DoubleCounter.tc</a></dt>
+	  <dt><a href="doc/codeExamples/demo/OrderedCounter.tc">OrderedCounter.tc</a></dt>
+	  <dt><a href="doc/codeExamples/demo/PiggyBank.tc">PiggyBank.tc</a></dt>
+	  <dt><a href="doc/codeExamples/demo/ResetableCounter.tc">ResetableCounter.tc</a></dt>
+	  <dt><a href="doc/codeExamples/demo/ResetableDoubleCounter.tc">ResetableDoubleCounter.tc</a></dt>
+	</dl>
+    </dl>
+	
+	<p>
+	  These examples are part of the Tycoon-2 distribution; they can
+	  be found in the directory <b>doc/codeExamples/demo/</b>.
+	</p>
+
+	<hr>
+
+	<a name="app"><h2><font color="#331199">Static Class Library Overview</font></h2></a>
+
+	<p>
+	  The following three links lead to an graphical overview of the class
+	  hierarchy.
+	  The hierachy is displayed by a Java applet.
+	  <b>WARNING: The second and the third  applet take a LONG while
+		to load!</b>
+	</p>
+
+	<dl>
+	  <dt>
+		<a href="doc/classes/tycoon2DAGPart.html">Class Browser (only a subset)</a>
+	  </dt>
+	  
+	  <dt>
+		<a href="doc/classes/tycoon2DAGPartWithMetaClasses.html">Class Browser (only a subset with its metaclasses -- takes a while)</a>
+	  </dt>
+
+	  <dt>
+		<a href="doc/classes/tycoon2DAG.html">Class Browser (all -- takes a very LONG while)</a>
+	  </dt>
+	</dl>
+
+	<hr>
+
+	(### HW, AX : replace this by the new online version (?))
+
+	<a name="faq"><h2><font color="#331199">FAQ</font></h2></a>
+	
+	<p>
+	  Frequently asked questions - and their answers.
+	  Currently, there is only a german version available.
+	  Click <a href="doc/faq.html">here</a> to read the FAQ.
+	</p>
+
+	(### HW : extend FAQ and translate)
+
+	<hr>
+
+	<a name="adv"><h2><font color="#331199">Advanced Topics</font></h2></a>
+
+	<p>
+	  This section covers advanced aspects of the Tycoon-2 system.
+	</p>
+
+	<hr>
+
+	<a name="port"><h3><font color="#331199">Porting Tycoon-2 to a new Platform</font></h3></a>
+
+	(### AW : todo; See <a href="doc/portierung.html">preliminary german version</a>)
+
+	<hr>
+
+	<a name="boot"><h3><font color="#331199">Bootstrapping a Tycoon-2 System</font></h3></a>
+
+	see <a href="doc/bootstrap/bootstrap.txt">preliminary outdated german version</a> (### AX, AW : todo)
+
+	<hr>
+
+
+
+<!-- $STS-Footer$ DO NOT DELETE! -->
+
+	<div align="center">
+	  <hr>
+	  <table width="90%">
+		<tr>
+		  <td align="left">
+			<a href="http://www.sts.tu-harburg.de/">
+			  <img src="/icons/STS-Logo.gif" alt="Software Systems Institute" align="middle" height="20" border="0"></a>
+		  </td>
+		  <td align="right">
+			02-jun-1999 <a href="/~ho.wegner">holm wegner</a><br>
+			04-nov-2003 <a href="/~ax.wienberg">axel wienberg</a>
+		  </td>
+		</tr>
+	  </table>
+	</div>
+
+  </body>
+</html>

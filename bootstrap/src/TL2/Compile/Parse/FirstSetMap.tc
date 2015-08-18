@@ -1,0 +1,99 @@
+class FirstSetMap
+super Parse
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ A FirstSetMap computes and stores the first sets for nonterminals in
+   <gram>. *)
+meta FirstSetMapClass
+{
+gram :Grammar(Object)
+  (* *)
+{ _gram }
+
+"[]"(s :SymbolO) :Set(TerminalO)
+  (* *)
+{ _firstDic[s] }
+
+epsilon :TerminalO
+  (* *)
+{ _epsilon }
+
+private
+
+_gram :Grammar(Object)
+
+_firstDic :Dictionary(SymbolO, Set(TerminalO))
+
+_epsilon :TerminalO
+
+ruleFirst(r :RuleO) :Set(TerminalO)
+  (* *)
+{
+  result ::= Set.with1(epsilon)
+  i ::= 0
+
+  while({result.includes(epsilon) & i < r.rhs.size} do: {
+    result.remove(epsilon)
+    result.addAll(_firstDic[r.rhs[i]])
+    i := i + 1
+  })
+  result
+}
+
+iterate: Bool
+  (* produce a better approximation from the previous one.
+   result: has anything changed? *)
+{
+  changed ::= false
+  gram.nonterminals.do(fun(nt:NonterminalO) {
+    newFirst ::= Set.new
+
+    nt.rules.do(fun(r:RuleO) {
+      newFirst.addAll(ruleFirst(r))
+    })
+    if( newFirst.size > _firstDic[nt].size then: {
+      changed := true
+      _firstDic[nt] := newFirst
+    })
+  })
+  changed
+}
+
+_init :Void
+  (* *)
+{
+  ;tycoon.stdout.writeln("Computing first sets"),
+
+  _epsilon := SimpleTerminal.new("epsilon")
+  _firstDic := Dictionary.new
+
+  ; initial approximation 
+  gram.terminals.do(fun(t :TerminalO) {
+    _firstDic[t] := Set.with1(t)
+  })
+  gram.nonterminals.do(fun(nt :NonterminalO) {
+    _firstDic[nt] := Set.new
+  })
+
+  while({iterate} do:{})
+  self  
+}
+
+}

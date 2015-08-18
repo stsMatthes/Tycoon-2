@@ -1,0 +1,44 @@
+class URLConnectionFactory
+super WWW
+(**)
+meta SimpleConcreteClass(URLConnectionFactory)
+{
+forURL(url :URL) :URLConnection
+  (* *)
+{
+  if( url.scheme.isNil then: fun() :URLConnection {
+    URLError.new("Cannot handle scheme "+url.asString).raise
+  } else: {
+    if( url.scheme = "file" then: fun() :URLConnection {
+      FileURLConnection.new1(url)
+  } else: {
+    if( url.scheme = "http" then: fun() :URLConnection {
+      HttpURLConnection.new1(url)
+  } else: {
+    if( url.scheme = "ftp" then: fun() :URLConnection {
+      FtpURLConnection.new1(url)
+  } else: {
+    URLError.new("Cannot handle scheme "+url.asString).raise
+  })})})})
+}
+
+forURLWithBasicAuthorization(url :URL, user :String, password :String) :URLConnection
+  (* *)
+{
+  if( url.scheme.isNil then: fun() :URLConnection {
+    URLError.new("Cannot handle scheme "+url.asString).raise
+  } else: {
+    if( url.scheme = "file" then: fun() :URLConnection {
+      FileURLConnection.new3(url, user, password)
+  } else: {
+    if( url.scheme = "http" then: fun() :URLConnection {
+      HttpURLConnection.new3(url, user, password)
+  } else: {
+    if( url.scheme = "ftp" then: fun() :URLConnection {
+      FtpURLConnection.new3(url, user, password)
+  } else: {
+    URLError.new("Cannot handle scheme "+url.asString).raise
+  })})})})
+}
+
+}

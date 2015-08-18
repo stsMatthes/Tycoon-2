@@ -1,0 +1,84 @@
+class AtTraceLogEntry
+super AtTrace
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+   an entry in the log.
+   outgoing and incoming event are successive events logged for thread
+   <thread> which occurred in different components:
+     outgoing.sendingComponent !== incoming.receivingComponent
+ *)
+meta AtTraceLogEntryClass
+{
+
+thread :Thread(Void)
+outgoing :AtTraceOutgoingEvent
+incoming :AtTraceIncomingEvent
+
+printOn(out :Output) :Void
+{
+  n ::=
+    if( thread.name = "Unknown" then: fun() :Object {
+      thread.identityHash
+    } else: {
+      thread.name
+    })
+  sendingC ::=
+    if(outgoing.sendingComponent.isNil then: { "?" } else: {
+      AtTraceDB.instance.tracedObjects[outgoing.sendingComponent]
+    })
+  receivingC ::= AtTraceDB.instance.tracedObjects[incoming.receivingComponent]
+  outgoing.case(
+    fun(send :AtTraceSend) {
+      incoming.case(
+        fun(enter :AtTraceEnter) {
+	  if(send.receiver == enter.receiver && send.selector = enter.selector then: {
+	    ;; could still be indirect, but "no importa"
+	    out<<n<<": "<<sendingC<<"--["<<send.selector<<"]-->"<<receivingC<<"\n"
+	  } else: {
+	    out<<n<<": "<<sendingC<<"--["<<send.selector<<"]...["<<enter.selector<<"]-->"<<receivingC<<"\n"
+	  })
+        },
+	fun(receive :AtTraceReceive) {
+	  assert({ false })  ;; ###
+	})
+    },
+    fun(return :AtTraceReturn) {
+      incoming.case(
+        fun(enter :AtTraceEnter) {
+	  out<<n<<": "<<"  ?  <--"<<sendingC<<"\n"
+	  out<<n<<": "<<"  ?  --["<<enter.selector<<"]-->"<<receivingC<<"\n"
+        },
+	fun(receive :AtTraceReceive) {
+	  out<<n<<": "<<receivingC<<"<--"<<sendingC<<"\n"
+	})
+    },
+    fun(start :AtTraceStart) {
+      incoming.case(
+        fun(enter :AtTraceEnter) {
+	  out<<n<<": "<<"  *  --["<<enter.selector<<"]-->"<<receivingC<<"\n"
+        },
+	fun(receive :AtTraceReceive) {
+	  assert({ false })  ;; ###
+	})
+    })
+}
+
+}

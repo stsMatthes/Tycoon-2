@@ -1,0 +1,15 @@
+class ReentrantSugarScannerClass
+super ConcreteClass(ReentrantSugarScanner)
+(**)
+meta MetaClass
+{
+new( sugarTerminals :SugarTerminals ) :ReentrantSugarScanner
+  (* *)
+{
+  instance ::= _new
+  instance.sugarTerminals := sugarTerminals
+  instance._init
+  instance
+}
+
+}

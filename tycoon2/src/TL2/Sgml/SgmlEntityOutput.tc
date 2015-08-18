@@ -1,0 +1,181 @@
+class SgmlEntityOutput
+super Sgml, OutputDecorator
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+
+My instances replace special characters with entity references
+
+13-Mar-1997 Andreas Gawecki
+
+*)
+meta SgmlEntityOutputClass()
+
+{
+table :MutableArray(String)
+  (* a mapping of characters to entity names *)
+
+writeEntityReference(entity :String) :Void
+  (* *)
+{
+  super.write('&')
+  super.writeString(entity)
+  super.write(';')
+}
+
+write(ch :Char) :Void
+  (* *)
+{
+  s ::= table[ch.asInt]
+  if( s == nil then: { super.write(ch) } else: {
+    writeEntityReference(s)
+  })
+}
+
+addHtmlLatin :Void
+  (* *)
+{
+  addIsoLat1
+  table['\160'.asInt] := "nbsp"
+  table['\161'.asInt] := "iexcl"
+  table['\162'.asInt] := "cent"
+  table['\163'.asInt] := "pound"
+  table['\164'.asInt] := "curren"
+  table['\165'.asInt] := "yen"
+  table['\166'.asInt] := "brvbar"
+  table['\167'.asInt] := "sect"
+  table['\168'.asInt] := "uml"
+  table['\169'.asInt] := "copy"
+  table['\170'.asInt] := "ordf"
+  table['\171'.asInt] := "laquo"
+  table['\172'.asInt] := "not"
+  table['\173'.asInt] := "shy"
+  table['\174'.asInt] := "reg"
+  table['\175'.asInt] := "macr"
+  table['\176'.asInt] := "deg"
+  table['\177'.asInt] := "plusmn"
+  table['\178'.asInt] := "sup2"
+  table['\179'.asInt] := "sup3"
+  table['\180'.asInt] := "acute"
+  table['\181'.asInt] := "micro"
+  table['\182'.asInt] := "para"
+  table['\183'.asInt] := "middot"
+  table['\184'.asInt] := "cedil"
+  table['\185'.asInt] := "sup1"
+  table['\186'.asInt] := "ordm"
+  table['\187'.asInt] := "raquo"
+  table['\188'.asInt] := "frac14"
+  table['\189'.asInt] := "frac12"
+  table['\190'.asInt] := "frac34"
+  table['\191'.asInt] := "iquest"
+}
+
+addIsoLat1 :Void
+  (* all characters from \192 to \255 *)
+{
+  addUmlauts
+  table['\192'.asInt] := "Agrave"
+  table['\193'.asInt] := "Aacute"
+  table['\194'.asInt] := "Acirc"
+  table['\195'.asInt] := "Atilde"
+  table['\197'.asInt] := "Aring"
+  table['\198'.asInt] := "AElig"
+  table['\199'.asInt] := "Ccedil"
+  table['\200'.asInt] := "Egrave"
+  table['\201'.asInt] := "Eacute"
+  table['\202'.asInt] := "Ecirc"
+  table['\203'.asInt] := "Euml"
+  table['\204'.asInt] := "Igrave"
+  table['\205'.asInt] := "Iacute"
+  table['\206'.asInt] := "Icirc"
+  table['\207'.asInt] := "Iuml"
+  table['\208'.asInt] := "ETH"
+  table['\209'.asInt] := "Ntilde"
+  table['\210'.asInt] := "Ograve"
+  table['\211'.asInt] := "Oacute"
+  table['\212'.asInt] := "Ocirc"
+  table['\213'.asInt] := "Otilde"
+  table['\215'.asInt] := "times"
+  table['\216'.asInt] := "Oslash"
+  table['\217'.asInt] := "Ugrave"
+  table['\218'.asInt] := "Uacute"
+  table['\219'.asInt] := "Ucirc"
+  table['\221'.asInt] := "Yacute"
+  table['\222'.asInt] := "THORN"
+  table['\224'.asInt] := "agrave"
+  table['\225'.asInt] := "aacute"
+  table['\226'.asInt] := "acirc"
+  table['\227'.asInt] := "atilde"
+  table['\229'.asInt] := "aring"
+  table['\230'.asInt] := "aelig"
+  table['\231'.asInt] := "ccedil"
+  table['\232'.asInt] := "egrave"
+  table['\233'.asInt] := "eacute"
+  table['\234'.asInt] := "icirc"
+  table['\235'.asInt] := "euml"
+  table['\236'.asInt] := "igrave"
+  table['\237'.asInt] := "iacute"
+  table['\238'.asInt] := "icirc"
+  table['\239'.asInt] := "iuml"
+  table['\240'.asInt] := "eth"
+  table['\241'.asInt] := "ntilde"
+  table['\242'.asInt] := "ograve"
+  table['\243'.asInt] := "oacute"
+  table['\244'.asInt] := "ocirc"
+  table['\245'.asInt] := "otilde"
+  table['\247'.asInt] := "divide"
+  table['\248'.asInt] := "oslash"
+  table['\249'.asInt] := "ugrave"
+  table['\250'.asInt] := "uacute"
+  table['\251'.asInt] := "ucirc"
+  table['\253'.asInt] := "yacute"
+  table['\254'.asInt] := "thorn"
+  table['\255'.asInt] := "yuml"
+}
+
+addUmlauts :Void
+  (* *)
+{
+  table[Char.AE.asInt] := "Auml"
+  table[Char.OE.asInt] := "Ouml"
+  table[Char.UE.asInt] := "Uuml"
+  table[Char.ae.asInt] := "auml"
+  table[Char.oe.asInt] := "ouml"
+  table[Char.ue.asInt] := "uuml"
+  table[Char.ss.asInt] := "szlig"
+}
+
+private
+
+_init :Void
+  (* *)
+{
+  super._init
+  table := MutableArray(:String).new(256)
+  
+  table['&'.asInt]  := "amp"
+  table['<'.asInt]  := "lt"
+  table['\"'.asInt] := "quot"
+  table['>'.asInt]  := "gt"
+  table := table
+  self
+}
+
+}

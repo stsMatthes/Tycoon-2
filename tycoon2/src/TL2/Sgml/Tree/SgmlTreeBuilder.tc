@@ -1,0 +1,61 @@
+class SgmlTreeBuilder
+super AbstractSgmlTreeBuilder(SgmlComponent)
+(**)
+meta SimpleConcreteClass(SgmlTreeBuilder)
+{
+entityFilter :SgmlEntityOutput
+  (* *)
+{
+  _entityFilter
+}
+
+private
+
+_entityFilter :SgmlEntityOutput
+
+buffer :StringBuilderOutput
+
+defaultElement(gi :String, contentType :SgmlContentType,
+	       defAttrVal :Dictionary(String, String)) :SgmlElement
+  (* *)
+{ SgmlElement.new(gi, contentType, defAttrVal) }
+
+makeLeaf(position :SgmlPos, value :String) :SgmlLeaf
+  (*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+ construct a leaf for the tree from character data *)
+{ _entityFilter.writeString(value)
+  filteredValue ::= buffer.contents
+  buffer.clear
+  SgmlLeaf.new(position, filteredValue)
+}
+
+makeComment(position :SgmlPos, value :String) :SgmlComment
+  (* construct a comment leaf for the tree from character data *)
+{ SgmlComment.new(position, value) }
+
+_init :Void
+  (* *)
+{ super._init
+  buffer := StringBuilderOutput.new
+  _entityFilter := SgmlEntityOutput.new(buffer)
+}
+
+}

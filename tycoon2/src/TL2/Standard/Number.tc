@@ -1,0 +1,237 @@
+class Number(F <:Number(F))
+super Ordered(F)
+(*
+ * This file is part of the Tycoon-2 system.
+ *
+ * The Tycoon-2 system is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation (Version 2).
+ *
+ * The Tycoon-2 system is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty
+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public
+ * License along with the Tycoon-2 system; see the file LICENSE.
+ * If not, write to AB 4.02, Softwaresysteme, TU Hamburg-Harburg
+ * D-21071 Hamburg, Germany. (http://www.sts.tu-harburg.de)
+ * 
+ * Copyright (c) 1996-1998 Higher-Order GmbH, Hamburg. All rights reserved.
+ *
+
+Protocol for all numbers, i.e. subclasses F of Number (Real, Int, ..).
+
+Author:  Andreas Gawecki
+Date:    01-Mar-1995
+Updates: (Date)	  (Name)	(Description)
+
+*)
+Self <: F
+meta AbstractClass
+{
+order(x :F) :Int
+  (* *)
+{
+  (self - x).sign
+  }
+
+"+"(x :F) :F
+  (* *)
+deferred
+
+"-"(x :F) :F
+  (* *)
+deferred
+
+"*"(x :F) :F
+  (* *)
+deferred
+
+"/"(x :F) :F
+  (* *)
+deferred
+
+"%"(x :F) :F
+  (* *)
+deferred
+
+zero :Self
+  (* *)
+deferred
+
+one :Self
+  (* *)
+deferred
+
+ten :Self
+  (* *)
+deferred
+
+truncated :Self
+  (* *)
+deferred
+
+rounded :Self
+  (* *)
+deferred
+
+ceiling :Self
+  (* *)
+deferred
+
+floor :Self
+  (* *)
+deferred
+
+asInt :Int
+  (* *)
+deferred
+
+asLong :Long
+  (* *)
+deferred
+
+asInt32 :Int32
+  (* *)
+deferred
+
+asChar :Char
+  (* *)
+deferred
+
+asReal :Real
+  (* *)
+deferred
+
+negated :F
+  (* *)
+{
+  zero - self  
+  }
+
+isNegative :Bool
+  (* *)
+{
+  self < zero
+  }
+
+isPositive :Bool
+  (* *)
+{
+  self >= zero
+  }
+
+isZero :Bool
+  (* *)
+{
+  self = zero
+  }
+
+isStrictlyPositive :Bool
+  (* *)
+{
+  self > zero
+  }
+
+sign :Int
+  (* *)
+{
+  if( self < zero	
+    then: {(-1)}
+    else: {if( self > zero
+         then: {1}
+	 else: {0})})
+  }
+
+squared :F
+  (* *)
+{
+  self * self
+  }
+
+abs :F
+  (* *)
+{
+  if( self < zero
+    then: {negated}
+    else: {self})
+  }
+
+intPower(x :Int) :F
+  (* computes the receiver raised to the power x,
+     where x is an integer.  for real x, use power(x). *)
+{
+  assert({ x.isPositive })
+  if( x.isZero
+  then: { f :F := one }
+  else: { p ::= intPower(x / 2)
+      pSquare ::= p*p
+      if( x.odd
+      then: { self * pSquare }
+      else: { pSquare }) })
+}
+
+sin :Real
+  (* *)
+{
+  asReal.sin
+  }
+
+cos :Real
+  (* *)
+{
+  asReal.cos
+  }
+
+tan :Real
+  (* *)
+{
+  asReal.tan
+  }
+
+asin :Real
+  (* *)
+{
+  asReal.asin
+  }
+
+acos :Real
+  (* *)
+{
+  asReal.acos
+  }
+
+atan :Real
+  (* *)
+{
+  asReal.atan
+  }
+
+sqrt :Real
+  (* *)
+{
+  asReal.sqrt
+  }
+
+ln :Real
+  (* *)
+{
+  asReal.ln
+  }
+
+power(x :Real) :Real
+  (* computes the receiver raised to the power x *)
+{
+  asReal.power(x)
+  }
+
+private
+
+_raiseDivisionByZero :Nil
+  (* *)
+{
+  nil ;##raise divisionByZero exception
+  }
+
+}

@@ -1,0 +1,17 @@
+class AtTraceEnter
+super AtTraceIncomingEvent
+meta AtTraceEnterClass
+{
+staticClass :Symbol
+selector :TL2Selector
+args :Array(Object)
+
+case(T<:Void, ifEnter :Fun(:AtTraceEnter):T, :Fun(:AtTraceReceive):T) :T
+{ ifEnter[self] }
+
+printOn(out :Output) :Void
+{
+  out<<"Enter{a "<<receiver."class".name<<" "<<staticClass<<"::"<<selector<<"}"
+}
+
+}

@@ -1,0 +1,23 @@
+class CommentCollectorState
+super Sugar
+(**)
+meta CommentCollectorStateClass
+{
+commentOut :Output
+
+otherOut :Output
+
+nesting :Int
+
+nComments :Int
+
+private
+
+_init :Void
+  (* *)
+{ super._init
+  nesting := 0
+  nComments := 0
+}
+
+}

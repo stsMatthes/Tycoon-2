@@ -1,0 +1,15 @@
+class HttpCookieClass
+super ConcreteClass(HttpCookie)
+(**)
+meta MetaClass
+{
+new(name :String, value :String) :HttpCookie
+  (* *)
+{
+  cookie ::= _new
+  cookie._init2(name, value)
+
+  cookie
+}
+
+}

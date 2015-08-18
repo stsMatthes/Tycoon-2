@@ -1,0 +1,42 @@
+;; continuation of e.tyc
+
+define Lines :MutableNonterminal(Object) ?
+define S :MutableNonterminal(Object) ?
+
+Lines := MutableNonterminal.new("Lines") ?
+S := MutableNonterminal.new("S") ?
+
+Lines.addRule1(
+	S,
+	fun(:Object) { nil }) ?
+Lines.addRule3(
+	S, t[","], Lines,
+	fun(:Object, :Object, :Object) { nil }) ?
+
+
+S.addRule1(
+	E,
+	fun(i :Int) {
+	  tycoon.stdout << "\nErgebnis:\n" << i << "\n"
+	  nil
+	}) ?
+S.addRule0(
+	{ nil }) ?
+
+define g :Grammar(Object) ?
+g := Grammar.new(Lines) ?
+
+
+;; define p :NaiveParser(Object) ?
+;; p := parserGen.generate(g) ?
+;; 
+;; sc := Scanner.new(st,File.stdin) ?
+;; p.logging := false ?
+;; p.parse(sc,errHandler) ?
+
+define cp :CompactParser(Object) ?
+cp := cparserGen.generate(g) ?
+
+sc := Scanner.new(st,File.stdin) ?
+cp.logging := false ?
+cp.parse(sc,errHandler) ?

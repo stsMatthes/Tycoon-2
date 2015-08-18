@@ -1,0 +1,46 @@
+class HandlerTaskRec
+super TaskRec
+(**)
+meta HandlerTaskRecClass(HandlerTaskRec)
+{
+workInQueue :Queue(Packet)
+
+deviceInQueue :Queue(Packet)
+
+init() :Self
+  (* *)
+{
+  workInQueue := Queue.new
+  deviceInQueue := Queue.new
+  self
+}
+
+workIn() :Packet
+  (* *)
+{
+  workInQueue[0]
+}
+
+setWorkIn(p :Packet) :Void
+  (* *)
+{
+  workInQueue.addLast(p)
+}
+
+deviceIn() :Packet
+  (* *)
+{
+  deviceInQueue[0]
+}
+
+setDeviceIn(p :Packet) :Void
+  (* *)
+{
+  deviceInQueue.addLast(p)
+}
+
+print() :Void
+  (* *)
+{}
+
+}
